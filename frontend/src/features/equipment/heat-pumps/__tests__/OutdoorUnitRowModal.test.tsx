@@ -26,6 +26,7 @@ function outdoorEquip(): HeatPumpOutdoorEquipRow {
     seer: null,
     ieer: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     notes: null,
     catalog_origin: null,
   };

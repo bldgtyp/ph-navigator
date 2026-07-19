@@ -193,7 +193,19 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # v3: rooms, thermal bridges, ventilators, pumps, and hot-water tanks gain
 # downstream-consumer built-ins (ceiling height, quantities, frost protection,
 # annual energy, heat-gain utilization, and tank temperature/location fields).
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4
+#
+# v6: Documentation-tab Phase 01 adds per-record site-photo attachment arrays
+# plus derived-axis waiver flags to equipment, heat-pump leaves, aperture
+# product tables, thermal bridges, project materials, and assembly segments.
+# Equipment/TB/HP FieldDef seeds gain `photo_asset_ids`, Thermal Bridges gains
+# the missing `datasheet_asset_ids`, and the shared `status` display label
+# becomes "Specification Status" while keeping field_key="status".
+#
+# v5: the four Heat Pump leaves gain the built-in `name` ("Display Name")
+# FieldDef like every other equipment table; the upgrade backfills
+# `custom_values["name"]` from the typed `tag` so no row renders a blank
+# identity.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 6
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -209,26 +221,28 @@ ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "floor_level", "building_zone", "icfa_factor", "catalog_origin", "notes"}
 )
 PUMPS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids"}
+    {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
 VENTILATORS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "inside_outside", "url", "notes", "datasheet_asset_ids"}
+    {"id", "inside_outside", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
 FANS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "fan_type", "phase", "url", "notes", "datasheet_asset_ids"}
+    {"id", "fan_type", "phase", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
 HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "heater_type", "phase", "url", "notes", "datasheet_asset_ids"}
+    {"id", "heater_type", "phase", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
 HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "tank_type", "inside_outside", "url", "notes", "datasheet_asset_ids"}
+    {"id", "tank_type", "inside_outside", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
-ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes", "datasheet_asset_ids"})
+ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
+)
 APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "appliance_type", "energy_star", "url", "notes", "datasheet_asset_ids"}
+    {"id", "appliance_type", "energy_star", "url", "notes", "datasheet_asset_ids", "photo_asset_ids"}
 )
 THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "thermal_bridge_type", "pdf_report_asset_ids", "notes"}
+    {"id", "thermal_bridge_type", "pdf_report_asset_ids", "datasheet_asset_ids", "photo_asset_ids", "notes"}
 )
 SPACE_TYPES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id"})
 
@@ -278,7 +292,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[4] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[6] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

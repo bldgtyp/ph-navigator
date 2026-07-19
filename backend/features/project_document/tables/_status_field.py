@@ -27,7 +27,7 @@ from features.project_document.document import SingleSelectOption
 from features.project_document.tables._built_in_seeds import built_in_field_def
 
 STATUS_FIELD_KEY = "status"
-STATUS_DISPLAY_NAME = "Status"
+STATUS_DISPLAY_NAME = "Specification Status"
 
 STATUS_OPTION_COMPLETE = "opt_status_complete"
 STATUS_OPTION_NEEDED = "opt_status_needed"

@@ -492,7 +492,7 @@ Pydantic models are written.
 | US-ENV-12 | HBJSON construction **export** (download only — import not in V2 v1) | Shipped |
 | US-ENV-13 | Materials sub-tab (per-segment status, photos, datasheets) | Shipped |
 | US-ENV-14 | Airtightness sub-tab | Placeholder (out of cluster scope) |
-| US-ENV-15 | Site Photos sub-tab — contractor-facing regrouped view of US-ENV-13 photo data | Draft (sub-tab not yet wired) |
+| US-ENV-15 | Site Photos sub-tab — contractor-facing regrouped view of US-ENV-13 photo data | Absorbed 2026-07-18 into the top-level Documentation tab (`planning/archive/dated/2026-07-19/documentation-tab/`); `/envelope/site-photos` becomes a redirect |
 
 ---
 
@@ -2542,7 +2542,16 @@ needs follow-up edit), §11.4.2 (`project_hbjson_files`)
 
 ## US-ENV-15 — Site Photos sub-tab
 
-**Status:** Draft · **Priority:** MVP (promoted from Placeholder
+**Status:** ABSORBED (2026-07-18) into the top-level **Documentation** tab —
+see `planning/archive/dated/2026-07-19/documentation-tab/` (PRD + decisions).
+The section design below (assembly-type grouping, sticky headers,
+anchor-copy links, per-assembly cards, per-segment zones, na-exemption)
+carries over verbatim as that page's Envelope section.
+`/projects/{id}/envelope/site-photos` is implemented as a redirect to
+`/projects/{id}/documentation#envelope`; no standalone envelope sub-tab is
+built. Original draft retained below for the carried-over design details.
+
+**Original status:** Draft · **Priority:** MVP (promoted from Placeholder
 2026-05-10 after all Q-ENV-15.x resolved)
 **PRD ref:** §6.2 (assembly shape — `assembly.type` field
 added per Q-ENV-15.1), §4 (Viewer access model —

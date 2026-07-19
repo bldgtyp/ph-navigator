@@ -1,7 +1,7 @@
 // Built-in `status` single-select contract shared by DataTable consumers.
 // Mirrors backend/features/project_document/tables/_status_field.py.
 export const STATUS_FIELD_KEY = "status";
-export const STATUS_DISPLAY_NAME = "Status";
+export const STATUS_DISPLAY_NAME = "Specification Status";
 
 export const STATUS_OPTION_COMPLETE = "opt_status_complete";
 export const STATUS_OPTION_NEEDED = "opt_status_needed";

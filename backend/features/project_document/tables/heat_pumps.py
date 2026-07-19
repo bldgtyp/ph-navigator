@@ -33,6 +33,7 @@ from features.project_document.document import ProjectDocumentV1, SingleSelectOp
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.options import option_list_key, read_option_list, replace_option_list
 from features.project_document.rows import RowWithCustomFields
+from features.project_document.tables._attachment_fields import datasheet_field_def, photo_field_def
 from features.project_document.tables._built_in_seeds import built_in_field_def
 from features.project_document.tables._registry_helpers import (
     FormulaType,
@@ -81,6 +82,7 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Outdoor equipment schedule tag.",
     ),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="model_number", display_name="Model", field_type=CustomFieldType.short_text),
     built_in_field_def(
@@ -126,7 +128,8 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="eer", display_name="EER / EER2", field_type=CustomFieldType.number),
     built_in_field_def(field_key="seer", display_name="SEER / SEER2", field_type=CustomFieldType.number),
     built_in_field_def(field_key="ieer", display_name="IEER", field_type=CustomFieldType.number),
-    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    datasheet_field_def(),
+    photo_field_def(),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
 )
@@ -138,6 +141,7 @@ INDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Indoor equipment schedule tag.",
     ),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="model_type", display_name="Model Type", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="model_number", display_name="Model", field_type=CustomFieldType.short_text),
@@ -159,7 +163,8 @@ INDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="seer", display_name="SEER", field_type=CustomFieldType.number),
     built_in_field_def(field_key="eer", display_name="EER", field_type=CustomFieldType.number),
     built_in_field_def(field_key="hspf", display_name="HSPF", field_type=CustomFieldType.number),
-    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    datasheet_field_def(),
+    photo_field_def(),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
 )
@@ -171,13 +176,15 @@ OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Outdoor unit schedule tag.",
     ),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(
         field_key="outdoor_equip_id",
         display_name="Outdoor Equipment",
         field_type=CustomFieldType.linked_record,
         config={"target_table_path": list(_OUTDOOR_EQUIP_PATH), "max_links": 1},
     ),
-    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    datasheet_field_def(),
+    photo_field_def(),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
 )
@@ -189,6 +196,7 @@ INDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Indoor unit schedule tag.",
     ),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(
         field_key="indoor_equip_id",
         display_name="Indoor Equipment",
@@ -213,7 +221,8 @@ INDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.linked_record,
         config={"target_table_path": ["rooms"], "max_links": None},
     ),
-    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    datasheet_field_def(),
+    photo_field_def(),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
 )

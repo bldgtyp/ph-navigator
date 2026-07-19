@@ -1010,11 +1010,15 @@ describe("equipment room helpers", () => {
 
     const payload = ventilatorsPayloadFromCellWrites(
       current,
-      [{ rowId: "vent_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] }],
+      [
+        { rowId: "vent_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+        { rowId: "vent_1", fieldKey: "photo_asset_ids", value: ["asset_photo_1"] },
+      ],
       {},
     );
 
     expect(payload.ventilators[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(payload.ventilators[0]?.photo_asset_ids).toEqual(["asset_photo_1"]);
   });
 
   test("ventilatorsPayloadFromRowDelete preserves field_defs", () => {
@@ -1052,6 +1056,7 @@ describe("equipment room helpers", () => {
       [
         { rowId: "fan_1", fieldKey: "record_id", value: "F-2" },
         { rowId: "fan_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+        { rowId: "fan_1", fieldKey: "photo_asset_ids", value: ["asset_photo_1"] },
       ],
       {},
     );
@@ -1059,6 +1064,7 @@ describe("equipment room helpers", () => {
     expect(payload.field_defs).toEqual(fansBuiltInFieldDefs);
     expect(payload.fans[0]?.custom_values.record_id).toBe("F-2");
     expect(payload.fans[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(payload.fans[0]?.photo_asset_ids).toEqual(["asset_photo_1"]);
   });
 
   test("fansPayloadFromRowDelete preserves field_defs", () => {
@@ -1139,6 +1145,7 @@ describe("equipment room helpers", () => {
       { rowId: "heatr_1", fieldKey: "url", value: " https://example.com/heater.pdf " },
       { rowId: "heatr_1", fieldKey: "watt", value: null },
       { rowId: "heatr_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+      { rowId: "heatr_1", fieldKey: "photo_asset_ids", value: ["asset_photo_1"] },
     ]);
 
     expect(payload.field_defs).toEqual(electricHeatersBuiltInFieldDefs);
@@ -1146,6 +1153,7 @@ describe("equipment room helpers", () => {
     expect(payload.electric_heaters[0]?.custom_values.watt).toBeNull();
     expect(payload.electric_heaters[0]?.url).toBe("https://example.com/heater.pdf");
     expect(payload.electric_heaters[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(payload.electric_heaters[0]?.photo_asset_ids).toEqual(["asset_photo_1"]);
   });
 
   test("electricHeatersPayloadFromRowDelete preserves field_defs", () => {
@@ -1501,7 +1509,13 @@ describe("electricHeatersPayloadFromRowDuplicate", () => {
 describe("appliances payload helpers", () => {
   test("inserts, edits, duplicates, and deletes while preserving field defs", () => {
     const current = buildAppliancesSlice({
-      appliances: [buildAppliance({ id: "appl_1" })],
+      appliances: [
+        buildAppliance({
+          id: "appl_1",
+          datasheet_asset_ids: ["asset_pdf_source"],
+          photo_asset_ids: ["asset_photo_source"],
+        }),
+      ],
     });
 
     const inserted = appliancesPayloadFromRowInsert(
@@ -1522,6 +1536,7 @@ describe("appliances payload helpers", () => {
         { rowId: "appl_1", fieldKey: "capacity_m3", value: null },
         { rowId: "appl_1", fieldKey: "energy_star", value: "opt_appl_energy_star_no" },
         { rowId: "appl_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+        { rowId: "appl_1", fieldKey: "photo_asset_ids", value: ["asset_photo_1"] },
       ],
       {},
       {},
@@ -1529,6 +1544,7 @@ describe("appliances payload helpers", () => {
     expect(edited.appliances[0]?.custom_values.capacity_m3).toBeNull();
     expect(edited.appliances[0]?.energy_star).toBe("opt_appl_energy_star_no");
     expect(edited.appliances[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(edited.appliances[0]?.photo_asset_ids).toEqual(["asset_photo_1"]);
 
     const duplicated = appliancesPayloadFromRowDuplicate(current, [
       {
@@ -1542,6 +1558,12 @@ describe("appliances payload helpers", () => {
       duplicated.appliances.find((appliance) => appliance.id === "appl_dup")?.custom_values
         .record_id,
     ).toBe("A-1 (copy)");
+    expect(
+      duplicated.appliances.find((appliance) => appliance.id === "appl_dup")?.datasheet_asset_ids,
+    ).toEqual([]);
+    expect(
+      duplicated.appliances.find((appliance) => appliance.id === "appl_dup")?.photo_asset_ids,
+    ).toEqual([]);
 
     const deleted = appliancesPayloadFromRowDelete(current, [
       { rowId: "appl_1", row: current.appliances[0]!, anchorRowId: null },
@@ -1601,7 +1623,7 @@ describe("built-in status field", () => {
       const statusDef = fieldDefs.find((field) => field.field_key === STATUS_FIELD_KEY);
       expect(statusDef?.field_type).toBe("single_select");
       expect(statusDef?.origin).toBe("built_in");
-      expect(statusDef?.display_name).toBe("Status");
+      expect(statusDef?.display_name).toBe("Specification Status");
       expect(statusDef?.config.default_option_id).toBe(STATUS_DEFAULT_OPTION_ID);
     }
   });

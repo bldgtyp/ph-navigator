@@ -41,7 +41,12 @@ export function AttachmentCell({
     [assetUrlById, urls.data],
   );
 
-  const accept = config.allowedTypes.join(",");
+  const accept = useMemo(() => {
+    const accepted = new Set(config.allowedTypes);
+    if (accepted.has("image/heic")) accepted.add(".heic");
+    if (accepted.has("image/heif")) accepted.add(".heif");
+    return Array.from(accepted).join(",");
+  }, [config.allowedTypes]);
   const commitChange = async (next: string[]) => {
     if (!sameAttachmentAssetIds(value, next)) await onChange(next);
   };
@@ -49,10 +54,14 @@ export function AttachmentCell({
     if (readOnly) return;
     const accepted = Array.from(files).filter((file) => {
       if (!config.allowedTypes.includes(file.type || "application/octet-stream")) {
-        return (
-          file.name.toLowerCase().endsWith(".hbjson") &&
-          config.allowedTypes.includes("application/json")
-        );
+        const name = file.name.toLowerCase();
+        if (
+          (name.endsWith(".heic") || name.endsWith(".heif")) &&
+          (config.allowedTypes.includes("image/heic") || config.allowedTypes.includes("image/heif"))
+        ) {
+          return true;
+        }
+        return name.endsWith(".hbjson") && config.allowedTypes.includes("application/json");
       }
       return true;
     });

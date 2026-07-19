@@ -1,6 +1,6 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import type { AssetUrls } from "../../assets/types";
+import { heatPumpDatasheetColumn, heatPumpPhotoColumn } from "./attachment-columns";
 import {
   HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
   heatPumpAttachmentField,
@@ -14,15 +14,18 @@ import {
   incomingIndoorUnitColumnDef,
   incomingIndoorUnitsFieldDef,
 } from "./link-fields";
+import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
 import { statusColumnDef, statusFieldDef } from "./status-column";
 import { type HeatPumpOutdoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
 export const OUTDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const OUTDOOR_UNIT_PHOTO_FIELD_KEY = "photo_asset_ids";
 
 export function outdoorUnitFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   return [
     heatPumpTagField(),
+    displayNameFieldDef(),
     heatPumpLinkedRecordField({
       field_key: "outdoor_equip_id",
       display_name: "Equipment",
@@ -31,6 +34,7 @@ export function outdoorUnitFieldDefs(options: HeatPumpsSlice["single_select_opti
       max_links: 1,
     }),
     heatPumpAttachmentField(OUTDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
+    heatPumpAttachmentField(OUTDOOR_UNIT_PHOTO_FIELD_KEY, "Site photos"),
     incomingIndoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
@@ -44,6 +48,7 @@ export function outdoorUnitColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  onPhotoChange,
   indoorUnits = [],
   incomingIndoorUnitIdsByRowId = new Map(),
   onIndoorUnitClick,
@@ -51,14 +56,16 @@ export function outdoorUnitColumnDefs({
 }: {
   projectId: string;
   isEditor: boolean;
-  assetUrlById: Map<string, unknown>;
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
+  onPhotoChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
   incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
   onIndoorUnitClick?: (rowId: string) => void;
   onIndoorUnitsLinkEdit?: (row: HeatPumpOutdoorUnitRow) => void;
 }): DataTableColumnDef<HeatPumpOutdoorUnitRow>[] {
   return [
+    displayNameColumnDef<HeatPumpOutdoorUnitRow>(),
     {
       id: "tag",
       fieldKey: "tag",
@@ -74,27 +81,20 @@ export function outdoorUnitColumnDefs({
       accessor: (row) => [row.outdoor_equip_id],
       defaultWidth: 220,
     },
-    {
-      id: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
+    heatPumpDatasheetColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
       fieldKey: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
-      header: "Datasheet",
-      accessor: (row) => row.datasheet_asset_ids.join(","),
-      render: (row) => (
-        <AttachmentCell
-          projectId={projectId}
-          value={row.datasheet_asset_ids}
-          config={DATASHEET_ATTACHMENT_CONFIG}
-          readOnly={!isEditor}
-          assetUrlById={assetUrlById as never}
-          onChange={(next) => {
-            if (sameAttachmentAssetIds(row.datasheet_asset_ids, next)) return;
-            return onDatasheetChange(row, next);
-          }}
-        />
-      ),
-      measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
-      defaultWidth: 260,
-    },
+      onChange: onDatasheetChange,
+    }),
+    heatPumpPhotoColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
+      fieldKey: OUTDOOR_UNIT_PHOTO_FIELD_KEY,
+      onChange: onPhotoChange,
+    }),
     incomingIndoorUnitColumnDef<HeatPumpOutdoorUnitRow>({
       indoorUnits,
       getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),

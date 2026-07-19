@@ -96,7 +96,8 @@ class PumpRow(RowWithCustomFields):
     """A row in the Pumps table (v3 mixed-storage).
 
     Locked-type built-ins keep typed columns: `device_type`, `phase`,
-    `link`, `notes`, `datasheet_asset_ids`. Mutable-type built-ins
+    `link`, `notes`, `datasheet_asset_ids`, `photo_asset_ids`, and
+    the Documentation-page waiver flags. Mutable-type built-ins
     (`tag`, `use`, `manufacturer`, `model`, `volts`, `horse_power`,
     `wattage`, `flow_gpm`, `runtime_khr_yr`) live in `custom_values`.
     """
@@ -109,6 +110,9 @@ class PumpRow(RowWithCustomFields):
     link: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("notes", "link", mode="before")
     @classmethod
@@ -157,6 +161,9 @@ class VentilatorRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -192,6 +199,9 @@ class FanRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -234,6 +244,9 @@ class HotWaterHeaterRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -276,6 +289,9 @@ class HotWaterTankRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -309,6 +325,9 @@ class ElectricHeaterRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -344,6 +363,9 @@ class ApplianceRow(RowWithCustomFields):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -376,6 +398,10 @@ class ThermalBridgeRow(RowWithCustomFields):
     id: str = Field(pattern=r"^tb_[A-Za-z0-9_-]+$", max_length=80)
     thermal_bridge_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     pdf_report_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("notes", mode="before")

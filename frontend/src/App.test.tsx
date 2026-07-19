@@ -317,6 +317,7 @@ describe("App", () => {
     expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toBeVisible();
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
     expect(within(projectTabs).getByRole("link", { name: "Thermal Bridges" })).toBeVisible();
+    expect(within(projectTabs).getByRole("link", { name: "Documentation" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
   });
 

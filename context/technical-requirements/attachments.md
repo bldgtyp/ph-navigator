@@ -71,21 +71,49 @@ Attachment cells exist ONLY on these PHN-declared core fields:
 | Document path | Core field | asset_kind | Allowed MIME / ext | Max files / cell | Max file size |
 |---|---|---|---|---|---|
 | `tables.project_materials[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
-| `tables.assemblies[*].layers[*].segments[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp` | 10 | 25 MB |
+| `tables.assemblies[*].layers[*].segments[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.project_glazings[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.project_glazings[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.project_frames[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.project_frames[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.ervs[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.ervs[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.pumps[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.pumps[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.fans[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.fans[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.hot_water_heaters[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.hot_water_heaters[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.hot_water_tanks[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.hot_water_tanks[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.electric_heaters[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.electric_heaters[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.equipment.appliances[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.appliances[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.equipment.heat_pumps.outdoor_equip[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.heat_pumps.outdoor_equip[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.equipment.heat_pumps.indoor_equip[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.heat_pumps.indoor_equip[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.equipment.heat_pumps.outdoor_units[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.heat_pumps.outdoor_units[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
+| `tables.equipment.heat_pumps.indoor_units[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.heat_pumps.indoor_units[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 | `tables.thermal_bridges.rows[*]` | `pdf_report_asset_ids[]` | `datasheet` | `application/pdf` | 5 | 25 MB |
+| `tables.thermal_bridges.rows[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.thermal_bridges.rows[*]` | `photo_asset_ids[]` | `site_photo` | `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif` (`.heic`/`.heif`) | 10 | 25 MB |
 
 Per-field config (allowed MIME, `max_count`, `max_file_size_mb`) lives
 in code in `backend/features/assets/registry.py`, with row-table
 contracts in `backend/features/project_document/tables/attachments.py`
 (see `data-model.md` §6.6.7 registered-table-contract pattern). Adding
 a new attachment cell in v1.1+ is a code change, not a runtime change.
+HEIC/HEIF `site_photo` uploads are converted to JPEG during
+`complete-upload` before the asset becomes `uploaded`. The asset row then
+points at the converted JPEG object (`content_type=image/jpeg`); the original
+HEIC object is deleted after the row update. The Documentation tab and
+Equipment owner tables share this same upload path, so an editor can attach a
+JPEG or HEIC from either surface and publish it to public viewers with the
+normal Save Version control.
 
 Cell value shape (every entry above):
 ```jsonc
@@ -97,6 +125,12 @@ Empty = `[]`. `null` reads coerce to `[]`. Writes normalize to `[]`.
 Backend hard caps (apply regardless of per-field config):
 - single file ≤ 100 MB (multipart upload deferred);
 - per cell ≤ 50 (defends against runaway frontend code).
+
+Frontend `site_photo` cells use the same `<AttachmentCell>` contract as
+datasheets. On the Documentation Tab path, proximate photo columns render on
+the owning Equipment tables, all four Heat Pump leaves, Aperture Frames /
+Glazings report panels, and Thermal Bridges; duplicate-row payloads clear
+attachment arrays instead of copying photos to the duplicated row.
 
 ## A3. Storage backend
 

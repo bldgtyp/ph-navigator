@@ -51,6 +51,8 @@ feature-first planning.
 | Model Viewer MEP Elements | Complete / Phases 1-5 implemented and verified; segment order settled as stable display order only; context docs-pass and full viewer closeout complete; archived | `archive/dated/2026-07-01/model-viewer-mep-elements/STATUS.md` |
 | Model Viewer Ground Shadows | Planned / short packet drafted to fix the visible vertical `ContactShadows` helper plane while preserving a soft ground-shadow cue; no implementation started | `features/model-viewer-ground-shadows/STATUS.md` |
 | Glazing + Frame Documentation | Complete / Phases 0-5 implemented; flat `ProjectGlazing`/`ProjectFrame` tables, aperture FK migration/write path, docs commands, datasheet registry, frontend API hydration, docs-pass, graphify, and `make ci` verified; archived | `archive/dated/2026-06-24/glazing-frame-documentation/STATUS.md` |
+| Heat Pump Display Name | Complete / archived with Documentation Tab branch closeout after Heat Pump leaf tables gained a built-in pinned Display Name field, v5 tag-to-name backfill, focused backend/frontend coverage, and browser verification | `archive/dated/2026-07-19/heat-pump-display-name/STATUS.md` |
+| Documentation Tab | Complete / archived after top-level evidence rollups, HEIC conversion, proximate photo columns, viewer/editor Documentation surfaces, directions content, seeded Documentation e2e, simplify/docs-pass, Graphify, and full `make ci` passed; included in final squash merge to `main` | `archive/dated/2026-07-19/documentation-tab/STATUS.md` |
 
 ## Active / Current Refactor Folders
 

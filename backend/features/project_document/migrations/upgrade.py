@@ -8,6 +8,7 @@ from typing import cast
 
 from features.project_document.custom_fields import TableFieldDef
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
+from features.project_document.tables._status_field import STATUS_FIELD_KEY
 
 
 class ProjectDocumentMigrationError(ValueError):
@@ -191,11 +192,158 @@ def _upgrade_v3_to_v4(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v4_to_v5(raw: dict[str, object]) -> dict[str, object]:
+    """Add the Heat Pump `name` ("Display Name") built-in and backfill it from `tag`.
+
+    The four HP leaves were the only equipment tables without a Display
+    Name field. Backfilling from the typed `tag` keeps every existing row
+    rendering a non-blank identity (heat-pump-display-name PRD criterion 3).
+    """
+
+    from features.project_document.tables.heat_pumps import (
+        INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+        OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    )
+
+    leaf_built_ins: dict[str, Sequence[TableFieldDef]] = {
+        "outdoor_equip": OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        "indoor_equip": INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        "outdoor_units": OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+        "indoor_units": INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    }
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    equipment = dict(_mapping(tables.get("equipment"), "tables.equipment"))
+    heat_pumps = dict(_mapping(equipment.get("heat_pumps"), "tables.equipment.heat_pumps"))
+
+    for leaf_name, built_ins in leaf_built_ins.items():
+        path = f"tables.equipment.heat_pumps.{leaf_name}"
+        leaf = dict(_mapping(heat_pumps.get(leaf_name), path))
+        leaf["field_defs"] = _merge_current_built_ins(
+            leaf.get("field_defs"),
+            current_built_ins=built_ins,
+            path=f"{path}.field_defs",
+        )
+        leaf["rows"] = [_backfill_name_from_tag(row) for row in _list(leaf.get("rows"), f"{path}.rows")]
+        heat_pumps[leaf_name] = leaf
+
+    equipment["heat_pumps"] = heat_pumps
+    tables["equipment"] = equipment
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 5
+    return upgraded
+
+
+def _backfill_name_from_tag(row: object) -> object:
+    """Copy `tag` into `custom_values["name"]` when no display name is set."""
+
+    if not isinstance(row, Mapping):
+        return row
+    row_mapping = cast(Mapping[str, object], row)
+    custom_values = row_mapping.get("custom_values")
+    custom_mapping: dict[str, object] = (
+        dict(cast(Mapping[str, object], custom_values)) if isinstance(custom_values, Mapping) else {}
+    )
+    existing = custom_mapping.get("name")
+    if isinstance(existing, str) and existing.strip():
+        return row
+    tag = row_mapping.get("tag")
+    if not isinstance(tag, str) or not tag.strip():
+        return row
+    custom_mapping["name"] = tag
+    next_row = dict(row_mapping)
+    next_row["custom_values"] = custom_mapping
+    return next_row
+
+
+def _upgrade_v5_to_v6(raw: dict[str, object]) -> dict[str, object]:
+    """Add Documentation evidence fields and rename `status` to Specification Status."""
+
+    from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.heat_pumps import (
+        INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+        OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    )
+    from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
+
+    status_refresh_keys = frozenset({STATUS_FIELD_KEY})
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    equipment = dict(_mapping(tables.get("equipment"), "tables.equipment"))
+
+    table_specs: dict[str, Sequence[TableFieldDef]] = {
+        "appliances": APPLIANCES_BUILT_IN_FIELD_DEFS,
+        "electric_heaters": ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS,
+        "fans": FANS_BUILT_IN_FIELD_DEFS,
+        "hot_water_heaters": HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS,
+        "hot_water_tanks": HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS,
+        "pumps": PUMPS_BUILT_IN_FIELD_DEFS,
+        "ervs": VENTILATORS_BUILT_IN_FIELD_DEFS,
+    }
+    for table_name, built_ins in table_specs.items():
+        path = f"tables.equipment.{table_name}"
+        table = dict(_mapping(equipment.get(table_name), path))
+        table["field_defs"] = _merge_current_built_ins(
+            table.get("field_defs"),
+            current_built_ins=built_ins,
+            path=f"{path}.field_defs",
+            refresh_field_keys=status_refresh_keys,
+        )
+        equipment[table_name] = table
+
+    heat_pumps = dict(_mapping(equipment.get("heat_pumps"), "tables.equipment.heat_pumps"))
+    hp_specs: dict[str, Sequence[TableFieldDef]] = {
+        "outdoor_equip": OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        "indoor_equip": INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        "outdoor_units": OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+        "indoor_units": INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    }
+    for leaf_name, built_ins in hp_specs.items():
+        path = f"tables.equipment.heat_pumps.{leaf_name}"
+        leaf = dict(_mapping(heat_pumps.get(leaf_name), path))
+        leaf["field_defs"] = _merge_current_built_ins(
+            leaf.get("field_defs"),
+            current_built_ins=built_ins,
+            path=f"{path}.field_defs",
+            refresh_field_keys=status_refresh_keys,
+        )
+        heat_pumps[leaf_name] = leaf
+
+    equipment["heat_pumps"] = heat_pumps
+    tables["equipment"] = equipment
+
+    thermal_bridges = dict(_mapping(tables.get("thermal_bridges"), "tables.thermal_bridges"))
+    thermal_bridges["field_defs"] = _merge_current_built_ins(
+        thermal_bridges.get("field_defs"),
+        current_built_ins=THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS,
+        path="tables.thermal_bridges.field_defs",
+        refresh_field_keys=status_refresh_keys,
+    )
+    tables["thermal_bridges"] = thermal_bridges
+
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 6
+    return upgraded
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
     2: _upgrade_v2_to_v3,
     3: _upgrade_v3_to_v4,
+    4: _upgrade_v4_to_v5,
+    5: _upgrade_v5_to_v6,
 }
 
 
@@ -272,6 +420,7 @@ def _merge_current_built_ins(
     *,
     current_built_ins: Sequence[TableFieldDef],
     path: str,
+    refresh_field_keys: frozenset[str] = frozenset(),
 ) -> list[object]:
     field_defs = list(_list(value, path))
     current_by_key = {
@@ -290,7 +439,10 @@ def _merge_current_built_ins(
             persisted_by_key[field_key] = field
 
     next_field_defs: list[object] = [
-        persisted_by_key.get(field_key, current_by_key[field_key]) for field_key in current_keys
+        current_by_key[field_key]
+        if field_key in refresh_field_keys
+        else persisted_by_key.get(field_key, current_by_key[field_key])
+        for field_key in current_keys
     ]
     for field in field_defs:
         if isinstance(field, Mapping) and cast(Mapping[str, object], field).get("field_key") in current_key_set:

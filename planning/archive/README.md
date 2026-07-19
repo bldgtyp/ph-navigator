@@ -3,6 +3,29 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-19
+
+- `heat-pump-display-name` - Documentation tab prerequisite: all four Heat
+  Pump leaf tables now seed and upgrade a built-in `Display Name` field,
+  backfill it from the existing typed Tag during schema v5 upgrades, and pin
+  it as the frozen identifier column while preserving Tag uniqueness,
+  downstream labels, sorting, modals, exports, and linked-record behavior.
+  Verified with backend schema/golden-corpus coverage, frontend heat-pump
+  table/payload tests, and AGENT-BROWSER legacy-row smoke; archived with the
+  Documentation tab branch closeout.
+- `documentation-tab` - top-level project Documentation tab for
+  specification/datasheet/photo evidence: schema v6 photo fields and waivers,
+  HEIC/HEIF upload conversion to JPEG, backend documentation-summary rollups,
+  proximate photo columns across Equipment / Heat Pumps / Apertures / Thermal
+  Bridges, viewer-first read-only Documentation page, editor upload/delete +
+  waiver/status affordances, static directions content, and legacy
+  `/envelope/site-photos` redirect. Final closeout verification: seeded
+  Playwright e2e for phone-width anonymous directions, missing-photo filters,
+  owning-table JPEG upload, Documentation-page HEIC upload, Save Version, and
+  fresh anonymous saved-version read; `make format`, Graphify update, and full
+  `make ci` passed. Archived from `feature/documentation-tab` and included
+  in the final squash merge to `main`.
+
 ## 2026-07-17
 
 - `typography-consolidation` - site-wide typography consolidation (refactor packet, driven by the 2026-07-17 rendered font audit's 55-variant finding). **Rendered variants 55 → 29, source typography debt 436 declarations → 0**, all on branch `refactor/typography-consolidation` (11 commits; merge = Ed's call). Six phases: (1) token groups (`--fw-*`, `--tracking-*`, `--lh-*`, named exceptions `--fs-display`/`--fs-display-sm`/`--fs-canvas-annotation`/`--fs-icon-badge`/`--lh-canvas-annotation`/`--lh-icon-collapse`), the `code/kbd/samp/pre` mono reset, and the blocking postcss-based `check:typography` guard (fingerprint ratchet, wired into `check:all`); (2–5) owner-by-owner migration (shared primitives → DataTable/ReportTable/catalogs → apertures/envelope/canvas → model viewer + long tail), retiring the baseline to an empty `{}` — zero-debt mode, any literal now fails CI; recharts `fontSize` props eliminated via CSS hooks instead of registry exceptions; (6) rendered-contract evaluator (`font-audit-eval.mjs` + `typography-rendered-contract.json`, state manifest shared with the sweep via `font-audit-states.mjs`), hermetic fixture (grants + `fixture.json` seeded by `make agent-browser-ready`), `make typography-eval`, and the scheduled/manual `typography-eval.yml` workflow. D1–D5 resolved with PRD defaults (modal titles → page-title tier; display type via named clamp tokens, probe-resolved so **zero off-scale rendered sizes**; canvas labels keep 10px; editor-hero drops 700; chevrons → `--fs-2xs`). Final state: two families, weights {400,500,600,700}, exactly one non-zero tracking (0.05em caps). Recorded deviations: 29 vs the PRD's aspirational ≤25 ceiling (the gap is four deliberate styles listed in STATUS.md) and role-inference button/heading budgets. Verified per phase with screenshots + `make ci`; e2e table smoke 14/14; final 4-angle simplify review applied (shared guard-utils, savepoint fix in `ensure_global_grant`, probe-based clamp mapping). Follow-ups (Ed): merge; after ~3 workflow runs decide PR-CI promotion; optional further consolidation toward ≤25.

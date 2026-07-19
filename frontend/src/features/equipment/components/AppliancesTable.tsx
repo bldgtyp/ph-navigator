@@ -13,8 +13,9 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedAppliances } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import { statusColumn } from "../lib/statusColumn";
 import {
@@ -25,6 +26,7 @@ import {
   APPLIANCE_DATASHEET_FIELD_KEY,
   APPLIANCE_ENERGY_STAR_COLUMN_ID,
   APPLIANCE_ENERGY_STAR_KEY,
+  APPLIANCE_PHOTO_FIELD_KEY,
   APPLIANCE_TYPE_COLUMN_ID,
   APPLIANCE_TYPE_KEY,
   type ApplianceRow,
@@ -67,14 +69,19 @@ export function AppliancesTable({
     () => sortedAppliances(appliancesSlice.appliances),
     [appliancesSlice.appliances],
   );
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((appliance) => appliance.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (appliance) => appliance.datasheet_asset_ids,
+        (appliance) => appliance.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -191,12 +198,26 @@ export function AppliancesTable({
         header: fieldDefByKey.get(APPLIANCE_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (appliance) => appliance.datasheet_asset_ids,
         getRowId: (appliance) => appliance.id,
         onWrite,
+      }),
+      attachmentColumn({
+        id: APPLIANCE_PHOTO_FIELD_KEY,
+        fieldKey: APPLIANCE_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(APPLIANCE_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (appliance) => appliance.photo_asset_ids,
+        getRowId: (appliance) => appliance.id,
+        onWrite,
+        measureLabel: "site photos",
       }),
       {
         id: "notes",
@@ -210,7 +231,7 @@ export function AppliancesTable({
     ],
     [
       customColumns,
-      datasheetUrlById,
+      attachmentUrlById,
       fieldDefByKey,
       isEditor,
       onWrite,

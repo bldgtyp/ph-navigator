@@ -20,8 +20,8 @@ def test_project_document_upgrade_audit_reports_fixture_corpus() -> None:
     report = audit_inputs(iter_fixture_inputs())
 
     assert report["ok"] is True
-    assert report["total_bodies"] == 2
-    assert report["schema_versions"] == {"1": 2}
+    assert report["total_bodies"] == 4
+    assert report["schema_versions"] == {"1": 2, "4": 2}
     assert report["invalid_count"] == 0
     assert report["future_version_count"] == 0
     largest = report["body_size_bytes"]["largest"]

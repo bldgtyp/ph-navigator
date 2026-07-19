@@ -67,7 +67,7 @@ direction. Treat V1 findings with this taxonomy:
 Current V1-derived invariants:
 
 - Project workspace tabs stay: Status, Climate, Apertures, Envelope,
-  Spaces, Equipment, Thermal Bridges, Model.
+  Spaces, Equipment, Thermal Bridges, Model, Documentation.
 - Status remains the default project landing surface.
 - Windows and assemblies need visual builders, not only tables.
 - Dense table views remain central for equipment, materials, and
@@ -542,8 +542,9 @@ are building **plus §1 (common elements) above**. See
 | 2.8b Climate tab (location + weather/climate reference datasets) | **no narrative doc yet** — shipped tab, `frontend/src/features/climate/` |
 | 2.8c Thermal Bridges tab (top-level, not an Equipment sub-tab) | **no dedicated narrative yet** — mentioned in passing in `ui/pages/spaces-equipment-tab.md` |
 | 2.9 Model tab (HBJSON viewer) | [`ui/pages/model-tab.md`](ui/pages/model-tab.md) |
-| 2.10 Project settings (overflow menu) | [`ui/pages/project-settings.md`](ui/pages/project-settings.md) |
-| 2.11 Viewer public read | [`ui/pages/viewer-public.md`](ui/pages/viewer-public.md) |
+| 2.10 Documentation tab (project-wide evidence viewer) | [`ui/pages/documentation-tab.md`](ui/pages/documentation-tab.md) |
+| 2.11 Project settings (overflow menu) | [`ui/pages/project-settings.md`](ui/pages/project-settings.md) |
+| 2.12 Viewer public read | [`ui/pages/viewer-public.md`](ui/pages/viewer-public.md) |
 ## 3. Flows (multi-page)
 
 ### 3.1 Sign-in → dashboard (US-0 → US-1)
@@ -661,5 +662,6 @@ content review.
 | Envelope · Site Photos sub-tab | Placeholder | MVP |
 | Equipment tab (`/projects/{id}/equipment`) | Placeholder | MVP |
 | Model tab (`/projects/{id}/model`) | Placeholder | MVP |
+| Documentation tab (`/projects/{id}/documentation`) | Drafted | MVP |
 | Project settings (overflow menu) | Placeholder | MVP (minus delete) |
 | Viewer public read (`/projects/{id}/{tab}`) | Drafted (high-level) | MVP |

@@ -47,6 +47,9 @@ export type HeatPumpOutdoorEquipRow = {
   seer: number | null;
   ieer: number | null;
   datasheet_asset_ids: string[];
+  datasheet_not_required?: boolean;
+  photo_asset_ids: string[];
+  photo_not_required?: boolean;
   notes: string | null;
   catalog_origin: Record<string, unknown> | null;
   custom_values?: Record<string, CustomValue>;
@@ -70,6 +73,9 @@ export type HeatPumpIndoorEquipRow = {
   eer: number | null;
   hspf: number | null;
   datasheet_asset_ids: string[];
+  datasheet_not_required?: boolean;
+  photo_asset_ids: string[];
+  photo_not_required?: boolean;
   notes: string | null;
   catalog_origin: Record<string, unknown> | null;
   custom_values?: Record<string, CustomValue>;
@@ -81,6 +87,9 @@ export type HeatPumpOutdoorUnitRow = {
   tag: string;
   outdoor_equip_id: string;
   datasheet_asset_ids: string[];
+  datasheet_not_required?: boolean;
+  photo_asset_ids: string[];
+  photo_not_required?: boolean;
   notes: string | null;
   custom_values?: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
@@ -94,6 +103,9 @@ export type HeatPumpIndoorUnitRow = {
   linked_erv_unit_id: string | null;
   served_room_ids: string[];
   datasheet_asset_ids: string[];
+  datasheet_not_required?: boolean;
+  photo_asset_ids: string[];
+  photo_not_required?: boolean;
   notes: string | null;
   custom_values?: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;

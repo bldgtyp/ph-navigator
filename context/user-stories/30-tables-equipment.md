@@ -40,6 +40,10 @@ Tables that carry datasheet/photo/spec state must also use the
 cross-cutting evidence/status grammar in `context/UI_UX.md` §1.8.
 Evidence badges should be filterable, human-readable, and linked to
 the row/detail surface that resolves the gap.
+The top-level Documentation tab derives the project-wide spec, datasheet,
+and site-photo rollups from the same equipment rows; see
+`context/ui/pages/documentation-tab.md` for the saved-vs-draft and public
+viewer contract.
 
 ### Acceptance criteria (the shared pattern)
 

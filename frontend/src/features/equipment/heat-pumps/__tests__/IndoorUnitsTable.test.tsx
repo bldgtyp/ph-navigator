@@ -320,6 +320,7 @@ function outdoorEquipRow() {
     seer: null,
     ieer: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     notes: null,
     catalog_origin: null,
   } satisfies HeatPumpsSlice["outdoor_equip"][number];
@@ -346,6 +347,7 @@ function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"][number
     notes: null,
     catalog_origin: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   } satisfies HeatPumpsSlice["indoor_equip"][number];
 }
 
@@ -357,6 +359,7 @@ function outdoorUnit(overrides: Partial<HeatPumpsSlice["outdoor_units"][number]>
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   } satisfies HeatPumpsSlice["outdoor_units"][number];
 }
 
@@ -371,6 +374,7 @@ function indoorUnit(overrides: Partial<HeatPumpsSlice["indoor_units"][number]> =
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   } satisfies HeatPumpsSlice["indoor_units"][number];
 }
 

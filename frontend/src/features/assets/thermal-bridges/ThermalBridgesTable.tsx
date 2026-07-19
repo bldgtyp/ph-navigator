@@ -12,14 +12,17 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../components/AttachmentCell";
 import { useAssetUrls } from "../hooks";
+import { SITE_PHOTO_ATTACHMENT_CONFIG } from "../lib";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
 } from "../../../shared/ui/data-table/feature";
 import { customNumberValue, customTextValue } from "../../equipment/lib/customValueReaders";
+import { uniqueAttachmentAssetIds } from "../lib";
 import { statusColumn } from "../../equipment/lib/statusColumn";
 import {
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
+  THERMAL_BRIDGE_PHOTO_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
   type ThermalBridgeRow,
   type ThermalBridgesSlice,
@@ -61,14 +64,19 @@ export function ThermalBridgesTable({
     () => sortedThermalBridges(slice.thermal_bridges),
     [slice.thermal_bridges],
   );
-  const reportAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((row) => row.pdf_report_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (row) => row.pdf_report_asset_ids,
+        (row) => row.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const reportUrls = useAssetUrls(projectId, reportAssetIds);
-  const reportUrlById = useMemo(
-    () => new Map((reportUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [reportUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -145,13 +153,27 @@ export function ThermalBridgesTable({
         header: "PDF Report",
         projectId,
         isEditor,
-        assetUrlById: reportUrlById,
+        assetUrlById: attachmentUrlById,
         config: PDF_REPORT_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (row) => row.pdf_report_asset_ids,
         getRowId: (row) => row.id,
         onWrite,
         measureLabel: "PDF reports",
+      }),
+      attachmentColumn({
+        id: THERMAL_BRIDGE_PHOTO_FIELD_KEY,
+        fieldKey: THERMAL_BRIDGE_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(THERMAL_BRIDGE_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (row) => row.photo_asset_ids,
+        getRowId: (row) => row.id,
+        onWrite,
+        measureLabel: "site photos",
       }),
       {
         id: "notes",
@@ -169,7 +191,7 @@ export function ThermalBridgesTable({
       isEditor,
       onWrite,
       projectId,
-      reportUrlById,
+      attachmentUrlById,
       slice.rows_computed,
     ],
   );

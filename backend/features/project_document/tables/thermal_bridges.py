@@ -22,6 +22,7 @@ from features.project_document.document import (
     ThermalBridgesTableEnvelope,
 )
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.tables._attachment_fields import datasheet_field_def, photo_field_def
 from features.project_document.tables._built_in_seeds import built_in_field_def
 from features.project_document.tables._registry_helpers import (
     FormulaType,
@@ -80,6 +81,8 @@ THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         display_name="PDF Report",
         field_type=CustomFieldType.long_text,
     ),
+    datasheet_field_def(),
+    photo_field_def(),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
 )
@@ -89,6 +92,8 @@ THERMAL_BRIDGES_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
     "id": "text",
     "thermal_bridge_type": "single_select",
     "pdf_report_asset_ids": "text",
+    "datasheet_asset_ids": "text",
+    "photo_asset_ids": "text",
     "notes": "text",
 }
 

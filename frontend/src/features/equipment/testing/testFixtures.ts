@@ -153,6 +153,7 @@ export function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
     notes: null,
     link: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "P-1",
       use: "DHW recirc",
@@ -176,6 +177,7 @@ export function buildVentilator(overrides: Partial<VentilatorRow> = {}): Ventila
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "ERV-1",
       name: "Apartment ERV",
@@ -199,6 +201,7 @@ export function buildFan(overrides: Partial<FanRow> = {}): FanRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "F-1",
       name: "Kitchen hood exhaust",

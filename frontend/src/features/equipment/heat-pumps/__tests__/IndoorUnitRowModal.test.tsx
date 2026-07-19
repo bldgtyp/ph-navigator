@@ -24,6 +24,7 @@ function indoorEquip(): HeatPumpIndoorEquipRow {
     eer: null,
     hspf: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     notes: null,
     catalog_origin: null,
   };
@@ -35,6 +36,7 @@ function outdoorUnit(): HeatPumpOutdoorUnitRow {
     tag: "HP-1",
     outdoor_equip_id: "hpoe_01HX0000000000000000000000",
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     notes: null,
   };
 }
@@ -46,6 +48,7 @@ function ventilator(id: string, recordId: string): VentilatorRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: { record_id: recordId, name: `ERV ${recordId}` },
   };
 }

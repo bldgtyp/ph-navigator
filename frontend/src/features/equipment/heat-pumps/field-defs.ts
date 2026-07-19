@@ -19,6 +19,16 @@ export const HEAT_PUMP_POWER_UNITS: NumberUnitsConfig = {
   precision_ip: 1,
 };
 
+// Shared accessor for built-in fields whose values ride in `custom_values`
+// (`status`, `name`) rather than a typed row column.
+export function readCustomStringValue(
+  row: { custom_values?: Record<string, unknown> | null },
+  fieldKey: string,
+): string | null {
+  const value = row.custom_values?.[fieldKey];
+  return typeof value === "string" ? value : null;
+}
+
 export function heatPumpTagField(): FieldDef {
   return {
     field_key: "tag",

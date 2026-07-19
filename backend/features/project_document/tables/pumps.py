@@ -39,6 +39,7 @@ from features.project_document.inverse_view import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.options import option_list_key, read_option_list, replace_option_list
+from features.project_document.tables._attachment_fields import photo_field_def
 from features.project_document.tables._built_in_seeds import built_in_field_def
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables._status_field import status_field_def
@@ -65,10 +66,10 @@ PUMP_INSIDE_OUTSIDE_OPTIONS: tuple[SingleSelectOption, ...] = (
 # Pumps built-in FieldDef seeds. `name` is the pinned Display Name
 # identifier (record-identity model); Pumps had no descriptive name
 # before, so it is seeded empty. `record_id` stays the ordinary "Tag"
-# code field (display name stays "Tag" — the domain term). The
-# `datasheet` attachment is NOT a TableFieldDef entry — attachment is
-# a FE-only renderer type and never round-trips through the schema-
-# mutation pipeline (PRD §P5.5).
+# code field (display name stays "Tag" — the domain term).
+# `photo_asset_ids` joins the FieldDef list as the new Documentation evidence
+# column; `datasheet_asset_ids` keeps the older Pumps contract and remains a
+# typed attachment column outside the FieldDef registry.
 PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(
         field_key=RESERVED_FIELD_KEY_RECORD_ID,
@@ -131,6 +132,7 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="link", display_name="Link", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    photo_field_def(),
     status_field_def(),
 )
 
@@ -349,6 +351,8 @@ PUMPS_TYPED_COLUMN_FORMULA_TYPES: dict[str, PumpFormulaType] = {
     "phase": "number",
     "link": "text",
     "notes": "text",
+    "datasheet_asset_ids": "text",
+    "photo_asset_ids": "text",
 }
 
 

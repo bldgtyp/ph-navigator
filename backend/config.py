@@ -83,6 +83,7 @@ class Settings(BaseSettings):
     asset_signed_url_ttl_preview_seconds: int = 15 * 60
     asset_signed_url_ttl_download_seconds: int = 60 * 60
     asset_thumbnail_render_timeout_seconds: int = 10
+    asset_heic_conversion_timeout_seconds: int = 10
     asset_max_file_size_mb_hard_cap: int = 100
 
     # Project location geodata

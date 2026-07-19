@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
@@ -21,6 +21,11 @@ vi.mock("../../assets/hooks", () => ({
         asset_id: "asset_ds_2",
         original_filename: "frame-datasheet.pdf",
         content_type: "application/pdf",
+      },
+      {
+        asset_id: "asset_photo_1",
+        original_filename: "frame-site-photo.jpg",
+        content_type: "image/jpeg",
       },
     ],
   }),
@@ -57,6 +62,7 @@ function glazing(overrides: Partial<ProjectGlazingRead> = {}): ProjectGlazingRea
     catalog_origin: null,
     specification_status: "missing",
     datasheet_asset_ids: ["asset_ds_1"],
+    photo_asset_ids: [],
     use_sites: [
       {
         aperture_type_id: "apt_1",
@@ -92,6 +98,7 @@ function frame(overrides: Partial<ProjectFrameRead> = {}): ProjectFrameRead {
     catalog_origin: null,
     specification_status: "question",
     datasheet_asset_ids: ["asset_ds_2"],
+    photo_asset_ids: [],
     use_sites: [
       {
         aperture_type_id: "apt_1",
@@ -127,7 +134,10 @@ function renderGlazings(rows: ProjectGlazingRead[], options: { isViewer?: boolea
   );
 }
 
-function renderFrames(rows: ProjectFrameRead[]) {
+function renderFrames(
+  rows: ProjectFrameRead[],
+  options: { canEdit?: boolean; onAttachmentChange?: ReturnType<typeof vi.fn> } = {},
+) {
   render(
     <UnitStub>
       <ApertureSpecReportPanel
@@ -138,11 +148,11 @@ function renderFrames(rows: ProjectFrameRead[]) {
         emptyMessage="Project frame specifications will appear here after apertures reference them."
         projectId="project_1"
         isViewer={false}
-        canEdit={false}
+        canEdit={options.canEdit ?? false}
         busy={false}
         driftEntries={DRIFT_ENTRIES}
         onCommand={vi.fn()}
-        onAttachmentChange={vi.fn()}
+        onAttachmentChange={options.onAttachmentChange ?? vi.fn()}
         onRefreshEntry={vi.fn()}
       />
     </UnitStub>,
@@ -270,8 +280,12 @@ describe("ApertureSpecReportPanel", () => {
 
     const row = screen.getByRole("row", { name: /Insulated Frame A/ });
     expect(within(row).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();
+    expect(within(row).getByLabelText("No site photos")).toBeInTheDocument();
     fireEvent.click(row);
 
+    expect(
+      screen.getByRole("region", { name: "Insulated Frame A site photos" }),
+    ).toBeInTheDocument();
     const useSitesRegion = screen.getByRole("region", { name: "Insulated Frame A use sites" });
     expect(screen.getByText("Grouped under Window Type A across 2 apertures.")).toBeInTheDocument();
     expect(within(useSitesRegion).queryByText("A")).not.toBeInTheDocument();
@@ -287,6 +301,28 @@ describe("ApertureSpecReportPanel", () => {
     expect(within(drawer).getByText("Right")).toBeInTheDocument();
     expect(within(drawer).getByText("Top")).toBeInTheDocument();
     expect(screen.getByText("Frame Left · 1 field differs")).toBeInTheDocument();
+  });
+
+  it("emits photo attachment changes from expanded frame rows", async () => {
+    const onAttachmentChange = vi.fn();
+    renderFrames([frame({ photo_asset_ids: ["asset_photo_1"] })], {
+      canEdit: true,
+      onAttachmentChange,
+    });
+
+    fireEvent.click(screen.getByRole("row", { name: /Insulated Frame A/ }));
+    fireEvent.click(await screen.findByTitle("frame-site-photo.jpg · image/jpeg"));
+    fireEvent.click(await screen.findByRole("button", { name: "Detach" }));
+
+    await waitFor(() => {
+      expect(onAttachmentChange).toHaveBeenCalledWith({
+        tableKey: "project_frames",
+        rowId: "frm_1",
+        fieldKey: "photo_asset_ids",
+        currentAssetIds: ["asset_photo_1"],
+        nextAssetIds: [],
+      });
+    });
   });
 
   it("groups frame rows by manufacturer by default and can regroup by brand", () => {

@@ -373,6 +373,7 @@ class UpdateProjectMaterialCommand(BaseModel):
     url: str | None = Field(default=None, max_length=2000)
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus | None = None
+    datasheet_not_required: bool | None = None
 
     @field_validator("color", mode="before")
     @classmethod
@@ -427,6 +428,8 @@ class UpdateProjectGlazingCommand(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus | None = None
+    datasheet_not_required: bool | None = None
+    photo_not_required: bool | None = None
 
     @field_validator("color", mode="before")
     @classmethod
@@ -457,6 +460,8 @@ class UpdateProjectFrameCommand(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus | None = None
+    datasheet_not_required: bool | None = None
+    photo_not_required: bool | None = None
 
     @field_validator("color", mode="before")
     @classmethod

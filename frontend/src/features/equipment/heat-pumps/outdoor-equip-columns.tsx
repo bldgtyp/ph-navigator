@@ -4,8 +4,8 @@ import {
   type FieldDef,
   type FieldOption,
 } from "../../../shared/ui/data-table";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import type { AssetUrls } from "../../assets/types";
+import { heatPumpDatasheetColumn, heatPumpPhotoColumn } from "./attachment-columns";
 import {
   HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
   heatPumpAttachmentField,
@@ -30,6 +30,7 @@ import {
   type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
 } from "./types";
+import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
 import { statusColumnDef, statusFieldDef } from "./status-column";
 import { HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY } from "../types";
 
@@ -52,6 +53,7 @@ const COOLING_DATA_TYPE_OPTIONS: FieldOption[] = COOLING_DATA_TYPES.map((value, 
 }));
 
 export const OUTDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const OUTDOOR_EQUIP_PHOTO_FIELD_KEY = "photo_asset_ids";
 
 export function outdoorEquipFieldDefs({
   options,
@@ -63,6 +65,7 @@ export function outdoorEquipFieldDefs({
   const refrigerant = options[HEAT_PUMP_OPTION_KEYS.refrigerant] ?? [];
   return [
     heatPumpTagField(),
+    displayNameFieldDef(),
     heatPumpTextField("model_number", "Model number"),
     heatPumpSelectField("manufacturer", "Manufacturer", manufacturer),
     heatPumpLinkedRecordField({
@@ -98,6 +101,7 @@ export function outdoorEquipFieldDefs({
     ),
     heatPumpNumberField("ieer", "IEER"),
     heatPumpAttachmentField(OUTDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
+    heatPumpAttachmentField(OUTDOOR_EQUIP_PHOTO_FIELD_KEY, "Site photos"),
     incomingOutdoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY] ?? []),
@@ -111,6 +115,7 @@ export function outdoorEquipColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  onPhotoChange,
   outdoorUnits = [],
   incomingOutdoorUnitIdsByRowId = new Map(),
   pairedIndoorEquipLabelById = new Map(),
@@ -119,8 +124,9 @@ export function outdoorEquipColumnDefs({
 }: {
   projectId: string;
   isEditor: boolean;
-  assetUrlById: Map<string, unknown>;
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
+  onPhotoChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
   incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
   pairedIndoorEquipLabelById?: ReadonlyMap<string, string>;
@@ -136,6 +142,7 @@ export function outdoorEquipColumnDefs({
     className: "numeric-cell",
   });
   return [
+    displayNameColumnDef<HeatPumpOutdoorEquipRow>(),
     {
       id: "tag",
       fieldKey: "tag",
@@ -214,27 +221,20 @@ export function outdoorEquipColumnDefs({
     number("eer", "EER/EER2", 120),
     number("seer", "SEER/SEER2", 120),
     number("ieer", "IEER"),
-    {
-      id: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
+    heatPumpDatasheetColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
       fieldKey: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
-      header: "Datasheet",
-      accessor: (row) => row.datasheet_asset_ids.join(","),
-      render: (row) => (
-        <AttachmentCell
-          projectId={projectId}
-          value={row.datasheet_asset_ids}
-          config={DATASHEET_ATTACHMENT_CONFIG}
-          readOnly={!isEditor}
-          assetUrlById={assetUrlById as never}
-          onChange={(next) => {
-            if (sameAttachmentAssetIds(row.datasheet_asset_ids, next)) return;
-            return onDatasheetChange(row, next);
-          }}
-        />
-      ),
-      measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
-      defaultWidth: 260,
-    },
+      onChange: onDatasheetChange,
+    }),
+    heatPumpPhotoColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
+      fieldKey: OUTDOOR_EQUIP_PHOTO_FIELD_KEY,
+      onChange: onPhotoChange,
+    }),
     incomingOutdoorUnitColumnDef<HeatPumpOutdoorEquipRow>({
       outdoorUnits,
       getIncomingIds: (row) => incomingOutdoorUnitIds(incomingOutdoorUnitIdsByRowId, row.id),

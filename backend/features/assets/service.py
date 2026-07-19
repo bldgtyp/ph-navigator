@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
@@ -23,6 +24,12 @@ from features.assets.base import (
     location_asset_ids_for_project,
 )
 from features.assets.downloads import AssetBulkDownloadWorkflow, find_row
+from features.assets.heic_conversion import (
+    AssetConversionError,
+    convert_heic_upload_to_jpeg,
+    is_heic_content_type,
+    prefix_looks_like_heic,
+)
 from features.assets.mapping import asset_row, asset_row_or_none, asset_rows
 from features.assets.models import (
     AssetRow,
@@ -185,16 +192,9 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
     def complete_upload(self, access: ProjectAccess, asset_id: str, background_tasks: BackgroundTasks) -> AssetRow:
         """Verify a finished R2 upload and flip the asset to ``uploaded``.
 
-        Three scopes by design: a read-only ``connection()`` fetches the
-        pending row; HEAD + magic-byte check on R2 happen outside any DB
-        transaction so we don't hold a row lock during a network call.
-        On verification failure, a ``transaction()`` marks the row
-        ``failed`` and the function raises
-        ``api_error(422, "asset_mime_not_allowed", ...)``. On success,
-        a second ``transaction()`` writes ``upload_status='uploaded'``
-        with the R2 ETag, and the thumbnailer is queued as a
-        background task (best-effort; failure does not roll the row
-        back).
+        R2 HEAD/sniff/conversion happen outside a DB transaction so network and
+        image-decoding work never holds a row lock. Success writes one final
+        asset-row update, then thumbnailing runs best-effort in the background.
         """
         require_editor_user(access)
         with connection() as conn:
@@ -208,6 +208,18 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
                 raise ValueError("size_mismatch")
             prefix = self.r2.get_object_prefix(asset.object_key, (0, min(asset.size_bytes, 8191)))
             self._validate_magic(asset, prefix)
+            converted = None
+            if is_heic_content_type(asset.content_type):
+                converted = convert_heic_upload_to_jpeg(asset, self.r2)
+        except AssetConversionError as exc:
+            with transaction() as conn:
+                repository.mark_asset_failed(conn, access.project_id, asset_id, reason="asset_conversion_failed")
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                "asset_conversion_failed",
+                "Uploaded HEIC/HEIF image could not be converted to JPEG.",
+                {"asset_id": asset_id, "reason": str(exc)},
+            ) from exc
         except Exception as exc:
             with transaction() as conn:
                 repository.mark_asset_failed(conn, access.project_id, asset_id, reason=str(exc))
@@ -218,15 +230,39 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
                 {"asset_id": asset_id, "reason": str(exc)},
             ) from exc
 
-        with transaction() as conn:
-            uploaded = asset_row(
-                repository.mark_asset_uploaded(
-                    conn,
-                    access.project_id,
-                    asset_id,
-                    r2_etag=str(head.get("ETag", "")).strip('"'),
+        if converted is None:
+            with transaction() as conn:
+                uploaded = asset_row(
+                    repository.mark_asset_uploaded(
+                        conn,
+                        access.project_id,
+                        asset_id,
+                        r2_etag=str(head.get("ETag", "")).strip('"'),
+                    )
                 )
-            )
+        else:
+            converted_object, r2_etag = converted
+            with transaction() as conn:
+                uploaded = asset_row(
+                    repository.mark_converted_asset_uploaded(
+                        conn,
+                        access.project_id,
+                        asset_id,
+                        object_key=converted_object.object_key,
+                        content_type=converted_object.content_type,
+                        size_bytes=converted_object.size_bytes,
+                        content_hash_sha256=converted_object.content_hash_sha256,
+                        r2_etag=r2_etag,
+                        metadata_patch={
+                            "converted_from_content_type": asset.content_type,
+                            "converted_from_object_key": asset.object_key,
+                            "converted_from_content_hash_sha256": asset.content_hash_sha256,
+                            "conversion": "heic_to_jpeg",
+                        },
+                    )
+                )
+            with suppress(Exception):
+                self.r2.delete_object(asset.object_key)
         if uploaded.asset_kind != "epw":
             background_tasks.add_task(self.thumbnailer.render_for_asset, access.project_id, asset_id)
         return uploaded
@@ -368,6 +404,8 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
             raise ValueError("jpeg_magic_mismatch")
         if asset.content_type == "image/webp" and not (prefix[:4] == b"RIFF" and prefix[8:12] == b"WEBP"):
             raise ValueError("webp_magic_mismatch")
+        if is_heic_content_type(asset.content_type) and not prefix_looks_like_heic(prefix):
+            raise ValueError("heic_magic_mismatch")
         if (
             asset.content_type in {"application/json", "application/octet-stream"}
             and filename_extension(asset.original_filename) == ".hbjson"
@@ -515,6 +553,8 @@ def _extension_from_content_type(content_type: str) -> str:
         "image/png": "png",
         "image/jpeg": "jpg",
         "image/webp": "webp",
+        "image/heic": "heic",
+        "image/heif": "heif",
         "application/zip": "zip",
         "application/json": "hbjson",
     }.get(content_type, "bin")

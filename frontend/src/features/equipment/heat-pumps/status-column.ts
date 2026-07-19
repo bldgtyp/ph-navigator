@@ -1,6 +1,6 @@
 import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/ui/data-table";
 import { STATUS_DEFAULT_OPTION_ID, STATUS_DISPLAY_NAME, STATUS_FIELD_KEY } from "../types";
-import { HEAT_PUMP_SELECT_LOCKS } from "./field-defs";
+import { HEAT_PUMP_SELECT_LOCKS, readCustomStringValue } from "./field-defs";
 
 // The built-in `status` single-select is shared by all four Heat-Pump
 // leaves (Outdoor/Indoor Equipment and Outdoor/Indoor Units). Its value
@@ -31,12 +31,7 @@ export function statusColumnDef<
     header: STATUS_DISPLAY_NAME,
     // Single-select accessors yield the raw option id; DataTable resolves the
     // label/color from FieldDef.options.
-    accessor: (row) => readStatus(row),
+    accessor: (row) => readCustomStringValue(row, STATUS_FIELD_KEY),
     defaultWidth: 130,
   };
-}
-
-function readStatus(row: { custom_values?: Record<string, unknown> | null }): string | null {
-  const value = row.custom_values?.[STATUS_FIELD_KEY];
-  return typeof value === "string" ? value : null;
 }

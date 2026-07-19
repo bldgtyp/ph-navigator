@@ -14,7 +14,6 @@ import type {
   HeatPumpOwnedOptionKey,
 } from "./types";
 import { HEAT_PUMP_OWNED_OPTION_KEYS } from "./types";
-import { STATUS_FIELD_KEY } from "../types";
 import { parseNumberInput } from "../../../lib/units/format";
 import { setCustomLink, setCustomValue, type TableFieldDef } from "../../../shared/ui/data-table";
 import type {
@@ -27,10 +26,13 @@ import type {
 } from "../../../shared/ui/data-table";
 import type { SlicePayloadBuilders } from "../../../shared/ui/data-table/feature";
 import { nextCopySuffix } from "../../../shared/lib/copySuffix";
+import { readAttachmentAssetIds } from "../../assets/lib";
 import { firstLinkedId, linkedIds } from "./link-fields";
 
 type HeatPumpPayloadRow = {
   id: string;
+  datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values?: Record<string, unknown> | null;
   custom_links?: Record<string, string[]> | null;
 };
@@ -171,17 +173,18 @@ function applyCellWrite<TRow extends HeatPumpPayloadRow>(
   write: CellWrite,
   fieldDef: TableFieldDef | undefined,
 ): TRow {
-  // `status` is a built-in single-select but, unlike the other built-ins,
-  // its value lives in `custom_values.status` rather than a typed row column.
-  // Route it through the custom-value bag so the write does not leak a stray
-  // top-level `status` property onto the row.
-  if (write.fieldKey === STATUS_FIELD_KEY) {
-    return setCustomValue(row, write.fieldKey, write.value);
-  }
   if (fieldDef?.origin === "custom") {
     if (fieldDef.field_type === "linked_record") {
       return setCustomLink(row, write.fieldKey, write.value);
     }
+    return setCustomValue(row, write.fieldKey, write.value);
+  }
+  // Built-ins split by storage: typed columns are always materialized on the
+  // row (backend serialization and `buildEmpty*Row` both emit every one), so
+  // any other built-in (`status`, `name`, future bag-backed fields) lives in
+  // `custom_values`. Routing on the row shape keeps this in lockstep with the
+  // backend's typed-column model without a per-field list.
+  if (!(write.fieldKey in row)) {
     return setCustomValue(row, write.fieldKey, write.value);
   }
   return {
@@ -253,17 +256,27 @@ function insertRows<TRow extends { id: string }>(
   return nextRows;
 }
 
-function duplicateRows<TRow extends { id: string; tag: string }>(
-  rows: TRow[],
-  duplicates: RowDuplicatePayload[],
-): TRow[] {
+function duplicateRows<
+  TRow extends {
+    id: string;
+    tag: string;
+    datasheet_asset_ids: string[];
+    photo_asset_ids: string[];
+  },
+>(rows: TRow[], duplicates: RowDuplicatePayload[]): TRow[] {
   let nextRows = [...rows];
   for (const duplicate of duplicates) {
     const source = nextRows.find((row) => row.id === duplicate.sourceRowId);
     if (!source) continue;
     const existingTags = nextRows.map((row) => row.tag);
     const nextTag = nextCopySuffix(source.tag, existingTags);
-    const nextRow = { ...source, id: duplicate.rowId, tag: nextTag };
+    const nextRow: TRow = {
+      ...source,
+      id: duplicate.rowId,
+      tag: nextTag,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
+    };
     const anchorIndex = duplicate.anchorRowId
       ? nextRows.findIndex((row) => row.id === duplicate.anchorRowId)
       : nextRows.findIndex((row) => row.id === source.id);
@@ -298,8 +311,11 @@ function heatPumpCellValue(fieldKey: string, value: unknown): unknown {
   }
   if (fieldKey === "paired_indoor_equip_id") return firstLinkedId(value);
   if (fieldKey === "served_room_ids") return linkedIds(value);
+  if (HEAT_PUMP_ATTACHMENT_FIELDS.has(fieldKey)) return readAttachmentAssetIds(value);
   return value === "" ? null : value;
 }
+
+const HEAT_PUMP_ATTACHMENT_FIELDS = new Set(["datasheet_asset_ids", "photo_asset_ids"]);
 
 const HEAT_PUMP_NUMBER_FIELDS = new Set([
   "heating_cap_kw_17f",

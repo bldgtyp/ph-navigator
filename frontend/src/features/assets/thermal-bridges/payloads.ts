@@ -16,6 +16,7 @@ import {
   STATUS_DEFAULT_OPTION_ID,
   STATUS_FIELD_KEY,
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
+  THERMAL_BRIDGE_PHOTO_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
   THERMAL_BRIDGE_TYPE_OPTION_KEY,
   type ThermalBridgeOptionKey,
@@ -116,7 +117,8 @@ export function thermalBridgesPayloadFromRowDuplicate(
       normalizeThermalBridgeForPayload({
         ...source,
         id: duplicate.rowId,
-        pdf_report_asset_ids: [...source.pdf_report_asset_ids],
+        pdf_report_asset_ids: [],
+        photo_asset_ids: [],
         custom_values: { ...source.custom_values, [RECORD_ID_FIELD_KEY]: newTag },
       }),
     );
@@ -168,6 +170,7 @@ export function makeBuildEmptyThermalBridgeRow(): BuildEmptyRow<ThermalBridgeRow
       id: rowId,
       thermal_bridge_type: readStringDefault(fieldDefaults[THERMAL_BRIDGE_TYPE_KEY], null),
       pdf_report_asset_ids: [],
+      photo_asset_ids: [],
       notes: readStringDefault(fieldDefaults.notes, null),
       custom_values: {
         [RECORD_ID_FIELD_KEY]: readStringDefault(fieldDefaults[RECORD_ID_FIELD_KEY], null),
@@ -251,6 +254,9 @@ function applyWriteToThermalBridge(
   if (fieldKey === THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY) {
     return { ...row, pdf_report_asset_ids: readAttachmentAssetIds(value) };
   }
+  if (fieldKey === THERMAL_BRIDGE_PHOTO_FIELD_KEY) {
+    return { ...row, photo_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (THERMAL_BRIDGE_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey) || fieldKey.startsWith("cf_")) {
     return setCustomValue(row, fieldKey, value);
   }
@@ -261,7 +267,8 @@ function normalizeThermalBridgeForPayload(row: ThermalBridgeRow): ThermalBridgeR
   const next: ThermalBridgeRow = {
     ...row,
     thermal_bridge_type: row.thermal_bridge_type ?? null,
-    pdf_report_asset_ids: [...row.pdf_report_asset_ids],
+    pdf_report_asset_ids: readAttachmentAssetIds(row.pdf_report_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(row.photo_asset_ids),
     notes: emptyToNull(row.notes),
     custom_values: { ...row.custom_values },
   };

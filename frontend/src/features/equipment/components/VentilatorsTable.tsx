@@ -25,8 +25,9 @@ import {
 import type { HeatPumpIndoorUnitRow } from "../heat-pumps/types";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedVentilators } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import {
   inverseColumnHeader,
   inverseFieldKey,
@@ -44,6 +45,7 @@ import {
   VENTILATOR_FROST_PROTECTION_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
+  VENTILATOR_PHOTO_FIELD_KEY,
   type InverseLinkField,
   type VentilatorRow,
   type VentilatorsSlice,
@@ -100,14 +102,19 @@ export function VentilatorsTable({
     () => sortedVentilators(ventilatorsSlice.ventilators),
     [ventilatorsSlice.ventilators],
   );
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((ventilator) => ventilator.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (ventilator) => ventilator.datasheet_asset_ids,
+        (ventilator) => ventilator.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const inverseLinkFields = ventilatorsSlice.inverse_link_fields;
@@ -266,12 +273,26 @@ export function VentilatorsTable({
         header: fieldDefByKey.get(VENTILATOR_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (ventilator) => ventilator.datasheet_asset_ids,
         getRowId: (ventilator) => ventilator.id,
         onWrite,
+      }),
+      attachmentColumn({
+        id: VENTILATOR_PHOTO_FIELD_KEY,
+        fieldKey: VENTILATOR_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(VENTILATOR_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (ventilator) => ventilator.photo_asset_ids,
+        getRowId: (ventilator) => ventilator.id,
+        onWrite,
+        measureLabel: "site photos",
       }),
       incomingIndoorUnitColumnDef<VentilatorRow>({
         header: "HP indoor units",
@@ -299,7 +320,7 @@ export function VentilatorsTable({
     ],
     [
       customColumns,
-      datasheetUrlById,
+      attachmentUrlById,
       fieldDefByKey,
       incomingIndoorUnitIdsByVentilatorId,
       inverseLinkFields,

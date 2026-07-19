@@ -29,13 +29,10 @@ import type {
 export type SingleSelectOption = FieldOption;
 export type { CustomValue, InverseLinkField, InverseLinks, RowsComputed };
 
-// Built-in `status` single-select field shared across the twelve in-scope
-// DataTables (every Datasheet-bearing table — the shared equipment tables
-// incl. Ventilators and all four Heat-Pump leaves — plus Thermal Bridges,
-// the lone status-without-Datasheet table). The value rides in
-// `custom_values.status`; the option list is namespaced per table as
-// `<table_label>.status` in each slice's `single_select_options`. Mirrors
-// the backend `status_field_def` / `*_STATUS_OPTION_KEY` constants.
+type DocumentationWaivers = { datasheet_not_required?: boolean; photo_not_required?: boolean };
+type PhotoWaiver = { photo_not_required?: boolean };
+
+// Built-in `status` single-select field shared across the documentation tables.
 export {
   APPLIANCES_STATUS_OPTION_KEY,
   ELECTRIC_HEATERS_STATUS_OPTION_KEY,
@@ -141,6 +138,7 @@ export const PUMP_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const PUMP_INSIDE_OUTSIDE_OPTION_KEY = "pumps.inside_outside";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
 export const PUMP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const PUMP_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const PUMP_OPTION_KEYS = [
   PUMP_DEVICE_TYPE_OPTION_KEY,
   PUMP_INSIDE_OUTSIDE_OPTION_KEY,
@@ -149,13 +147,14 @@ export const PUMP_OPTION_KEYS = [
 
 export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
 
-export type PumpRow = {
+export type PumpRow = DocumentationWaivers & {
   id: string;
   device_type: string | null;
   phase: number | null;
   notes: string | null;
   link: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   // `record_id` replaces the old typed `tag`; the other mutable
   // built-ins listed here share storage with custom `cf_*` fields.
   custom_values: Record<string, CustomValue>;
@@ -196,6 +195,7 @@ export const VENTILATOR_FROST_PROTECTION_OPTION_KEY = "ventilators.frost_protect
 export const VENTILATORS_STATUS_OPTION_KEY = "ventilators.status";
 export const VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID = "inside_outside";
 export const VENTILATOR_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const VENTILATOR_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const VENTILATOR_OPTION_KEYS = [
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
   VENTILATOR_FROST_PROTECTION_OPTION_KEY,
@@ -204,12 +204,13 @@ export const VENTILATOR_OPTION_KEYS = [
 
 export type VentilatorOptionKey = (typeof VENTILATOR_OPTION_KEYS)[number];
 
-export type VentilatorRow = {
+export type VentilatorRow = DocumentationWaivers & {
   id: string;
   inside_outside: string | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -242,14 +243,16 @@ export const THERMAL_BRIDGE_TYPE_KEY = "thermal_bridge_type";
 export const THERMAL_BRIDGE_TYPE_OPTION_KEY = "thermal_bridges.type";
 export const THERMAL_BRIDGE_TYPE_COLUMN_ID = "thermal_bridge_type";
 export const THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY = "pdf_report_asset_ids";
+export const THERMAL_BRIDGE_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const THERMAL_BRIDGE_OPTION_KEYS = [THERMAL_BRIDGE_TYPE_OPTION_KEY] as const;
 
 export type ThermalBridgeOptionKey = (typeof THERMAL_BRIDGE_OPTION_KEYS)[number];
 
-export type ThermalBridgeRow = {
+export type ThermalBridgeRow = PhotoWaiver & {
   id: string;
   thermal_bridge_type: string | null;
   pdf_report_asset_ids: string[];
+  photo_asset_ids: string[];
   notes: string | null;
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
@@ -282,17 +285,19 @@ export const FAN_TYPE_KEY = "fan_type";
 export const FAN_TYPE_OPTION_KEY = "fans.type";
 export const FAN_TYPE_COLUMN_ID = "fan_type";
 export const FAN_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const FAN_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const FAN_OPTION_KEYS = [FAN_TYPE_OPTION_KEY, FANS_STATUS_OPTION_KEY] as const;
 
 export type FanOptionKey = (typeof FAN_OPTION_KEYS)[number];
 
-export type FanRow = {
+export type FanRow = DocumentationWaivers & {
   id: string;
   fan_type: string | null;
   phase: number | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -322,6 +327,7 @@ export const HOT_WATER_HEATER_TYPE_KEY = "heater_type";
 export const HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type";
 export const HOT_WATER_HEATER_TYPE_COLUMN_ID = "heater_type";
 export const HOT_WATER_HEATER_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const HOT_WATER_HEATER_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const HOT_WATER_HEATER_OPTION_KEYS = [
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
   HOT_WATER_HEATERS_STATUS_OPTION_KEY,
@@ -329,13 +335,14 @@ export const HOT_WATER_HEATER_OPTION_KEYS = [
 
 export type HotWaterHeaterOptionKey = (typeof HOT_WATER_HEATER_OPTION_KEYS)[number];
 
-export type HotWaterHeaterRow = {
+export type HotWaterHeaterRow = DocumentationWaivers & {
   id: string;
   heater_type: string | null;
   phase: number | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -367,6 +374,7 @@ export const HOT_WATER_TANK_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY = "hot_water_tanks.inside_outside";
 export const HOT_WATER_TANK_TYPE_COLUMN_ID = "tank_type";
 export const HOT_WATER_TANK_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const HOT_WATER_TANK_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const HOT_WATER_TANK_OPTION_KEYS = [
   HOT_WATER_TANK_TYPE_OPTION_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
@@ -375,13 +383,14 @@ export const HOT_WATER_TANK_OPTION_KEYS = [
 
 export type HotWaterTankOptionKey = (typeof HOT_WATER_TANK_OPTION_KEYS)[number];
 
-export type HotWaterTankRow = {
+export type HotWaterTankRow = DocumentationWaivers & {
   id: string;
   tank_type: string | null;
   inside_outside: string | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -408,12 +417,14 @@ export type HotWaterTanksReplacePayload = {
 
 export const ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters";
 export const ELECTRIC_HEATER_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const ELECTRIC_HEATER_PHOTO_FIELD_KEY = "photo_asset_ids";
 
-export type ElectricHeaterRow = {
+export type ElectricHeaterRow = DocumentationWaivers & {
   id: string;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -446,6 +457,7 @@ export const APPLIANCE_ENERGY_STAR_KEY = "energy_star";
 export const APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star";
 export const APPLIANCE_ENERGY_STAR_COLUMN_ID = "energy_star";
 export const APPLIANCE_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const APPLIANCE_PHOTO_FIELD_KEY = "photo_asset_ids";
 export const APPLIANCE_OPTION_KEYS = [
   APPLIANCE_TYPE_OPTION_KEY,
   APPLIANCE_ENERGY_STAR_OPTION_KEY,
@@ -454,13 +466,14 @@ export const APPLIANCE_OPTION_KEYS = [
 
 export type ApplianceOptionKey = (typeof APPLIANCE_OPTION_KEYS)[number];
 
-export type ApplianceRow = {
+export type ApplianceRow = DocumentationWaivers & {
   id: string;
   appliance_type: string | null;
   energy_star: string | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];
+  photo_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };

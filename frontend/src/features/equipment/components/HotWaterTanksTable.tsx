@@ -13,8 +13,9 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedHotWaterTanks } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import { statusColumn } from "../lib/statusColumn";
 import {
@@ -24,6 +25,7 @@ import {
 import {
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
+  HOT_WATER_TANK_PHOTO_FIELD_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
   type HotWaterTankRow,
@@ -66,14 +68,19 @@ export function HotWaterTanksTable({
     () => sortedHotWaterTanks(hotWaterTanksSlice.hot_water_tanks),
     [hotWaterTanksSlice.hot_water_tanks],
   );
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((tank) => tank.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (tank) => tank.datasheet_asset_ids,
+        (tank) => tank.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -178,12 +185,26 @@ export function HotWaterTanksTable({
         header: fieldDefByKey.get(HOT_WATER_TANK_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (tank) => tank.datasheet_asset_ids,
         getRowId: (tank) => tank.id,
         onWrite,
+      }),
+      attachmentColumn({
+        id: HOT_WATER_TANK_PHOTO_FIELD_KEY,
+        fieldKey: HOT_WATER_TANK_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(HOT_WATER_TANK_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (tank) => tank.photo_asset_ids,
+        getRowId: (tank) => tank.id,
+        onWrite,
+        measureLabel: "site photos",
       }),
       linkColumn({
         id: "url",
@@ -202,7 +223,7 @@ export function HotWaterTanksTable({
     ],
     [
       customColumns,
-      datasheetUrlById,
+      attachmentUrlById,
       fieldDefByKey,
       isEditor,
       onWrite,

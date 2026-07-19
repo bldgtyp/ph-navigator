@@ -26,6 +26,7 @@ class AssemblySegmentReplaceRow(BaseModel):
 
     id: str
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_not_required: bool = False
     use_site_notes: str | None = None
 
     @field_validator("use_site_notes", mode="before")
@@ -106,7 +107,11 @@ def apply_assembly_segments_replace(body: ProjectDocumentV1, payload: BaseModel)
                     "use_site_notes" in replacement.model_fields_set
                     and segment.use_site_notes != replacement.use_site_notes
                 )
-                if segment.photo_asset_ids != replacement.photo_asset_ids or notes_changed:
+                waiver_changed = (
+                    "photo_not_required" in replacement.model_fields_set
+                    and segment.photo_not_required != replacement.photo_not_required
+                )
+                if segment.photo_asset_ids != replacement.photo_asset_ids or waiver_changed or notes_changed:
                     changed = True
                     break
             if changed:
@@ -125,6 +130,8 @@ def apply_assembly_segments_replace(body: ProjectDocumentV1, payload: BaseModel)
                     continue
                 photo_asset_ids = list(replacement.photo_asset_ids)
                 segment["photo_asset_ids"] = photo_asset_ids
+                if "photo_not_required" in replacement.model_fields_set:
+                    segment["photo_not_required"] = replacement.photo_not_required
                 if "use_site_notes" in replacement.model_fields_set:
                     segment["use_site_notes"] = replacement.use_site_notes
     return validate_document(raw)

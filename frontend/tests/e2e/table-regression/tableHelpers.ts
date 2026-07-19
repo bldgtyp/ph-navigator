@@ -12,16 +12,15 @@
 // Contract").
 
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { apiUrl, escapeRegExp, headerByLabel, openHeaderMenu, readVersionedTable, signIn } from "../_helpers";
+import {
+  apiUrl,
+  escapeRegExp,
+  headerByLabel,
+  openHeaderMenu,
+  readVersionedTable,
+  signInForAgent,
+} from "../_helpers";
 import type { SingleSelectSample, TableRegressionCase } from "./tableMatrix";
-
-// The table suite signs in as the dedicated local agent account
-// (`codex@example.com`), never the user's `ed@example.com`, because PHN
-// enforces one active session per user. `E2E_EMAIL` / `E2E_PASSWORD`
-// override the default for CI or alternate accounts. Seed the account
-// first with `make seed-agent-user`.
-const AGENT_EMAIL = process.env.E2E_EMAIL ?? "codex@example.com";
-const AGENT_PASSWORD = process.env.E2E_PASSWORD ?? "password";
 
 // The reserved built-in identifier field ("Tag") shared by every table —
 // mirrors RESERVED_FIELD_KEY_RECORD_ID in the backend registry.
@@ -29,7 +28,7 @@ const RECORD_ID_FIELD_KEY = "record_id";
 
 /** Sign in as the dedicated local agent account for table-suite runs. */
 export async function signInForTables(page: Page): Promise<void> {
-  await signIn(page, { email: AGENT_EMAIL, password: AGENT_PASSWORD });
+  await signInForAgent(page);
 }
 
 /**
@@ -93,7 +92,10 @@ export async function expectHeadersVisible(page: Page, table: TableRegressionCas
  * cell — both prove the body rendered without crashing. This is the
  * "at least one cell or valid empty-state affordance" smoke contract.
  */
-export async function expectGridBodyRendered(page: Page, table: TableRegressionCase): Promise<void> {
+export async function expectGridBodyRendered(
+  page: Page,
+  table: TableRegressionCase,
+): Promise<void> {
   await expect(page.getByRole("grid"), `${table.label}: grid container`).toBeVisible();
   const dataRow = page.locator("tr[data-row-id]").first();
   const emptyState = page.locator("td.data-table-filter-empty").first();
@@ -535,7 +537,9 @@ export async function sortByHeader(
   direction: "asc" | "desc",
 ): Promise<void> {
   await openHeaderMenu(page, header);
-  await page.getByRole("menuitem", { name: direction === "asc" ? "Sort A → Z" : "Sort Z → A" }).click();
+  await page
+    .getByRole("menuitem", { name: direction === "asc" ? "Sort A → Z" : "Sort Z → A" })
+    .click();
 }
 
 /** Seed a filter rule for a column via its header context menu. */

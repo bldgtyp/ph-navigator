@@ -1,6 +1,6 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import type { AssetUrls } from "../../assets/types";
+import { heatPumpDatasheetColumn, heatPumpPhotoColumn } from "./attachment-columns";
 import {
   HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
   heatPumpAttachmentField,
@@ -16,10 +16,12 @@ import {
   incomingIndoorUnitsFieldDef,
 } from "./link-fields";
 import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "./types";
+import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
 import { statusColumnDef, statusFieldDef } from "./status-column";
 import { HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY } from "../types";
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const INDOOR_EQUIP_PHOTO_FIELD_KEY = "photo_asset_ids";
 
 export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
@@ -27,6 +29,7 @@ export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_opti
   const installType = options[HEAT_PUMP_OPTION_KEYS.installType] ?? [];
   return [
     heatPumpTagField(),
+    displayNameFieldDef(),
     heatPumpTextField("model_number", "Model number"),
     heatPumpSelectField("manufacturer", "Manufacturer", manufacturer),
     heatPumpSelectField("model_type", "Model type", modelType),
@@ -41,6 +44,7 @@ export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_opti
     heatPumpNumberField("eer", "EER"),
     heatPumpNumberField("hspf", "HSPF"),
     heatPumpAttachmentField(INDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
+    heatPumpAttachmentField(INDOOR_EQUIP_PHOTO_FIELD_KEY, "Site photos"),
     incomingIndoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY] ?? []),
@@ -63,6 +67,7 @@ export function indoorEquipColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  onPhotoChange,
   indoorUnits = [],
   incomingIndoorUnitIdsByRowId = new Map(),
   onIndoorUnitClick,
@@ -70,8 +75,9 @@ export function indoorEquipColumnDefs({
 }: {
   projectId: string;
   isEditor: boolean;
-  assetUrlById: Map<string, unknown>;
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
   onDatasheetChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
+  onPhotoChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
   incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
   onIndoorUnitClick?: (rowId: string) => void;
@@ -86,6 +92,7 @@ export function indoorEquipColumnDefs({
     className: "numeric-cell",
   });
   return [
+    displayNameColumnDef<HeatPumpIndoorEquipRow>(),
     {
       id: "tag",
       fieldKey: "tag",
@@ -133,27 +140,20 @@ export function indoorEquipColumnDefs({
     number("seer", "SEER"),
     number("eer", "EER"),
     number("hspf", "HSPF"),
-    {
-      id: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
+    heatPumpDatasheetColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
       fieldKey: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
-      header: "Datasheet",
-      accessor: (row) => row.datasheet_asset_ids.join(","),
-      render: (row) => (
-        <AttachmentCell
-          projectId={projectId}
-          value={row.datasheet_asset_ids}
-          config={DATASHEET_ATTACHMENT_CONFIG}
-          readOnly={!isEditor}
-          assetUrlById={assetUrlById as never}
-          onChange={(next) => {
-            if (sameAttachmentAssetIds(row.datasheet_asset_ids, next)) return;
-            return onDatasheetChange(row, next);
-          }}
-        />
-      ),
-      measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
-      defaultWidth: 260,
-    },
+      onChange: onDatasheetChange,
+    }),
+    heatPumpPhotoColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
+      fieldKey: INDOOR_EQUIP_PHOTO_FIELD_KEY,
+      onChange: onPhotoChange,
+    }),
     incomingIndoorUnitColumnDef<HeatPumpIndoorEquipRow>({
       indoorUnits,
       getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),

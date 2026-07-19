@@ -11,6 +11,8 @@ from features.assets.registry import (
     list_asset_references,
 )
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.envelope_models import AssemblySegment, ProjectFrame, ProjectGlazing, ProjectMaterial
+from features.project_document.rows import PumpRow, ThermalBridgeRow
 from tests.envelope.test_envelope_document_contracts import base_document
 
 
@@ -24,6 +26,7 @@ def _document_with_pump_datasheets() -> ProjectDocumentV1:
             "notes": None,
             "link": "https://example.com/pump.pdf",
             "datasheet_asset_ids": ["asset_pdf_1", "asset_img_1"],
+            "photo_asset_ids": ["asset_photo_1"],
             "custom_values": {
                 "use": "DHW recirc",
                 "record_id": "P-1",
@@ -101,6 +104,38 @@ def test_project_aperture_product_datasheet_fields_are_registered() -> None:
     assert frame.asset_kinds == frozenset({"datasheet"})
 
 
+def test_site_photo_fields_are_registered_for_documentation_scope() -> None:
+    table_keys = {
+        "project_glazings",
+        "project_frames",
+        "assembly_segments",
+        "ventilators",
+        "pumps",
+        "fans",
+        "hot_water_heaters",
+        "hot_water_tanks",
+        "electric_heaters",
+        "appliances",
+        "thermal_bridges",
+        "heat_pump_outdoor_equip",
+        "heat_pump_indoor_equip",
+        "heat_pump_outdoor_units",
+        "heat_pump_indoor_units",
+    }
+
+    for table_key in table_keys:
+        field = get_attachment_field(table_key, "photo_asset_ids")
+        assert field is not None, table_key
+        assert field.key == f"{table_key}.photo_asset_ids"
+        assert field.asset_kinds == frozenset({"site_photo"})
+        assert field.allowed_content_types == frozenset(
+            {"image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"}
+        )
+        assert field.allowed_extensions == frozenset({".heic", ".heif"})
+        assert field.max_count == 10
+        assert field.max_file_size_mb == 25
+
+
 def test_pumps_datasheet_field_matches_allowed_assets() -> None:
     field = get_attachment_field("pumps", "datasheet_asset_ids")
     assert field is not None
@@ -145,6 +180,61 @@ def test_pumps_datasheet_field_matches_allowed_assets() -> None:
     )
 
 
+def test_pumps_site_photo_field_matches_allowed_assets() -> None:
+    field = get_attachment_field("pumps", "photo_asset_ids")
+    assert field is not None
+
+    assert asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="image/jpeg",
+        original_filename="installed-pump.jpg",
+        size_bytes=512,
+    )
+    assert asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="image/heic",
+        original_filename="installed-pump.heic",
+        size_bytes=512,
+    )
+    assert asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="application/octet-stream",
+        original_filename="installed-pump.heif",
+        size_bytes=512,
+    )
+    assert not asset_matches_field(
+        field,
+        asset_kind="datasheet",
+        content_type="image/jpeg",
+        original_filename="pump.jpg",
+        size_bytes=512,
+    )
+    assert not asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="application/pdf",
+        original_filename="pump.pdf",
+        size_bytes=512,
+    )
+    assert not asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="text/plain",
+        original_filename="installed-pump.heic",
+        size_bytes=512,
+    )
+    assert not asset_matches_field(
+        field,
+        asset_kind="site_photo",
+        content_type="image/jpeg",
+        original_filename="installed-pump.jpg",
+        size_bytes=26 * 1024 * 1024,
+    )
+
+
 def test_equipment_pump_datasheet_references_are_discoverable() -> None:
     body = _document_with_pump_datasheets()
 
@@ -175,6 +265,29 @@ def test_equipment_pump_datasheet_references_are_discoverable() -> None:
     ]
     assert asset_referenced_by_document(body, "asset_pdf_1")
     assert not asset_referenced_by_document(body, "asset_missing")
+
+
+def test_equipment_pump_site_photo_references_are_discoverable() -> None:
+    body = _document_with_pump_datasheets()
+
+    references = list_asset_references(
+        body,
+        table_key="pumps",
+        column_key="photo_asset_ids",
+        kind="site_photo",
+    )
+
+    assert references == [
+        {
+            "table_key": "pumps",
+            "field_key": "photo_asset_ids",
+            "row_id": "pmp_1",
+            "row_name": "pmp_1",
+            "asset_id": "asset_photo_1",
+            "index": 0,
+        }
+    ]
+    assert asset_referenced_by_document(body, "asset_photo_1")
 
 
 def test_project_aperture_product_datasheet_references_are_discoverable() -> None:
@@ -269,3 +382,28 @@ def test_equipment_ventilator_datasheet_references_are_discoverable() -> None:
             "index": 0,
         }
     ]
+
+
+def test_documentation_evidence_fields_default_on_representative_rows() -> None:
+    pump = PumpRow(id="pmp_defaults")
+    bridge = ThermalBridgeRow(id="tb_defaults")
+    segment = AssemblySegment(id="seg_defaults", order=0, width_mm=100)
+    material = ProjectMaterial(id="pmat_defaults", name="Cellulose", category="Insulation")
+    glazing = ProjectGlazing(id="pglz_defaults", name="Triple pane")
+    frame = ProjectFrame(id="pfrm_defaults", name="Wood frame")
+
+    assert pump.photo_asset_ids == []
+    assert pump.datasheet_not_required is False
+    assert pump.photo_not_required is False
+    assert bridge.datasheet_asset_ids == []
+    assert bridge.photo_asset_ids == []
+    assert segment.photo_asset_ids == []
+    assert segment.photo_not_required is False
+    assert material.datasheet_asset_ids == []
+    assert material.datasheet_not_required is False
+    assert glazing.photo_asset_ids == []
+    assert glazing.datasheet_not_required is False
+    assert glazing.photo_not_required is False
+    assert frame.photo_asset_ids == []
+    assert frame.datasheet_not_required is False
+    assert frame.photo_not_required is False

@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 from typing import Any
 from uuid import UUID
 
 from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
+from PIL import Image
+from pillow_heif import register_heif_opener
 
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
@@ -119,6 +122,29 @@ def _upload_intent_payload(body: bytes, *, content_type: str = "application/pdf"
         "size_bytes": len(body),
         "content_hash_sha256": hashlib.sha256(body).hexdigest(),
     }
+
+
+def _site_photo_upload_intent_payload(
+    body: bytes,
+    *,
+    content_type: str = "image/heic",
+    filename: str = "installed-pump.heic",
+) -> dict[str, object]:
+    return {
+        "asset_kind": "site_photo",
+        "original_filename": filename,
+        "display_name": "Installed pump",
+        "content_type": content_type,
+        "size_bytes": len(body),
+        "content_hash_sha256": hashlib.sha256(body).hexdigest(),
+    }
+
+
+def _heic_bytes() -> bytes:
+    register_heif_opener()
+    output = io.BytesIO()
+    Image.new("RGB", (8, 6), "red").save(output, format="HEIF")
+    return output.getvalue()
 
 
 def _pump_payload() -> dict[str, Any]:
@@ -351,6 +377,78 @@ def test_complete_upload_marks_magic_mismatch_failed(clean_document_tables: None
         assert failed.status_code == 200
         assert failed.json()["upload_status"] == "failed"
         assert failed.json()["metadata"]["failure_reason"] == "pdf_magic_mismatch"
+    finally:
+        _clear_fake_asset_service()
+
+
+def test_complete_upload_converts_heic_site_photo_to_jpeg(clean_document_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    _install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = project["id"]
+        heic_body = _heic_bytes()
+        intent = client.post(
+            f"/api/v1/projects/{project_id}/assets/upload-intent",
+            headers={"Origin": ORIGIN},
+            json=_site_photo_upload_intent_payload(heic_body),
+        )
+        assert intent.status_code == 200
+        asset = intent.json()["asset"]
+        original_key = asset["object_key"]
+        fake_r2.put_object(original_key, heic_body, asset["content_type"])
+
+        complete = client.post(
+            _asset_url(project_id, asset["id"], "/complete-upload"),
+            headers={"Origin": ORIGIN},
+        )
+
+        assert complete.status_code == 200, complete.text
+        body = complete.json()
+        assert body["upload_status"] == "uploaded"
+        assert body["content_type"] == "image/jpeg"
+        assert body["object_key"].endswith("/file.jpg")
+        assert body["metadata"]["conversion"] == "heic_to_jpeg"
+        assert body["metadata"]["converted_from_content_type"] == "image/heic"
+        assert original_key not in fake_r2.objects
+        converted_bytes, converted_content_type = fake_r2.objects[body["object_key"]]
+        assert converted_content_type == "image/jpeg"
+        assert converted_bytes.startswith(b"\xff\xd8\xff")
+        assert body["size_bytes"] == len(converted_bytes)
+        assert body["content_hash_sha256"] == hashlib.sha256(converted_bytes).hexdigest()
+    finally:
+        _clear_fake_asset_service()
+
+
+def test_complete_upload_marks_corrupt_heic_conversion_failed(clean_document_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    _install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = project["id"]
+        corrupt_heic = b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00not really an image"
+        intent = client.post(
+            f"/api/v1/projects/{project_id}/assets/upload-intent",
+            headers={"Origin": ORIGIN},
+            json=_site_photo_upload_intent_payload(corrupt_heic),
+        )
+        assert intent.status_code == 200
+        asset = intent.json()["asset"]
+        fake_r2.put_object(asset["object_key"], corrupt_heic, asset["content_type"])
+
+        complete = client.post(
+            _asset_url(project_id, asset["id"], "/complete-upload"),
+            headers={"Origin": ORIGIN},
+        )
+
+        assert complete.status_code == 422
+        assert complete.json()["error_code"] == "asset_conversion_failed"
+        failed = client.get(_asset_url(project_id, asset["id"]))
+        assert failed.status_code == 200
+        assert failed.json()["upload_status"] == "failed"
+        assert failed.json()["metadata"]["failure_reason"] == "asset_conversion_failed"
     finally:
         _clear_fake_asset_service()
 

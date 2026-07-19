@@ -35,6 +35,7 @@ def project_material(**overrides: Any) -> dict[str, Any]:
         "comments": None,
         "specification_status": "missing",
         "datasheet_asset_ids": ["asset_01HXABCDEF0123456789ABCD"],
+        "datasheet_not_required": False,
         "catalog_origin": None,
     }
     base.update(overrides)
@@ -61,6 +62,7 @@ def assembly(**overrides: Any) -> dict[str, Any]:
                         "steel_stud_spacing_mm": None,
                         "project_material_id": "pmat_insul",
                         "photo_asset_ids": ["asset_01HXPHOTO00123456789ABCD"],
+                        "photo_not_required": False,
                         "use_site_notes": "Use over exterior sheathing.",
                     }
                 ],
@@ -78,6 +80,7 @@ def assembly(**overrides: Any) -> dict[str, Any]:
                         "steel_stud_spacing_mm": 406.4,
                         "project_material_id": None,
                         "photo_asset_ids": [],
+                        "photo_not_required": False,
                         "use_site_notes": None,
                     }
                 ],
@@ -132,6 +135,7 @@ def envelope_body() -> ProjectDocumentV1:
                             "steel_stud_spacing_mm": None,
                             "project_material_id": "pmat_duplicate_name",
                             "photo_asset_ids": [],
+                            "photo_not_required": False,
                             "use_site_notes": None,
                         }
                     ],
@@ -293,11 +297,14 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
     body = envelope_body()
     segment = body.tables.assemblies[0].layers[0].segments[0]
 
-    photos_only = contract.parse_replace_payload({"rows": [{"id": segment.id, "photo_asset_ids": ["asset_new"]}]})
+    photos_only = contract.parse_replace_payload(
+        {"rows": [{"id": segment.id, "photo_asset_ids": ["asset_new"], "photo_not_required": True}]}
+    )
     updated = contract.apply_replace(body, photos_only)
 
     updated_segment = updated.tables.assemblies[0].layers[0].segments[0]
     assert updated_segment.photo_asset_ids == ["asset_new"]
+    assert updated_segment.photo_not_required is True
     assert updated_segment.use_site_notes == "Use over exterior sheathing."
 
     unchanged = contract.parse_replace_payload(
@@ -306,6 +313,7 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
                 {
                     "id": updated_segment.id,
                     "photo_asset_ids": ["asset_new"],
+                    "photo_not_required": updated_segment.photo_not_required,
                     "use_site_notes": updated_segment.use_site_notes,
                 }
             ]

@@ -14,6 +14,7 @@ import {
   THERMAL_BRIDGES_STATUS_OPTION_KEY,
   THERMAL_BRIDGES_TABLE_NAME,
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
+  THERMAL_BRIDGE_PHOTO_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
   THERMAL_BRIDGE_TYPE_OPTION_KEY,
   type ThermalBridgesSlice,
@@ -50,6 +51,7 @@ export const THERMAL_BRIDGE_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("frsi_value", "fRSI Value", "number"),
   builtInFieldDef(THERMAL_BRIDGE_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef(THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY, "PDF Report", "long_text"),
+  builtInFieldDef(THERMAL_BRIDGE_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   builtInFieldDef("notes", "Notes", "long_text"),
   {
     ...builtInFieldDef(STATUS_FIELD_KEY, STATUS_DISPLAY_NAME, "single_select"),
@@ -103,6 +105,9 @@ export function thermalBridgesFieldOverlay(
       locked: ["field_type", "options", "delete", "duplicate"],
     },
     [THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+    [THERMAL_BRIDGE_PHOTO_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
     notes: {

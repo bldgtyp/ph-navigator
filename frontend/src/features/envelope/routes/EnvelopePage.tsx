@@ -117,6 +117,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
   const isMaterialsRoute = isEnvelopeSubroute(subpath, "materials");
+  const isLegacySitePhotosRoute = subpath === "/site-photos" || subpath.startsWith("/site-photos/");
   const assemblyId = activeAssemblyIdFromSubpath(subpath);
   const assemblies = useMemo(
     () => naturalSortAssemblies(query.data?.assemblies ?? []),
@@ -160,6 +161,19 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     return (
       <Navigate
         to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
+        replace
+      />
+    );
+  }
+
+  if (isLegacySitePhotosRoute) {
+    return (
+      <Navigate
+        to={{
+          pathname: `/projects/${project.id}/documentation`,
+          search: location.search,
+          hash: "#envelope",
+        }}
         replace
       />
     );

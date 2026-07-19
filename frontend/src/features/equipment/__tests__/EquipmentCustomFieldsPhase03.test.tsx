@@ -451,6 +451,7 @@ function buildThermalBridge(overrides: Partial<ThermalBridgeRow> = {}): ThermalB
     id: "tb_1",
     thermal_bridge_type: "opt_linear",
     pdf_report_asset_ids: [],
+    photo_asset_ids: [],
     notes: null,
     custom_values: {
       record_id: "TB-1",

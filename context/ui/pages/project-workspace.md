@@ -7,7 +7,8 @@
 
 **Purpose:** One project's home. Workspace structure started from the V1
 mental model the user already had and has since grown: Status / Climate /
-Apertures / Envelope / Spaces / Equipment / Thermal Bridges / Model
+Apertures / Envelope / Spaces / Equipment / Thermal Bridges / Model /
+Documentation
 (current tab set — see `frontend/src/features/projects/lib.ts`'s
 `PROJECT_TABS`; matches `../../UI_UX.md` §1's tab list).
 
@@ -71,7 +72,7 @@ because the screen lacks a secondary information model.
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  Status · Climate · Apertures · Envelope · Spaces · Equipment ·          │
-│  Thermal Bridges · Model                                                 │
+│  Thermal Bridges · Model · Documentation                                 │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -84,8 +85,8 @@ because the screen lacks a secondary information model.
   `/projects/{id}/status`, `/projects/{id}/climate`,
   `/projects/{id}/apertures`, `/projects/{id}/envelope`,
   `/projects/{id}/spaces`, `/projects/{id}/equipment`,
-  `/projects/{id}/thermal-bridges`, `/projects/{id}/model`. Browser
-  back/forward work.
+  `/projects/{id}/thermal-bridges`, `/projects/{id}/model`,
+  `/projects/{id}/documentation`. Browser back/forward work.
 - Each tab loads independently (no full-page reload between tabs;
   data fetches are scoped).
 
@@ -162,4 +163,3 @@ When the open version is locked:
   ```
 - Save button is hidden / replaced by a Save-As shortcut.
 - Eliminates "I typed for 10 min and got 409 at Save."
-

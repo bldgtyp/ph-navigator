@@ -9,11 +9,38 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
+from features.assets.heic_types import HEIC_CONTENT_TYPES, HEIC_FILE_EXTENSIONS
 from features.project_document.document import ProjectDocumentV1
 
 AssetKind = Literal[
     "datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "stat", "ddy", "other"
 ]
+
+DATASHEET_CONTENT_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
+SITE_PHOTO_CONTENT_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", *HEIC_CONTENT_TYPES})
+DATASHEET_FIELD_KEY = "datasheet_asset_ids"
+PHOTO_FIELD_KEY = "photo_asset_ids"
+
+EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
+    "ventilators": "ervs",
+    "pumps": "pumps",
+    "fans": "fans",
+    "hot_water_heaters": "hot_water_heaters",
+    "hot_water_tanks": "hot_water_tanks",
+    "electric_heaters": "electric_heaters",
+    "appliances": "appliances",
+}
+HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
+    "heat_pump_outdoor_equip": "outdoor_equip",
+    "heat_pump_indoor_equip": "indoor_equip",
+    "heat_pump_outdoor_units": "outdoor_units",
+    "heat_pump_indoor_units": "indoor_units",
+}
+DOCUMENTATION_ATTACHMENT_TABLE_KEYS: tuple[str, ...] = (
+    *EQUIPMENT_ATTACHMENT_TABLE_KEYS,
+    "thermal_bridges",
+    *HEAT_PUMP_ATTACHMENT_TABLE_KEYS,
+)
 
 
 @dataclass(frozen=True)
@@ -32,9 +59,9 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
     AttachmentFieldConfig(
         key="project_materials.datasheet_asset_ids",
         table_key="project_materials",
-        field_key="datasheet_asset_ids",
+        field_key=DATASHEET_FIELD_KEY,
         asset_kinds=frozenset({"datasheet"}),
-        allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+        allowed_content_types=DATASHEET_CONTENT_TYPES,
         allowed_extensions=frozenset(),
         max_count=5,
         max_file_size_mb=25,
@@ -42,76 +69,80 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
     AttachmentFieldConfig(
         key="project_glazings.datasheet_asset_ids",
         table_key="project_glazings",
-        field_key="datasheet_asset_ids",
+        field_key=DATASHEET_FIELD_KEY,
         asset_kinds=frozenset({"datasheet"}),
-        allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+        allowed_content_types=DATASHEET_CONTENT_TYPES,
         allowed_extensions=frozenset(),
         max_count=5,
+        max_file_size_mb=25,
+    ),
+    AttachmentFieldConfig(
+        key="project_glazings.photo_asset_ids",
+        table_key="project_glazings",
+        field_key=PHOTO_FIELD_KEY,
+        asset_kinds=frozenset({"site_photo"}),
+        allowed_content_types=SITE_PHOTO_CONTENT_TYPES,
+        allowed_extensions=HEIC_FILE_EXTENSIONS,
+        max_count=10,
         max_file_size_mb=25,
     ),
     AttachmentFieldConfig(
         key="project_frames.datasheet_asset_ids",
         table_key="project_frames",
-        field_key="datasheet_asset_ids",
+        field_key=DATASHEET_FIELD_KEY,
         asset_kinds=frozenset({"datasheet"}),
-        allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+        allowed_content_types=DATASHEET_CONTENT_TYPES,
         allowed_extensions=frozenset(),
         max_count=5,
         max_file_size_mb=25,
     ),
     AttachmentFieldConfig(
+        key="project_frames.photo_asset_ids",
+        table_key="project_frames",
+        field_key=PHOTO_FIELD_KEY,
+        asset_kinds=frozenset({"site_photo"}),
+        allowed_content_types=SITE_PHOTO_CONTENT_TYPES,
+        allowed_extensions=HEIC_FILE_EXTENSIONS,
+        max_count=10,
+        max_file_size_mb=25,
+    ),
+    AttachmentFieldConfig(
         key="assembly_segments.photo_asset_ids",
         table_key="assembly_segments",
-        field_key="photo_asset_ids",
+        field_key=PHOTO_FIELD_KEY,
         asset_kinds=frozenset({"site_photo"}),
-        allowed_content_types=frozenset({"image/png", "image/jpeg", "image/webp"}),
-        allowed_extensions=frozenset(),
+        allowed_content_types=SITE_PHOTO_CONTENT_TYPES,
+        allowed_extensions=HEIC_FILE_EXTENSIONS,
         max_count=10,
         max_file_size_mb=25,
     ),
     *(
         AttachmentFieldConfig(
-            key=f"{table}.datasheet_asset_ids",
+            key=f"{table}.{DATASHEET_FIELD_KEY}",
             table_key=table,
-            field_key="datasheet_asset_ids",
+            field_key=DATASHEET_FIELD_KEY,
             asset_kinds=frozenset({"datasheet"}),
-            allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+            allowed_content_types=DATASHEET_CONTENT_TYPES,
             allowed_extensions=frozenset(),
             max_count=5,
             max_file_size_mb=25,
         )
-        for table in (
-            "ventilators",
-            "pumps",
-            "fans",
-            "hot_water_heaters",
-            "hot_water_tanks",
-            "electric_heaters",
-            "appliances",
-            "thermal_bridges",
-            "heat_pump_outdoor_equip",
-            "heat_pump_indoor_equip",
-            "heat_pump_outdoor_units",
-            "heat_pump_indoor_units",
+        for table in (*DOCUMENTATION_ATTACHMENT_TABLE_KEYS,)
+    ),
+    *(
+        AttachmentFieldConfig(
+            key=f"{table}.{PHOTO_FIELD_KEY}",
+            table_key=table,
+            field_key=PHOTO_FIELD_KEY,
+            asset_kinds=frozenset({"site_photo"}),
+            allowed_content_types=SITE_PHOTO_CONTENT_TYPES,
+            allowed_extensions=HEIC_FILE_EXTENSIONS,
+            max_count=10,
+            max_file_size_mb=25,
         )
+        for table in (*DOCUMENTATION_ATTACHMENT_TABLE_KEYS,)
     ),
 )
-
-EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "ventilators": "ervs",
-    "pumps": "pumps",
-    "fans": "fans",
-    "hot_water_heaters": "hot_water_heaters",
-    "hot_water_tanks": "hot_water_tanks",
-    "electric_heaters": "electric_heaters",
-    "appliances": "appliances",
-}
-HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "heat_pump_outdoor_equip": "outdoor_equip",
-    "heat_pump_indoor_equip": "indoor_equip",
-    "heat_pump_outdoor_units": "outdoor_units",
-    "heat_pump_indoor_units": "indoor_units",
-}
 
 
 # Model-tab HBJSON exports (US-VIEW-1) upload as standalone assets, not
@@ -189,7 +220,9 @@ def asset_matches_field(
         if field.allowed_extensions and content_type in {"application/json", "application/octet-stream"}:
             return filename_extension(original_filename) in field.allowed_extensions
         return True
-    return filename_extension(original_filename) in field.allowed_extensions
+    if content_type == "application/octet-stream":
+        return filename_extension(original_filename) in field.allowed_extensions
+    return False
 
 
 def asset_referenced_by_document(body: ProjectDocumentV1, asset_id: str) -> bool:
@@ -213,26 +246,30 @@ def list_asset_references(
         and (column_key is None or field.field_key == column_key)
         and (kind is None or kind in field.asset_kinds)
     ]
+    fields_by_table: dict[str, list[AttachmentFieldConfig]] = {}
     for field in field_configs:
-        for row in iter_rows_for_raw_tables(tables, field.table_key):
-            values = row.get(field.field_key)
-            if not isinstance(values, list):
-                continue
-            for index, value in enumerate(values):
-                if not isinstance(value, str):
+        fields_by_table.setdefault(field.table_key, []).append(field)
+    for table, fields in fields_by_table.items():
+        for row in iter_rows_for_raw_tables(tables, table):
+            for field in fields:
+                values = row.get(field.field_key)
+                if not isinstance(values, list):
                     continue
-                if asset_ids is not None and value not in asset_ids:
-                    continue
-                references.append(
-                    {
-                        "table_key": field.table_key,
-                        "field_key": field.field_key,
-                        "row_id": row.get("id"),
-                        "row_name": row.get("name") or row.get("number") or row.get("id"),
-                        "asset_id": value,
-                        "index": index,
-                    }
-                )
+                for index, value in enumerate(values):
+                    if not isinstance(value, str):
+                        continue
+                    if asset_ids is not None and value not in asset_ids:
+                        continue
+                    references.append(
+                        {
+                            "table_key": field.table_key,
+                            "field_key": field.field_key,
+                            "row_id": row.get("id"),
+                            "row_name": row.get("name") or row.get("number") or row.get("id"),
+                            "asset_id": value,
+                            "index": index,
+                        }
+                    )
     return references
 
 

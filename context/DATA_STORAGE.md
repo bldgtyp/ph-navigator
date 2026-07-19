@@ -195,11 +195,11 @@ built-in default by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`), not name
 This is the heart of V2 and the reason it left V1's relational entity model.
 The entire project model — assemblies, layers, segments, project materials,
 apertures, rooms, thermal bridges, equipment, option lists, the field-config
-registry — is **one Pydantic-validated JSON document** (`ProjectDocumentV1`,
-`schema_version` **1** after the 2026-06-24 clean baseline reset; the code
+registry — is **one Pydantic-validated JSON document** (`ProjectDocumentV1`; the code
 constant `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` in
-`backend/features/project_document/document.py` is authoritative) stored as
-JSONB.
+`backend/features/project_document/document.py` is the authoritative
+`schema_version`, bumped by each forward-only migration in
+`migrations/upgrade.py`) stored as JSONB.
 
 ### 3.1 The tables
 

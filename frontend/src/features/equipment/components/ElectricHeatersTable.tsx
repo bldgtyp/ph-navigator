@@ -13,12 +13,14 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedElectricHeaters } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import { statusColumn } from "../lib/statusColumn";
 import {
   ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+  ELECTRIC_HEATER_PHOTO_FIELD_KEY,
   type ElectricHeaterRow,
   type ElectricHeatersSlice,
 } from "../types";
@@ -63,14 +65,19 @@ export function ElectricHeatersTable({
     () => sortedElectricHeaters(electricHeatersSlice.electric_heaters),
     [electricHeatersSlice.electric_heaters],
   );
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((heater) => heater.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (heater) => heater.datasheet_asset_ids,
+        (heater) => heater.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -140,19 +147,33 @@ export function ElectricHeatersTable({
         header: fieldDefByKey.get(ELECTRIC_HEATER_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (heater) => heater.datasheet_asset_ids,
         getRowId: (heater) => heater.id,
         onWrite,
       }),
+      attachmentColumn({
+        id: ELECTRIC_HEATER_PHOTO_FIELD_KEY,
+        fieldKey: ELECTRIC_HEATER_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(ELECTRIC_HEATER_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (heater) => heater.photo_asset_ids,
+        getRowId: (heater) => heater.id,
+        onWrite,
+        measureLabel: "site photos",
+      }),
       statusColumn<ElectricHeaterRow>(fieldDefByKey),
       ...customColumns,
     ],
     [
       customColumns,
-      datasheetUrlById,
+      attachmentUrlById,
       fieldDefByKey,
       isEditor,
       onWrite,

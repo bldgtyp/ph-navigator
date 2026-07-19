@@ -11,6 +11,7 @@ import {
   type SliceTableController,
 } from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
+import { uniqueAttachmentAssetIds } from "../../../assets/lib";
 import {
   buildEmptyOutdoorEquipRow,
   deleteHeatPumpRow,
@@ -96,7 +97,12 @@ export function OutdoorEquipTable({
     return labels;
   }, [manufacturerOptions, slice.indoor_equip]);
   const assetIds = useMemo(
-    () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
+    () =>
+      uniqueAttachmentAssetIds(
+        rows,
+        (row) => row.datasheet_asset_ids,
+        (row) => row.photo_asset_ids,
+      ),
     [rows],
   );
   const assetUrls = useAssetUrls(projectId, assetIds);
@@ -136,6 +142,9 @@ export function OutdoorEquipTable({
         assetUrlById,
         onDatasheetChange: async (row, next) => {
           await replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next });
+        },
+        onPhotoChange: async (row, next) => {
+          await replaceHeatPumpRow(controller.onWrite, { ...row, photo_asset_ids: next });
         },
         outdoorUnits,
         incomingOutdoorUnitIdsByRowId,

@@ -36,6 +36,20 @@ beforeEach(() => {
             display_name: "Ventilator datasheet",
             size_bytes: 512,
           },
+          {
+            asset_id: "asset_photo_1",
+            preview_url: "https://fake-r2.test/ventilator-site-photo.jpg",
+            preview_expires_at: "2026-05-26T13:15:00Z",
+            download_url: "https://fake-r2.test/ventilator-site-photo.jpg",
+            download_expires_at: "2026-05-26T14:00:00Z",
+            thumbnail_url: null,
+            thumbnail_status: "ready",
+            thumbnail_expires_at: null,
+            content_type: "image/jpeg",
+            original_filename: "ventilator-site-photo.jpg",
+            display_name: "Ventilator site photo",
+            size_bytes: 512,
+          },
         ],
       });
     }
@@ -84,6 +98,7 @@ describe("VentilatorsTable DataTable reuse", () => {
     expect(screen.getByText("ERV-1")).toBeInTheDocument();
     expect(screen.getByText("Inside")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /HP indoor units/i })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Site photos/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
   });
 
@@ -247,6 +262,36 @@ describe("VentilatorsTable DataTable reuse", () => {
       });
     });
   });
+
+  test("emits a cell write when deleting a site photo attachment", async () => {
+    const slice = buildVentilatorsSlice({
+      ventilators: [buildVentilator({ photo_asset_ids: ["asset_photo_1"] })],
+    });
+    const tableSchema = schemaForVentilators(slice);
+    const onWrite = vi.fn().mockResolvedValue(undefined);
+    renderWithQueryClient(
+      <VentilatorsTable
+        ventilatorsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={onWrite}
+      />,
+    );
+
+    const attachment = await screen.findByTitle("ventilator-site-photo.jpg · image/jpeg");
+    fireEvent.click(attachment);
+    fireEvent.click(await screen.findByRole("button", { name: "Detach" }));
+
+    await waitFor(() => {
+      expect(onWrite).toHaveBeenCalledWith({
+        kind: "cell",
+        writes: [{ rowId: "vent_1", fieldKey: "photo_asset_ids", value: [] }],
+      });
+    });
+  });
 });
 
 function indoorUnit(overrides: Partial<HeatPumpIndoorUnitRow> = {}): HeatPumpIndoorUnitRow {
@@ -260,5 +305,6 @@ function indoorUnit(overrides: Partial<HeatPumpIndoorUnitRow> = {}): HeatPumpInd
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   };
 }

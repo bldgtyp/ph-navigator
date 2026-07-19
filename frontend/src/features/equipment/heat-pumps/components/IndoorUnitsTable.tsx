@@ -12,6 +12,7 @@ import {
   type SliceTableController,
 } from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
+import { uniqueAttachmentAssetIds } from "../../../assets/lib";
 import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
 import { LinkedRoomDialogHost } from "../../components/LinkedRoomDialogHost";
 import type { RoomRow, VentilatorRow } from "../../types";
@@ -97,7 +98,12 @@ export function IndoorUnitsTable({
   const rooms: RoomRow[] = useMemo(() => roomsQuery.data?.rooms ?? [], [roomsQuery.data?.rooms]);
   const rows = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
   const assetIds = useMemo(
-    () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
+    () =>
+      uniqueAttachmentAssetIds(
+        rows,
+        (row) => row.datasheet_asset_ids,
+        (row) => row.photo_asset_ids,
+      ),
     [rows],
   );
   const assetUrls = useAssetUrls(projectId, assetIds);
@@ -126,6 +132,8 @@ export function IndoorUnitsTable({
         assetUrlById,
         onDatasheetChange: (row, next) =>
           replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next }),
+        onPhotoChange: (row, next) =>
+          replaceHeatPumpRow(controller.onWrite, { ...row, photo_asset_ids: next }),
       }),
       tableSchema,
       rowsComputed: leafSlice.rows_computed,

@@ -65,6 +65,9 @@ class HeatPumpOutdoorEquipRow(RowWithCustomFields):
     seer: NonNegativeFloat | None = None
     ieer: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: dict[str, object] | None = None
 
@@ -98,6 +101,9 @@ class HeatPumpIndoorEquipRow(RowWithCustomFields):
     eer: NonNegativeFloat | None = None
     hspf: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: dict[str, object] | None = None
 
@@ -119,6 +125,9 @@ class HeatPumpOutdoorUnitRow(RowWithCustomFields):
     tag: str = Field(min_length=1, max_length=80)
     outdoor_equip_id: str = Field(pattern=rf"^hpoe_{ULID_SUFFIX_PATTERN}$")
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("tag", mode="before")
@@ -142,6 +151,9 @@ class HeatPumpIndoorUnitRow(RowWithCustomFields):
     linked_erv_unit_id: str | None = Field(default=None, pattern=r"^vent_[A-Za-z0-9_-]+$")
     served_room_ids: list[str] = Field(default_factory=list)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("tag", mode="before")

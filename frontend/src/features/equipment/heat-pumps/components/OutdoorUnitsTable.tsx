@@ -13,6 +13,7 @@ import {
   type SliceTableController,
 } from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
+import { uniqueAttachmentAssetIds } from "../../../assets/lib";
 import { ventilatorsSliceFeature } from "../../api";
 import type { VentilatorRow } from "../../types";
 import { heatPumpOutdoorUnitsSliceFeature } from "../api";
@@ -114,7 +115,12 @@ export function OutdoorUnitsTable({
     [indoorUnits],
   );
   const assetIds = useMemo(
-    () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
+    () =>
+      uniqueAttachmentAssetIds(
+        rows,
+        (row) => row.datasheet_asset_ids,
+        (row) => row.photo_asset_ids,
+      ),
     [rows],
   );
   const assetUrls = useAssetUrls(projectId, assetIds);
@@ -183,6 +189,9 @@ export function OutdoorUnitsTable({
         assetUrlById,
         onDatasheetChange: async (row, next) => {
           await replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next });
+        },
+        onPhotoChange: async (row, next) => {
+          await replaceHeatPumpRow(controller.onWrite, { ...row, photo_asset_ids: next });
         },
         indoorUnits,
         incomingIndoorUnitIdsByRowId,

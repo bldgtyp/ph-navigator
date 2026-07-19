@@ -39,17 +39,21 @@ import {
   APPLIANCE_ENERGY_STAR_COLUMN_ID,
   APPLIANCE_ENERGY_STAR_KEY,
   APPLIANCE_ENERGY_STAR_OPTION_KEY,
+  APPLIANCE_PHOTO_FIELD_KEY,
   APPLIANCE_TYPE_COLUMN_ID,
   APPLIANCE_TYPE_KEY,
   APPLIANCE_TYPE_OPTION_KEY,
   APPLIANCES_STATUS_OPTION_KEY,
   ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+  ELECTRIC_HEATER_PHOTO_FIELD_KEY,
   FAN_DATASHEET_FIELD_KEY,
+  FAN_PHOTO_FIELD_KEY,
   FAN_TYPE_COLUMN_ID,
   FAN_TYPE_KEY,
   FAN_TYPE_OPTION_KEY,
   FANS_STATUS_OPTION_KEY,
   HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+  HOT_WATER_HEATER_PHOTO_FIELD_KEY,
   HOT_WATER_HEATER_TYPE_COLUMN_ID,
   HOT_WATER_HEATER_TYPE_KEY,
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
@@ -57,6 +61,7 @@ import {
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+  HOT_WATER_TANK_PHOTO_FIELD_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
   HOT_WATER_TANK_TYPE_OPTION_KEY,
@@ -67,6 +72,7 @@ import {
   PUMP_DEVICE_TYPE_OPTION_KEY,
   PUMP_INSIDE_OUTSIDE_KEY,
   PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+  PUMP_PHOTO_FIELD_KEY,
   PUMPS_STATUS_OPTION_KEY,
   STATUS_DEFAULT_OPTION_ID,
   STATUS_DISPLAY_NAME,
@@ -86,6 +92,7 @@ import {
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATOR_PHOTO_FIELD_KEY,
   VENTILATORS_TARGET_TABLE_PATH,
   VENTILATORS_STATUS_OPTION_KEY,
 } from "./types";
@@ -208,6 +215,7 @@ export const PUMPS_SCHEMA_CORE_FIELD_KEYS = [
   "notes",
   "link",
   PUMP_DATASHEET_FIELD_KEY,
+  PUMP_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -217,6 +225,7 @@ export const VENTILATORS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   VENTILATOR_DATASHEET_FIELD_KEY,
+  VENTILATOR_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -227,6 +236,7 @@ export const FANS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   FAN_DATASHEET_FIELD_KEY,
+  FAN_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -237,6 +247,7 @@ export const HOT_WATER_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+  HOT_WATER_HEATER_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -247,6 +258,7 @@ export const HOT_WATER_TANKS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  HOT_WATER_TANK_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -255,6 +267,7 @@ export const ELECTRIC_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+  ELECTRIC_HEATER_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -265,6 +278,7 @@ export const APPLIANCES_SCHEMA_CORE_FIELD_KEYS = [
   "url",
   "notes",
   APPLIANCE_DATASHEET_FIELD_KEY,
+  APPLIANCE_PHOTO_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -488,6 +502,7 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("link", "Link", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(PUMP_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(PUMP_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   statusBuiltInFieldDef(),
 ];
 
@@ -534,6 +549,7 @@ export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(VENTILATOR_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(VENTILATOR_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   statusBuiltInFieldDef(),
 ];
 
@@ -566,6 +582,7 @@ export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(FAN_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(FAN_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   statusBuiltInFieldDef(),
 ];
 
@@ -611,6 +628,7 @@ export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(HOT_WATER_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(HOT_WATER_HEATER_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   statusBuiltInFieldDef(),
 ];
 
@@ -657,6 +675,7 @@ export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
     },
   },
   builtInFieldDef(HOT_WATER_TANK_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(HOT_WATER_TANK_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   statusBuiltInFieldDef(),
@@ -671,6 +690,7 @@ export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(ELECTRIC_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(ELECTRIC_HEATER_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   statusBuiltInFieldDef(),
 ];
 
@@ -706,6 +726,7 @@ export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   },
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef(APPLIANCE_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  builtInFieldDef(APPLIANCE_PHOTO_FIELD_KEY, "Site photos", "long_text"),
   builtInFieldDef("notes", "Notes", "long_text"),
   statusBuiltInFieldDef(),
 ];
@@ -888,6 +909,9 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
     [PUMP_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [PUMP_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -954,6 +978,9 @@ export function ventilatorsFieldOverlay(
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     [VENTILATOR_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+    [VENTILATOR_PHOTO_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
@@ -1039,6 +1066,9 @@ export function fansFieldOverlay(fansSlice: FansSlice): Record<string, TableFiel
     [FAN_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [FAN_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1110,6 +1140,9 @@ export function hotWaterHeatersFieldOverlay(
     [HOT_WATER_HEATER_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [HOT_WATER_HEATER_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1172,6 +1205,9 @@ export function hotWaterTanksFieldOverlay(
     [HOT_WATER_TANK_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [HOT_WATER_TANK_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
     url: {
       locked: ["field_type", "delete", "duplicate"],
     },
@@ -1218,6 +1254,12 @@ export function electricHeatersFieldOverlay(): Record<string, TableFieldRenderOv
     },
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [ELECTRIC_HEATER_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
+    [ELECTRIC_HEATER_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
     },
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
@@ -1283,6 +1325,9 @@ export function appliancesFieldOverlay(
     [APPLIANCE_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [APPLIANCE_PHOTO_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
+    },
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
@@ -1314,6 +1359,7 @@ export function emptyPump(): PumpRow {
     notes: null,
     link: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1336,6 +1382,7 @@ export function emptyVentilator(): VentilatorRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1358,6 +1405,7 @@ export function emptyFan(): FanRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1382,6 +1430,7 @@ export function emptyHotWaterHeater(): HotWaterHeaterRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1407,6 +1456,7 @@ export function emptyHotWaterTank(): HotWaterTankRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1425,6 +1475,7 @@ export function emptyElectricHeater(): ElectricHeaterRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1443,6 +1494,7 @@ export function emptyAppliance(): ApplianceRow {
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1956,6 +2008,8 @@ export function pumpsPayloadFromRowDuplicate(
     const clone: PumpRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     pumps.push(normalizePumpForPayload(clone));
@@ -1983,6 +2037,8 @@ export function ventilatorsPayloadFromRowDuplicate(
     const clone: VentilatorRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     ventilators.push(normalizeVentilatorForPayload(clone));
@@ -2010,6 +2066,8 @@ export function fansPayloadFromRowDuplicate(
     const clone: FanRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     fans.push(normalizeFanForPayload(clone));
@@ -2037,6 +2095,8 @@ export function hotWaterHeatersPayloadFromRowDuplicate(
     const clone: HotWaterHeaterRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     hotWaterHeaters.push(normalizeHotWaterHeaterForPayload(clone));
@@ -2064,6 +2124,8 @@ export function hotWaterTanksPayloadFromRowDuplicate(
     const clone: HotWaterTankRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     hotWaterTanks.push(normalizeHotWaterTankForPayload(clone));
@@ -2091,6 +2153,8 @@ export function electricHeatersPayloadFromRowDuplicate(
     const clone: ElectricHeaterRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     electricHeaters.push(normalizeElectricHeaterForPayload(clone));
@@ -2118,6 +2182,8 @@ export function appliancesPayloadFromRowDuplicate(
     const clone: ApplianceRow = {
       ...source,
       id: duplicate.rowId,
+      datasheet_asset_ids: [],
+      photo_asset_ids: [],
       custom_values: { ...source.custom_values, record_id: newName },
     };
     appliances.push(normalizeApplianceForPayload(clone));
@@ -3182,6 +3248,9 @@ function applyWriteToPump(pump: PumpRow, fieldKey: string, value: unknown): Pump
   if (fieldKey === PUMP_DATASHEET_FIELD_KEY) {
     return { ...pump, datasheet_asset_ids: readAttachmentAssetIds(value) };
   }
+  if (fieldKey === PUMP_PHOTO_FIELD_KEY) {
+    return { ...pump, photo_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (PUMP_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(pump, fieldKey, value);
   }
@@ -3202,6 +3271,9 @@ function applyWriteToVentilator(
   if (fieldKey === VENTILATOR_DATASHEET_FIELD_KEY) {
     return { ...ventilator, datasheet_asset_ids: readAttachmentAssetIds(value) };
   }
+  if (fieldKey === VENTILATOR_PHOTO_FIELD_KEY) {
+    return { ...ventilator, photo_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (VENTILATOR_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(ventilator, fieldKey, value);
   }
@@ -3220,6 +3292,9 @@ function applyWriteToFan(fan: FanRow, fieldKey: string, value: unknown): FanRow 
   }
   if (fieldKey === FAN_DATASHEET_FIELD_KEY) {
     return { ...fan, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (fieldKey === FAN_PHOTO_FIELD_KEY) {
+    return { ...fan, photo_asset_ids: readAttachmentAssetIds(value) };
   }
   if (FAN_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(fan, fieldKey, value);
@@ -3244,6 +3319,9 @@ function applyWriteToHotWaterHeater(
   if (fieldKey === HOT_WATER_HEATER_DATASHEET_FIELD_KEY) {
     return { ...heater, datasheet_asset_ids: readAttachmentAssetIds(value) };
   }
+  if (fieldKey === HOT_WATER_HEATER_PHOTO_FIELD_KEY) {
+    return { ...heater, photo_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (HOT_WATER_HEATER_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(heater, fieldKey, value);
   }
@@ -3267,6 +3345,9 @@ function applyWriteToHotWaterTank(
   if (fieldKey === HOT_WATER_TANK_DATASHEET_FIELD_KEY) {
     return { ...tank, datasheet_asset_ids: readAttachmentAssetIds(value) };
   }
+  if (fieldKey === HOT_WATER_TANK_PHOTO_FIELD_KEY) {
+    return { ...tank, photo_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(tank, fieldKey, value);
   }
@@ -3283,6 +3364,9 @@ function applyWriteToElectricHeater(
   }
   if (fieldKey === ELECTRIC_HEATER_DATASHEET_FIELD_KEY) {
     return { ...heater, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (fieldKey === ELECTRIC_HEATER_PHOTO_FIELD_KEY) {
+    return { ...heater, photo_asset_ids: readAttachmentAssetIds(value) };
   }
   if (ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(heater, fieldKey, value);
@@ -3306,6 +3390,9 @@ function applyWriteToAppliance(
   }
   if (fieldKey === APPLIANCE_DATASHEET_FIELD_KEY) {
     return { ...appliance, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
+  if (fieldKey === APPLIANCE_PHOTO_FIELD_KEY) {
+    return { ...appliance, photo_asset_ids: readAttachmentAssetIds(value) };
   }
   if (APPLIANCE_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(appliance, fieldKey, value);
@@ -3511,6 +3598,7 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
     notes: pump.notes?.trim() || null,
     link: pump.link?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(pump.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(pump.photo_asset_ids),
   };
 }
 
@@ -3539,6 +3627,7 @@ function normalizeVentilatorForPayload(ventilator: VentilatorRow): VentilatorRow
     notes: ventilator.notes?.trim() || null,
     url: ventilator.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(ventilator.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(ventilator.photo_asset_ids),
   };
 }
 
@@ -3568,6 +3657,7 @@ function normalizeFanForPayload(fan: FanRow): FanRow {
     notes: fan.notes?.trim() || null,
     url: fan.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(fan.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(fan.photo_asset_ids),
   };
 }
 
@@ -3598,6 +3688,7 @@ function normalizeHotWaterHeaterForPayload(heater: HotWaterHeaterRow): HotWaterH
     notes: heater.notes?.trim() || null,
     url: heater.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(heater.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(heater.photo_asset_ids),
   };
 }
 
@@ -3617,6 +3708,7 @@ function normalizeHotWaterTankForPayload(tank: HotWaterTankRow): HotWaterTankRow
     notes: tank.notes?.trim() || null,
     url: tank.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(tank.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(tank.photo_asset_ids),
   };
 }
 
@@ -3634,6 +3726,7 @@ function normalizeElectricHeaterForPayload(heater: ElectricHeaterRow): ElectricH
     notes: heater.notes?.trim() || null,
     url: heater.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(heater.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(heater.photo_asset_ids),
   };
 }
 
@@ -3656,6 +3749,7 @@ function normalizeApplianceForPayload(appliance: ApplianceRow): ApplianceRow {
     notes: appliance.notes?.trim() || null,
     url: appliance.url?.trim() || null,
     datasheet_asset_ids: readAttachmentAssetIds(appliance.datasheet_asset_ids),
+    photo_asset_ids: readAttachmentAssetIds(appliance.photo_asset_ids),
   };
 }
 

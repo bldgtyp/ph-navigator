@@ -192,6 +192,50 @@ def mark_asset_uploaded(conn: Connection[Any], project_id: UUID, asset_id: str, 
     return dict(row)
 
 
+def mark_converted_asset_uploaded(
+    conn: Connection[Any],
+    project_id: UUID,
+    asset_id: str,
+    *,
+    object_key: str,
+    content_type: str,
+    size_bytes: int,
+    content_hash_sha256: str,
+    r2_etag: str,
+    metadata_patch: dict[str, Any],
+) -> dict[str, Any]:
+    row = conn.execute(
+        f"""
+        UPDATE project_assets
+        SET object_key = %(object_key)s,
+            content_type = %(content_type)s,
+            size_bytes = %(size_bytes)s,
+            content_hash_sha256 = %(content_hash_sha256)s,
+            upload_status = 'uploaded',
+            r2_etag = %(r2_etag)s,
+            uploaded_at = now(),
+            metadata = metadata || %(metadata_patch)s::jsonb
+        WHERE project_id = %(project_id)s
+          AND id = %(asset_id)s
+          AND deleted_at IS NULL
+        RETURNING {ASSET_COLUMNS}
+        """,
+        {
+            "project_id": project_id,
+            "asset_id": asset_id,
+            "object_key": object_key,
+            "content_type": content_type,
+            "size_bytes": size_bytes,
+            "content_hash_sha256": content_hash_sha256.lower(),
+            "r2_etag": r2_etag,
+            "metadata_patch": Jsonb(metadata_patch),
+        },
+    ).fetchone()
+    if row is None:
+        raise LookupError("asset_not_found")
+    return dict(row)
+
+
 def mark_asset_failed(conn: Connection[Any], project_id: UUID, asset_id: str, *, reason: str) -> dict[str, Any]:
     row = conn.execute(
         f"""

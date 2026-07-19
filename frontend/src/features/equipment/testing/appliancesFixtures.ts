@@ -36,6 +36,7 @@ export function buildAppliance(overrides: Partial<ApplianceRow> = {}): Appliance
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "A-1",
       name: "Kitchen refrigerator",

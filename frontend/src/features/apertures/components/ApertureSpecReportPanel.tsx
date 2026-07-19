@@ -22,7 +22,11 @@ import {
 } from "../../../shared/ui/report-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import {
+  DATASHEET_ATTACHMENT_CONFIG,
+  SITE_PHOTO_ATTACHMENT_CONFIG,
+  uniqueAttachmentAssetIds,
+} from "../../assets/lib";
 import {
   lengthUnitLabel,
   psiUnitLabel,
@@ -201,7 +205,13 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     () => visibleRows.find((row) => row.id === useSitesProductId) ?? null,
     [useSitesProductId, visibleRows],
   );
-  const assetIds = expandedRow?.datasheet_asset_ids ?? [];
+  const assetIds = expandedRow
+    ? uniqueAttachmentAssetIds(
+        [expandedRow],
+        (row) => row.datasheet_asset_ids,
+        (row) => row.photo_asset_ids,
+      )
+    : [];
   const assetUrls = useAssetUrls(projectId, assetIds);
   const assetUrlById = useMemo(
     () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
@@ -303,6 +313,27 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                         rowId: row.id,
                         fieldKey: "datasheet_asset_ids",
                         currentAssetIds: row.datasheet_asset_ids,
+                        nextAssetIds,
+                      })
+                    }
+                  />
+                </section>
+                <section className="spec-evidence" aria-label={`${row.name} site photos`}>
+                  <h3>Site photos</h3>
+                  <AttachmentCell
+                    projectId={projectId}
+                    value={row.photo_asset_ids}
+                    config={SITE_PHOTO_ATTACHMENT_CONFIG}
+                    readOnly={!canEdit || row.specification_status === "na" || busy}
+                    assetUrlById={assetUrlById}
+                    variant="card"
+                    showInlineEmptyButton={canEdit && row.specification_status !== "na"}
+                    onChange={(nextAssetIds) =>
+                      onAttachmentChange({
+                        tableKey: productConfig.tableKey,
+                        rowId: row.id,
+                        fieldKey: "photo_asset_ids",
+                        currentAssetIds: row.photo_asset_ids,
                         nextAssetIds,
                       })
                     }
@@ -638,6 +669,12 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
       render: (row) => (
         <AttachmentChipCell count={row.datasheet_asset_ids.length} noun="datasheet" />
       ),
+    },
+    {
+      key: "site_photos",
+      header: "Site photos",
+      width: "80px",
+      render: (row) => <AttachmentChipCell count={row.photo_asset_ids.length} noun="site photo" />,
     },
     {
       key: "status",

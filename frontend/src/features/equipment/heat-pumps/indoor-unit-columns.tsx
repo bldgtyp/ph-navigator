@@ -1,6 +1,6 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import type { AssetUrls } from "../../assets/types";
+import { heatPumpDatasheetColumn, heatPumpPhotoColumn } from "./attachment-columns";
 import type { RoomRow, VentilatorRow } from "../types";
 import {
   HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
@@ -11,15 +11,18 @@ import {
 } from "./field-defs";
 import { roomLabel, ventilatorLabel } from "./lib";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
+import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
 import { statusColumnDef, statusFieldDef } from "./status-column";
 import { type HeatPumpIndoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
 export const INDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const INDOOR_UNIT_PHOTO_FIELD_KEY = "photo_asset_ids";
 
 export function indoorUnitFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   return [
     heatPumpTagField(),
+    displayNameFieldDef(),
     heatPumpLinkedRecordField({
       field_key: "indoor_equip_id",
       display_name: "Equipment",
@@ -48,6 +51,7 @@ export function indoorUnitFieldDefs(options: HeatPumpsSlice["single_select_optio
       max_links: 1,
     }),
     heatPumpAttachmentField(INDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
+    heatPumpAttachmentField(INDOOR_UNIT_PHOTO_FIELD_KEY, "Site photos"),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
   ];
@@ -62,6 +66,7 @@ export function indoorUnitColumnDefs({
   ventilators,
   assetUrlById,
   onDatasheetChange,
+  onPhotoChange,
 }: {
   projectId: string;
   isEditor: boolean;
@@ -69,8 +74,9 @@ export function indoorUnitColumnDefs({
   // human-readable, comma-joined cell values.
   rooms: readonly RoomRow[];
   ventilators: readonly VentilatorRow[];
-  assetUrlById: Map<string, unknown>;
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
   onDatasheetChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
+  onPhotoChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpIndoorUnitRow>[] {
   const roomsById = new Map(rooms.map((room) => [room.id, room]));
   const ventilatorsById = new Map(ventilators.map((ventilator) => [ventilator.id, ventilator]));
@@ -88,6 +94,7 @@ export function indoorUnitColumnDefs({
     return ventilator ? ventilatorLabel(ventilator) : row.linked_erv_unit_id;
   };
   return [
+    displayNameColumnDef<HeatPumpIndoorUnitRow>(),
     {
       id: "tag",
       fieldKey: "tag",
@@ -128,27 +135,20 @@ export function indoorUnitColumnDefs({
       measureText: formatLinkedVentilator,
       defaultWidth: 160,
     },
-    {
-      id: INDOOR_UNIT_DATASHEET_FIELD_KEY,
+    heatPumpDatasheetColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
       fieldKey: INDOOR_UNIT_DATASHEET_FIELD_KEY,
-      header: "Datasheet",
-      accessor: (row) => row.datasheet_asset_ids.join(","),
-      render: (row) => (
-        <AttachmentCell
-          projectId={projectId}
-          value={row.datasheet_asset_ids}
-          config={DATASHEET_ATTACHMENT_CONFIG}
-          readOnly={!isEditor}
-          assetUrlById={assetUrlById as never}
-          onChange={(next) => {
-            if (sameAttachmentAssetIds(row.datasheet_asset_ids, next)) return;
-            return onDatasheetChange(row, next);
-          }}
-        />
-      ),
-      measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
-      defaultWidth: 260,
-    },
+      onChange: onDatasheetChange,
+    }),
+    heatPumpPhotoColumn({
+      projectId,
+      isEditor,
+      assetUrlById,
+      fieldKey: INDOOR_UNIT_PHOTO_FIELD_KEY,
+      onChange: onPhotoChange,
+    }),
     {
       id: "notes",
       fieldKey: "notes",

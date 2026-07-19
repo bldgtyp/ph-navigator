@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation tab — wireframe v2 (2026-07-18)</title>
+<style>
+  :root {
+    --ink: #333; --ink-2: #777; --ink-3: #aaa;
+    --line: #ccc; --line-soft: #e4e4e4;
+    --bg: #fff; --bg-soft: #f6f6f6; --bg-softer: #fbfbfb;
+    --note: #c2185b;
+    --ok: #2e7d32; --miss: #b26a00; --na: #999;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: var(--ink); background: #eee; }
+  .frame { max-width: 1120px; margin: 24px auto 80px; background: var(--bg); border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+  .tag { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 4px;
+         border-radius: 9px; background: var(--note); color:#fff; font-size:11px; font-weight:700; vertical-align: 2px; cursor: default; }
+  .legend { max-width:1120px; margin: 16px auto; padding: 14px 18px; background:#fff; border:1px dashed var(--note); font-size:13px; }
+  .legend b { color: var(--note); }
+  .legend li { margin: 4px 0; }
+
+  /* ---- app chrome ---- */
+  .chrome { border-bottom: 1px solid var(--line); background: var(--bg-soft); padding: 8px 16px; display:flex; gap:16px; align-items:center; color:var(--ink-2); font-size:13px; }
+  .chrome .brand { font-weight: 700; color: var(--ink); }
+  .tabs { display:flex; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 12px; background: var(--bg-softer); }
+  .tabs span { padding: 9px 13px; color: var(--ink-2); border-bottom: 2px solid transparent; }
+  .tabs .active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+
+  /* ---- page head ---- */
+  .pagehead { padding: 18px 22px 12px; display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; }
+  .pagehead h1 { font-size: 20px; margin: 0 auto 0 0; }
+  .rollup { display:flex; gap:8px; }
+  .chip { border:1px solid var(--line); border-radius: 14px; padding: 3px 10px; font-size: 12.5px; background: var(--bg-softer); white-space:nowrap; }
+  .controls { padding: 0 22px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .fchip { border:1px solid var(--line); border-radius: 14px; padding: 3px 10px; font-size:12.5px; color: var(--ink-2); background:#fff; cursor:pointer; }
+  .fchip.on { border-color: var(--ink); color: var(--ink); font-weight:600; background: var(--bg-soft); }
+  .verline { margin-left:auto; font-size: 12px; color: var(--ink-2); }
+  .verline .unsaved { color: var(--miss); font-weight: 600; }
+  .axis-ok { color: var(--ok); } .axis-miss { color: var(--miss); } .axis-na { color: var(--na); }
+
+  /* ---- sections ---- */
+  .section { border-top: 1px solid var(--line); }
+  .sechead { position: sticky; top: 0; background: var(--bg-soft); border-bottom: 1px solid var(--line-soft);
+             padding: 8px 22px; display:flex; align-items:center; gap:10px; z-index: 5; }
+  .sechead h2 { font-size: 14.5px; margin: 0; }
+  .sechead .counts { color: var(--ink-2); font-size: 12.5px; }
+  .howto { margin-left:auto; border:1px solid var(--line); background:#fff; font-size:12px; padding: 3px 10px; cursor:pointer; border-radius: 3px; }
+  .sechead .anchor { color: var(--ink-3); font-size: 12px; cursor:pointer; }
+  .secbody { padding: 12px 22px 18px; display:flex; flex-direction:column; gap:14px; }
+  .stub { padding: 9px 22px; color: var(--ink-2); border-top: 1px dashed var(--line-soft); font-size: 13px; display:flex; gap:10px; align-items:center;}
+  .stub small { color: var(--ink-3); }
+  .stub .howto { margin-left:auto; }
+
+  /* ---- cards + unified 3-column row grammar ---- */
+  .card { border: 1px solid var(--line); background: #fff; }
+  .cardhead { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); background: var(--bg-softer); }
+  .cardhead .cname { font-weight: 700; }
+  .rsub { color: var(--ink-2); font-size: 12.5px; }
+  .rname { font-weight: 600; text-decoration: underline dotted; cursor: pointer; }
+
+  .grid { display:grid; grid-template-columns: minmax(210px,1fr) 130px minmax(210px,290px) 170px; }
+  .g-h { font-size: 11px; text-transform: uppercase; letter-spacing:.05em; color: var(--ink-3);
+         padding: 6px 12px 4px; border-bottom: 1px solid var(--line-soft); }
+  .g-c { padding: 8px 12px; border-bottom: 1px solid var(--line-soft); display:flex; align-items:center; gap:8px; min-height: 56px; flex-wrap:wrap;}
+  .grid > .g-c:nth-last-child(-n+4) { border-bottom: 0; }
+  .g-label small { color: var(--ink-2); display:block; font-size: 12px; }
+  .rowna { color: var(--na); background: var(--bg-softer); }
+
+  select.wf { font-size: 12.5px; padding: 2px 4px; border:1px solid var(--line); background:#fff; color: var(--ink); max-width: 105px;}
+  .dchip { border:1px solid var(--line); border-radius: 12px; padding: 2px 9px; font-size: 12px; background: var(--bg-softer); }
+  .dchip.miss { border-style: dashed; color: var(--miss); }
+  .thumb { width: 50px; height: 40px; background: #e9e9e9; border: 1px solid var(--line);
+           display:flex; align-items:center; justify-content:center; color: var(--ink-3); font-size: 15px; cursor: pointer; }
+  .drop { width: 50px; height: 40px; border: 1.5px dashed var(--line); display:flex; align-items:center; justify-content:center;
+          color: var(--ink-3); font-size: 17px; cursor: pointer; }
+  .needed { border: 1.5px dashed var(--miss); color: var(--miss); font-size: 12px; padding: 5px 9px; }
+  .waived { color: var(--na); font-size: 12px; }
+  .nr { font-size: 11px; color: var(--ink-3); display:flex; align-items:center; gap:4px; width:100%; }
+  .nr input { margin:0; }
+
+  .ministrip { display:flex; flex-direction:column; width: 70px; border:1px solid var(--line); }
+  .ministrip div { height: 8px; }
+
+  /* ---- modals ---- */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display:none; align-items:flex-start; justify-content:center; z-index: 50; }
+  .overlay.open { display:flex; }
+  .modal { margin-top: 6vh; width: min(720px, 94vw); background:#fff; border:1px solid var(--line); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .mhead { display:flex; align-items:center; padding: 12px 16px; border-bottom:1px solid var(--line); gap:8px;}
+  .mhead h3 { margin:0; font-size: 16px; }
+  .mclose { margin-left:auto; cursor:pointer; border:1px solid var(--line); background:#fff; padding: 2px 9px; }
+  .mbody { padding: 14px 16px 18px; display:flex; flex-direction:column; gap: 14px; max-height: 72vh; overflow:auto; }
+  .attr { width:100%; border-collapse: collapse; font-size: 12.5px; }
+  .attr td { border: 1px solid var(--line-soft); padding: 5px 8px; }
+  .attr td:first-child { width: 38%; color: var(--ink-2); background: var(--bg-softer); }
+  .msec h4 { margin: 0 0 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing:.04em; color: var(--ink-2); }
+  .strip { display:flex; gap:6px; flex-wrap:wrap; }
+
+  /* directions modal content */
+  .dir-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: 12px; }
+  .dir-card { border:1px solid var(--line-soft); background:#fff; }
+  .dir-card h5 { margin: 8px 10px 0; font-size: 12.5px; }
+  .dir-card ul { margin: 6px 10px 8px; padding-left: 18px; font-size: 12.5px; }
+  .dir-img { height: 100px; background: repeating-linear-gradient(45deg,#eee,#eee 8px,#f7f7f7 8px,#f7f7f7 16px);
+             display:flex; align-items:center; justify-content:center; color:var(--ink-3); font-size:12px; border-top:1px solid var(--line-soft); }
+  .dir-note { font-size: 12.5px; color: var(--ink-2); }
+
+  .modebar { position: fixed; top: 10px; right: 10px; z-index: 60; background:#fff; border:1px solid var(--note);
+             padding: 6px 10px; font-size: 12.5px; display:flex; gap:8px; align-items:center; }
+  body.viewer .editor-only { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="modebar">
+  <b style="color:var(--note)">WIREFRAME v2</b>
+  <label><input type="radio" name="mode" checked onclick="document.body.classList.remove('viewer')"> Editor (Ed/John)</label>
+  <label><input type="radio" name="mode" onclick="document.body.classList.add('viewer')"> Viewer (contractor/certifier)</label>
+</div>
+
+<div class="frame">
+
+  <div class="chrome"><span class="brand">PH-Navigator</span><span>SEAVIEW-RETRO-2026</span><span style="margin-left:auto">v4 · SI ▾ · ed_may</span></div>
+  <div class="tabs">
+    <span>Status</span><span>Apertures</span><span>Envelope</span><span>Spaces</span><span>Equipment</span>
+    <span>Thermal Bridges</span><span>Model</span><span class="active">Documentation</span>
+  </div>
+
+  <div class="pagehead">
+    <h1>Documentation</h1>
+    <div class="rollup">
+      <span class="chip">Spec <b class="axis-ok">24</b>/31</span>
+      <span class="chip">Datasheets <b class="axis-miss">18</b>/31</span>
+      <span class="chip">Photos <b class="axis-miss">12</b>/31</span>
+    </div>
+  </div>
+  <div class="controls">
+    <span class="fchip on">All records</span>
+    <span class="fchip">Missing photos</span>
+    <span class="fchip">Missing datasheets</span>
+    <span class="fchip">Spec pending</span>
+    <span class="verline">Viewing saved v4 (2026-07-12)
+      <span class="unsaved editor-only"> · includes unsaved changes — Save to publish</span></span>
+  </div>
+
+  <!-- ENVELOPE -->
+  <div class="section" id="envelope">
+    <div class="sechead">
+      <h2>Envelope — Walls</h2><span class="counts">3 assemblies · Spec 6/7 · Photos 3/7 · Datasheets 5/7</span>
+      <button class="howto" onclick="openModal('dirWalls')">📖 How to photograph — Walls</button> <span class="tag">1</span>
+      <span class="anchor">🔗 #walls</span>
+    </div>
+    <div class="secbody">
+
+      <div class="card">
+        <div class="cardhead">
+          <div class="ministrip"><div style="background:#bbb"></div><div style="background:#ddd"></div><div style="background:#999"></div></div>
+          <span class="cname">WALL-C3</span>
+          <span class="rsub">3 layers · 5 segments · 3 unique materials <span class="tag">2</span></span>
+        </div>
+        <div class="grid">
+          <div class="g-h">Material</div><div class="g-h">Spec</div><div class="g-h">Photos</div><div class="g-h">Datasheet</div>
+
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">Cellulose (dense-pack)</span><small>used in 3 segments — photos apply to all <span class="tag">2</span></small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option><option>Needed</option><option>Question</option><option>N/A</option></select><span class="rsub axis-ok viewer-only">Complete</span></div>
+          <div class="g-c"><div class="thumb">📷</div><div class="thumb">📷</div><div class="drop editor-only">+</div>
+            <label class="nr editor-only"><input type="checkbox"> not required <span class="tag">3</span></label></div>
+          <div class="g-c"><span class="dchip">📄 1</span>
+            <span class="nr">shared project-wide <span class="tag">7</span></span>
+            <label class="nr editor-only"><input type="checkbox"> not required</label></div>
+
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">Intello Plus membrane</span><small>used in 1 segment</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option></select></div>
+          <div class="g-c"><span class="needed">Photo needed</span><div class="drop editor-only">+</div>
+            <label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip miss">📄 Missing</span>
+            <label class="nr editor-only"><input type="checkbox"> not required</label></div>
+
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">Gypsum Board</span><small>used in 2 segments</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option></select></div>
+          <div class="g-c"><span class="waived">not required ✓</span>
+            <label class="nr editor-only"><input type="checkbox" checked> not required</label></div>
+          <div class="g-c"><span class="waived">not required ✓</span>
+            <label class="nr editor-only"><input type="checkbox" checked> not required</label></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardhead">
+          <div class="ministrip"><div style="background:#ccc"></div><div style="background:#aaa"></div></div>
+          <span class="cname">WALL-SE-30a</span>
+          <span class="rsub">2 layers · 2 unique materials</span>
+        </div>
+        <div class="grid">
+          <div class="g-h">Material</div><div class="g-h">Spec</div><div class="g-h">Photos</div><div class="g-h">Datasheet</div>
+          <div class="g-c g-label rowna"><span class="rname">(TBD product)</span><small>Spec N/A — all axes off <span class="tag">4</span></small></div>
+          <div class="g-c rowna"><span class="waived">N/A</span></div>
+          <div class="g-c rowna"><span class="waived">n/a</span></div>
+          <div class="g-c rowna"><span class="waived">n/a</span></div>
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">Mineral Wool Board</span><small>used in 1 segment</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Question</option></select></div>
+          <div class="g-c"><div class="thumb">📷</div><div class="drop editor-only">+</div><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip">📄 2</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="stub">▸ Envelope — Floors <small>(2 assemblies · Photos 2/4)</small><button class="howto" onclick="openModal('dirWalls')">📖 How to photograph — Floors</button></div>
+    <div class="stub">▸ Envelope — Roofs <small>(1 assembly · Photos 0/3)</small><button class="howto" onclick="openModal('dirWalls')">📖 How to photograph — Roofs</button></div>
+  </div>
+
+  <!-- EQUIPMENT -->
+  <div class="section" id="equipment">
+    <div class="sechead">
+      <h2>Equipment — Ventilators</h2><span class="counts">2 records · Spec 2/2 · Photos 1/2 · Datasheets 1/2</span>
+      <button class="howto" onclick="openModal('dirVent')">📖 How to photograph — Ventilators</button>
+      <span class="anchor">🔗 #ventilators</span>
+    </div>
+    <div class="secbody">
+      <div class="card">
+        <div class="grid">
+          <div class="g-h">Record</div><div class="g-h">Spec</div><div class="g-h">Photos</div><div class="g-h">Datasheet</div>
+
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">ERV-01 — Basement Unit</span><small>Zehnder ComfoAir 350</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option><option>Needed</option><option>Question</option><option>N/A</option></select></div>
+          <div class="g-c"><div class="thumb">📷</div><div class="thumb">📷</div><div class="thumb">📷</div><div class="drop editor-only">+</div>
+            <label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip">📄 2</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">ERV-02 — Attic Unit</span><small>Zehnder ComfoAir 200</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Needed</option></select></div>
+          <div class="g-c"><span class="needed">Photos needed</span><div class="drop editor-only">+</div>
+            <label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip miss">📄 Missing</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sechead">
+      <h2>Equipment — Heat Pumps</h2><span class="counts">4 records · Spec 3/4 · Photos 2/4 · Datasheets 4/4</span>
+      <button class="howto" onclick="openModal('dirVent')">📖 How to photograph — Heat Pumps</button>
+      <span class="anchor">🔗 #heat-pumps</span>
+    </div>
+    <div class="secbody">
+      <div class="card">
+        <div class="cardhead"><span class="rsub"><b>Outdoor Units</b> (2) <span class="tag">5</span></span></div>
+        <div class="grid">
+          <div class="g-h">Record</div><div class="g-h">Spec</div><div class="g-h">Photos</div><div class="g-h">Datasheet</div>
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">HP-OU-01 — North Yard</span><small>Mitsubishi PUZ</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option></select></div>
+          <div class="g-c"><div class="thumb">📷</div><div class="drop editor-only">+</div><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip">📄 1</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">HP-OU-02 — South Yard</span><small>Mitsubishi PUZ</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option></select></div>
+          <div class="g-c"><span class="waived">not required ✓</span><label class="nr editor-only"><input type="checkbox" checked> not required</label></div>
+          <div class="g-c"><span class="dchip">📄 1</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+        </div>
+      </div>
+      <div class="stub" style="border:0;padding:6px 0 0">▸ Indoor Units (2) <small>· Photos 1/2</small></div>
+    </div>
+
+    <div class="stub">▸ Equipment — Pumps <small>(1 record · all complete ✓)</small><button class="howto">📖</button></div>
+    <div class="stub">▸ Equipment — Fans <small>(2 records · Photos 0/2)</small><button class="howto">📖</button></div>
+    <div class="stub">▸ Equipment — Hot Water · Electric Heaters · Appliances <small>(6 records)</small><button class="howto">📖</button></div>
+  </div>
+
+  <!-- APERTURES + TB -->
+  <div class="section" id="apertures">
+    <div class="sechead">
+      <h2>Apertures — Frames &amp; Glazings</h2><span class="counts">6 records · Photos 0/6</span>
+      <button class="howto" onclick="openModal('dirVent')">📖 How to photograph — Windows</button>
+      <span class="anchor">🔗 #apertures</span>
+    </div>
+    <div class="secbody">
+      <div class="card">
+        <div class="grid">
+          <div class="g-h">Record</div><div class="g-h">Spec</div><div class="g-h">Photos</div><div class="g-h">Datasheet</div>
+          <div class="g-c g-label"><span class="rname" onclick="openModal('mRec')">FRAME-01 — Typ. Fixed</span><small>Schüco AWS 90</small></div>
+          <div class="g-c"><select class="wf editor-only"><option>Complete</option></select></div>
+          <div class="g-c"><span class="needed">Photos needed</span><div class="drop editor-only">+</div><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+          <div class="g-c"><span class="dchip">📄 1</span><label class="nr editor-only"><input type="checkbox"> not required</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="stub">▸ Thermal Bridges <small>(4 records · Photos 1/4)</small><button class="howto">📖</button></div>
+  </div>
+
+</div>
+
+<!-- directions modal: WALLS -->
+<div class="overlay" id="dirWalls" onclick="if(event.target===this)closeModal('dirWalls')">
+  <div class="modal">
+    <div class="mhead"><h3>📖 How to photograph — Wall assemblies</h3> <span class="tag">1</span><button class="mclose" onclick="closeModal('dirWalls')">✕ esc</button></div>
+    <div class="mbody">
+      <p class="dir-note">Take these photos for <b>each wall assembly</b> listed below the button you clicked. When in doubt: more photos, wider + close-up pairs, always before close-in.</p>
+      <div class="dir-grid">
+        <div class="dir-card"><h5>1 · Insulation installed</h5>
+          <ul><li>Batt / dense-pack / continuous — installed in place.</li><li>Include the product wrapper or stamp showing brand &amp; type.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+        <div class="dir-card"><h5>2 · Thickness with ruler</h5>
+          <ul><li>Hold a <b>ruler or tape</b> against the installed insulation.</li><li>Numbers must be legible in the frame.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+        <div class="dir-card"><h5>3 · Air barrier &amp; sealing</h5>
+          <ul><li>Membranes or liquid-applied layers installed.</li><li>Show the joint / penetration sealing detail up close.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+        <div class="dir-card"><h5>4 · Framing member</h5>
+          <ul><li>Stud / framing depth with ruler in the image.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- directions modal: VENTILATORS -->
+<div class="overlay" id="dirVent" onclick="if(event.target===this)closeModal('dirVent')">
+  <div class="modal">
+    <div class="mhead"><h3>📖 How to photograph — Ventilators</h3><button class="mclose" onclick="closeModal('dirVent')">✕ esc</button></div>
+    <div class="mbody">
+      <p class="dir-note">Take these photos for <b>each ventilation unit</b> (ERV-01, ERV-02, …). One set per unit — the photos attach to that specific record.</p>
+      <div class="dir-grid">
+        <div class="dir-card"><h5>1 · Nameplate</h5>
+          <ul><li>Manufacturer label with model + serial number legible.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+        <div class="dir-card"><h5>2 · Installed in place</h5>
+          <ul><li>Whole unit mounted, before ceiling/soffit close-in.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+        <div class="dir-card"><h5>3 · Duct connections</h5>
+          <ul><li>Supply/exhaust/outdoor/return connections + insulation on the cold-side ducts.</li></ul>
+          <div class="dir-img">[example photo]</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- record-detail modal -->
+<div class="overlay" id="mRec" onclick="if(event.target===this)closeModal('mRec')">
+  <div class="modal">
+    <div class="mhead"><h3>Ventilator: ERV-01 — Basement Unit</h3> <span class="tag">6</span><button class="mclose" onclick="closeModal('mRec')">✕ esc</button></div>
+    <div class="mbody">
+      <div class="msec"><h4>Record attributes (read-only projection)</h4>
+        <table class="attr">
+          <tr><td>Display Name</td><td>ERV-01 — Basement Unit</td></tr>
+          <tr><td>Manufacturer / Model</td><td>Zehnder / ComfoAir 350</td></tr>
+          <tr><td>Airflow (design)</td><td>295 m³/h</td></tr>
+          <tr><td>HR / MR Efficiency</td><td>84% / 73%</td></tr>
+          <tr><td>Electrical</td><td>0.31 Wh/m³</td></tr>
+          <tr><td>Notes</td><td>Confirmed w/ mech engineer 2026-06-30</td></tr>
+        </table>
+      </div>
+      <div class="msec"><h4>Datasheets</h4><div class="strip"><div class="thumb">PDF</div><div class="thumb">PDF</div></div></div>
+      <div class="msec"><h4>Site photos</h4>
+        <div class="strip"><div class="thumb">📷</div><div class="thumb">📷</div><div class="thumb">📷</div><div class="drop editor-only">+</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Wireframe v2 — changes from v1 + annotations</b>
+  <ol>
+    <li><b>1</b> — Directions moved <i>into each category</i>: a "📖 How to photograph — X" button per section header opens a category-specific modal (walls show wall shots, ventilators show ventilator shots). Never expanded by default; explicit numbered shot-list per record type.</li>
+    <li><b>2</b> — Envelope dedup: one row per <b>unique material per assembly</b> (cellulose in 3 segments = 1 row; upload fans out to all its segments in that assembly — same as Materials-page use-site grouping).</li>
+    <li><b>3</b> — Unified 3-column row grammar everywhere: <b>Spec · Photos · Datasheet</b>, each of Photos/Datasheet with an editor-only "not required" checkbox (the per-axis waiver). Checked → cell renders as muted "not required ✓" and counts as satisfied in the rollup.</li>
+    <li><b>4</b> — Spec = N/A still disables both axes wholesale (row goes muted).</li>
+    <li><b>5</b> — Heat Pumps keep leaf sub-heads inside one section (Status-tab disclosure parity).</li>
+    <li><b>6</b> — Record modal simplified: attributes + evidence read-only (waivers now live inline in the grid, so the modal no longer carries them). Exact per-table attribute list still an open item.</li>
+    <li><b>7</b> — Envelope datasheet cells are <b>material-level projections</b>: one datasheet array per material, project-wide. Supplying the cellulose datasheet from any assembly row updates every assembly that uses cellulose instantly (same record). Photos remain per material-per-assembly. The material-primary counterpart view already exists as the Envelope → Materials sub-tab.</li>
+  </ol>
+  <b>Toggle Editor/Viewer</b> (top-right): viewers lose selects, drop zones, and waiver checkboxes; keep thumbnails, chips, 📖 directions, and the record modal.
+</div>
+
+<script>
+  function openModal(id){ document.getElementById(id).classList.add('open'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+</script>
+</body>
+</html>

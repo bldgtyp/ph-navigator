@@ -16,8 +16,9 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedPumps } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   inverseColumnHeader,
@@ -35,6 +36,7 @@ import {
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
   PUMP_INSIDE_OUTSIDE_KEY,
+  PUMP_PHOTO_FIELD_KEY,
   type InverseLinkField,
   type PumpRow,
   type PumpsSlice,
@@ -79,14 +81,19 @@ export function PumpsTable({
   resolveInverseLinkLabel?: (field: InverseLinkField, rowId: string) => string | null;
 } & CustomFieldTableActions<PumpRow>) {
   const sortedRows = useMemo(() => sortedPumps(pumpsSlice.pumps), [pumpsSlice.pumps]);
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((pump) => pump.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (pump) => pump.datasheet_asset_ids,
+        (pump) => pump.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const inverseLinkFields = pumpsSlice.inverse_link_fields;
@@ -261,12 +268,26 @@ export function PumpsTable({
         header: fieldDefByKey.get(PUMP_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (pump) => pump.datasheet_asset_ids,
         getRowId: (pump) => pump.id,
         onWrite,
+      }),
+      attachmentColumn({
+        id: PUMP_PHOTO_FIELD_KEY,
+        fieldKey: PUMP_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(PUMP_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (pump) => pump.photo_asset_ids,
+        getRowId: (pump) => pump.id,
+        onWrite,
+        measureLabel: "site photos",
       }),
       statusColumn<PumpRow>(fieldDefByKey),
     ];
@@ -286,7 +307,7 @@ export function PumpsTable({
     return [...baseColumns, ...customColumns, ...inverseColumns];
   }, [
     customColumns,
-    datasheetUrlById,
+    attachmentUrlById,
     fieldDefByKey,
     isEditor,
     onInversePillClick,

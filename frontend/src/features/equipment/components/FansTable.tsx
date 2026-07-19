@@ -13,8 +13,9 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedFans } from "../lib";
+import { uniqueAttachmentAssetIds } from "../../assets/lib";
 import { statusColumn } from "../lib/statusColumn";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -23,6 +24,7 @@ import {
 } from "../../../shared/ui/data-table/feature";
 import {
   FAN_DATASHEET_FIELD_KEY,
+  FAN_PHOTO_FIELD_KEY,
   FAN_TYPE_COLUMN_ID,
   FAN_TYPE_KEY,
   type FanRow,
@@ -62,14 +64,19 @@ export function FansTable({
   focusRowId?: string | null;
 } & CustomFieldTableActions<FanRow>) {
   const sortedRows = useMemo(() => sortedFans(fansSlice.fans), [fansSlice.fans]);
-  const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((fan) => fan.datasheet_asset_ids))),
+  const attachmentAssetIds = useMemo(
+    () =>
+      uniqueAttachmentAssetIds(
+        sortedRows,
+        (fan) => fan.datasheet_asset_ids,
+        (fan) => fan.photo_asset_ids,
+      ),
     [sortedRows],
   );
-  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
-  const datasheetUrlById = useMemo(
-    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
-    [datasheetUrls.data],
+  const attachmentUrls = useAssetUrls(projectId, attachmentAssetIds);
+  const attachmentUrlById = useMemo(
+    () => new Map((attachmentUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [attachmentUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -200,19 +207,33 @@ export function FansTable({
         header: fieldDefByKey.get(FAN_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
         projectId,
         isEditor,
-        assetUrlById: datasheetUrlById,
+        assetUrlById: attachmentUrlById,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (fan) => fan.datasheet_asset_ids,
         getRowId: (fan) => fan.id,
         onWrite,
       }),
+      attachmentColumn({
+        id: FAN_PHOTO_FIELD_KEY,
+        fieldKey: FAN_PHOTO_FIELD_KEY,
+        header: fieldDefByKey.get(FAN_PHOTO_FIELD_KEY)?.display_name ?? "Site photos",
+        projectId,
+        isEditor,
+        assetUrlById: attachmentUrlById,
+        config: SITE_PHOTO_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (fan) => fan.photo_asset_ids,
+        getRowId: (fan) => fan.id,
+        onWrite,
+        measureLabel: "site photos",
+      }),
       statusColumn<FanRow>(fieldDefByKey),
       ...customColumns,
     ],
     [
       customColumns,
-      datasheetUrlById,
+      attachmentUrlById,
       fieldDefByKey,
       isEditor,
       onWrite,

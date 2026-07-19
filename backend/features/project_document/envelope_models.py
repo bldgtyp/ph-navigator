@@ -161,6 +161,7 @@ class AssemblySegment(BaseModel):
     steel_stud_spacing_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     project_material_id: str | None = Field(default=None, pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_not_required: bool = False
     use_site_notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("use_site_notes", mode="before")
@@ -248,6 +249,7 @@ class ProjectMaterial(BaseModel):
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("name", "category", mode="before")
@@ -297,6 +299,9 @@ class ProjectGlazing(BaseModel):
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("name", mode="before")
@@ -354,6 +359,9 @@ class ProjectFrame(BaseModel):
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None
 
     @field_validator("name", mode="before")

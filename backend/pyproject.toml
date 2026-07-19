@@ -29,6 +29,7 @@ dependencies = [
     "ladybug-core>=0.44.49",
     "openpyxl>=3.1.5",
     "honeybee-ref==0.2.1",
+    "pillow-heif>=1.4.0",
 ]
 
 [dependency-groups]

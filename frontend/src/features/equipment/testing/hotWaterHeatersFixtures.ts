@@ -35,6 +35,7 @@ export function buildHotWaterHeater(overrides: Partial<HotWaterHeaterRow> = {}):
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "HWH-1",
       name: "DHW heater",

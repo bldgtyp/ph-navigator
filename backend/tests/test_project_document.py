@@ -291,6 +291,8 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
         "_upgrade_v1_to_v2",
         "_upgrade_v2_to_v3",
         "_upgrade_v3_to_v4",
+        "_upgrade_v4_to_v5",
+        "_upgrade_v5_to_v6",
     )
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
@@ -327,7 +329,13 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
     field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
     assert result.original_schema_version == 1
     assert result.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert result.applied_steps == ("_upgrade_v1_to_v2", "_upgrade_v2_to_v3", "_upgrade_v3_to_v4")
+    assert result.applied_steps == (
+        "_upgrade_v1_to_v2",
+        "_upgrade_v2_to_v3",
+        "_upgrade_v3_to_v4",
+        "_upgrade_v4_to_v5",
+        "_upgrade_v5_to_v6",
+    )
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
         "ceiling_height_m",
@@ -364,7 +372,12 @@ def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields()
     pump_keys = [field.field_key for field in result.document.tables.equipment.pumps.field_defs]
     ventilator_keys = [field.field_key for field in result.document.tables.equipment.ervs.field_defs]
     assert result.original_schema_version == 2
-    assert result.applied_steps == ("_upgrade_v2_to_v3", "_upgrade_v3_to_v4")
+    assert result.applied_steps == (
+        "_upgrade_v2_to_v3",
+        "_upgrade_v3_to_v4",
+        "_upgrade_v4_to_v5",
+        "_upgrade_v5_to_v6",
+    )
     assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
         pump_keys
     )
@@ -387,8 +400,44 @@ def test_project_document_v3_upgrade_adds_room_ventilator_field() -> None:
 
     field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
     assert result.original_schema_version == 3
-    assert result.applied_steps == ("_upgrade_v3_to_v4",)
+    assert result.applied_steps == ("_upgrade_v3_to_v4", "_upgrade_v4_to_v5", "_upgrade_v5_to_v6")
     assert field_keys[field_keys.index("space_type_id") + 1] == "ventilator_id"
+
+
+def test_project_document_v4_upgrade_adds_heat_pump_display_name_and_backfills_from_tag() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 4
+    heat_pumps = cast(
+        dict[str, Any], cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["equipment"])["heat_pumps"]
+    )
+    for leaf_name in ("outdoor_equip", "indoor_equip", "outdoor_units", "indoor_units"):
+        leaf = cast(dict[str, Any], heat_pumps[leaf_name])
+        leaf["field_defs"] = [
+            field for field in cast(list[dict[str, Any]], leaf["field_defs"]) if field["field_key"] != "name"
+        ]
+    outdoor_equip = cast(dict[str, Any], heat_pumps["outdoor_equip"])
+    outdoor_equip["rows"] = [
+        {"id": "hpoe_01ARZ3NDEKTSV4RRFFQ69G5FAV", "tag": "ASHP-1", "custom_values": {}},
+        {
+            "id": "hpoe_01ARZ3NDEKTSV4RRFFQ69G5FAW",
+            "tag": "ASHP-2",
+            "custom_values": {"name": "Main House Heat Pump"},
+        },
+    ]
+
+    result = upgrade_project_document(raw)
+
+    assert result.original_schema_version == 4
+    assert result.applied_steps == ("_upgrade_v4_to_v5", "_upgrade_v5_to_v6")
+    leaves = result.document.tables.equipment.heat_pumps
+    for envelope in (leaves.outdoor_equip, leaves.indoor_equip, leaves.outdoor_units, leaves.indoor_units):
+        field_keys = [field.field_key for field in envelope.field_defs]
+        assert field_keys[field_keys.index("record_id") + 1] == "name"
+    rows = leaves.outdoor_equip.rows
+    assert rows[0].custom_values["name"] == "ASHP-1"
+    assert rows[1].custom_values["name"] == "Main House Heat Pump"
 
 
 def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:
@@ -468,6 +517,7 @@ def test_first_rooms_replace_lazily_creates_draft(clean_document_tables: None) -
 def test_rooms_replace_emits_full_write_timing_event(
     clean_document_tables: None,
     caplog: pytest.LogCaptureFixture,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -484,8 +534,30 @@ def test_rooms_replace_emits_full_write_timing_event(
 
     assert response.status_code == 200
     record = next(
-        record for record in caplog.records if getattr(record, "event", None) == "project_document.write_timing"
+        (record for record in caplog.records if getattr(record, "event", None) == "project_document.write_timing"),
+        None,
     )
+    if record is None:
+        output = capsys.readouterr().out
+        assert "project_document.write_timing" in output
+        assert f"project_id={project_id}" in output
+        assert f"version_id={version_id}" in output
+        assert "table_name=rooms" in output
+        for field in (
+            "version_parse_ms",
+            "draft_parse_ms",
+            "payload_parse_ms",
+            "apply_ms",
+            "outgoing_validate_ms",
+            "asset_check_ms",
+            "serialize_ms",
+            "sql_ms",
+            "response_build_ms",
+            "txn_ms",
+            "request_ms",
+        ):
+            assert f"{field}=" in output
+        return
     payload = cast(dict[str, object], record.msg)
     assert payload["project_id"] == str(project_id)
     assert payload["version_id"] == str(version_id)

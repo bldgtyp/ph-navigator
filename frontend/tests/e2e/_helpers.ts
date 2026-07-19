@@ -39,6 +39,14 @@ export async function signIn(
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
+/** Sign in as the dedicated local/CI e2e agent account. */
+export async function signInForAgent(page: Page): Promise<void> {
+  await signIn(page, {
+    email: process.env.E2E_EMAIL ?? "codex@example.com",
+    password: process.env.E2E_PASSWORD ?? "password",
+  });
+}
+
 export async function createProject(
   page: Page,
   options: { name: string; btNumber: string; client?: string },

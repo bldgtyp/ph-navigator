@@ -3,6 +3,7 @@ import { tableFieldDef } from "../../testing/testFixtures";
 import { buildEmptyOutdoorEquipRow, heatPumpOutdoorEquipPayloadBuilders } from "../lib";
 import type { HeatPumpOutdoorEquipSlice } from "../types";
 import { STATUS_DEFAULT_OPTION_ID, STATUS_FIELD_KEY } from "../../types";
+import { NAME_FIELD_KEY } from "../name-column";
 
 describe("heat pump payload builders", () => {
   test("routes custom value and linked-record writes through the custom bags", () => {
@@ -72,6 +73,30 @@ describe("heat pump payload builders", () => {
     expect(payload.outdoor_equip[0]).not.toHaveProperty(STATUS_FIELD_KEY);
   });
 
+  test("display-name cell writes round-trip into custom_values.name, not a top-level column", () => {
+    const slice = outdoorEquipSlice({
+      outdoor_equip: [outdoorEquipRow({ id: "hpoe_a" })],
+      field_defs: [
+        tableFieldDef({
+          field_key: NAME_FIELD_KEY,
+          display_name: "Display Name",
+          field_type: "short_text",
+          origin: "built_in",
+        }),
+      ],
+    });
+
+    const payload = heatPumpOutdoorEquipPayloadBuilders.fromCellWrites(
+      slice,
+      [{ rowId: "hpoe_a", fieldKey: NAME_FIELD_KEY, value: "Main House Heat Pump" }],
+      {},
+      {},
+    );
+
+    expect(payload.outdoor_equip[0]?.custom_values?.[NAME_FIELD_KEY]).toBe("Main House Heat Pump");
+    expect(payload.outdoor_equip[0]).not.toHaveProperty(NAME_FIELD_KEY);
+  });
+
   test("carries inline single-select option deltas into the replace payload", () => {
     const slice = outdoorEquipSlice({
       single_select_options: {
@@ -120,10 +145,34 @@ describe("heat pump payload builders", () => {
     );
   });
 
+  test("routes attachment writes to datasheet and photo asset arrays", () => {
+    const slice = outdoorEquipSlice({
+      outdoor_equip: [outdoorEquipRow({ id: "hpoe_a" })],
+    });
+
+    const payload = heatPumpOutdoorEquipPayloadBuilders.fromCellWrites(
+      slice,
+      [
+        { rowId: "hpoe_a", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+        { rowId: "hpoe_a", fieldKey: "photo_asset_ids", value: ["asset_photo_1"] },
+      ],
+      {},
+      {},
+    );
+
+    expect(payload.outdoor_equip[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(payload.outdoor_equip[0]?.photo_asset_ids).toEqual(["asset_photo_1"]);
+  });
+
   test("applies shared row insert, delete, and duplicate operations", () => {
     const slice = outdoorEquipSlice({
       outdoor_equip: [
-        outdoorEquipRow({ id: "hpoe_a", tag: "OE-A" }),
+        outdoorEquipRow({
+          id: "hpoe_a",
+          tag: "OE-A",
+          datasheet_asset_ids: ["asset_pdf_source"],
+          photo_asset_ids: ["asset_photo_source"],
+        }),
         outdoorEquipRow({ id: "hpoe_b", tag: "OE-B" }),
       ],
     });
@@ -162,6 +211,8 @@ describe("heat pump payload builders", () => {
     ]);
     expect(duplicated.outdoor_equip.map((row) => row.id)).toEqual(["hpoe_a", "hpoe_dup", "hpoe_b"]);
     expect(duplicated.outdoor_equip[1]?.tag).toBe("OE-A (copy)");
+    expect(duplicated.outdoor_equip[1]?.datasheet_asset_ids).toEqual([]);
+    expect(duplicated.outdoor_equip[1]?.photo_asset_ids).toEqual([]);
 
     const deleted = heatPumpOutdoorEquipPayloadBuilders.fromRowDelete(slice, [
       { rowId: "hpoe_a", row: sourceRow, anchorRowId: null },

@@ -21,6 +21,7 @@ export type ProjectMaterialUseSite = {
   segment_order: number;
   use_site_notes: string | null;
   photo_asset_ids: string[];
+  photo_not_required?: boolean;
 };
 
 export type ProjectMaterial = {
@@ -37,6 +38,7 @@ export type ProjectMaterial = {
   comments: string | null;
   specification_status: SpecificationStatus;
   datasheet_asset_ids: string[];
+  datasheet_not_required?: boolean;
   catalog_origin: CatalogOrigin | null;
   use_sites: ProjectMaterialUseSite[];
 };
@@ -49,6 +51,7 @@ export type AssemblySegment = {
   steel_stud_spacing_mm: number | null;
   project_material_id: string | null;
   photo_asset_ids: string[];
+  photo_not_required?: boolean;
   use_site_notes: string | null;
 };
 
@@ -231,6 +234,7 @@ export type EnvelopeCommand =
       url?: string | null;
       comments?: string | null;
       specification_status?: SpecificationStatus | null;
+      datasheet_not_required?: boolean | null;
     }
   | {
       kind: "update_segment_use_site_notes";

@@ -31,6 +31,11 @@ const EnvelopePage = lazy(() =>
 const ModelTab = lazy(() =>
   import("../../model_viewer/routes/ModelTab").then((module) => ({ default: module.ModelTab })),
 );
+const DocumentationPage = lazy(() =>
+  import("../../documentation/routes/DocumentationPage").then((module) => ({
+    default: module.DocumentationPage,
+  })),
+);
 
 // Lazy-loaded so recharts (monthly graphs) stays out of the initial bundle,
 // matching the ModelTab/three.js split.
@@ -68,6 +73,11 @@ const PROJECT_TAB_MODULES: Record<
     loadingLabel: TAB_LABELS["thermal-bridges"],
   },
   model: { Component: ModelTab, className: "model-tab", loadingLabel: "model viewer" },
+  documentation: {
+    Component: DocumentationPage,
+    className: "documentation-page",
+    loadingLabel: TAB_LABELS.documentation,
+  },
 };
 
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {

@@ -14,6 +14,11 @@ from features.project_document.aperture_commands.service import (
     apply_aperture_command_to_draft,
 )
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.documentation_summary import (
+    ProjectDocumentationSummaryResponse,
+    get_draft_documentation_summary,
+    get_saved_documentation_summary,
+)
 from features.project_document.models import (
     DiscardDraftResponse,
     ProjectDiffResponse,
@@ -90,6 +95,14 @@ def get_saved_status_summary_route(
     return get_saved_status_summary(version_id, access)
 
 
+@router.get("/document/documentation-summary", response_model=ProjectDocumentationSummaryResponse)
+def get_saved_documentation_summary_route(
+    version_id: UUID,
+    access: ProjectViewAccess,
+) -> ProjectDocumentationSummaryResponse:
+    return get_saved_documentation_summary(version_id, access)
+
+
 @router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
 def get_saved_table(
     version_id: UUID,
@@ -119,6 +132,14 @@ def get_draft_status_summary_route(
     access: ProjectEditAccess,
 ) -> ProjectStatusSummaryResponse:
     return get_draft_status_summary(version_id, access)
+
+
+@router.get("/draft/documentation-summary", response_model=ProjectDocumentationSummaryResponse)
+def get_draft_documentation_summary_route(
+    version_id: UUID,
+    access: ProjectEditAccess,
+) -> ProjectDocumentationSummaryResponse:
+    return get_draft_documentation_summary(version_id, access)
 
 
 @router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)

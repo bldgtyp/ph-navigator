@@ -115,6 +115,13 @@ export function useApertureProductCommandMutation(projectId: string, versionId: 
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
       });
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationSummary(
+          projectId,
+          resolvedVersionId,
+          "editor",
+        ),
+      });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
   });
@@ -140,6 +147,13 @@ export function useApertureReportRefreshMutation(projectId: string, versionId: s
       if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationSummary(
+          projectId,
+          resolvedVersionId,
+          "editor",
+        ),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
@@ -201,6 +215,13 @@ export function useApertureReportAttachmentMutation({
       if (draftEtag) {
         markLocalDraftTouched(projectId, resolvedVersionId, draftEtag);
       }
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationSummary(
+          projectId,
+          resolvedVersionId,
+          "editor",
+        ),
+      });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
     onError: (error) => {

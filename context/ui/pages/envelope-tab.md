@@ -31,8 +31,10 @@ Assemblies · Materials · Airtightness · Site Photos
   tab surfaces and filters on.
 - **Airtightness** — placeholder; specced separately. URL
   `/envelope/airtightness`.
-- **Site Photos** — placeholder; specced separately. URL
-  `/envelope/site-photos`.
+- **Site Photos** — absorbed (2026-07-18) into the top-level
+  **Documentation** tab; `/envelope/site-photos` redirects to
+  `/projects/{id}/documentation#envelope`. See §2.7.5 and
+  `planning/archive/dated/2026-07-19/documentation-tab/`.
 
 The bare `/envelope` URL redirects to `/envelope/assemblies`.
 
@@ -435,6 +437,12 @@ but they DO see the page, since contractor-share is the primary
 use case per Ed's framing.
 
 ## 2.7.5 Site Photos sub-tab (`/envelope/site-photos`)
+
+**ABSORBED (2026-07-18):** this sub-tab is not built as its own surface.
+Its design became the Envelope section of the top-level **Documentation**
+tab (`planning/archive/dated/2026-07-19/documentation-tab/`); the URL
+redirects to `/projects/{id}/documentation#envelope`. Sketch below retained
+as the carried-over section design.
 
 **(Detailed in US-ENV-15.)**
 

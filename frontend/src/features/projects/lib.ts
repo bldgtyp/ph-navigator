@@ -10,6 +10,7 @@ export const PROJECT_TABS = [
   "equipment",
   "thermal-bridges",
   "model",
+  "documentation",
 ] as const;
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 
@@ -22,6 +23,7 @@ export const TAB_LABELS: Record<ProjectTab, string> = {
   equipment: "Equipment",
   "thermal-bridges": "Thermal Bridges",
   model: "Model",
+  documentation: "Documentation",
 };
 
 export const TAB_COPY: Record<ProjectTab, string> = {
@@ -34,6 +36,7 @@ export const TAB_COPY: Record<ProjectTab, string> = {
     "Equipment tables for ventilators, pumps, fans, hot-water heaters, and electric heaters.",
   "thermal-bridges": "Thermal bridge datasheets and simulation files.",
   model: "Upload HBJSON exports and view them as an interactive 3D model.",
+  documentation: "Project-wide specification, datasheet, and site-photo evidence.",
 };
 
 export function projectTabPath(projectId: string, tab: ProjectTab): string {

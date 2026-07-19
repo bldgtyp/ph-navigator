@@ -36,6 +36,7 @@ export function buildHotWaterTank(overrides: Partial<HotWaterTankRow> = {}): Hot
     url: null,
     notes: null,
     datasheet_asset_ids: [],
+    photo_asset_ids: [],
     custom_values: {
       record_id: "HWT-1",
       name: "DHW storage tank",

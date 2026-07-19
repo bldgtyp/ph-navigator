@@ -174,6 +174,7 @@ function outdoorEquipRow(overrides: Partial<HeatPumpsSlice["outdoor_equip"][numb
     notes: null,
     catalog_origin: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   } satisfies HeatPumpsSlice["outdoor_equip"][number];
 }
 
@@ -198,5 +199,6 @@ function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"][number
     notes: null,
     catalog_origin: null,
     ...overrides,
+    photo_asset_ids: overrides.photo_asset_ids ?? [],
   } satisfies HeatPumpsSlice["indoor_equip"][number];
 }
