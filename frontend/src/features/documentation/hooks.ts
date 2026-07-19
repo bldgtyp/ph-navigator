@@ -9,6 +9,7 @@ import {
 } from "../equipment/types";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
+import { serializeReleaseASpecificationStatus } from "../project_document/specification-status";
 import {
   invalidateProjectDocumentEditorTableSlices,
   type BaseTableSlice,
@@ -213,7 +214,7 @@ async function updateApertureProductDocumentationField(
       : "update_project_frame";
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: typedSpecificationStatus(change.value) }
+      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
       : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
@@ -241,7 +242,7 @@ async function updateEnvelopeDocumentationField(
   }
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: typedSpecificationStatus(change.value) }
+      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
       : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
@@ -462,11 +463,6 @@ function documentationRowHasValue(
     return row[change.field] === change.value;
   }
   return false;
-}
-
-function typedSpecificationStatus(status: DocumentationSpecStatus) {
-  if (status === "needed" || status === "unknown") return "missing";
-  return status;
 }
 
 function customStatusOption(status: DocumentationSpecStatus): string {

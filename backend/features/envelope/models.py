@@ -9,13 +9,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.envelope.phpp_types import ExportReason
+from features.envelope.specification_status_compat import CompatibleSpecificationStatus
 from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
     AssemblyType,
     EvidenceStatus,
     ProjectMaterial,
-    SpecificationStatus,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.shared.colors import normalize_optional_hex_color
@@ -373,7 +373,7 @@ class UpdateProjectMaterialCommand(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
 
@@ -429,7 +429,7 @@ class UpdateProjectGlazingCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
@@ -463,7 +463,7 @@ class UpdateProjectFrameCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None

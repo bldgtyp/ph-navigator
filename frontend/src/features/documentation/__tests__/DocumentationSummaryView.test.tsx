@@ -80,6 +80,8 @@ describe("DocumentationPage", () => {
       expect(screen.queryByRole("dialog", { name: "How to photograph - Equipment" })).toBeNull(),
     );
 
+    expect(screen.getByRole("button", { name: "Needed specs" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Missing specs" })).not.toBeInTheDocument();
     const missingPhotosFilter = screen.getByRole("button", { name: "Missing photos" });
     expect(missingPhotosFilter).toHaveAttribute("aria-pressed", "false");
 

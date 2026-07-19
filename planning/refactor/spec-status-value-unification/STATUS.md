@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
-TIME: 14:30 EDT
-STATUS: Phase 00 complete — Phase 01 next
+TIME: 11:30 EDT
+STATUS: Phase 01 implementation complete — production deployment pending
 AUTHOR: Codex with Ed May
 SCOPE: Current state and implementation gates for specification-status value
   unification.
@@ -18,10 +18,11 @@ RELATED:
 
 ## Current state
 
-Phase 00 is complete. The local schema-v7 baseline is internally consistent,
-the status surface inventory is classified, both production projects are
-identified, and the deployed production code baseline is schema v4. No status
-semantics, production body, draft, or saved version was changed.
+Phase 01's Release-A code is implemented and CI-green. The complete read-only
+production entry corpus contained two schema-v4 saved bodies across the two
+named projects and no open drafts; both bodies passed the existing v4 → v7
+candidate and strict structural validation. No production body, draft, saved
+version, service, or status value was changed.
 
 ## Accepted planning conclusions
 
@@ -41,40 +42,39 @@ semantics, production body, draft, or saved version was changed.
 
 ## Next step
 
-Start Compatibility Release A's entry gate. Before compatibility code is
-implemented, inventory every production saved-version schema and open draft
-and run the v4 → v7 candidate over the complete read-only corpus. The safe
-dashboard list does not expose those fields.
+Ed reviews and merges the Release-A candidate, then completes the verified
+backup/restore and rollback gate before explicitly triggering production
+deployment. After both API/web SHA markers match, run authenticated read-only
+smoke on both projects. Do not use a real project mutation as a smoke test.
 
 ## Phase 00 evidence
 
-The v7 guard and focused schema gates are green. Production runs schema-v4
-code, so Compatibility A must carry the full v4 → v7 rollout controls. Exact
-hashes, SHAs, commands, test results, and the classified surface inventory live
-only in `phase-00-inventory.md`; project names/ids remain in the gitignored
-operator worksheet.
+The v7 guard and focused schema gates remain green. Release A accepts either
+`missing` or `needed` at public mutation boundaries while persisting v7
+`missing`, normalizes either response spelling at frontend API boundaries,
+displays Needed across the specification-status UI, and adds exact API/web
+build-SHA deployment gates. Exact corpus hashes, project names/ids, commands,
+and operator results remain in the gitignored worksheet and audit artifacts.
 
 ## Open operator inputs (not design blockers)
 
-- Persisted schema-version and draft-count inventory for both production
-  projects before Compatibility A deploy.
 - Actual production backup/snapshot mechanism, retention, restore owner, and
   verified recovery procedure.
 - Duration of the Compatibility A observation/cache window before temporary
   adapters are removed.
 - Scheduling of the Ed/John write freeze for Canonical B.
 
-The persisted schema/draft inventory is a Phase 01 entry gate. Backup/restore
-and write-freeze details are Phase 01 deployment gates and must be reconfirmed
-in Phase 04. The observation/cache window is a Phase 07 cleanup input. No
-production deploy proceeds while its applicable gate is blank.
+The persisted schema/draft inventory entry gate is complete. Backup/restore
+and write-freeze details remain Phase 01 deployment gates and must be
+reconfirmed in Phase 04. The observation/cache window is a Phase 07 cleanup
+input. No production deploy proceeds while its applicable gate is blank.
 
 ## Phase ledger
 
 | Phase | State | Exit gate |
 | --- | --- | --- |
 | 00 Contract/baseline | Complete | v7 baseline green; project ids recorded |
-| 01 Compatibility A | Not started | CI + both-project deployed smoke |
+| 01 Compatibility A | Implementation complete; deploy pending | CI + both-project deployed smoke |
 | 02 v8 backend | Not started | corpus/exact-diff/domain/export gates green |
 | 03 Canonical UI/adapters | Not started | UI/wire/custom-option regressions green |
 | 04 Production preflight | Not started | full corpus + restore point + go/no-go |
@@ -89,7 +89,7 @@ production deploy proceeds while its applicable gate is blank.
 - [ ] Frozen v7 corpus covers all three built-in row paths.
 - [ ] v7 → v8 exact diff and idempotence proven.
 - [ ] Canonical built-in status is `needed` backend/frontend.
-- [ ] Apertures displays Needed, not Missing, for specification status.
+- [x] Apertures displays Needed, not Missing, for specification status.
 - [ ] Documentation built-in write emits `needed`.
 - [ ] Equipment/TB option ids remain unchanged.
 - [ ] Summary built-in translation shims removed.

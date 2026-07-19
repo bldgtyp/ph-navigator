@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
-TIME: 14:30 EDT
-STATUS: Accepted phased plan — Phase 00 complete
+TIME: 11:30 EDT
+STATUS: Phase 01 implementation complete — production deployment pending
 AUTHOR: Codex with Ed May
 SCOPE: Release and implementation sequence for canonical specification status
   `needed` with two production projects.
@@ -57,6 +57,11 @@ This release makes the later API/web skew safe and creates no v8 data. Its
 status-rename changes are code-rollback-safe; whole-app rollback still depends
 on whether production was already v7. Deploy and verify both production
 projects before Phase 02/03 ships.
+
+Implementation checkpoint: the complete entry corpus passed v4 → v7 and
+structural validation, the compatibility/API/UI/build-marker candidate is
+implemented, and local CI is green. The verified backup/restore gate, Ed's
+review/merge/deploy, and both-project read-only production smoke remain open.
 
 Plan: `phases/phase-01-compatibility-release.md`.
 

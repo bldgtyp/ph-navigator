@@ -1,6 +1,7 @@
 import type { UnitSystem } from "../../lib/units/types";
 import { fetchBlob, fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
+import { normalizeSpecificationStatusRecord } from "../project_document/specification-status";
 import type {
   AssemblyThermalResponse,
   EnvelopeCommandBody,
@@ -9,6 +10,7 @@ import type {
   ImportConstructionsPreview,
   PhppPreflightResponse,
   ProjectMaterialDriftReport,
+  WireEnvelopeReadResponse,
 } from "./types";
 
 export async function fetchEnvelopeReadModel(
@@ -17,10 +19,11 @@ export async function fetchEnvelopeReadModel(
   source: EnvelopeReadSource,
   signal?: AbortSignal,
 ): Promise<EnvelopeReadResponse> {
-  return fetchJson<EnvelopeReadResponse>(
+  const response = await fetchJson<WireEnvelopeReadResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope?source=${source}`,
     { signal },
   );
+  return normalizeEnvelopeReadResponse(response);
 }
 
 export async function postEnvelopeCommand(
@@ -29,7 +32,7 @@ export async function postEnvelopeCommand(
   current: EnvelopeReadResponse,
   body: EnvelopeCommandBody,
 ): Promise<EnvelopeReadResponse> {
-  return fetchJson<EnvelopeReadResponse>(
+  const response = await fetchJson<WireEnvelopeReadResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/draft/envelope/commands`,
     {
       method: "POST",
@@ -37,6 +40,7 @@ export async function postEnvelopeCommand(
       body: JSON.stringify(body),
     },
   );
+  return normalizeEnvelopeReadResponse(response);
 }
 
 export async function fetchAssemblyThermal(
@@ -100,4 +104,13 @@ export async function previewEnvelopeHbjsonImport(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope/import/hbjson/preview`,
     { method: "POST", body: form },
   );
+}
+
+export function normalizeEnvelopeReadResponse(
+  response: WireEnvelopeReadResponse,
+): EnvelopeReadResponse {
+  return {
+    ...response,
+    project_materials: response.project_materials.map(normalizeSpecificationStatusRecord),
+  };
 }

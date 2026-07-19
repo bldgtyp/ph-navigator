@@ -98,19 +98,30 @@ jobs:
           curl -fsS -o /dev/null "$HOOK_API&ref=$DEPLOY_SHA" && echo "API deploy triggered."
           curl -fsS -o /dev/null "$HOOK_WEB&ref=$DEPLOY_SHA" && echo "Web deploy triggered."
 
-      - name: Verify API deploy (git_sha match)
+      - name: Verify API and web deploys (git_sha match)
         run: |
           # The API start command exports GIT_SHA=$RENDER_GIT_COMMIT, exposed at
-          # /api/v1/version. Poll until it reports the deployed commit
-          # (build + alembic migrations typically take a few minutes).
+          # /api/v1/version. Query-bust the web marker in addition to its
+          # no-store response header so an intermediary cannot make an old web
+          # build look current. Poll both builds together so either timeout is
+          # reported within the same 15-minute window.
+          API_READY=false
+          WEB_READY=false
           for i in $(seq 1 90); do
-            LIVE=$(curl -fsS https://api.ph-nav.com/api/v1/version | jq -r '.git_sha // empty' || true)
-            if [ "$LIVE" = "$DEPLOY_SHA" ]; then
-              echo "API is live at $LIVE." && exit 0
+            API_LIVE=$(curl -fsS https://api.ph-nav.com/api/v1/version | jq -r '.git_sha // empty' || true)
+            WEB_LIVE=$(curl -fsS "https://www.ph-nav.com/version.json?deploy_sha=$DEPLOY_SHA&attempt=$i" | jq -r '.git_sha // empty' || true)
+            if [ "$API_LIVE" = "$DEPLOY_SHA" ]; then
+              API_READY=true
             fi
-            echo "API still at ${LIVE:-unknown}..." && sleep 10
+            if [ "$WEB_LIVE" = "$DEPLOY_SHA" ]; then
+              WEB_READY=true
+            fi
+            if [ "$API_READY" = true ] && [ "$WEB_READY" = true ]; then
+              echo "API and web are live at $DEPLOY_SHA." && exit 0
+            fi
+            echo "API: ${API_LIVE:-unknown}; web: ${WEB_LIVE:-unknown}..." && sleep 10
           done
-          echo "::error::API never reported $DEPLOY_SHA — check the Render deploy logs." && exit 1
+          echo "::error::API and/or web never reported $DEPLOY_SHA — check the Render deploy logs." && exit 1
 
       - name: Smoke-check public surfaces
         run: |

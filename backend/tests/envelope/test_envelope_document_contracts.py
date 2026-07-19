@@ -258,12 +258,15 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
     draft_materials = saved_body.tables.project_materials + [
         ProjectMaterial.model_validate(project_material(id="pmat_extra", name="Extra"))
     ]
+    replacement_rows = [material.model_dump(mode="json") for material in draft_materials]
+    replacement_rows[-1]["specification_status"] = "needed"
     updated = client.put(
         draft_project_materials_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json={"rows": [material.model_dump(mode="json") for material in draft_materials]},
+        json={"rows": replacement_rows},
     )
     assert updated.status_code == 200
+    assert updated.json()["rows"][-1]["specification_status"] == "missing"
 
     draft = client.get(envelope_url(project_id, version_id, source="draft"))
     assert draft.status_code == 200

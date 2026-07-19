@@ -27,7 +27,7 @@ import { DirectionsModal } from "./DocumentationModals";
 import { DocumentationRecordRow } from "./DocumentationRecordViews";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
-  { axis: "spec", label: "Missing specs" },
+  { axis: "spec", label: "Needed specs" },
   { axis: "datasheet", label: "Missing datasheets" },
   { axis: "photo", label: "Missing photos" },
 ];

@@ -136,7 +136,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
                 "conductivity_w_mk": 0.041,
                 "density_kg_m3": 115.0,
                 "specific_heat_j_kgk": 1800.0,
-                "specification_status": "question",
+                "specification_status": "needed",
                 "comments": "Confirm final product submittal.",
             }
         },
@@ -146,7 +146,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
         material for material in edited.json()["project_materials"] if material["id"] == custom["id"]
     )
     assert edited_material["conductivity_w_mk"] == pytest.approx(0.041)
-    assert edited_material["specification_status"] == "question"
+    assert edited_material["specification_status"] == "missing"
 
     noted = client.post(
         command_url(project_id, version_id),
