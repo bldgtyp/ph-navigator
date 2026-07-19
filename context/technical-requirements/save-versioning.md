@@ -123,9 +123,12 @@ Properties:
 - MCP counterparts are `replace_table` for whole-table draft writes,
   semantic command/custom-field tools for structured draft writes,
   `save_draft`, `save_draft_as`, and `discard_draft`.
-- Stale-draft GC: drafts untouched for >30 days are deleted by a
-  scheduled job. (User is warned on reopen if a draft is older than
-  N days; configurable.)
+- Stale-draft GC: **intended/planned, not yet built.** No scheduled job
+  or code path deleting drafts by age was found in
+  `backend/features/project_document/`. The design intent (drafts
+  untouched for >30 days are deleted by a scheduled job; user is warned
+  on reopen if a draft is older than N days) is recorded here as a
+  backlog item, not a shipped guarantee.
 - Frontend on load: GET draft for active version. If draft exists and
   differs from version body, show recovery prompt. User chooses
   restore (load draft) or discard (delete draft, load version body).
@@ -149,13 +152,21 @@ Properties:
   legality, option-list reference integrity, and formula parse /
   cycle / dependency rules. Rejected mutations do not modify the
   stored draft. Save re-runs full-document validation as a final gate.
-- **Schema version pinning (v1 clean baseline).** Drafts and saved
-  versions tag the body with `schema_version: 1`. The pre-deploy dev
-  bump history was squashed in the backend-data-architecture cleanup;
-  there are no read-time project-document migration shims before first
-  deploy. Bodies posted with any non-current shape are rejected with a
-  structured `invalid_project_document` error; dev DBs rebuild on each
-  schema-shape phase boundary.
+- **Read-time forward-only upgrade is the live schema-migration
+  mechanism.** Drafts and saved versions tag the body with
+  `schema_version: N`; current is `6`
+  (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`,
+  `backend/features/project_document/document.py`), up from the
+  pre-launch clean-baseline squash. `backend/features/project_document/store.py`
+  upgrades a stale `version`/`draft` body at read time
+  (`upgrade_document_with_errors` → `upgrade_project_document`); when a
+  draft is upgraded, `repository.rewrite_draft_body` persists the
+  upgraded body and bumps the draft's `schema_version` / `draft_etag`
+  so the stale cached row doesn't keep re-triggering the shim on every
+  read. Bodies the upgrade chain cannot bring to the current shape are
+  rejected with a structured `invalid_project_document` error on write;
+  see §10.5 in `llm-mcp-schema.md` for the golden-fixture / audit-CLI
+  discipline that gates each schema bump.
 
 The draft/save state machine is consolidated here in §§8.3–8.6. The
 former standalone decision note is archived in `planning/archive/dated/2026-05-14/REMOVED.md`.

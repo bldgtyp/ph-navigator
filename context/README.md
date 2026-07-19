@@ -39,9 +39,10 @@ Read these first:
 
 Load these only when the task touches the relevant surface:
 
-- `USER_STORIES.md` — routing document for story files and phasing.
-- `user-stories/*.md` — canonical story bodies; load only the file for
-  the active phase / feature cluster.
+- `USER_STORIES.md` — redirect only. The MVP story bodies are archived to
+  `planning/archive/user-stories/`; the live contracts they produced live in
+  `technical-requirements/*` and `ui/pages/*`. This file also carries the two
+  still-open aperture questions.
 - `planning/features/<feature>/README.md`, `PRD.md`, and `STATUS.md` —
   feature-focused product intent, active state, and phase routing. Load
   with the matching user-story file when implementation or review needs
@@ -66,6 +67,12 @@ Load these only when the task touches the relevant surface:
 - `CODING_STANDARDS.md` — backend Python and frontend TypeScript
   engineering standards: layer/feature boundaries, typing, module-size,
   documentation, state ownership, and quality gates.
+- `DESIGN_SYSTEM.md` — the visual-language source of truth: design tokens
+  (color, type, spacing, radius, shadow, z-index), the blessed component
+  inventory, and the authoring doctrine. Its self-contained "Portable spec"
+  block is what you upload to Claude-Design or any external design tool. Load
+  when adding a token, building a new component, or handing UI to an outside
+  tool; pairs with `frontend/src/styles/README.md` (the implementation how).
 - `LOGGING.md` — canonical logging architecture: structlog config,
   request-id propagation, dev vs Render production behavior, security
   rules, and the convention for event names and levels. Load when
@@ -78,7 +85,7 @@ Load these only when the task touches the relevant surface:
   is off; merging to `main` does not deploy), and deploy-aware closeout rules.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
-  `user-stories/30-tables-equipment.md` when touching table behavior.
+  `ui/pages/spaces-equipment-tab.md` when touching table behavior.
 - `mcp.md` — live MCP tool inventory, draft/save lifecycle, token scopes,
   structured error envelope, and token issuance pointer.
 
@@ -93,7 +100,7 @@ Load these only when the task touches the relevant surface:
 ## Planned Generated Docs
 
 Add these only as the corresponding implementation exists:
-`api.md`, `operations.md`, `error-codes.md`,
-`llm-cookbook.md`, and optional static JSON Schema snapshots under
-`schemas/`. The current runtime schema source is the backend endpoint
-set under `/api/v1/schemas/...`.
+`operations.md`, `error-codes.md`, `llm-cookbook.md`, and optional static
+JSON Schema snapshots under `schemas/`. (The `/api/v1` route contract already
+lives in `technical-requirements/api.md`.) The current runtime schema source
+is the backend endpoint set under `/api/v1/schemas/...`.

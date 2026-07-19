@@ -21,7 +21,7 @@ const TINY_HEIC = Buffer.from(
   "base64",
 );
 
-test("Documentation tab supports contractor directions and editor equipment photo publication", async ({
+test("Documentation tab supports contractor directions and editor evidence publication", async ({
   page,
   browser,
   baseURL,
@@ -42,7 +42,7 @@ test("Documentation tab supports contractor directions and editor equipment phot
     const publicPage = await publicContext.newPage();
     await publicPage.goto(`/projects/${projectId}/documentation`);
     await expect(publicPage.getByText("Read-only")).toBeVisible();
-    await expect(publicPage.getByRole("heading", { name: "Documentation" })).toBeVisible();
+    await expect(publicPage.getByRole("heading", { name: "Documentation" })).toHaveCount(0);
     await expect(publicPage.getByRole("button", { name: row.displayName })).toBeVisible();
     await expect(publicPage.getByText("Photos 0/1").first()).toBeVisible();
 
@@ -85,12 +85,95 @@ test("Documentation tab supports contractor directions and editor equipment phot
     has: page.getByRole("button", { name: row.displayName }),
   });
   await expect(record.getByText("1 attached")).toBeVisible();
+  const photoWaiver = record
+    .locator(".documentation-evidence-cell")
+    .filter({ hasText: "Photos" })
+    .getByLabel("Not required");
+  const checkWrite = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/draft/tables/ventilators") && response.request().method() === "PUT",
+  );
+  await photoWaiver.click();
+  await expect(photoWaiver).toBeChecked();
+  await checkWrite;
+  await page.reload();
+  await expect(photoWaiver).toBeChecked();
+  const uncheckWrite = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/draft/tables/ventilators") && response.request().method() === "PUT",
+  );
+  await photoWaiver.click();
+  await expect(photoWaiver).not.toBeChecked();
+  await uncheckWrite;
+  await page.reload();
+  await expect(photoWaiver).not.toBeChecked();
   await record.locator('input[type="file"]').setInputFiles({
     name: "installed-ventilator.heic",
     mimeType: "image/heic",
     buffer: TINY_HEIC,
   });
   await expect(record.getByText("2 attached")).toBeVisible();
+
+  const envelopeMaterialName = await seedEnvelopeMaterial(
+    page.request,
+    baseURL,
+    projectId,
+    versionId,
+    stamp,
+  );
+  await page.goto(`/projects/${projectId}/documentation#envelope`);
+  await page.reload();
+  const envelopeRecord = page.getByRole("listitem").filter({
+    has: page.getByRole("button", { name: envelopeMaterialName }),
+  });
+  const envelopePhotoWaiver = envelopeRecord
+    .locator(".documentation-evidence-cell")
+    .filter({ hasText: "Photos" })
+    .getByLabel("Not required");
+  const envelopeCheckWrite = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/draft/tables/assembly_segments") &&
+      response.request().method() === "PUT",
+  );
+  await envelopePhotoWaiver.click();
+  const envelopeCheckResponse = await envelopeCheckWrite;
+  const envelopeCheckPayload = envelopeCheckResponse.request().postDataJSON() as {
+    rows: Array<{ photo_not_required: boolean }>;
+  };
+  expect(envelopeCheckPayload.rows.every((row) => row.photo_not_required)).toBe(true);
+  const envelopeCheckRows = (
+    (await envelopeCheckResponse.json()) as { rows: Array<{ photo_not_required: boolean }> }
+  ).rows;
+  expect(envelopeCheckRows.some((row) => row.photo_not_required)).toBe(true);
+  await page.reload();
+  await expect(envelopePhotoWaiver).toBeChecked();
+  const envelopeUncheckRead = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/draft/tables/assembly_segments") &&
+      response.request().method() === "GET",
+  );
+  const envelopeUncheckWrite = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/draft/tables/assembly_segments") &&
+      response.request().method() === "PUT",
+  );
+  await envelopePhotoWaiver.click();
+  const envelopeSegmentsBeforeUncheck = await envelopeUncheckRead;
+  const envelopeRows = (
+    (await envelopeSegmentsBeforeUncheck.json()) as { rows: Array<{ photo_not_required: boolean }> }
+  ).rows;
+  expect(envelopeRows.some((row) => row.photo_not_required)).toBe(true);
+  const envelopeUncheckResponse = await envelopeUncheckWrite;
+  const envelopeUncheckPayload = envelopeUncheckResponse.request().postDataJSON() as {
+    rows: Array<{ photo_not_required: boolean }>;
+  };
+  expect(envelopeUncheckPayload.rows.every((row) => !row.photo_not_required)).toBe(true);
+  const envelopeUncheckRows = (
+    (await envelopeUncheckResponse.json()) as { rows: Array<{ photo_not_required: boolean }> }
+  ).rows;
+  expect(envelopeUncheckRows.every((row) => !row.photo_not_required)).toBe(true);
+  await page.reload();
+  await expect(envelopePhotoWaiver).not.toBeChecked();
 
   const saveVersionButton = page.getByRole("button", {
     name: "Save Version",
@@ -171,6 +254,98 @@ async function seedVentilator(
   );
   expect(response.status(), await response.text()).toBe(200);
   return { id, recordId, displayName, versionEtag: slice.version_etag };
+}
+
+async function seedEnvelopeMaterial(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+  versionId: string,
+  stamp: string,
+): Promise<string> {
+  const commandPath = `/api/v1/projects/${projectId}/versions/${versionId}/draft/envelope/commands`;
+  const read = await request.get(
+    apiUrl(baseURL, `/api/v1/projects/${projectId}/versions/${versionId}/envelope?source=draft`),
+  );
+  expect(read.ok(), await read.text()).toBeTruthy();
+  const current = (await read.json()) as EnvelopeRead;
+  const created = await request.post(apiUrl(baseURL, commandPath), {
+    headers: envelopeWriteHeaders(baseURL, current),
+    data: {
+      command: {
+        kind: "create_assembly",
+        name: `Envelope waiver ${stamp}`,
+        type: "wall",
+      },
+    },
+  });
+  expect(created.ok(), await created.text()).toBeTruthy();
+  const createdEnvelope = (await created.json()) as EnvelopeRead;
+  const assembly = createdEnvelope.assemblies.find(
+    (candidate) => candidate.name === `Envelope waiver ${stamp}`,
+  );
+  const layer = assembly?.layers[0];
+  const segment = layer?.segments[0];
+  if (!assembly || !layer || !segment)
+    throw new Error("Envelope fixture assembly was not created.");
+
+  const materialName = `Envelope material ${stamp}`;
+  const assigned = await request.post(apiUrl(baseURL, commandPath), {
+    headers: envelopeWriteHeaders(baseURL, createdEnvelope),
+    data: {
+      command: {
+        kind: "hand_enter_material",
+        assembly_id: assembly.id,
+        layer_id: layer.id,
+        segment_id: segment.id,
+        name: materialName,
+      },
+    },
+  });
+  expect(assigned.ok(), await assigned.text()).toBeTruthy();
+  const assignedEnvelope = (await assigned.json()) as EnvelopeRead;
+  expect(
+    assignedEnvelope.project_materials.some((material) => material.name === materialName),
+  ).toBe(true);
+  const assignedAssembly = assignedEnvelope.assemblies.find(
+    (candidate) => candidate.id === assembly.id,
+  );
+  expect(assignedAssembly?.layers[0]?.segments[0]?.project_material_id).not.toBeNull();
+  const summary = await request.get(
+    apiUrl(
+      baseURL,
+      `/api/v1/projects/${projectId}/versions/${versionId}/draft/documentation-summary`,
+    ),
+  );
+  expect(summary.ok(), await summary.text()).toBeTruthy();
+  expect(JSON.stringify(await summary.json())).toContain(materialName);
+  return materialName;
+}
+
+type EnvelopeRead = {
+  version_etag: string;
+  draft_etag: string | null;
+  assemblies: Array<{
+    id: string;
+    name: string;
+    layers: Array<{
+      id: string;
+      segments: Array<{ id: string; project_material_id: string | null }>;
+    }>;
+  }>;
+  project_materials: Array<{ id: string; name: string }>;
+};
+
+function envelopeWriteHeaders(
+  baseURL: string | undefined,
+  envelope: Pick<EnvelopeRead, "version_etag" | "draft_etag">,
+): Record<string, string> {
+  return {
+    ...originHeaders(baseURL),
+    ...(envelope.draft_etag
+      ? { "If-Match": envelope.draft_etag }
+      : { "If-Match-Version": envelope.version_etag }),
+  };
 }
 
 async function saveDraft(

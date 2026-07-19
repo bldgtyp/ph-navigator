@@ -328,7 +328,7 @@ CREATE INDEX ON project_versions (project_id, created_at);
 
 Catalog tables (full schema in §7):
 ```
-catalog_materials                       -- flat (§7.2 callout)
+catalog_materials                       -- flat (§7.2)
 catalog_frame_types                     -- flat; *_versions table dropped 0017
 catalog_glazing_types                   -- flat; *_versions table dropped 0016
 catalog_field_options                   -- per-(catalog_table, field_key)
@@ -398,7 +398,7 @@ JSON document. Illustrative sketch (the canonical model is the
       {
         "id": "pmat_...",
         "name": "XPS",
-        "category": "insulation",                 // one of twelve fixed option ids (§7.2 callout)
+        "category": "insulation",                 // one of twelve fixed option ids (§7.2)
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
         "conductivity_w_mk": 0.034,
@@ -412,7 +412,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "catalog_origin": {
           "catalog_table": "materials",
           "catalog_record_id": "rec123abc",
-          "catalog_version_id": null,             // materials catalog is flat (§7.2 callout)
+          "catalog_version_id": null,             // all catalogs are flat; always null on new origins (§7.2)
           "catalog_schema_version": null,
           "synced_at": "2026-05-09T14:00:00Z",
           "local_overrides": []                   // field keys intentionally kept different from catalog (§7.4)
@@ -538,7 +538,16 @@ JSON document. Illustrative sketch (the canonical model is the
       ]
     },
     "equipment": {
-      "fans":  [ /* see US-EQ-6 — name, manufacturer (single-select), model_number, fan_purpose (single-select), airflow_cfm, electrical_power_w, runtime_hours_per_day, datasheet_asset_ids, catalog_origin, notes */ ],
+      // Eight leaf tables total (see `EmptyEquipmentTables` in
+      // `backend/features/project_document/rows.py`): appliances,
+      // electric_heaters, fans, hot_water_heaters, hot_water_tanks,
+      // pumps, ervs, heat_pumps. Only fans/pumps/ervs/heat_pumps are
+      // sketched below for brevity; appliances, electric_heaters,
+      // hot_water_heaters, and hot_water_tanks follow the same
+      // `{ field_defs, rows }`-style envelope (§6.6.1) with row shapes
+      // like the others (id, typed built-ins incl. `type`
+      // single-select, datasheet/photo asset ids, notes).
+      "fans":  [ /* see US-EQ-6 — id (fan_*), fan_type (single-select; option key "fans.type", NOT "fan_purpose"), phase, url, notes, datasheet_asset_ids, photo_asset_ids, datasheet_not_required, photo_not_required, custom_values/custom_links per RowWithCustomFields */ ],
       "pumps": [ /* see US-EQ-5 — name, manufacturer (single-select), model_number, pump_type (single-select), electrical_power_w, runtime_hours_per_year, datasheet_asset_ids, catalog_origin, notes */ ],
       "ervs":  [ /* see US-EQ-4 — name, manufacturer (single-select), model_number, unit_type (single-select), nominal_airflow_cfm, sensible_recovery_efficiency, electrical_power_w, datasheet_asset_ids, catalog_origin, notes */ ],
       "heat_pumps": {
@@ -962,12 +971,25 @@ Rules (post-Phase 1b):
     - `locked` arrays — render-time overlay, NOT persisted (see §6.6.2);
     - the canonical ordered list of built-in `field_key`s — drives the
       schema fingerprint's built-in slice.
-- **Current clean-baseline contract:** `schema_version: 1` is the current
-  project-document schema after the prior dev-only bump history through v12 was
-  squashed back to one baseline. Future project-document schema changes use the
-  beta schema-evolution lane: dict-to-dict read-time upgraders, committed
-  fixture snapshots, the audit CLI, and the schema-bump checklist. Invalid
-  bodies still surface through the read-safe envelope.
+- **Current schema-version contract:** the project-document schema was
+  squashed to a clean baseline once during pre-launch dev-only churn,
+  and has bumped forward several times since
+  (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`, currently `6`, `Literal[6]`
+  on `ProjectDocumentV1.schema_version` — `backend/features/project_document/document.py`).
+  Each bump documented there (Space-Types promoted to a top-level table,
+  the record-identity model, Heat Pumps' four-leaf-table consolidation,
+  shared Datasheet fields on Electric Heaters/Ventilators, aperture
+  glazing/frame flattening to `project_glazings`/`project_frames`,
+  Documentation-tab site-photo/waiver fields, etc.) went through the beta
+  schema-evolution lane: dict-to-dict read-time upgraders, committed
+  fixture snapshots, the audit CLI, and the schema-bump checklist. This
+  is a live, standing mechanism, not a one-time pre-deploy event — see
+  `save-versioning.md` for the read-time upgrade call path. Invalid
+  bodies still surface through the read-safe envelope. (Note: the
+  in-code version-history comments in `document.py` are not fully
+  chronological/monotonic — some describe pre-squash version numbers
+  retained as historical notes — so treat the constant's current value
+  as authoritative over the comment numbering.)
 - **Record links** store values in
   `custom_links: dict[str, list[str]]` on every FieldDef-capable row. The
   storage model admits `CustomFieldType.linked_record` and does not use typed
@@ -1278,51 +1300,48 @@ A `catalog_origin` block on each copied entry records where it came from
 **refresh-from-catalog** UX can show catalog drift, preserve intentional
 project-specific edits, and offer per-entry refresh.
 
-### 7.2 Catalog has versions, projects don't reference them live
+### 7.2 All three catalogs are flat — no versioning
 
-Catalog entries are versioned for the **catalog's own organization** —
-e.g. "Skyline Ridge frame, 2024 spec" and "Skyline Ridge frame, 2026
-spec" coexist as two versions of the same identity row. The user can
-pick either when adding to a project. Once picked, the values are copied
-in and the project no longer cares which version was the source.
-
-> **Materials are flat as of Alembic 20260603_0015.** The
-> identity-plus-versions shape below still applies to `catalog_frame_types`
-> and `catalog_glazing_types`. Materials collapsed to a single
-> `catalog_materials` row carrying the nine catalog fields inline
-> (`name`, `category`, `density_kg_m3`, `specific_heat_j_kgk`,
-> `conductivity_w_mk`, `emissivity`, `color`, `source`, `url`,
-> `comments`) plus the soft-delete + audit columns. `current_version_id`,
-> `catalog_schema_version`, `version_label`, and `version_date` no longer
-> exist on materials; the `catalog_material_versions` table is dropped.
-> `category` is constrained to the twelve fixed option ids via CHECK
-> constraint. See `planning/features/materials-catalog-datatable/PRD.md`
-> for the live materials shape.
+**Superseded design note.** Earlier drafts of this section described an
+identity-plus-versions shape (a `catalog_*` identity row referencing a
+`catalog_*_versions` row via `current_version_id`, so e.g. "Skyline
+Ridge frame, 2024 spec" and "Skyline Ridge frame, 2026 spec" could
+coexist as two versions of one identity row). That shape was dropped in
+the flatten migrations — materials in `20260603_0015`, glazing types in
+`20260604_0016`, frame types in `20260604_0017` — before any of the
+three catalogs shipped with the versioned shape in production. **All
+three catalogs (`catalog_materials`, `catalog_frame_types`,
+`catalog_glazing_types`) are flat single-table rows today**, matching
+§6.1. There is no `catalog_*_versions` table, no `current_version_id`,
+and no "new version" flow anywhere in the catalog UX.
 
 ```sql
--- Frame / glazing catalogs keep the identity + versions pattern.
--- The materials catalog is flat per the callout above.
-
 catalog_frame_types (
-    id              TEXT PRIMARY KEY,         -- AirTable-shaped rec id; see §7.2.1
+    id              TEXT PRIMARY KEY,   -- AirTable-shaped rec id; see §7.2.1
     name            TEXT NOT NULL,
-    current_version_id  TEXT REFERENCES catalog_frame_type_versions(id),
+    manufacturer, brand, use, operation, location, mull_type,
+    prefix, suffix, material, width_mm, u_value_w_m2k, psi_g_w_mk,
+    psi_install_w_mk, color, source, comments, datasheet_url,
     deleted_at      TIMESTAMPTZ,
     created_at, created_by, updated_at, updated_by
 )
 
-catalog_frame_type_versions (
-    id              TEXT PRIMARY KEY,         -- V2-native `framev_<token>`; see §7.2.1
-    record_id       TEXT NOT NULL REFERENCES catalog_frame_types(id),
-    version_label   TEXT NOT NULL,
-    version_date    DATE NOT NULL,
-    -- typed value columns ...
-    created_at, created_by
+catalog_glazing_types (
+    id              TEXT PRIMARY KEY,   -- AirTable-shaped rec id; see §7.2.1
+    name            TEXT NOT NULL,
+    manufacturer, brand, suffix, u_value_w_m2k, g_value, color,
+    source, comments, datasheet_url,
+    deleted_at      TIMESTAMPTZ,
+    created_at, created_by, updated_at, updated_by
 )
+
+-- catalog_materials: see the nine-field list already given in §6.1 /
+-- the callout that used to live here; identical flat shape.
 ```
 
-Glazing types follow the same identity-plus-versions pattern as frame
-types. Catalog audit log records all edits.
+(Full column lists: `backend/alembic/versions/20260624_0001_baseline.py`.)
+There is no `catalog_audit_log` table; catalog audit writes go to
+`user_action_log` (§6.1).
 
 #### 7.2.1 Catalog id format (TB-08.a)
 
@@ -1336,36 +1355,30 @@ same shape lets V1/AirTable imports drop in as a literal
 legacy cross-references (e.g. V1 `aperture_element_frame.material_id`
 → catalog material) resolve unchanged after import.
 
-Catalog **version** ids are V2-native and use a table-prefixed shape
-because AirTable has no version concept. Prefixes:
-
-| Catalog                | Version-id prefix |
-|------------------------|-------------------|
-| `catalog_materials`    | `matv_`           |
-| `catalog_frame_types`  | `framev_`         |
-| `catalog_glazing_types`| `glazingv_`       |
+There is no catalog **version** id format — the `matv_` / `framev_` /
+`glazingv_` prefixes described in earlier drafts belonged to the
+version-row shape dropped per §7.2 and were never used in a shipped
+schema.
 
 Document-level entity ids (`asm_<ULID>`, `pmat_<ULID>`, `win_<ULID>`,
 `winel_<ULID>`, `rm_<ULID>`, etc.) keep their existing per-entity-type
 prefixes; they are project-document internal and are not imported from
 AirTable. The catalog id format applies only to the catalog identity
-and version rows.
+rows.
 
-The shared id generator lives in
-`backend/features/catalogs/_shared.py` (`new_catalog_record_id`,
-`new_catalog_version_id`). New catalogs added in future slices must
+The shared id generator lives in `backend/features/catalogs/_shared.py`
+(`new_catalog_record_id`). New catalogs added in future slices must
 reuse it rather than inventing per-catalog id schemes.
 
 ### 7.3 Catalog UX
 
 - **List / detail / edit views** for each catalog table.
-- **New version** flow when a meaningful change occurs (manufacturer
-  reformulation, new datasheet). Creates a new `catalog_*_versions` row;
-  identity row's `current_version_id` updates if the user marks it
-  current.
-- **In-place edit** allowed on the current version for small corrections
-  (typo, missing value). Audit-logged.
-- **Soft delete** on identity rows. Versions are never hard-deleted.
+- **In-place edit** directly on the flat row for any field, including
+  what earlier drafts called "new version" changes (manufacturer
+  reformulation, new datasheet) — there is no separate version row to
+  create. Audit-logged to `user_action_log`.
+- **Soft delete** (`deleted_at`) with a reactivate action
+  (`POST /{id}/reactivate`, §9.8). Rows are never hard-deleted.
 
 ### 7.4 Refresh from catalog
 
@@ -1388,21 +1401,18 @@ catalog" gesture:
   `local_overrides` verbatim. Recomputing `local_overrides` from the
   post-refresh field values is deferred until full field-level override
   management ships beyond the `u_value_w_m2k` tracer.
-- A copied entry is **drifted** when either
-  `catalog_origin.catalog_version_id != current_version_id` **or** any
-  compared catalog field on the current version differs from the
-  bookshelf-copied value on the entry. The second branch exists because
-  in-place catalog edits (§7.3) patch the current version row without
-  bumping `current_version_id`, and the user's bookshelf copy still needs
-  to surface that delta. A copied entry with `local_overrides.length > 0`
+- **Drift is field-only for all three catalogs.** Because all three
+  catalogs are flat (§7.2 — there is no version row to compare
+  against), `catalog_origin.catalog_version_id` is `null` on new
+  origins (the field is kept only so older documents that still carry
+  a stamped version id round-trip cleanly — see `CatalogOrigin` in
+  `envelope_models.py`). A copied entry is **drifted** iff any compared
+  catalog field on the live catalog row differs from the
+  bookshelf-copied value on the entry — there is no separate
+  version-id branch. A copied entry with `local_overrides.length > 0`
   is **customized** on those specific fields — they default to **Keep
   mine** in the refresh dialog — but the entry as a whole is still
   drifted if anything else differs.
-- **Materials drift is field-only.** Because the materials catalog is
-  flat (no versions; see §7.2 callout), `catalog_origin.catalog_version_id`
-  is `null` on material origins and the version-id branch above does not
-  apply. A material origin is drifted iff any of the nine catalog fields
-  differs from the live `catalog_materials` row.
 
 A "show me everything that's drifted or customized from catalog" report
 lives in the catalog manager view of a project. In v1, **Review all**

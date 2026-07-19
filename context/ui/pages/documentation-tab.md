@@ -35,8 +35,8 @@ same attachment ids stored on the owning record.
 
 ## Composition
 
-The header shows the selected version, whether the data is draft or saved, a
-draft-publish hint for editors, and three rollup chips:
+The page opens with three rollup chips; the selected version and active tab are
+already identified by the project workspace chrome:
 `Spec N/M`, `Datasheets N/M`, and `Photos N/M`.
 
 Below the header, per-axis filter chips show only records missing specs,
@@ -98,7 +98,7 @@ intentionally render placeholders until BLDGTYP-owned photos are selected.
 ## Access invariants
 
 - Viewer markup has no upload, delete, waiver, or status-edit controls.
-- Editors see and edit draft evidence here; the draft-publish hint focuses the
-  standard Save Version control.
+- Editors see and edit draft evidence here; the standard project workspace
+  indicates uncommitted changes and provides the Save Version control.
 - Locked versions keep the standard project locked-version banner behavior.
 - Phone-width layout stacks cells so contractors can read the page on site.

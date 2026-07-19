@@ -27,8 +27,7 @@ export function DocumentationPage({ project }: { project: ProjectDetail }) {
 
   if (!project.active_version_id) {
     return (
-      <section className="tab-panel documentation-page" aria-labelledby="documentation-title">
-        <h2 id="documentation-title">Documentation</h2>
+      <section className="tab-panel documentation-page" aria-label="Documentation">
         <p className="status-section-empty">Create a project version to review documentation.</p>
       </section>
     );
@@ -36,8 +35,7 @@ export function DocumentationPage({ project }: { project: ProjectDetail }) {
 
   if (query.isLoading) {
     return (
-      <section className="tab-panel documentation-page" aria-labelledby="documentation-title">
-        <h2 id="documentation-title">Documentation</h2>
+      <section className="tab-panel documentation-page" aria-label="Documentation">
         <p role="status">Loading documentation...</p>
       </section>
     );
@@ -45,8 +43,7 @@ export function DocumentationPage({ project }: { project: ProjectDetail }) {
 
   if (query.isError || !query.data) {
     return (
-      <section className="tab-panel documentation-page" aria-labelledby="documentation-title">
-        <h2 id="documentation-title">Documentation</h2>
+      <section className="tab-panel documentation-page" aria-label="Documentation">
         <div className="status-section-error" role="alert">
           <p>{errorMessage(query.error, "Could not load documentation.")}</p>
           <button type="button" className="secondary-button" onClick={() => void query.refetch()}>

@@ -104,7 +104,7 @@ Attachment cells exist ONLY on these PHN-declared core fields:
 
 Per-field config (allowed MIME, `max_count`, `max_file_size_mb`) lives
 in code in `backend/features/assets/registry.py`, with row-table
-contracts in `backend/features/project_document/tables/attachments.py`
+contracts in `backend/features/project_document/tables/_attachment_fields.py`
 (see `data-model.md` §6.6.7 registered-table-contract pattern). Adding
 a new attachment cell in v1.1+ is a code change, not a runtime change.
 HEIC/HEIF `site_photo` uploads are converted to JPEG during
@@ -218,8 +218,9 @@ Signed URL TTLs:
 
 ### A4.4 Preview modal
 
-- Triggered by double-click on a thumbnail (or Enter on a selected
-  thumbnail).
+- Triggered by a single click on a thumbnail (or Enter/Space on a
+  focused thumbnail) — see §A4.2 / decision D-1;
+  `AttachmentCell.tsx` uses `onClick`, not a double-click handler.
 - Layout: large preview (~80vw × 80vh); filename strip top with size
   + MIME; Prev/Next chevrons; bottom-right action bar.
 - Action bar (editor): `Download`, `Open in new tab`, `Replace…`.

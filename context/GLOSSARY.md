@@ -107,7 +107,7 @@ resolves to a **Principal**, which maps to a **Capability** set —
 | **Viewer**   | Informal shorthand for an anonymous request holding only `CLIENT_CAPS` (read-only, redacted metadata, no bulk exports) via a Project URL | Guest, public user, anonymous client      |
 | **Admin**    | A User holding the grantable `admin.users.manage` capability (`user_grants`), backing invite/reset-link/deactivate/grant flows — never a hard-coded superuser | Superuser, root |
 | **Owner**    | The User listed in `projects.owner_id`; **dashboard-organization concept only, not an ACL**                         | Author, admin, project lead               |
-| **Session**  | A server-side authenticated session row; single-active-per-user with 60-minute sliding idle expiry                  | Token (Session ID is a token, but bare "token" is ambiguous) |
+| **Session**  | A server-side authenticated session row; single-active-per-user with 480-minute (8h) sliding idle expiry            | Token (Session ID is a token, but bare "token" is ambiguous) |
 
 ## UI surfaces
 

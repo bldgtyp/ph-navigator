@@ -120,10 +120,13 @@ PRD decision record.
 
 ## Future evolution
 
-- VT field promotion to the glazing catalog — deferred indefinitely.
-- Manufacturer filters — Phase 11.
-- Refresh-from-catalog dialog — Phase 12.
-- MCP semantic-write tools — Phase 13.
+- VT field promotion to the glazing catalog — not yet scheduled.
+
+The MCP semantic-write tools referenced in earlier drafts of this
+roadmap (envelope and aperture commands) have shipped — see
+`context/mcp.md` and `envelope-commands.md`. Manufacturer filters and
+the refresh-from-catalog dialog have also shipped (see
+`data-model.md` §7.4 and the `equipment.manufacturer_filters` table).
 
 Future breaking changes coordinate with the Rhino / `honeybee_ph`
 component side. The decision lives in PRD §17 / §21 decision 17.

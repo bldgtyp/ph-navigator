@@ -80,8 +80,56 @@ export function useDocumentationFieldMutation(projectId: string, versionId: stri
       if (!versionId) throw new Error("No active project-document version is selected.");
       return updateDocumentationField(projectId, versionId, change);
     },
-    onSuccess: (current) => acknowledgeDocumentationWrite(queryClient, projectId, current),
+    onMutate: async (change) => {
+      const queryKey = documentationQueryKeys.summary(
+        projectId,
+        change.summary.version_id,
+        "editor",
+      );
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ProjectDocumentationSummary>(queryKey);
+      queryClient.setQueryData<ProjectDocumentationSummary>(queryKey, (current) =>
+        current ? applyOptimisticDocumentationFieldChange(current, change) : current,
+      );
+      return { previous, queryKey };
+    },
+    onError: (_error, _change, context) => {
+      if (context?.previous) queryClient.setQueryData(context.queryKey, context.previous);
+    },
+    onSuccess: (current, change) => {
+      const queryKey = documentationQueryKeys.summary(
+        projectId,
+        change.summary.version_id,
+        "editor",
+      );
+      queryClient.setQueryData<ProjectDocumentationSummary>(queryKey, (cached) =>
+        cached ? { ...cached, source: "draft", draft_etag: current.draft_etag } : cached,
+      );
+      acknowledgeDocumentationWrite(queryClient, projectId, current);
+    },
   });
+}
+
+function applyOptimisticDocumentationFieldChange(
+  summary: ProjectDocumentationSummary,
+  change: DocumentationFieldMutation,
+): ProjectDocumentationSummary {
+  if (change.field === "spec_status") return summary;
+  const updateRecord = (record: DocumentationRecord): DocumentationRecord =>
+    record.table_key === change.record.table_key && record.record_id === change.record.record_id
+      ? { ...record, [change.field]: change.value }
+      : record;
+  return {
+    ...summary,
+    sections: summary.sections.map((section) => ({
+      ...section,
+      records: section.records.map(updateRecord),
+      groups: section.groups.map((group) => ({
+        ...group,
+        records: group.records.map(updateRecord),
+      })),
+    })),
+  };
 }
 
 async function updateDocumentationPhotos(

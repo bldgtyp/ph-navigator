@@ -107,7 +107,8 @@ Per assembly:
 
 Consumers can rely on `materials[0]` being the **outside** layer.
 
-Implementation: `_layers_outside_to_inside`.
+Implementation: `assembly.layers_outside_to_inside()` (method on
+`Assembly`, `backend/features/project_document/envelope_models.py`).
 
 ## Single-segment vs hybrid layers
 

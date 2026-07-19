@@ -26,6 +26,20 @@ how and when each feature packet landed. Newest first. Grep by slug.
   `make ci` passed. Archived from `feature/documentation-tab` and included
   in the final squash merge to `main`.
 
+## 2026-07-18
+
+- `user-stories` (docs housekeeping, not a feature packet) - the ~10k-line MVP
+  user-story cluster (`00-foundation-shell`, `10-apertures`, `20-envelope`,
+  `30-tables-equipment`, `31-data-table-enhancements`, `32-custom-fields`,
+  `40-model-viewer`, `50-settings-ops-llm`, `90-open-questions`) moved out of
+  canonical `context/user-stories/` to `planning/archive/user-stories/`. All
+  the features shipped; the durable contracts they produced live in
+  `context/technical-requirements/*` and `context/ui/pages/*`.
+  `context/USER_STORIES.md` stays as a thin redirect carrying the two
+  still-open aperture questions (Q-APT-3, Q-APT-5); the resolved
+  open-question log and the historical Phase 0-7 vertical-slice plan remain in
+  the archived bodies. Grep by `US-`/`Q-` id.
+
 ## 2026-07-17
 
 - `typography-consolidation` - site-wide typography consolidation (refactor packet, driven by the 2026-07-17 rendered font audit's 55-variant finding). **Rendered variants 55 → 29, source typography debt 436 declarations → 0**, all on branch `refactor/typography-consolidation` (11 commits; merge = Ed's call). Six phases: (1) token groups (`--fw-*`, `--tracking-*`, `--lh-*`, named exceptions `--fs-display`/`--fs-display-sm`/`--fs-canvas-annotation`/`--fs-icon-badge`/`--lh-canvas-annotation`/`--lh-icon-collapse`), the `code/kbd/samp/pre` mono reset, and the blocking postcss-based `check:typography` guard (fingerprint ratchet, wired into `check:all`); (2–5) owner-by-owner migration (shared primitives → DataTable/ReportTable/catalogs → apertures/envelope/canvas → model viewer + long tail), retiring the baseline to an empty `{}` — zero-debt mode, any literal now fails CI; recharts `fontSize` props eliminated via CSS hooks instead of registry exceptions; (6) rendered-contract evaluator (`font-audit-eval.mjs` + `typography-rendered-contract.json`, state manifest shared with the sweep via `font-audit-states.mjs`), hermetic fixture (grants + `fixture.json` seeded by `make agent-browser-ready`), `make typography-eval`, and the scheduled/manual `typography-eval.yml` workflow. D1–D5 resolved with PRD defaults (modal titles → page-title tier; display type via named clamp tokens, probe-resolved so **zero off-scale rendered sizes**; canvas labels keep 10px; editor-hero drops 700; chevrons → `--fs-2xs`). Final state: two families, weights {400,500,600,700}, exactly one non-zero tracking (0.05em caps). Recorded deviations: 29 vs the PRD's aspirational ≤25 ceiling (the gap is four deliberate styles listed in STATUS.md) and role-inference button/heading budgets. Verified per phase with screenshots + `make ci`; e2e table smoke 14/14; final 4-angle simplify review applied (shared guard-utils, savepoint fix in `ensure_global_grant`, probe-based clamp mapping). Follow-ups (Ed): merge; after ~3 workflow runs decide PR-CI promotion; optional further consolidation toward ≤25.

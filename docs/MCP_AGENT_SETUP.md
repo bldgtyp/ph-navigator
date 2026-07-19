@@ -18,19 +18,12 @@ registration.
 
 ## Token Model
 
-PHN MCP is never anonymous. A token is scoped to one project and is attributed
-to the editor who issued it.
-
-Scopes:
-
-- `project:read` is always required.
-- `project:write` allows document/project mutations.
-- `asset:read` allows asset lookup and signed URL tools.
-- `asset:write` allows attach/detach tools.
-
-Writes land in the token issuer's draft. A write-capable agent should read the
-current document/table, write with the latest etag, then call `save_draft` or
-`discard_draft`.
+The token/scope model and the draft → `save_draft`/`discard_draft` write
+lifecycle are the canonical MCP contract in `context/mcp.md` — read it there.
+In short: a token is never anonymous, is scoped to one project, is attributed
+to its issuing editor, `project:read` is always required (plus optional
+`project:write`/`asset:read`/`asset:write`), and writes land in the issuer's
+draft. This file covers only the client-side setup/config below.
 
 ## Local One-Time Setup
 

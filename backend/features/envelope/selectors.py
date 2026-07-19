@@ -83,6 +83,7 @@ def flatten_assembly_segments(body: ProjectDocumentV1) -> list[AssemblySegmentTa
                         project_material_id=segment.project_material_id,
                         project_material_name=material.name if material is not None else None,
                         photo_asset_ids=list(segment.photo_asset_ids),
+                        photo_not_required=segment.photo_not_required,
                         use_site_notes=segment.use_site_notes,
                     )
                 )

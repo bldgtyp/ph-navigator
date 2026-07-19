@@ -21,13 +21,22 @@ TypeScript / React. Restricted to display + UI/UX.
 - **Project list** (editor home, `/dashboard`) — owned-by-current-user
   projects, with pinning + per-user ordering; "Catalogs ▾" dropdown
   in the global header.
-- **Project workspace** (`/projects/{id}/{tab}`) — five tabs:
+- **Project workspace** (`/projects/{id}/{tab}`) — nine tabs, per the
+  live `PROJECT_TABS` roster in `frontend/src/features/projects/lib.ts`:
   - **Status** (default landing) — project lifecycle / cert
     milestones (US-Status).
-  - **Windows** — window types (US-Builder-Windows).
+  - **Climate** — project location and weather/climate reference
+    datasets.
+  - **Apertures** — window/door types, frames, glazing, dimensions,
+    U-Value (US-Builder-Windows; tab key is `apertures`, not `windows`).
   - **Envelope** — assemblies (US-Builder-Envelope).
-  - **Equipment** — rooms + future MEP equipment tables.
+  - **Spaces** — Space-Types (see `data-model.md` §6.6.1).
+  - **Equipment** — rooms + MEP equipment tables (fans, pumps, ERVs,
+    heat pumps, hot-water heaters/tanks, appliances, electric heaters —
+    shipped; see `data-model.md` §6.2 `EmptyEquipmentTables`).
+  - **Thermal Bridges** — thermal-bridge log.
   - **Model** — 3D HBJSON viewer (§11.4).
+  - **Documentation** — documentation-tab summary/export surface.
   - **Project header bar** above the tabs:
     project name + bt_number + client (left); version dropdown
     (US-3.1, *not* a tab — always-visible chrome) + save status +
@@ -43,9 +52,8 @@ TypeScript / React. Restricted to display + UI/UX.
   URL (`/projects/{id}/...`) — there is no separate viewer URL
   shape. Frontend hides edit affordances when not authenticated;
   backend rejects writes without a session token. Non-logged-in
-  viewers see Status / Windows / Envelope / Equipment / Model
-  tabs read-only, can browse versions, and can download project
-  JSON / table JSON / HBJSON.
+  viewers see all nine tabs read-only, can browse versions, and can
+  download project JSON / table JSON / HBJSON.
 
 There is **no top-level "Versions" tab** — versions live in the
 header dropdown to keep "current version" always visible and
@@ -193,25 +201,20 @@ Properties:
   providers (`SelectedModelContext`, `AppVizState`, `AppToolState`,
   `ColorBy`, `SelectedObject`, `HoverObject`).
 
-#### 11.4.4 Why R3F (grounded in V1 review)
+#### 11.4.4 Why R3F (decision record)
 
-V1's `model_viewer/` works but carries scaffolding cost that R3F
-removes:
-
-| V1 pattern | Why it exists | R3F equivalent |
-|---|---|---|
-| 6 nested `<...ContextProvider>` in `Viewer.tsx` (l.34–55) | Each tool / viz state needs its own React state | One Zustand store; subscribers select slices |
-| Custom `addToolStateEventHandler` / `addVizStateMountHandler` registries with manual `mount`/`dismount` lists | React lifecycle wasn't reachable from imperative scene code | Standard React `useEffect` per scene component; mount = render, dismount = cleanup |
-| Empty-deps animation `useEffect` with side-effect manual `requestAnimationFrame` (l.334–354) | Scene was outside React | R3F runs the loop; `useFrame` hooks into it cleanly |
-| `mountRef.current?.appendChild(world.current.renderer.domElement)` | Imperative DOM mount | `<Canvas>` component |
-| `world.current.scene.add(dimensionLinesRef.current)` during render in `Viewer.tsx` (l.30) | No declarative way to add a group | `<group ref={...}>` in JSX |
-| `useCallback` with `eslint-disable-next-line react-hooks/exhaustive-deps` in 6+ places (l.83–127) | Stale-closure dance against the imperative scene | Subscribe to Zustand → no stale deps |
-| Hand-rolled outline / wireframe / vertex visibility juggling per viz state | Three has no React-aware lifecycle | Conditional JSX: `{vizState === 'showSpaces' && <SpaceMeshes />}` |
-
-The HBJSON viewer is a near-perfect R3F use case: static or
+**Decided and shipped.** R3F was chosen over porting V1's imperative
+`model_viewer/` (six nested context providers, manual
+`requestAnimationFrame` loop, imperative DOM/scene mounting, and
+stale-closure-prone `useCallback` scaffolding) because the HBJSON
+viewer is a near-perfect declarative-React use case: static or
 infrequently-updated geometry, view modes (color-by, sun-path, ERV
-ducting), pick / hover interactions, no transform gizmos, no per-vertex
-editing. R3F's strengths line up exactly.
+ducting), pick/hover interactions, no transform gizmos, no per-vertex
+editing. The full V1-pattern-by-pattern comparison against R3F equivalents that
+drove the decision lives in `research/v1-3d-model-viewer-reference.md`
+if the historical detail is ever needed again; it is not reproduced
+here since the decision is settled and the viewer is live in
+`frontend/src/features/model_viewer/`.
 
 #### 11.4.5 What we keep from V1
 
@@ -231,9 +234,8 @@ What changes from V1:
 - Visual styling should use the BLDGTYP token system and avoid carrying
   forward MUI/default-blue/magenta-as-everything semantics.
 
-The work is a **port**, not a rewrite from scratch. Rough scope: ~2
-weeks of focused frontend work assuming the loaders and color-by logic
-are mostly portable.
+The viewer was built as a **port** of V1's behavior and domain
+vocabulary, not a rewrite from scratch, and has shipped.
 
 Compatibility: R3F is a renderer for React; same React, same Vite,
 same TS, same component library as the rest of V2. Zero stack

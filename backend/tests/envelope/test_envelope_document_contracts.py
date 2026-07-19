@@ -306,6 +306,9 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
     assert updated_segment.photo_asset_ids == ["asset_new"]
     assert updated_segment.photo_not_required is True
     assert updated_segment.use_site_notes == "Use over exterior sheathing."
+    extracted_rows = contract.extract_rows(updated)
+    assert isinstance(extracted_rows, list)
+    assert extracted_rows[0]["photo_not_required"] is True
 
     unchanged = contract.parse_replace_payload(
         {

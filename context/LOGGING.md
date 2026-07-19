@@ -156,10 +156,11 @@ As built (verified 2026-06-24), it also:
    only — query strings are deliberately excluded (see Security rules
    below). `client_ip` is the first entry of `X-Forwarded-For` when
    present (Render terminates TLS) else `request.client.host`.
-2. ⚠️ **Bind `user_id` once auth resolves the session — NOT yet wired.**
-   The middleware binds `request_id`/`method`/`path`/`client_ip` but does
-   not yet bind `user_id`. This is the one remaining item in this list
-   (2026-06-24 review OBS-7).
+2. ✅ **`user_id` is bound once auth resolves the session.**
+   `features/auth/service.py` calls
+   `structlog.contextvars.bind_contextvars(user_id=...)` on login, session
+   refresh, and session resolution, so it joins `request_id`/`method`/`path`/
+   `client_ip` on every log line for the rest of the request.
 3. ✅ After `call_next`, emit one structured access log line — and it carries
    more than this sketch: `log.info("http.request", status=...,
    duration_ms=..., request_bytes=..., response_bytes=...)` with `method` /

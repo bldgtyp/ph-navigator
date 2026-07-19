@@ -15,11 +15,14 @@ airtightness data, and required project site photos.
 ## 2.7.1 Sub-tab structure (US-ENV-1)
 
 The Envelope tab has its own **second-level tab bar** below the
-project header / project tab bar. Four sub-tabs in this order:
+project header / project tab bar. As shipped there are **two**
+sub-tabs in this order:
 
 ```
-Assemblies · Materials · Airtightness · Site Photos
+Assemblies · Materials
 ```
+
+(`AppSubTabs` in `EnvelopePage.tsx` renders exactly these two links.)
 
 - **Assemblies** (default landing) — visual layer/segment composer
   for each assembly. URL `/envelope/assemblies` (with optional
@@ -29,17 +32,22 @@ Assemblies · Materials · Airtightness · Site Photos
   `/envelope/materials`. The page heading inside is "Project
   Materials"; each row carries a `specification_status` that the
   tab surfaces and filters on.
-- **Airtightness** — placeholder; specced separately. URL
-  `/envelope/airtightness`.
+
+Two earlier-planned sub-tabs did **not** ship as sub-tabs of this bar:
+
+- **Airtightness** — **PLANNED, not built.** No route, path, or
+  component exists in `features/envelope/`. See §2.7.4 for the retained
+  design intent.
 - **Site Photos** — absorbed (2026-07-18) into the top-level
-  **Documentation** tab; `/envelope/site-photos` redirects to
-  `/projects/{id}/documentation#envelope`. See §2.7.5 and
+  **Documentation** tab; the legacy `/envelope/site-photos` URL
+  redirects to `/projects/{id}/documentation#envelope`. See §2.7.5 and
   `planning/archive/dated/2026-07-19/documentation-tab/`.
 
-The bare `/envelope` URL redirects to `/envelope/assemblies`.
+The bare `/envelope` URL redirects to `/envelope/assemblies`, and any
+other envelope subpath falls back there.
 
 The locked-version banner (UI/UX §2.4.1) sits above the sub-tab
-bar — one banner across all four sub-tabs, not duplicated per
+bar — one banner across both sub-tabs, not duplicated per
 sub-tab.
 
 ## 2.7.2 Assemblies sub-tab (`/envelope/assemblies`)
@@ -390,7 +398,14 @@ picked yet:
 
 ## 2.7.4 Airtightness sub-tab (`/envelope/airtightness`)
 
-**(Detailed in US-ENV-14.)**
+**PLANNED — not built.** There is no `/envelope/airtightness` route,
+no `airtightness` subpath, and no component for it in
+`features/envelope/`; the shipped sub-tab bar carries only Assemblies
+and Materials (§2.7.1). The sketch below is retained design intent from
+US-ENV-14, not a description of shipped UI. Reaching the old URL simply
+falls back to `/envelope/assemblies`.
+
+**(Design intent, US-ENV-14 — unbuilt.)**
 
 Project-level airtightness page. Shareable with the construction
 team via normal project URLs. Auto-extracts envelope volume + envelope

@@ -4,7 +4,7 @@ STATUS: CANONICAL ENGINEERING STANDARD
 RELATED: context/ENVIRONMENT.md, context/TECH_STACK.md, context/LOGGING.md, backend/README.md, frontend/package.json
 ---
 
-# PH-Navigator V2 Coding Standards
+# PH-Navigator Coding Standards
 
 This file is the project-level engineering standard for new code. Keep
 startup docs short and link here instead of duplicating these rules.
@@ -161,8 +161,10 @@ identifiers, not contents. `request_id` is bound automatically by
 
 ## Mandatory Closeout Gate
 
-Every code-changing session must end with the full repo gate before the work
-is reported complete, committed, or opened as a PR:
+The authoritative closeout gate is in the repo-root `CLAUDE.md` — it runs the
+`simplify` and `docs-pass` skills ahead of the commands below. Every
+code-changing session ends with that gate before the work is reported
+complete, committed, or opened as a PR:
 
 ```bash
 make format

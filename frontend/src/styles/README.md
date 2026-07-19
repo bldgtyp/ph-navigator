@@ -8,6 +8,11 @@ look is all in these stylesheets.
 If you are about to add a feature, jump to
 [How to style a new feature](#how-to-style-a-new-feature).
 
+> This file is the **implementation how** (which sheet owns what, import
+> strategy, guards). The **design-system index** — token *intent*, the blessed
+> component inventory, the doctrine, and the self-contained spec you upload to
+> Claude-Design — is `context/DESIGN_SYSTEM.md`.
+
 ---
 
 ## The three-tier token model

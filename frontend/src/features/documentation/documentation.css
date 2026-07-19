@@ -19,17 +19,11 @@
 }
 
 .documentation-header {
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-16);
 }
 
-.documentation-header h2 {
-  margin: 0;
-}
-
-.documentation-header p,
 .documentation-record-label p,
-.documentation-unsaved-note,
 .documentation-collapsed-stub,
 .documentation-group-empty,
 .documentation-empty {
@@ -37,14 +31,6 @@
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   margin: 0;
-}
-
-.documentation-unsaved-note {
-  background: var(--phn-warning-bg);
-  border: 1px solid color-mix(in oklab, var(--phn-warning) 22%, var(--border-subtle));
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  padding: var(--space-10) var(--space-12);
 }
 
 .documentation-write-error {
@@ -417,7 +403,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .documentation-header,
   .documentation-section-header,
   .documentation-group-header {
     align-items: flex-start;

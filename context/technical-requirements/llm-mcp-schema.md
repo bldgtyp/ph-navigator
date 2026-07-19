@@ -54,153 +54,12 @@ with read-only scopes cannot call mutating tools. All tool calls are
 attributed to the issuing editor. Mutating tools obey the MCP/browser
 edit-lease rules in §8.5.
 
-Original tool intent (historical):
-
-The authoritative shipped MCP inventory is `context/mcp.md`. The list below is
-retained only as the original planning intent; it no longer defines the live
-tool surface.
-
-```
-list_projects()                      → token-visible projects
-                                        (v1 project-scoped token returns one)
-get_project(project_id)              → metadata + version list
-list_versions(project_id)            → [{id, name, kind, locked, ...}]
-get_document(project_id, version_id) → full project JSON + version_body_etag
-                                       + current draft_etag if present
-get_table(project_id, version_id, table_name)
-                                     → TB-04b read primitive returning one
-                                       full table; `query_table` is a typed
-                                       filtered-read backlog item
-list_envelope_assemblies(project_id, version_id, source?)
-                                     → Assembly Builder assemblies with
-                                       layers, segments, and status flags
-list_project_materials(project_id, version_id, source?)
-                                     → project-owned materials with
-                                       use-sites and evidence ids
-query_unfinished_envelope_work(project_id, version_id, source?)
-                                     → null materials, missing conductivity,
-                                       missing datasheets, missing site photos,
-                                       unused materials, and catalog drift
-report_material_catalog_drift(project_id, version_id, source?)
-                                     → material catalog drift report without
-                                       writing project values
-report_missing_envelope_evidence(project_id, version_id, source?)
-                                     → datasheet and site-photo evidence gaps
-apply_envelope_command(project_id, version_id, command, if_match?, if_match_version?)
-                                     → validates the same discriminated
-                                       EnvelopeCommandRequest used by REST;
-                                       writes through the envelope command
-                                       service and tags the draft as MCP-edited
-replace_table(project_id, version_id, table_name, rows, draft_etag | base_version_etag)
-                                     → live generic write; whole-table replace
-                                       through the same replace_table_slice
-                                       service as browser PUT; stale etag
-                                       returns 409
-query_table(project_id, version_id, table_name, query)
-                                     → read backlog; filtered subset of one
-                                       table using a typed query object, not
-                                       expression text
-diff_versions(project_id, from_version_id, to_version_id)
-                                     → structured diff
-list_catalog(table)                  → catalog browse
-get_catalog_record(table, record_id) → record + version list
-create_version(project_id, source_version_id, name, kind?)
-                                     → old name for save_draft_as
-save_draft(project_id, version_id)   → flush token owner's draft to version
-discard_draft(project_id, version_id)
-                                     → discard token owner's draft
-update_project(project_id, patch)    → edit relational project metadata
-download_project_json(project_id, version_id)
-                                     → project JSON (via signed URL or inline)
-download_table_json(project_id, version_id, table_name)
-                                     → table JSON
-list_hbjson_files(project_id)        → metadata only (file list)
-get_hbjson_file_url(project_id, hbjson_file_id)
-                                     → signed R2 URL + expires_at
-                                       (LLM can fetch the body itself if needed)
-// Browser/REST currently owns direct upload-intent and complete-upload.
-// MCP asset tools operate on uploaded assets.
-get_asset_url(project_id, asset_id)  → signed preview/download URLs + expires_at
-
-# Bulk asset tools — wrap the §9.10.1/2 REST surface. See
-# `attachments.md` for the full contract.
-list_assets(project_id, version_id?, filter)
-                                     → page of asset metadata
-                                       filter: kind, table_key, column_key,
-                                               row_ids, content_type, ...
-
-resolve_asset_urls(project_id, asset_ids[])
-                                     → batch signed preview/download +
-                                       thumbnail URLs (≤ 100 ids per call)
-
-start_bulk_download(project_id, filter, filename_pattern?,
-                    include_manifest_csv?)
-                                     → job_id
-
-get_job(project_id, job_id)          → job status; embeds
-                                       result_asset_id when complete
-
-bulk_attach(project_id, version_id, attachments[])
-                                     → per-item attach calls against the
-                                       token owner's draft; returns item
-                                       indexes and `partial_failure`
-
-bulk_detach(project_id, version_id, asset_refs[])
-                                     → per-item detach calls against the
-                                       token owner's draft; returns item
-                                       indexes and `partial_failure`
-
-# Custom field schema mutations (Phase 2 of plan-13; project-document
-# tables only — catalog tables are not custom-field-capable in v1).
-# Each tool maps to the same backend FieldSchemaMutation service used
-# by the browser; require `project:write`; reject unauthenticated MCP.
-add_custom_field(project_id, version_id, table_key, after, insert_after_field_id?, expected_schema_fingerprint)
-                                     → CustomFieldDef
-rename_custom_field(project_id, version_id, table_key, field_id, display_name, expected_schema_fingerprint)
-                                     → CustomFieldDef
-delete_custom_field(project_id, version_id, table_key, field_id, expected_schema_fingerprint)
-                                     → { removed_field_id, cleared_row_count }
-duplicate_custom_field(project_id, version_id, table_key, source_field_id, after, expected_schema_fingerprint)
-                                     → CustomFieldDef
-change_custom_field_type(project_id, version_id, table_key, field_id, after, cell_writes, expected_schema_fingerprint)
-                                     → CustomFieldDef                # later phase
-set_custom_field_description(project_id, version_id, table_key, field_id, description, expected_schema_fingerprint)
-                                     → CustomFieldDef
-set_custom_field_formula(project_id, version_id, table_key, field_id, config, expected_schema_fingerprint)
-                                     → CustomFieldDef                # Phase 4
-
-# Apertures-feature semantic tools (Phase 13). Read tools require
-# `project:read`; `apply_aperture_command` requires `project:write` and
-# honors the same draft / ETag / locked-version / edit-lease policy as
-# browser writes. Audit entries are tagged `updated_via=mcp`.
-list_aperture_types(project_id, version_id, source?)
-                                     → { apertures: [{ id, name, element_count }] }
-get_aperture_type(project_id, version_id, aperture_type_id, source?)
-                                     → ApertureTypeEntry
-calculate_aperture_u_values(project_id, version_id, aperture_type_ids?, source?)
-                                     → { apertures: [ApertureUValueResult] }
-report_aperture_catalog_drift(project_id, version_id, source?)
-                                     → ApertureDriftReport
-apply_aperture_command(project_id, version_id, command,
-                       if_match?, if_match_version?)
-                                     → { response: AperturesSliceResponse,
-                                         audit: dict }
-```
-
-`apply_aperture_command` accepts any kind in the shared `ApertureCommand`
-union — `createApertureType`, `renameApertureType`, `pickFrame`,
-`editDimension`, `mergeElements`, `splitElement`, `pasteAssignment`,
-`setManufacturerFilters`, `refreshRefFromCatalog`, … — and wraps the
-same dispatcher the browser uses. Validation errors are `fatal`; ETag
-conflicts and locked versions return `refresh` recoverability so the
-caller knows to re-read and retry.
-
-Assembly Builder MCP writes are intentionally narrower than the generic
-document-write backlog: `apply_envelope_command` accepts one semantic
-command payload and calls the same backend service as the browser.
-It does not accept raw nested document mutation into `tables.assemblies[]`.
-All physical quantity fields remain SI canonical in MCP requests and
-responses; IP/SI conversion is a browser display/input concern.
+**The authoritative shipped MCP tool inventory is `context/mcp.md`.** Do
+not maintain a second tool roster here — the one that used to live in
+this section (original planning-era tool names/signatures) had already
+drifted from the live surface and has been removed. Read `context/mcp.md`
+for the current tool list, request/response shapes, and per-tool scope
+requirements.
 
 Custom-field MCP rules:
 
@@ -245,10 +104,13 @@ browser from silently applying failed/partial MCP state, and surface a
 concise banner or toast with the request id when the open project/draft
 was affected.
 
-`query_table` uses a constrained Pydantic query model. It does **not**
-accept SQL-like text, JSONPath, Python expressions, or any other
-string language that could be evaluated. The query shape is intentionally
-small and LLM-friendly:
+**Backlog / not yet built.** `query_table` does not exist in the shipped
+tool surface (`context/mcp.md`) — `get_table` (whole-table read) is the
+only read primitive today. The design below is kept as the target shape
+for when a typed filtered-read tool is built: a constrained Pydantic
+query model that does **not** accept SQL-like text, JSONPath, Python
+expressions, or any other string language that could be evaluated. The
+query shape is intentionally small and LLM-friendly:
 
 ```
 {
@@ -302,52 +164,29 @@ writes, and project asset attach flows are MCP-callable in v1.
 
 ### 10.4 Documentation `context/` (LLM-targeted)
 
-`context/` is the stable reference layer. It should stay tight:
-canonical product/architecture docs live here; dated working plans and
-implementation phasing stay under `planning/archive/dated/`.
-
-**The file tree below is a historical snapshot (2026-05-12) and has since
-drifted** — `context/` has since grown `DATA_STORAGE.md`, `LOGGING.md`,
-`PRODUCTION_DEPLOYMENT.md`, `DEVELOPMENT_WORKFLOW.md`, `mcp.md`, `ui/`, and
-more of `technical-requirements/`. **`context/README.md` is the live,
-maintained index** — read that instead of treating this list as current.
-
-Docs as of this doc's writing:
-
-```
-context/
-├── README.md                       reading order and doc routing
-├── ENVIRONMENT.md                  local environment / command card
-├── PRD.md                          concise canonical PRD
-├── TECHNICAL_REQUIREMENTS.md       router for detailed contracts
-├── technical-requirements/         on-demand technical contracts
-├── TECH_STACK.md                   stack and persistence decisions
-├── UI_UX.md                        UI narrative companion
-├── USER_STORIES.md                 story routing + vertical-slice phasing map
-├── user-stories/                   split canonical story bodies
-├── GLOSSARY.md                     canonical PHN-V2 terms
-└── technical-requirements/api.md    REST, OpenAPI, schema endpoint inventory
-```
+`context/` is the stable reference layer designed for both human and
+LLM use: canonical product/architecture docs live here; dated working
+plans and implementation phasing stay under `planning/archive/dated/`.
+**`context/README.md` is the live, maintained index and router** — read
+that for the current file tree and reading order rather than
+maintaining a second copy in this doc.
 
 Runtime JSON Schemas are served from `/api/v1/schemas/...` and OpenAPI from
 `/api/v1/openapi.json`; static schema snapshots under `context/schemas/`
 can be added later if CI starts checking committed generated artifacts.
 
-These docs are deliverables in the same way as code. CI should verify
-generated schemas are in sync with Pydantic models once schema
-generation exists.
-
 ### 10.5 Schema versioning — open-old-projects safety
 
-**The hard guarantee** (activated for real beta data): a project version that was openable
+**The hard guarantee** (live in production): a project version that was openable
 when it was saved must remain openable forever. No production release
 ships if it breaks reads of any prior document `schema_version`.
 
-**Beta gate.** The current clean baseline is
-`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION == 1`. Before the first real BLDGTYP
-beta project save, schema bumps are still allowed, but every bump now uses the
-project-document upgrade lane: a read-time forward-only shim chain, committed
-fixtures, an audit CLI drill, and the schema-bump checklist in
+**Current state.** `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is `6`
+(`backend/features/project_document/document.py`) and has bumped
+several times since the pre-launch baseline. Every bump uses the
+project-document upgrade lane: a read-time forward-only shim chain
+(live — see `save-versioning.md`), committed fixtures, an audit CLI
+drill, and the schema-bump checklist in
 `planning/features/beta-schema-evolution/schema-bump-checklist.md`.
 
 Mechanisms:

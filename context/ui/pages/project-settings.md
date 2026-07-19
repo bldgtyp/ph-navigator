@@ -7,8 +7,11 @@
 
 **(Detailed in US-Settings.)**
 
-Reached via the project header `⋯` → "Project settings". Opens a
-modal (or dedicated route — TBD when walked) with:
+Reached via the project header `⋯` → "Project settings". It opens a
+**modal** — `ProjectSettingsModal` (`features/projects/components/
+ProjectSettingsModal.tsx`, a `ModalDialog`), mounted from `ProjectShell`
+and toggled by that overflow-menu item. It is not a dedicated route.
+The modal contains:
 - Edit metadata (name, bt_number, client, phius_number,
   phius_dropbox_url).
 - Location metadata (latitude, longitude, elevation, time zone,

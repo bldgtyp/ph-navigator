@@ -58,7 +58,7 @@ describe("DocumentationPage", () => {
     renderDocumentation();
 
     expect(await screen.findByText("Ventilator ERV-01")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Documentation" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Documentation" })).not.toBeInTheDocument();
     expect(screen.getAllByText(hasTextContent("Spec 2/3"))[0]).toBeVisible();
     expect(screen.getAllByText(hasTextContent("Photos 2/3"))[0]).toBeVisible();
     expect(screen.getByText("Pump P-01")).toBeVisible();
@@ -119,7 +119,8 @@ describe("DocumentationPage", () => {
     );
     renderDocumentation({ ...PROJECT, access_mode: "viewer" });
 
-    expect(await screen.findByText(hasNearestTextContent("saved version"))).toBeVisible();
+    expect(await screen.findByText("Ventilator ERV-01")).toBeVisible();
+    expect(screen.queryByText(hasNearestTextContent("saved version"))).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Drop files here" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add file" })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Not required" })).not.toBeInTheDocument();
@@ -182,6 +183,62 @@ describe("DocumentationPage", () => {
         }),
       ),
     );
+  });
+
+  test("photo waiver stays unchecked while the clearing write is pending", async () => {
+    const user = userEvent.setup();
+    const checkedSummary = summaryFixture();
+    const pumpsGroup = checkedSummary.sections[0]?.groups.find((group) => group.key === "pumps");
+    const pump = pumpsGroup?.records.find((record) => record.record_id === "pump_1");
+    if (!pump) throw new Error("Missing pump fixture.");
+    pump.photo_not_required = true;
+
+    let resolvePut: ((response: Response) => void) | undefined;
+    const pendingPut = new Promise<Response>((resolve) => {
+      resolvePut = resolve;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.endsWith("/draft/documentation-summary")) {
+          return Promise.resolve(jsonResponse(checkedSummary));
+        }
+        if (url.startsWith("/api/v1/projects/proj_1/assets/bulk-urls")) {
+          return Promise.resolve(jsonResponse({ items: assetUrlsFixture() }));
+        }
+        if (url.endsWith("/draft/tables/pumps") && init?.method !== "PUT") {
+          const slice = pumpsSliceFixture();
+          slice.pumps[0]!.photo_not_required = true;
+          return Promise.resolve(jsonResponse(slice));
+        }
+        if (url.endsWith("/draft/tables/pumps") && init?.method === "PUT") return pendingPut;
+        return Promise.resolve(jsonResponse({}, 404));
+      }),
+    );
+    renderDocumentation();
+
+    const pumpRow = (await screen.findByRole("button", { name: "Pump P-01" })).closest("article");
+    expect(pumpRow).not.toBeNull();
+    const photoWaiver = within(pumpRow as HTMLElement).getAllByLabelText("Not required")[0];
+    expect(photoWaiver).toBeChecked();
+
+    await user.click(photoWaiver as HTMLElement);
+    expect(photoWaiver).not.toBeChecked();
+    expect(within(pumpRow as HTMLElement).getByLabelText("Spec")).toBeDisabled();
+
+    const ventilatorRow = screen
+      .getByRole("button", { name: "Ventilator ERV-01" })
+      .closest("article");
+    expect(ventilatorRow).not.toBeNull();
+    expect(within(ventilatorRow as HTMLElement).getByLabelText("Spec")).toBeEnabled();
+    for (const unaffectedWaiver of within(ventilatorRow as HTMLElement).getAllByLabelText(
+      "Not required",
+    )) {
+      expect(unaffectedWaiver).toBeEnabled();
+    }
+
+    resolvePut?.(jsonResponse({ ...pumpsSliceFixture(), draft_etag: "d2" }));
   });
 });
 

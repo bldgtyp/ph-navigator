@@ -30,14 +30,17 @@ current implementation decisions.
 
 ## Library Decision
 
-Use TanStack Table v8 (MIT, headless) with
-`@tanstack/react-virtual`, rendered through shadcn-table primitives.
+Use TanStack Table v8 (MIT, headless) with `@tanstack/react-virtual`.
+Markup and styling are plain CSS on the site's 3-tier token system
+(`context/CODING_STANDARDS.md`) — there is no Tailwind or shadcn/ui in
+this codebase; an earlier POC draft of this doc assumed shadcn-table
+primitives and a Tailwind app shell, neither of which shipped.
 
 AG Grid Community was rejected because row grouping, range selection,
 and set-filter style faceted filtering are Enterprise features. MUI X
 DataGrid was also rejected because the comparable parity features live
-behind paid tiers and its visual idiom does not match the shadcn/Tailwind
-app shell.
+behind paid tiers and its visual idiom does not match the app's plain-CSS
+styling approach.
 
 Accepted tradeoff: TanStack is headless, so PHN owns markup, styling,
 selection behavior, clipboard handling, and accessibility. That is
@@ -59,29 +62,33 @@ fit this contract.
 
 ## Component Shape
 
-The public API should expose user intent, not TanStack internals.
+The public API should expose user intent, not TanStack internals. The
+canonical `DataTableProps<TRow>` shape lives in
+`frontend/src/shared/ui/data-table/types.ts` — treat that file as the
+source of truth and this doc as orientation, not a mirror. Notable
+props as of this writing (see the file for the full, commented list):
 
-```ts
-type DataTableProps<TRow> = {
-  rows: TRow[];
-  getRowId: (row: TRow) => string;
-  fieldDefs: FieldDef[];
-  columnDefs: ColumnDef<TRow>[];
+- `rows`, `getRowId`, `fieldDefs`, `columnDefs`, `view`, `onViewChange`
+  — the core data/view contract.
+- `onWrite?: (op: WriteOp) => WriteResult | Promise<WriteResult>` —
+  optional; see *Write Pipeline* below for `WriteOp` and `WriteResult`.
+- `readOnly?`, `density?: "compact" | "comfortable"`.
+- `emptyMessage: string` and `tableName: string` are **required** (not
+  optional) — every table ships a meaningful empty state and CSV/JSON
+  download filename base; there is no default fallback.
+- `onRowOpen?`, `overflowMenuActions?`, `bulkSelectionActions?`,
+  `rowActions?`, `footerAction?`, `onResetView?`.
+- Custom-field wiring: `onDeleteCustomField?`, `onAddCustomField?`,
+  `onDuplicateCustomField?`, `onEditCustomFieldBundle?`,
+  `prepareEditCustomFieldBundleConfirmation?`, `canEditFieldConfig?`.
+- Formula support: `formulaFieldRegistry?`, `getFormulaRowValues?`.
+- Linked-record integration: `linkedRecordOps?`, `linkedRecordTargets?`.
 
-  view: ViewState;
-  onViewChange: (next: ViewState) => void;
-
-  onWrite: (op: WriteOp) => void | Promise<void>;
-  readOnly?: boolean;
-
-  density?: "compact" | "comfortable";
-  tintTheme?: TintTheme;
-  rowChrome?: { leading?: ChromeSlot[]; trailing?: ChromeSlot[] };
-
-  unitContext?: UnitContext;
-  attachmentRenderer?: AttachmentRenderer;
-};
-```
+There is no `tintTheme`, `rowChrome`, `unitContext`, or
+`attachmentRenderer` prop — those were POC-draft names that never
+shipped. Tint theming is an internal token set (see *Layout, Styling,
+And Accessibility*); units and attachments are handled by
+column/field-level configuration, not a table-level prop.
 
 Rules:
 
@@ -457,8 +464,9 @@ the undo inverse pointed at the persisted row. Consumers whose
 client-generated ids are canonical return nothing.
 
 ```ts
+// Canonical shape: frontend/src/shared/ui/data-table/types.ts — WriteOp.
 type WriteOp =
-  | { kind: "cell"; writes: CellWrite[] }
+  | ({ kind: "cell"; writes: CellWrite[] } & OptionListDelta)  // OptionListDelta: newOptions? / removedOptions?
   | {
       kind: "paste";
       writes: CellWrite[];
@@ -467,35 +475,42 @@ type WriteOp =
       newOptions: Record<string, FieldOption[]>;
     }
   | { kind: "fill"; writes: CellWrite[] }
-  | { kind: "rowInsert"; rows: unknown[] }
-  | { kind: "rowDelete"; rows: unknown[] }
-  | { kind: "schemaMutation"; mutation: FieldSchemaMutation };
+  | { kind: "rowInsert"; rows: RowInsertPayload[] }
+  | { kind: "rowDelete"; rows: RowDeletePayload[] }
+  | { kind: "rowDuplicate"; rows: RowDuplicatePayload[] }
+  | { kind: "schemaMutation"; variant: "typed"; mutation: FieldSchemaMutation }
+  | { kind: "schemaMutation"; variant: "legacyOptions"; before: FieldDef; after: FieldDef; cellWrites?: CellWrite[]; optionReplacements?: Record<string, string> };
 ```
 
-> **Implementation note (plan-15 P2.4):** the legacy
-> `WriteOp.fieldDefMutation` shape — currently consumed only by the
-> single-select option editor (`FieldEditorPopover`) — is renamed to
-> `WriteOp.schemaMutation` in plan-15 phase 2.4. No shim chain
-> (pre-deploy, CLAUDE.md §16). The single-select option editor
-> continues to ride the renamed variant via the legacy `before` /
-> `after` / `cellWrites` slots until plan-16 / Phase 3 splits it into
-> its own `editOptions` mutation kind.
+`rowDuplicate` carries `RowDuplicatePayload[]` (`rowId`, `sourceRowId`,
+`sourceRow`, `anchorRowId`) — CRUD consumers (Materials) use
+`sourceRowId` to call the backend duplicate endpoint; slice-replace
+consumers (Rooms, Pumps) clone `sourceRow` client-side.
+
+The legacy `WriteOp.fieldDefMutation` shape was renamed to
+`WriteOp.schemaMutation` (plan-15 phase 2.4) and now carries a
+`variant` discriminant: `"typed"` is the current custom-field pipeline
+(`FieldSchemaMutation`, POSTs to `/custom-fields:mutate`); `"legacyOptions"`
+is the single-select option editor (`FieldEditorPopover`), which still
+rides the whole-table replace path with the legacy `before` / `after` /
+`cellWrites` slots until a future phase splits it into its own
+`editOptions` mutation kind.
 
 `FieldSchemaMutation` is the discriminated DTO for user-defined field
-schema changes. It is shared by browser writes, REST, and MCP so that
-add / rename / delete / duplicate / change-type / describe / set-formula
-go through one validation and audit path:
-
-```ts
-type FieldSchemaMutation =
-  | { kind: "addField";       tableKey: TableKey; after: CustomFieldDef;  insertAfterFieldId?: string; expectedSchemaFingerprint: string }
-  | { kind: "renameField";    tableKey: TableKey; fieldId: string;        displayName: string;          expectedSchemaFingerprint: string }
-  | { kind: "deleteField";    tableKey: TableKey; fieldId: string;        clearValues: true;            expectedSchemaFingerprint: string }
-  | { kind: "duplicateField"; tableKey: TableKey; sourceFieldId: string;  after: CustomFieldDef;        expectedSchemaFingerprint: string }
-  | { kind: "changeType";     tableKey: TableKey; fieldId: string;        after: CustomFieldDef;        cellWrites: CellWrite[]; expectedSchemaFingerprint: string }
-  | { kind: "setDescription"; tableKey: TableKey; fieldId: string;        description: string | null;   expectedSchemaFingerprint: string }
-  | { kind: "setFormula";     tableKey: TableKey; fieldId: string;        config: FormulaConfig;        expectedSchemaFingerprint: string };
-```
+schema changes, defined in
+`frontend/src/shared/ui/data-table/lib/customFieldMutations.ts`. It is
+shared by browser writes, REST, and MCP so that add / rename / delete /
+duplicate / change-type / set-description / set-formula / edit-bundle
+go through one validation and audit path. Variants:
+`AddFieldMutation`, `RenameFieldMutation`, `DeleteFieldMutation`,
+`DuplicateFieldMutation`, `SetDescriptionMutation`,
+`EditOptionsMutation`, `ChangeTypeMutation`, `SetFormulaMutation`, and
+`EditFieldBundleMutation` (`kind: "editFieldBundle"`) — the unified
+field-config-modal mutation built by `buildEditFieldBundleMutation()`,
+which bundles display name, description, option-list, formula-source,
+and display-units edits into one `expectedSchemaFingerprint`-guarded
+write. See that file for the exact per-variant field lists — they are
+not duplicated here.
 
 Invariants:
 
@@ -700,7 +715,7 @@ for the original identifier-column rollout that this model supersedes.
 
 ## Layout, Styling, And Accessibility
 
-- 32 px row height; 1 px dividers; row hover highlight.
+- 38 px row height (`--data-table-row-height`, `frontend/src/styles/tokens.css`); 1 px dividers; row hover highlight.
 - Sticky first data column by default; when a column declares
   `isIdentifier` (see *Identifier column*), that column is pinned to
   slot 0 regardless of saved `columnOrder`.
@@ -776,9 +791,10 @@ group / order / hidden columns (plan 09).
   header / data / summary row. v1 is `aria-disabled`; the future
   "add field" feature only needs to add behavior, not layout.
 - **Persistence corollary.** `sanitizeViewStateForSchema` drops widths
-  whose column id is no longer present in the schema. No back-compat
-  shim is required for the rename from `width` → `defaultWidth` —
-  pre-deployment.
+  whose column id is no longer present in the schema. The rename from
+  `width` → `defaultWidth` shipped without a back-compat shim — it
+  landed while `ViewState` had no persisted rows to migrate, not as a
+  standing no-shim policy.
 
 ## Shared Column Builders
 

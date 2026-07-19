@@ -345,56 +345,10 @@ Agents cannot click the Render dashboard or call the Render API without a
 `RENDER_API_KEY`; steps 1–3 are operator (Ed) actions. With an API key
 exported, the same flow can be scripted against `https://api.render.com/v1`.
 
-The verbatim service/DB config (also encoded in `render.yaml`):
-
-- Static frontend service: `ph-navigator-v2-staging`
-  - URL: `https://ph-navigator-v2-staging.onrender.com`
-  - Root directory: `frontend`
-  - Build command: `pnpm install --frozen-lockfile && pnpm run build`
-  - Publish directory: `dist`
-  - Rewrite rule: `/*` -> `/index.html` with action `Rewrite`
-  - Env: `VITE_API_BASE_URL=https://ph-navigator-v2.onrender.com`
-- Backend web service: `ph-navigator-v2-api-staging`
-  - URL: `https://ph-navigator-v2.onrender.com`
-  - Plan: `starter` (512 MB / 0.5 CPU) so staging can run Render Shell,
-    SSH, and one-off jobs for production-rehearsal tasks.
-  - Root directory: `backend`
-  - Build command: `pip install uv && uv sync --frozen --no-dev`
-  - Start command:
-    `uv run alembic upgrade head && uv run uvicorn main:app --host 0.0.0.0 --port $PORT`
-  - Env:
-    - `ENVIRONMENT=staging`
-    - `APP_VERSION=0.1.0`
-    - `LOG_FORMAT=json`
-    - `LOG_LEVEL=INFO`
-    - `GIT_SHA` mapped from Render's `RENDER_GIT_COMMIT`
-    - `DATABASE_URL=<Render internal database URL>`
-    - `DATABASE_POOL_MIN_SIZE=2`
-    - `DATABASE_POOL_MAX_SIZE=10`
-    - `DATABASE_POOL_TIMEOUT_SECONDS=10`
-    - `SLOW_QUERY_MS=500`
-    - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
-    - `CORS_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
-    - `SESSION_COOKIE_NAME=phn_session`
-    - `SESSION_LIFETIME_MINUTES=480`
-    - `SESSION_COOKIE_SAMESITE=none`
-    - `FRONTEND_BASE_URL=https://ph-navigator-v2-staging.onrender.com`
-    - `MCP_ISSUER_URL=https://ph-navigator-v2.onrender.com`
-    - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-v2.onrender.com/mcp`
-    - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
-    - `MCP_ALLOWED_HOSTS=ph-navigator-v2.onrender.com`
-    - `MCP_ALLOWED_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
-    - `R2_ACCOUNT_ID=<Cloudflare account id>`
-    - `R2_ACCESS_KEY_ID=<Render secret>`
-    - `R2_SECRET_ACCESS_KEY=<Render secret>`
-    - `R2_BUCKET=ph-navigator-v2-dev`
-    - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
-    - `ACCOUNT_TOKEN_SECRET=<Render secret>`
-    - Render also sets `RENDER_EXTERNAL_URL` and
-      `RENDER_EXTERNAL_HOSTNAME`; the backend derives MCP Host allowlist
-      entries from them automatically.
-    - `FERNET_SECRET_KEY=<generated Fernet key>`
-- Postgres service: `ph-navigator-v2-staging-db`
+The pre-deletion service/DB config (two web services + `ph-navigator-v2-staging-db`,
+with the full env-var block) lived here verbatim but is fully encoded in
+`render.yaml`; that Blueprint is the source of truth if staging is ever rebuilt.
+See `context/PRODUCTION_DEPLOYMENT.md` for the canonical production/env-var roster.
 
 ### Render Postgres Observability
 
@@ -711,8 +665,10 @@ Notes:
 
 ## Code-change closeout gate
 
-Every code-changing session must end with the same local gate before the
-work is reported complete, committed, or opened as a PR:
+The authoritative closeout gate — including the `simplify` and `docs-pass`
+skills that run before `make format`/`make ci` — lives in the repo-root
+`CLAUDE.md`. This section documents only what the two commands in that gate
+actually run. Every code-changing session ends with:
 
 ```bash
 make format
@@ -791,8 +747,10 @@ the required `make format` followed by `make ci` closeout gate.
   Query for server state, and pass `build`, tests, lint, and format
   checks through `pnpm` or the Makefile.
 
-## Browser testing (Playwright MCP)
+## Browser testing
 
-Project-scoped MCP server registered in `.mcp.json`. Use
-`mcp__plugin_playwright_playwright__*` for interactive verification
-during development. Use `make e2e` for CLI test runs.
+Canonical: `context/USING_A_WEB_BROWSER.md`. For interactive verification and
+screenshots, use `make agent-browser-ready` + `frontend/scripts/agent-browser.mjs`
+(self-cleaning, reliable) — NOT the Playwright/MCP browser tools, which are
+unreliable in this repo (shared-profile lock + zombie processes). `make e2e`
+runs the Playwright CLI e2e suite.

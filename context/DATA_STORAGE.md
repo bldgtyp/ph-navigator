@@ -109,12 +109,8 @@ the project-document tables** (assemblies, apertures, rooms, equipment, etc. —
 those live in class ②).
 
 Grouped by concern (full column-level schema in `data-model.md` §6.1;
-`20260624_0001` is the relational baseline reset — three migrations have
-layered on top since: `20260627_0002` (awning/hopper frame operations),
-`20260627_0003` (access-capability foundation: `projects.team_id`,
-`users.is_staff`, `user_grants`), and `20260627_0004` (admin user
-management: `account_tokens`, `users.password_set_at`,
-`user_action_log.target_user_id`/`target_email`)):
+`20260624_0001` is the relational baseline reset — several migrations layer
+on top since; see `backend/alembic/versions/` for the current chain):
 
 ### Auth & audit
 | Table | Holds | Notes |

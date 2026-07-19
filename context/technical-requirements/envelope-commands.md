@@ -33,9 +33,10 @@ versions are rejected with HTTP 409 (`viewer_read_only`,
 
 ## Command list
 
-24 command kinds, grouped by domain. JSON shapes live in
+29 command kinds, grouped by domain. JSON shapes live in
 `backend/features/envelope/models.py`; the table below cites the model
-class name.
+class name. The dispatch registry is
+`backend/features/envelope/commands/registry.py`.
 
 ### Assembly commands
 
@@ -86,6 +87,26 @@ class name.
 | `remove_project_material` | `RemoveProjectMaterialCommand` | Drop one project material, only when no segment references it. Used by the Materials tab's Unused section row-level remove action. | `project_material_not_found`, `project_material_in_use` |
 | `refresh_project_material_from_catalog` | `RefreshProjectMaterialFromCatalogCommand` | Reconcile a drifted catalog-origin project material against the current catalog row using per-field `take_catalog` / `use_value` / `keep_mine` choices. **Touches DB**. See `envelope-catalog-drift.md`. | `project_material_has_no_catalog_origin`, `catalog_material_source_missing`, `catalog_material_source_deactivated`, `unknown_project_material_refresh_field` |
 
+### Project glazing / frame commands
+
+Handlers in `backend/features/envelope/commands/aperture_products.py`.
+These act on `tables.project_glazings` / `tables.project_frames` (the
+per-project aperture-product tables, distinct from the assembly
+material commands above).
+
+| Kind | Model | Purpose | Notable conflicts |
+|------|-------|---------|-------------------|
+| `update_project_glazing` | `UpdateProjectGlazingCommand` | Patch a subset of project-glazing fields; edits to catalog-bound fields auto-flag `local_overrides`. No-op when no fields changed. | `project_glazing_not_found` |
+| `update_project_frame` | `UpdateProjectFrameCommand` | Patch a subset of project-frame fields; same override-tracking as glazing. | `project_frame_not_found` |
+| `remove_project_glazing` | `RemoveProjectGlazingCommand` | Drop one project glazing, only when no aperture element references it. | `project_glazing_not_found`, `project_glazing_in_use` |
+| `remove_project_frame` | `RemoveProjectFrameCommand` | Drop one project frame, only when no aperture element (any of the four sides) references it. | `project_frame_not_found`, `project_frame_in_use` |
+
+### Import commands
+
+| Kind | Model | Purpose | Notable conflicts |
+|------|-------|---------|-------------------|
+| `import_envelope_constructions` | `ImportEnvelopeConstructionsCommand` | Re-run a previewed HBJSON-construction import plan (materials + assemblies) as one atomic `replace_materials_and_assemblies` write. Handler lives in `backend/features/envelope/commands/envelope_import.py`; parsing/plan-building is shared with the preview endpoint. See `envelope-hbjson-import.md` for the parse/match/resolution surface and its own error codes (this command's own handler raises no additional 409 conflict codes beyond the parse-time 422 and the plan's resolution requirements). | — |
+
 ## Conflict code reference
 
 All command conflicts emit HTTP 409 with this body:
@@ -111,6 +132,8 @@ Catalog of conflict codes raised by envelope commands:
 - `catalog_material_source_missing`,
   `catalog_material_source_deactivated`
 - `unknown_project_material_refresh_field`
+- `project_glazing_not_found`, `project_frame_not_found`
+- `project_glazing_in_use`, `project_frame_in_use`
 - `version_etag_mismatch`, `draft_etag_mismatch`, `version_locked`,
   `viewer_read_only` (concurrency / authz envelope, applies to every
   command)

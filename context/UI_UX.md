@@ -80,6 +80,12 @@ Current V1-derived invariants:
 
 ### BLDGTYP design system
 
+> **Design-system source of truth:** `context/DESIGN_SYSTEM.md` is the
+> canonical index of tokens, the blessed component inventory, and authoring
+> doctrine — and its self-contained "Portable spec" block is the file to
+> **upload to Claude-Design**. This section stays as narrative context; read
+> `DESIGN_SYSTEM.md` for the concrete token/component reference.
+
 > **Implementation reality (2026-06-14).** The styling is **hand-written
 > plain CSS** on a 3-tier custom-property token system cribbed from the
 > BLDGTYP brand. **There is no Tailwind and no shadcn/ui.** Earlier
@@ -537,14 +543,15 @@ are building **plus §1 (common elements) above**. See
 | 2.4 Project workspace — header, tab bar, version picker | [`ui/pages/project-workspace.md`](ui/pages/project-workspace.md) |
 | 2.5 Status tab (default landing) | [`ui/pages/status-tab.md`](ui/pages/status-tab.md) |
 | 2.6 Apertures tab — builder, glazings report, frames report | [`ui/pages/apertures-tab.md`](ui/pages/apertures-tab.md) |
-| 2.7 Envelope tab — assemblies, materials, airtightness, site photos | [`ui/pages/envelope-tab.md`](ui/pages/envelope-tab.md) |
+| 2.7 Envelope tab — assemblies + materials (airtightness planned/unbuilt; site photos absorbed into Documentation) | [`ui/pages/envelope-tab.md`](ui/pages/envelope-tab.md) |
 | 2.8 Spaces & Equipment tabs | [`ui/pages/spaces-equipment-tab.md`](ui/pages/spaces-equipment-tab.md) |
-| 2.8b Climate tab (location + weather/climate reference datasets) | **no narrative doc yet** — shipped tab, `frontend/src/features/climate/` |
-| 2.8c Thermal Bridges tab (top-level, not an Equipment sub-tab) | **no dedicated narrative yet** — mentioned in passing in `ui/pages/spaces-equipment-tab.md` |
+| 2.8b Climate tab (location + weather/climate reference datasets) | [`ui/pages/climate.md`](ui/pages/climate.md) |
+| 2.8c Thermal Bridges tab (top-level, not an Equipment sub-tab) | [`ui/pages/thermal-bridges.md`](ui/pages/thermal-bridges.md) |
 | 2.9 Model tab (HBJSON viewer) | [`ui/pages/model-tab.md`](ui/pages/model-tab.md) |
 | 2.10 Documentation tab (project-wide evidence viewer) | [`ui/pages/documentation-tab.md`](ui/pages/documentation-tab.md) |
 | 2.11 Project settings (overflow menu) | [`ui/pages/project-settings.md`](ui/pages/project-settings.md) |
 | 2.12 Viewer public read | [`ui/pages/viewer-public.md`](ui/pages/viewer-public.md) |
+| 2.13 Admin — Users (app-level, `/admin/users`) | [`ui/pages/admin-users.md`](ui/pages/admin-users.md) |
 ## 3. Flows (multi-page)
 
 ### 3.1 Sign-in → dashboard (US-0 → US-1)

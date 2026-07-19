@@ -35,7 +35,7 @@ Use a boring, explicit stack:
 | API / validation model | Pydantic v2 |
 | DB | Postgres 16 |
 | DB access | Raw parameterized SQL through narrow repository modules; no ORM entity layer. App access goes through a lifespan-managed `psycopg_pool.ConnectionPool` with explicit sizing, checkout validation, `/ready` DB probe, and threshold slow-query logging |
-| Migrations | Alembic retained for schema migrations; current pre-deploy history is squashed into baseline `20260624_0001` |
+| Migrations | Alembic retained for schema migrations; pre-deploy history was squashed into baseline `20260624_0001` |
 | App document model | Pydantic-validated JSONB document versions |
 | Frontend | Vite + TypeScript + React |
 | UI kit | Hand-written plain CSS + Radix UI behavior primitives (no Tailwind, no shadcn/ui). See `frontend/src/styles/README.md` |
@@ -176,7 +176,8 @@ Alembic remains for migrations. Alembic may use SQLAlchemy internally,
 but application code does not use SQLAlchemy ORM/Core for persistence.
 Migrations are manual revisions; no autogenerate from ORM metadata.
 Before first deploy, the accreted migration chain was squashed into
-`20260624_0001`; future schema changes layer on top of that baseline.
+`20260624_0001`; schema changes since have layered on top of that baseline
+(see `backend/alembic/versions/`).
 
 ## Frontend Decision
 
@@ -340,7 +341,7 @@ Frontend:
 4. Confirm React version during scaffold. React 19 is fine if the Radix/R3F/TanStack combination is clean at install time; otherwise pin React 18 for compatibility.
 5. Decide whether to generate TypeScript API types from OpenAPI early. Lean yes, but keep the generated client thin.
 
-## Open Questions
+## Resolved (formerly Open Questions)
 
-1. Should the V2 repo enforce generated OpenAPI client/types in CI from day 1?
-2. Should document/table Pydantic models live under `features/project/document/` only, or in a shared `schemas/` package consumed by REST and MCP?
+1. Generated OpenAPI client/types were not enforced in CI; the app shipped without generated client codegen.
+2. Document/table Pydantic models live under `features/project_document/`, not a shared top-level `schemas/` package.

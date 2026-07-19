@@ -247,8 +247,10 @@ Production MCP settings are:
 - allowed host: `api.ph-nav.com`
 - allowed origins: `https://www.ph-nav.com,https://ph-nav.com`
 
-Repo-local `.mcp.json` currently defines only the Playwright MCP helper for
-browser testing. There is no committed Render or Cloudflare MCP connector.
+Repo-local `.mcp.json` registers the `phn-local` stdio MCP server (this
+project's agent-facing MCP, see `context/mcp.md`) and the Playwright MCP
+helper for browser testing. There is no committed Render or Cloudflare MCP
+connector.
 Render operations use the Render dashboard, Render CLI, or Render API with an
 operator-held token.
 

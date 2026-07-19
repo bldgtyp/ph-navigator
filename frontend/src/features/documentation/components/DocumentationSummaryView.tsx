@@ -53,8 +53,14 @@ export function DocumentationSummaryView({
   const photoMutation = useDocumentationPhotoMutation(project.id, project.active_version_id);
   const fieldMutation = useDocumentationFieldMutation(project.id, project.active_version_id);
   const canEdit = project.access_mode === "editor" && project.active_version?.locked !== true;
-  const writing = photoMutation.isPending || fieldMutation.isPending;
   const writeError = photoMutation.error ?? fieldMutation.error;
+  const isRecordWriting = (record: DocumentationRecord) =>
+    (photoMutation.isPending &&
+      photoMutation.variables?.record.table_key === record.table_key &&
+      photoMutation.variables.record.record_id === record.record_id) ||
+    (fieldMutation.isPending &&
+      fieldMutation.variables?.record.table_key === record.table_key &&
+      fieldMutation.variables.record.record_id === record.record_id);
   const activeRecord = useMemo(() => {
     if (!activeRecordKey) return null;
     for (const section of summary.sections) {
@@ -94,13 +100,6 @@ export function DocumentationSummaryView({
     const nextUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${anchor}`;
     await navigator.clipboard?.writeText(nextUrl);
   };
-  const hasUnsavedEditorDraft = project.access_mode === "editor" && summary.source === "draft";
-  const focusSaveVersion = () => {
-    const buttons = Array.from(document.querySelectorAll("button"));
-    const saveButton = buttons.find((button) => button.textContent?.trim() === "Save Version");
-    saveButton?.scrollIntoView({ block: "center" });
-    saveButton?.focus();
-  };
   const updatePhotos = async (record: DocumentationRecord, nextAssetIds: string[]) => {
     await photoMutation.mutateAsync({ summary, record, nextAssetIds });
   };
@@ -109,29 +108,13 @@ export function DocumentationSummaryView({
   };
 
   return (
-    <section className="tab-panel documentation-page" aria-labelledby="documentation-title">
+    <section className="tab-panel documentation-page" aria-label="Documentation">
       <header className="documentation-header">
-        <div>
-          <h2 id="documentation-title">Documentation</h2>
-          <p>
-            Version {project.active_version?.name ?? "Working"} ·{" "}
-            {summary.source === "draft" ? "working draft" : "saved version"}
-          </p>
-        </div>
         <AxisRollup counts={summary.counts} />
       </header>
       {project.active_version?.locked ? (
         <p className="draft-banner">
           This version is locked. Save As to copy it into a new version.
-        </p>
-      ) : null}
-      {hasUnsavedEditorDraft ? (
-        <p className="documentation-unsaved-note">
-          Includes draft changes.{" "}
-          <button type="button" className="text-button" onClick={focusSaveVersion}>
-            Save Version
-          </button>{" "}
-          publishes this evidence to viewers.
         </p>
       ) : null}
       {writeError ? (
@@ -221,7 +204,7 @@ export function DocumentationSummaryView({
                     activeFilters={activeFilters}
                     assetUrlById={assetUrlById}
                     canEdit={canEdit}
-                    writing={writing}
+                    isRecordWriting={isRecordWriting}
                     onPhotoChange={updatePhotos}
                     onFieldChange={updateField}
                     onOpenRecord={(record) => setActiveRecordKey(documentationRecordKey(record))}
@@ -241,7 +224,7 @@ export function DocumentationSummaryView({
           record={activeRecord}
           assetUrlById={assetUrlById}
           canEdit={canEdit}
-          writing={writing}
+          writing={isRecordWriting(activeRecord)}
           onPhotoChange={updatePhotos}
           onFieldChange={updateField}
           onClose={() => setActiveRecordKey(null)}
@@ -287,7 +270,7 @@ function DocumentationSectionBody({
   activeFilters,
   assetUrlById,
   canEdit,
-  writing,
+  isRecordWriting,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
@@ -297,7 +280,7 @@ function DocumentationSectionBody({
   activeFilters: ReadonlySet<DocumentationAxis>;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
-  writing: boolean;
+  isRecordWriting: (record: DocumentationRecord) => boolean;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -328,7 +311,7 @@ function DocumentationSectionBody({
           activeFilters={activeFilters}
           assetUrlById={assetUrlById}
           canEdit={canEdit}
-          writing={writing}
+          isRecordWriting={isRecordWriting}
           onPhotoChange={onPhotoChange}
           onFieldChange={onFieldChange}
           onOpenRecord={onOpenRecord}
@@ -345,7 +328,7 @@ function DocumentationGroupView({
   activeFilters,
   assetUrlById,
   canEdit,
-  writing,
+  isRecordWriting,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
@@ -356,7 +339,7 @@ function DocumentationGroupView({
   activeFilters: ReadonlySet<DocumentationAxis>;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
-  writing: boolean;
+  isRecordWriting: (record: DocumentationRecord) => boolean;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -391,7 +374,7 @@ function DocumentationGroupView({
             record={record}
             assetUrlById={assetUrlById}
             canEdit={canEdit}
-            writing={writing}
+            writing={isRecordWriting(record)}
             onPhotoChange={onPhotoChange}
             onFieldChange={onFieldChange}
             onOpenRecord={onOpenRecord}

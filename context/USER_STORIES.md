@@ -1,70 +1,43 @@
 ---
 DATE: 2026-05-11
-STATUS: Routing document. Canonical story bodies live in context/user-stories/.
-AUTHOR: Ed May (with Claude)
-SCOPE: User-story map, vertical-slice phasing, and pointers to split story files.
+UPDATED: 2026-07-18
+STATUS: Redirect. The MVP user-story bodies are archived; live contracts
+        live in technical-requirements/ and ui/pages/.
 RELATED: context/PRD.md, context/UI_UX.md,
          context/technical-requirements/data-table.md
 ---
 
-# PH-Navigator V2 — User Stories
+# PH-Navigator — User Stories (archived)
 
-This file is the routing layer for PH-Navigator V2 user stories. The
-full story bodies were split out of this file on 2026-05-11 because the
-single-file version had grown past 8,000 lines and was no longer useful
-as startup context.
+The user-story bodies were **authoring history** for the MVP build, which
+has shipped and is live at `www.ph-nav.com`/`api.ph-nav.com`. On
+2026-07-18 the ~10k-line story cluster was moved out of canonical
+`context/` to **`planning/archive/user-stories/`** (grep by `US-` id or
+`Q-` question id). The durable contracts those stories produced now live
+in their own canonical homes — read those, not the archived narrative:
 
-Canonical story bodies now live in `context/user-stories/`:
+| For… | Read (live contract) |
+|---|---|
+| Any project page/screen | `context/ui/pages/<page>.md` + `context/UI_UX.md` |
+| Shared DataTable behavior | `context/technical-requirements/data-table.md` |
+| Data model / save-versioning | `context/technical-requirements/data-model.md`, `save-versioning.md` |
+| API / MCP surface | `context/technical-requirements/api.md`, `context/mcp.md` |
+| Apertures / Envelope / Viewer | the matching `ui/pages/*` + `technical-requirements/*` files |
+| Active/planned work | `planning/STATUS.md` |
 
-| File | Contents | Primary implementation phase |
-|---|---|---|
-| `00-foundation-shell.md` | Conventions; sign-in; dashboard; project create/delete; catalog access; workspace shell; concurrency; schema fallback; Status tab | Phases 0-1 |
-| `10-apertures.md` | Apertures tab parent and US-APT-1..12 | Phase 3 |
-| `20-envelope.md` | Envelope tab parent and US-ENV-1..15 | Phase 4 |
-| `30-tables-equipment.md` | Shared DataTable story; Equipment parent; Rooms, ERVs, Fans, and placeholder mechanical tables | Phase 2 and Phase 6 |
-| `31-data-table-enhancements.md` | AirTable-parity enhancements to the shared `<DataTable>` primitive (US-TBL-FILL/EDIT/VIEW/SELECT/FIELDS/COLREORDER/ICONS/AGG) | Phase 2+ (post US-Builder-Tables landing) |
-| `40-model-viewer.md` | Model tab parent and US-VIEW-1..7 | Phase 5 |
-| `50-settings-ops-llm.md` | Project Settings; action logging; header consistency; post-parity features; LLM/MCP asset API | Phases 0, 2, and 6 |
-| `90-open-questions.md` | Current and resolved open-question index | Ongoing cleanup |
+## Still-open questions carried forward
 
-## Vertical-Slice Phasing (historical — MVP shipped, production is live)
+Everything in the archived `90-open-questions.md` is resolved except these
+two aperture items (verify against code before acting on either):
 
-**This phase table is the original pre-launch build plan, not a live
-tracker.** Production has been live at `www.ph-nav.com`/`api.ph-nav.com`
-since the 2026-06 rollout, and most phases below are long since
-complete/archived. Kept for historical context on why the story files
-are grouped the way they are. For current/active work, read
-`planning/STATUS.md`.
+- **Q-APT-3 — Default frame/glazing on aperture-element create.** Lean: `null`
+  + Save-time validation (explicit pick required); not re-verified against the
+  shipped builder.
+- **Q-APT-5 — Per-aperture-type deep-link URL.** Still open / not shipped.
+  Routes are `/projects/{id}/apertures/{builder|glazings|frames}` only; the
+  active aperture type is component/store state (`AperturesTab.tsx`), not a URL
+  param.
 
-The implementation plan moved in thin, manually verifiable slices.
-Each phase included backend, frontend, tests, environment wiring,
-and enough UI to manually exercise the workflow on day one of that
-phase, avoiding large isolated subsystems that couldn't be clicked
-through end-to-end.
-
-Active execution tracker:
-`planning/STATUS.md`.
-
-| Phase | Goal | Stories / docs to load | Manual verification target |
-|---|---|---|---|
-| 0. Scaffold + environment | Repo boots consistently: backend, frontend, DB, migrations, health/version, structured errors/logging, seed user/project. | `00-foundation-shell.md`, `50-settings-ops-llm.md`, `context/ENVIRONMENT.md`, `context/TECH_STACK.md` | `make setup`, `make smoke`, sign in as seed user, see empty dashboard. |
-| 1. Project shell + Status | Create/open a project, land on Status, edit project metadata/status rows, exercise public read-only shell. | `00-foundation-shell.md`, `context/UI_UX.md` | Create project -> `/projects/{id}/status`; apply default Status template; open same URL as Viewer. |
-| 2. First document-edit slice | Implement `ProjectDocumentV1`, draft buffer, ETags, Save/Save As/Discard/Lock, JSON downloads, and one editable table (Rooms) using the shared DataTable path. | `30-tables-equipment.md`, `00-foundation-shell.md`, `context/technical-requirements/data-table.md`, `context/PRD.md` §8-10 | Add/edit Rooms, reload with draft restore, Save, Save As, lock, public read, project/table JSON download. |
-| 3. Catalog + Apertures slice | Prove bookshelf catalog pick + project-document copy with Aperture Types, frame/glazing pick, basic grid/canvas, and refresh-from-catalog. | `10-apertures.md`, `00-foundation-shell.md`, `context/technical-requirements/data-table.md` | Add catalog frame/glazing in one tab; pick into an Aperture Type in another; save and reload. |
-| 4. Envelope + assets slice | Implement Assemblies, Project Materials, Materials sub-tab, datasheet/photo asset attach, effective R/U display, and envelope export. | `20-envelope.md`, `50-settings-ops-llm.md` | Build one wall assembly, pick material, attach datasheet/photo, verify Viewer read-only cards, download construction JSON/HBJSON export. |
-| 5. Model viewer slice | Upload HBJSON, parse/model-data endpoint, render R3F Model tab, file picker, color/viz/tool basics. | `40-model-viewer.md`, `50-settings-ops-llm.md` | Upload two HBJSONs, switch active file, see nonblank interactive 3D scene, use basic select/measure/color-by. |
-| 6. MCP + mechanical completion | Harden MCP read/write, asset ingestion, ERV/Fans tables, placeholders for pumps/TB, concurrency edge cases, audit trail. | `30-tables-equipment.md`, `50-settings-ops-llm.md`, `00-foundation-shell.md` | Claude/MCP uploads a datasheet and attaches it; browser shows MCP edit lease; ERV/Fan rows save and reload. |
-| 7. Release hardening | Resolve remaining open questions, security/ops baseline, bundle/performance budgets, e2e coverage, staging deployment. | `90-open-questions.md`, `planning/STATUS.md`, all story files as needed | Full MVP smoke on staging with seed and imported V1 project. |
-
-## Loading Rules
-
-- Start with this file plus `context/README.md` for orientation.
-- Load only the story file for the active phase, plus any referenced
-  shared docs (`PRD`, `UI_UX`,
-  `technical-requirements/data-table.md`, `TECH_STACK`).
-- Use `90-open-questions.md` when resolving questions; do not let
-  resolved historical Q rows drive implementation against newer story
-  text.
-- When a phase lands, update this routing table and any active
-  `planning/features/<feature>/STATUS.md` or `planning/STATUS.md`
-  tracker.
+The original **vertical-slice phasing plan** (Phases 0–7) is preserved in the
+archived bodies and in the `planning/archive/README.md` index; it is historical
+and no longer a tracker.

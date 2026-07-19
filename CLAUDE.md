@@ -66,6 +66,7 @@ always-loaded fast-path.
 | writing/reviewing **backend** code | `backend/.instructions.md` → `context/CODING_STANDARDS.md` | feature layers `routes`/`models`/`service`/`repository`; strict typing (`ty`); raw parameterized SQL, no ORM |
 | writing/reviewing **frontend** code | `frontend/.instructions.md` → `context/CODING_STANDARDS.md` | plain CSS on 3-tier tokens (no Tailwind/shadcn); TanStack Query for server state; `App.tsx` = composition only |
 | building a specific **page / screen** | `context/ui/pages/<page>.md` + `context/UI_UX.md` §0/§1 | read only the page in hand; common elements + DataTable model live in the UI_UX core |
+| **design system** / tokens / visual language / a new component / handing UI to Claude-Design | `context/DESIGN_SYSTEM.md` (→ `frontend/src/styles/README.md` for the how) | tokens + blessed component inventory + doctrine; portable spec block is self-contained for external tools; reuse before inventing; guards reject off-system CSS |
 | running the app / env / DB / ports / login | `context/ENVIRONMENT.md` | frontend :5173, backend :8000; sign in as `codex@example.com` (not Ed); Postgres in Docker, Alembic migrations; no `.env` overlays |
 | loading/clicking/**screenshotting** the app in a browser | `context/USING_A_WEB_BROWSER.md` | use `frontend/scripts/agent-browser.mjs` (self-cleaning, reliable) — NOT the browser MCP tools / claude-in-chrome; `make agent-browser-cleanup` reaps zombies |
 | deciding **stack / persistence** | `context/TECH_STACK.md` | raw SQL + Pydantic v2 via narrow repositories; `psycopg` v3; JSONB document versions; no SQLAlchemy ORM in app code |
@@ -75,7 +76,7 @@ always-loaded fast-path.
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
 | changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; deploys via the "Deploy Production" Actions workflow (auto-deploy off); staging is deleted unless recreated from `render.yaml` |
 | **naming** / domain terms | `context/GLOSSARY.md` | — |
-| picking up a **story / phase** | `context/USER_STORIES.md` → `context/user-stories/*` | — |
+| picking up a **story / phase** | `context/USER_STORIES.md` (redirect) → `planning/STATUS.md`, `technical-requirements/*`, `ui/pages/*` | MVP story bodies archived to `planning/archive/user-stories/`; live contracts are the tech-req + ui/pages files |
 
 Commands: `make smoke` (orient in an unfamiliar state), `make ci` (full local CI
 mirror), `make format`, `make frontend-dev-check` (fast frontend-only gate),

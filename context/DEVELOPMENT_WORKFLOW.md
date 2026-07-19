@@ -96,7 +96,9 @@ cd backend && uv run pytest tests/test_health.py
 cd frontend && pnpm exec vitest run src/features/.../name.test.tsx
 ```
 
-Use the full closeout gate when the change is accepted and ready:
+Use the full closeout gate when the change is accepted and ready — the
+authoritative version (which runs the `simplify`/`docs-pass` skills first) is
+in the repo-root `CLAUDE.md`:
 
 ```bash
 make format

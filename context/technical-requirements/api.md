@@ -31,11 +31,11 @@ All endpoints live under a versioned prefix: `/api/v1/...`. Hard rules:
   Removing or renaming a field is breaking; adding one is not.
 - **OpenAPI per version.** `/api/v1/openapi.json`, `/api/v2/openapi.json`.
 - **Document body schema versioning is independent** from API
-  versioning. Before first deploy, `/api/v1` serves only the current
-  clean-baseline project-document shape (`schema_version: 1`) and
-  rejects unsupported bodies. Future body-schema bumps use the beta
-  schema-evolution lane in §10.5: forward-only project-document upgraders,
-  fixtures, and the audit CLI.
+  versioning. `/api/v1` upgrades project-document bodies forward at
+  read time toward the current schema (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`,
+  currently `6`) and rejects bodies it cannot upgrade. See
+  `save-versioning.md` for the read-time upgrade mechanism and §10.5 for
+  the schema-bump discipline (dict-to-dict upgraders, fixtures, audit CLI).
 - **Deprecation marking.** Endpoints scheduled for removal carry a
   `Deprecation: true` response header and an entry in
   `/api/v1/deprecations`.
@@ -65,7 +65,8 @@ TB-01 implementation details:
   `SESSION_COOKIE_SAMESITE` defaulting to `lax`; `Secure` is off only
   for local/test environments and on otherwise. Split-origin staging
   deployments set `SESSION_COOKIE_SAMESITE=none`.
-- Session lifetime: 60-minute sliding expiry. `/auth/session` returns
+- Session lifetime: 480-minute (8-hour) sliding expiry
+  (`config.py:34`, `session_lifetime_minutes`). `/auth/session` returns
   the current user and `expires_at`.
 - Every API response includes `X-Request-ID`; callers may send one or
   let the backend generate it.
@@ -236,28 +237,49 @@ object keyed by the registered table name, e.g. `{ "rooms": [...] }`.
 
 ### 9.8 Catalog
 
+The generic `/api/v1/catalog/{table}` shape sketched in earlier drafts
+of this doc was never adopted. All three catalogs are flat (no
+identity/version split — see `data-model.md` §7.2) and each ships
+under its own per-catalog route prefix:
+
 ```
-GET    /api/v1/catalog/{table}                              list records
-POST   /api/v1/catalog/{table}                              create record
-GET    /api/v1/catalog/{table}/{rid}                        record + version list
-POST   /api/v1/catalog/{table}/{rid}/versions               create new version
-PATCH  /api/v1/catalog/{table}/{rid}/versions/{vid}         in-place edit (current only)
-DELETE /api/v1/catalog/{table}/{rid}                        soft delete record
+# Materials — backend/features/catalogs/materials/routes.py
+GET    /api/v1/catalogs/materials                    list
+POST   /api/v1/catalogs/materials                    create
+GET    /api/v1/catalogs/materials/{material_id}       get
+PATCH  /api/v1/catalogs/materials/{material_id}       in-place edit
+DELETE /api/v1/catalogs/materials/{material_id}       soft delete
+POST   /api/v1/catalogs/materials/{material_id}/reactivate
+POST   /api/v1/catalogs/materials/import/preview
+POST   /api/v1/catalogs/materials/import/commit
+
+# Frame types — backend/features/catalogs/frame_types/routes.py
+GET    /api/v1/catalogs/frame-types                  list
+POST   /api/v1/catalogs/frame-types                  create
+GET    /api/v1/catalogs/frame-types/manufacturers
+GET    /api/v1/catalogs/frame-types/options
+PUT    /api/v1/catalogs/frame-types/options
+GET    /api/v1/catalogs/frame-types/{record_id}       get
+PATCH  /api/v1/catalogs/frame-types/{record_id}       in-place edit
+DELETE /api/v1/catalogs/frame-types/{record_id}       soft delete
+POST   /api/v1/catalogs/frame-types/{record_id}/reactivate
+POST   /api/v1/catalogs/frame-types/import/preview
+POST   /api/v1/catalogs/frame-types/import/commit
+
+# Glazing types — backend/features/catalogs/glazing_types/routes.py
+# same route shape as frame-types, under /api/v1/catalogs/glazing-types
+
+# Option cascade jobs — backend/features/catalogs/option_jobs_routes.py
+POST   /api/v1/catalogs/option-jobs/preview
+GET    /api/v1/catalogs/option-jobs/unresolved/{catalog_table}
+GET    /api/v1/catalogs/option-jobs/{job_id}
+POST   /api/v1/catalogs/option-jobs/{job_id}/retry
 ```
 
-TB-07 implementation status (2026-05-14): Materials is the first catalog
-and ships under a per-catalog prefix rather than the generic
-`/catalog/{table}` shape — the live routes are
-`/api/v1/catalogs/materials` with list/create/get/patch/delete plus a
-`POST /{rid}/reactivate` for soft-undelete. `PATCH` targets the
-identity row and the current version in one in-place edit; explicit
-`/versions` sub-routes and new-version creation are deferred until a
-second catalog requires the generic shape (TB-08 should pick: keep
-per-catalog prefixes consistent across catalogs, or generalize to
-`/catalog/{table}` once 2+ catalogs exist). Every response carries
-`catalog_schema_version: 1` and the joined `current_version_id` /
-`version_label` / `version_date` so downstream pickers can build a
-`catalog_origin` block at pick time.
+Every catalog-record response carries the joined manufacturer/option
+metadata needed to build a `catalog_origin` block at pick time. The
+per-catalog-prefix pattern is the live convention: new catalogs reuse
+it rather than reviving the generic `/catalog/{table}` shape.
 
 ### 9.9 Public links
 
@@ -542,7 +564,7 @@ segment use-site notes / photo refs for the Assembly Builder UI. All
 edits flow through the semantic-command POST; there is no per-field
 PATCH endpoint. See:
 
-- `context/technical-requirements/envelope-commands.md` — the 23
+- `context/technical-requirements/envelope-commands.md` — the 29
   command kinds, request shapes, and conflict codes shared by the
   frontend and the MCP server.
 - `context/technical-requirements/envelope-thermal-preview.md` — the
@@ -599,3 +621,49 @@ row schemas are served through `{schema_slug}` from the table-contract
 registry; current slugs include `aperture-type`, `project-material`, and
 `assembly-segment`. Catalog (Materials, Frame, Glazing) schemas will be
 added as those table contracts land.
+
+### 9.13 Additional route surfaces
+
+Route inventories drift as features land piecemeal (see the file-header
+caveat). The following feature route modules exist in
+`backend/features/*/routes.py` but predate this file's last full pass —
+verify against source before relying on exact request/response shapes:
+
+```
+# project_status — backend/features/project_status/routes.py
+GET    /api/v1/projects/{project_id}/status-items
+POST   /api/v1/projects/{project_id}/status-items
+POST   /api/v1/projects/{project_id}/status-items/apply-default-template
+PATCH  /api/v1/projects/{project_id}/status-items/{item_id}
+DELETE /api/v1/projects/{project_id}/status-items/{item_id}
+
+# table_views — backend/features/table_views/routes.py
+GET    /api/v1/projects/{project_id}/table-views
+GET    /api/v1/projects/{project_id}/table-views/{table_key}
+PUT    /api/v1/projects/{project_id}/table-views/{table_key}
+DELETE /api/v1/projects/{project_id}/table-views/{table_key}
+
+# sidebar_views — backend/features/sidebar_views/routes.py
+GET    /api/v1/projects/{project_id}/sidebar-views/{view_key}
+PUT    /api/v1/projects/{project_id}/sidebar-views/{view_key}
+DELETE /api/v1/projects/{project_id}/sidebar-views/{view_key}
+
+# aperture_u_value — backend/features/aperture_u_value/routes.py
+GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/u-values
+
+# apertures — backend/features/apertures/routes.py
+GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report
+POST   /api/v1/projects/{project_id}/versions/{version_id}/apertures/command
+                                                             semantic ApertureCommand
+                                                             dispatch (project_document
+                                                             draft mutation, distinct
+                                                             from the envelope command
+                                                             endpoint in §9.10b)
+
+# gh_api — backend/features/gh_api/routes.py (Grasshopper/Rhino integration reads)
+GET    /api/v1/gh/projects/{bt_number}
+GET    /api/v1/gh/projects/{bt_number}/constructions/hbjson
+GET    /api/v1/gh/projects/{bt_number}/aperture-types
+GET    /api/v1/gh/projects/{bt_number}/aperture-constructions/hbjson
+GET    /api/v1/gh/projects/{bt_number}/tables/{table_name}
+```
