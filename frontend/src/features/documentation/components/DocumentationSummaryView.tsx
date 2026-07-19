@@ -193,12 +193,12 @@ export function DocumentationSummaryView({
                   <div className="documentation-section-actions">
                     <button
                       type="button"
-                      className="icon-button"
+                      className="secondary-button documentation-directions-button"
                       aria-label={`How to photograph - ${section.title}`}
-                      title={`How to photograph - ${section.title}`}
                       onClick={() => setDirectionsSection(section)}
                     >
-                      <BookOpen size={16} aria-hidden="true" />
+                      <BookOpen size={15} aria-hidden="true" />
+                      <span>Photo Guide</span>
                     </button>
                   </div>
                 </div>

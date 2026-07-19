@@ -199,6 +199,10 @@
   justify-content: flex-end;
 }
 
+.documentation-directions-button {
+  gap: var(--space-6);
+}
+
 .documentation-group {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -223,7 +227,7 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: var(--fw-bold);
   gap: var(--space-6);
   line-height: var(--lh-heading);
@@ -242,6 +246,10 @@
   background: var(--bg-card);
   display: flex;
   flex-direction: column;
+  /* Cap inherited text (e.g. the attachment "Drop files here" button and note
+     text, which use font: inherit) so nothing in the record reads larger than
+     the record name. */
+  font-size: var(--fs-sm);
   gap: var(--space-12);
   padding: var(--space-12);
 }
@@ -295,6 +303,7 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   gap: var(--space-4);
   line-height: var(--lh-ui);
@@ -355,22 +364,35 @@
   gap: var(--space-8);
 }
 
+/* Match the app's status pill (`.single-select-pill--status`): a soft
+   option-color fill with colored text and no border, driven by --option-color. */
 .documentation-status-select {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  align-items: center;
+  background-color: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
+  border: 0;
   border-radius: var(--radius-pill);
-  color: var(--text-primary);
+  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
   display: inline-flex;
   font: inherit;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
   line-height: var(--lh-ui);
-  min-height: 34px;
+  min-height: 30px;
   min-width: 112px;
-  padding: 0 var(--space-10);
+  padding: 2px var(--space-10);
 }
 
+/* Native select: replace the UA arrow (which sits flush to the edge and can't
+   be padded away) with a custom chevron and room to breathe on the right. */
 select.documentation-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   cursor: pointer;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-10) center;
 }
 
 .documentation-status-select:focus-visible {
@@ -379,30 +401,24 @@ select.documentation-status-select {
 }
 
 span.documentation-status-select {
-  align-items: center;
   cursor: default;
 }
 
-.documentation-status-select--needed,
-.documentation-status-select--unknown {
-  background: color-mix(in oklab, var(--report-status-missing) 9%, var(--bg-card));
-  border-color: color-mix(in oklab, var(--report-status-missing) 42%, var(--border-subtle));
+.documentation-status-select--needed {
+  --option-color: var(--report-status-missing);
 }
 
 .documentation-status-select--question {
-  background: color-mix(in oklab, var(--phn-warning) 10%, var(--bg-card));
-  border-color: color-mix(in oklab, var(--phn-warning) 35%, var(--border-subtle));
+  --option-color: var(--report-status-question);
 }
 
 .documentation-status-select--complete {
-  background: var(--phn-success-bg);
-  border-color: color-mix(in oklab, var(--phn-success) 22%, var(--border-subtle));
+  --option-color: var(--report-status-complete);
 }
 
-.documentation-status-select--na {
-  background: color-mix(in oklab, var(--text-muted) 12%, var(--bg-card));
-  border-color: var(--border-subtle);
-  color: var(--text-secondary);
+.documentation-status-select--na,
+.documentation-status-select--unknown {
+  --option-color: var(--text-muted);
 }
 
 .documentation-cell-label {
