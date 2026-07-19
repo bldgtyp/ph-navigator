@@ -1,5 +1,6 @@
 import type {
   DocumentationAxisCounts,
+  DocumentationEvidenceStatus,
   DocumentationRecord,
   DocumentationSection,
   DocumentationSpecStatus,
@@ -14,6 +15,26 @@ export const SPEC_STATUS_LABELS: Record<DocumentationSpecStatus, string> = {
   na: "N/A",
   unknown: "Unknown",
 };
+
+export type DocumentationStatusOption<TValue extends string> = {
+  value: TValue;
+  label: string;
+};
+
+export const SPEC_STATUS_OPTIONS: Array<DocumentationStatusOption<DocumentationSpecStatus>> = [
+  { value: "needed", label: SPEC_STATUS_LABELS.needed },
+  { value: "question", label: SPEC_STATUS_LABELS.question },
+  { value: "complete", label: SPEC_STATUS_LABELS.complete },
+  { value: "na", label: SPEC_STATUS_LABELS.na },
+];
+
+export const EVIDENCE_STATUS_OPTIONS: Array<
+  DocumentationStatusOption<DocumentationEvidenceStatus>
+> = [
+  { value: "needed", label: "Needed" },
+  { value: "complete", label: "Complete" },
+  { value: "na", label: "N/A" },
+];
 
 export function allDocumentationAssetIds(sections: readonly DocumentationSection[]): string[] {
   const ids = new Set<string>();
@@ -32,6 +53,18 @@ export function allDocumentationAssetIds(sections: readonly DocumentationSection
 
 export function sectionRecords(section: DocumentationSection): DocumentationRecord[] {
   return [...section.records, ...section.groups.flatMap((group) => group.records)];
+}
+
+export function documentationSpecStatusValue(record: DocumentationRecord): DocumentationSpecStatus {
+  return record.spec_status === "unknown" ? "needed" : record.spec_status;
+}
+
+export function documentationEvidenceStatusValue(
+  record: DocumentationRecord,
+  axis: "datasheet" | "photo",
+): DocumentationEvidenceStatus {
+  if (record.spec_status === "na") return "na";
+  return axis === "datasheet" ? record.datasheet_status : record.photo_status;
 }
 
 export function axisDone(record: DocumentationRecord, axis: DocumentationAxis): boolean {

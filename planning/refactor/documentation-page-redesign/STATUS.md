@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-19
-TIME: 00:00 EDT
+TIME: 00:05 EDT
 STATUS: In Progress
 AUTHOR: Codex
 SCOPE: Current state and handoff for the Documentation tab Option 1A redesign.
@@ -15,11 +15,11 @@ RELATED:
 
 ## Current State
 
-Phase 02 implemented. The project-document schema is v7 with persisted
-Datasheet/Photo evidence statuses, and the Documentation page now loads as an
-overview-first disclosure shell: sections are collapsed by default, hash links
-expand their target section/group, groups expand inside sections, and compact
-record rows expand locally for owner/detail/evidence controls.
+Phase 03 implemented. The project-document schema is v7 with persisted
+Datasheet/Photo evidence statuses. The Documentation page now loads as an
+overview-first disclosure shell with compact Spec/Datasheet/Photo status
+selects, expanded-row evidence controls, Datasheet and Photo upload/delete
+paths, and read-only viewer rows.
 
 Reviewed:
 
@@ -33,6 +33,7 @@ Reviewed:
 - `frontend/src/features/documentation/documentation.css`;
 - `frontend/src/features/documentation/hooks.ts`;
 - `frontend/src/features/documentation/__tests__/DocumentationSummaryView.test.tsx`;
+- `frontend/src/features/documentation/__tests__/DocumentationSummaryView.fixtures.ts`;
 - `context/ui/pages/documentation-tab.md`;
 - `planning/archive/dated/2026-07-19/documentation-tab/`.
 
@@ -43,7 +44,7 @@ Reviewed:
 | 00 - Status contract and current slice | Decision recorded | Spec has four states; Datasheet/Photo have three persisted states |
 | 01 - Evidence status schema | Complete | Schema v7 adds/backfills Datasheet/Photo status, rollups use persisted status, uploads auto-complete |
 | 02 - Progressive disclosure shell | Complete | Overview header, local section/group/record expansion, hash expansion, compact rows |
-| 03 - Axis selects and evidence writes | Planned | Spec/Datasheet/Photo selects; upload auto-sets Datasheet/Photo complete |
+| 03 - Axis selects and evidence writes | Complete | Spec/Datasheet/Photo pill selects, status writes, Datasheet/Photo attachments, viewer read-only |
 | 04 - Visual polish and responsive behavior | Planned | Tokenized CSS, meters, pills, drop zones, desktop/mobile checks |
 | 05 - Verification and docs | Planned | RTL, browser smoke, docs-pass, Graphify |
 
@@ -66,8 +67,8 @@ Reviewed:
 - Backend-derived rollups remain the source of truth, updated to use the new
   persisted evidence statuses.
 - Legacy `datasheet_not_required` / `photo_not_required` booleans are retained
-  as compatibility fields for the current UI and owner-page surfaces; the new
-  `datasheet_status` / `photo_status` fields are the rollup source.
+  as compatibility fields for owner-page surfaces and migrated documents; the
+  Documentation page now writes `datasheet_status` / `photo_status` directly.
 
 ## Open Questions
 
@@ -76,8 +77,8 @@ None currently. The three initial contract questions were resolved by Ed on
 
 ## Next Step
 
-Start Phase 03 by replacing the compatibility spec/waiver controls with the
-three axis status selects and evidence write paths required by Option 1A.
+Start Phase 04 by polishing the visual density, responsive behavior, meters,
+pills, and evidence drop-zone treatment against Option 1A.
 
 ## Verification
 
@@ -85,4 +86,6 @@ three axis status selects and evidence write paths required by Option 1A.
 - `pnpm exec tsc -b --pretty false` passed.
 - `git diff --check` passed.
 - `pnpm exec vitest run src/features/documentation/__tests__/DocumentationSummaryView.test.tsx` passed.
+- Phase 03 simplify pass completed with three review agents; concrete findings
+  were fixed in shared status helpers, attachment controls, and test coverage.
 - `make frontend-dev-check` passed; eslint still reports the pre-existing Fast Refresh warnings in Apertures, Climate, and shared DataTable files.

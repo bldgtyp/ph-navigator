@@ -4,8 +4,8 @@ import { useLocation } from "react-router-dom";
 import type { AssetUrls } from "../../assets/types";
 import type { ProjectDetail } from "../../projects/types";
 import {
+  useDocumentationAttachmentMutation,
   useDocumentationFieldMutation,
-  useDocumentationPhotoMutation,
   type DocumentationFieldChange,
 } from "../hooks";
 import {
@@ -47,14 +47,17 @@ export function DocumentationSummaryView({
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => new Set());
   const [directionsSection, setDirectionsSection] = useState<DocumentationSection | null>(null);
   const [activeRecordKey, setActiveRecordKey] = useState<string | null>(null);
-  const photoMutation = useDocumentationPhotoMutation(project.id, project.active_version_id);
+  const attachmentMutation = useDocumentationAttachmentMutation(
+    project.id,
+    project.active_version_id,
+  );
   const fieldMutation = useDocumentationFieldMutation(project.id, project.active_version_id);
   const canEdit = project.access_mode === "editor" && project.active_version?.locked !== true;
-  const writeError = photoMutation.error ?? fieldMutation.error;
+  const writeError = attachmentMutation.error ?? fieldMutation.error;
   const isRecordWriting = (record: DocumentationRecord) =>
-    (photoMutation.isPending &&
-      photoMutation.variables?.record.table_key === record.table_key &&
-      photoMutation.variables.record.record_id === record.record_id) ||
+    (attachmentMutation.isPending &&
+      attachmentMutation.variables?.record.table_key === record.table_key &&
+      attachmentMutation.variables.record.record_id === record.record_id) ||
     (fieldMutation.isPending &&
       fieldMutation.variables?.record.table_key === record.table_key &&
       fieldMutation.variables.record.record_id === record.record_id);
@@ -113,8 +116,11 @@ export function DocumentationSummaryView({
     const nextUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${anchor}`;
     await navigator.clipboard?.writeText(nextUrl);
   };
+  const updateDatasheets = async (record: DocumentationRecord, nextAssetIds: string[]) => {
+    await attachmentMutation.mutateAsync({ summary, record, axis: "datasheet", nextAssetIds });
+  };
   const updatePhotos = async (record: DocumentationRecord, nextAssetIds: string[]) => {
-    await photoMutation.mutateAsync({ summary, record, nextAssetIds });
+    await attachmentMutation.mutateAsync({ summary, record, axis: "photo", nextAssetIds });
   };
   const updateField = async (change: DocumentationFieldChange) => {
     await fieldMutation.mutateAsync({ summary, ...change });
@@ -219,6 +225,7 @@ export function DocumentationSummaryView({
                     expandedRecords={expandedRecords}
                     onToggleGroup={toggleGroup}
                     onToggleRecord={toggleRecord}
+                    onDatasheetChange={updateDatasheets}
                     onPhotoChange={updatePhotos}
                     onFieldChange={updateField}
                     onOpenRecord={(record) => setActiveRecordKey(documentationRecordKey(record))}
@@ -245,6 +252,7 @@ export function DocumentationSummaryView({
           assetUrlById={assetUrlById}
           canEdit={canEdit}
           writing={isRecordWriting(activeRecord)}
+          onDatasheetChange={updateDatasheets}
           onPhotoChange={updatePhotos}
           onFieldChange={updateField}
           onClose={() => setActiveRecordKey(null)}
@@ -324,6 +332,7 @@ function DocumentationSectionBody({
   expandedRecords,
   onToggleGroup,
   onToggleRecord,
+  onDatasheetChange,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
@@ -339,6 +348,7 @@ function DocumentationSectionBody({
   expandedRecords: ReadonlySet<string>;
   onToggleGroup: (sectionKey: string, groupKey: string) => void;
   onToggleRecord: (record: DocumentationRecord) => void;
+  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -374,6 +384,7 @@ function DocumentationSectionBody({
           expandedRecords={expandedRecords}
           onToggleGroup={onToggleGroup}
           onToggleRecord={onToggleRecord}
+          onDatasheetChange={onDatasheetChange}
           onPhotoChange={onPhotoChange}
           onFieldChange={onFieldChange}
           onOpenRecord={onOpenRecord}
@@ -395,6 +406,7 @@ function DocumentationGroupView({
   expandedRecords,
   onToggleGroup,
   onToggleRecord,
+  onDatasheetChange,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
@@ -410,6 +422,7 @@ function DocumentationGroupView({
   expandedRecords: ReadonlySet<string>;
   onToggleGroup: (sectionKey: string, groupKey: string) => void;
   onToggleRecord: (record: DocumentationRecord) => void;
+  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -454,6 +467,7 @@ function DocumentationGroupView({
                   writing={isRecordWriting(record)}
                   expanded={expandedRecords.has(documentationRecordKey(record))}
                   onToggle={() => onToggleRecord(record)}
+                  onDatasheetChange={onDatasheetChange}
                   onPhotoChange={onPhotoChange}
                   onFieldChange={onFieldChange}
                   onOpenRecord={onOpenRecord}

@@ -274,20 +274,47 @@
   gap: var(--space-8);
 }
 
-.documentation-evidence-summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.documentation-spec-select {
+.documentation-status-select {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   color: var(--text-primary);
+  display: inline-flex;
   font: inherit;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
   min-height: 34px;
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-10);
+}
+
+select.documentation-status-select {
+  cursor: pointer;
+}
+
+span.documentation-status-select {
+  align-items: center;
+}
+
+.documentation-status-select--needed,
+.documentation-status-select--unknown {
+  background: color-mix(in oklab, var(--report-status-missing) 9%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--report-status-missing) 42%, var(--border-subtle));
+}
+
+.documentation-status-select--question {
+  background: color-mix(in oklab, var(--phn-warning) 10%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--phn-warning) 35%, var(--border-subtle));
+}
+
+.documentation-status-select--complete {
+  background: var(--phn-success-bg);
+  border-color: color-mix(in oklab, var(--phn-success) 22%, var(--border-subtle));
+}
+
+.documentation-status-select--na {
+  background: color-mix(in oklab, var(--text-muted) 12%, var(--bg-card));
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
 }
 
 .documentation-cell-label {
@@ -329,19 +356,6 @@
   background: color-mix(in oklab, var(--text-muted) 12%, var(--bg-card));
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-}
-
-.documentation-waiver-toggle {
-  align-items: center;
-  color: var(--text-secondary);
-  display: inline-flex;
-  font-size: var(--fs-xs);
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-.documentation-waiver-toggle input {
-  margin: 0;
 }
 
 .documentation-assembly-strip {

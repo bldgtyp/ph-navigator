@@ -1,14 +1,20 @@
 import { Copy, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
-import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import type { AssetUrls } from "../../assets/types";
 import { directionsForSection } from "../directions/content";
 import type { DocumentationFieldChange } from "../hooks";
-import { axisMissing, SPEC_STATUS_LABELS } from "../lib";
+import {
+  EVIDENCE_STATUS_OPTIONS,
+  SPEC_STATUS_LABELS,
+  documentationEvidenceStatusValue,
+} from "../lib";
 import type { DocumentationRecord, DocumentationSection } from "../types";
-import { ReadOnlyAttachmentCell, SpecCell } from "./DocumentationRecordViews";
+import {
+  AxisStatusCell,
+  DocumentationEvidenceAttachmentControl,
+  SpecCell,
+} from "./DocumentationRecordViews";
 
 export function DirectionsModal({
   section,
@@ -56,6 +62,7 @@ export function RecordDetailModal({
   assetUrlById,
   canEdit,
   writing,
+  onDatasheetChange,
   onPhotoChange,
   onFieldChange,
   onClose,
@@ -65,6 +72,7 @@ export function RecordDetailModal({
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
   writing: boolean;
+  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onClose: () => void;
@@ -115,78 +123,46 @@ export function RecordDetailModal({
         ) : null}
         <section aria-label="Record photos">
           <h3>Photos</h3>
-          {axisMissing(record, "photo") ? (
-            <p className="documentation-evidence-state documentation-evidence-state--missing">
-              Photo needed
-            </p>
-          ) : null}
-          {canEdit && !specNa ? (
-            <>
-              <label className="documentation-waiver-toggle">
-                <input
-                  type="checkbox"
-                  aria-label="Photos not required"
-                  checked={record.photo_not_required}
-                  disabled={writing}
-                  onChange={(event) =>
-                    void onFieldChange({
-                      record,
-                      field: "photo_not_required",
-                      value: event.target.checked,
-                    })
-                  }
-                />
-                <span>Not required</span>
-              </label>
-              <AttachmentCell
-                projectId={projectId}
-                value={record.photo_asset_ids}
-                config={SITE_PHOTO_ATTACHMENT_CONFIG}
-                readOnly={writing || record.photo_not_required}
-                onChange={(nextAssetIds) => onPhotoChange(record, nextAssetIds)}
-                assetUrlById={assetUrlById}
-                variant="card"
-              />
-            </>
-          ) : (
-            <ReadOnlyAttachmentCell
-              projectId={projectId}
-              assetIds={record.photo_asset_ids}
-              config={SITE_PHOTO_ATTACHMENT_CONFIG}
-              assetUrlById={assetUrlById}
-            />
-          )}
+          <AxisStatusCell
+            label="Photos"
+            value={documentationEvidenceStatusValue(record, "photo")}
+            options={EVIDENCE_STATUS_OPTIONS}
+            canEdit={canEdit && !specNa}
+            disabled={writing}
+            onChange={(value) => onFieldChange({ record, field: "photo_status", value })}
+          />
+          <DocumentationEvidenceAttachmentControl
+            projectId={projectId}
+            record={record}
+            axis="photo"
+            assetUrlById={assetUrlById}
+            canEdit={canEdit}
+            writing={writing}
+            variant="card"
+            onDatasheetChange={onDatasheetChange}
+            onPhotoChange={onPhotoChange}
+          />
         </section>
         <section aria-label="Record datasheets">
           <h3>Datasheets</h3>
-          {axisMissing(record, "datasheet") ? (
-            <p className="documentation-evidence-state documentation-evidence-state--missing">
-              Missing
-            </p>
-          ) : null}
-          {canEdit && !specNa ? (
-            <label className="documentation-waiver-toggle">
-              <input
-                type="checkbox"
-                aria-label="Datasheet not required"
-                checked={record.datasheet_not_required}
-                disabled={writing}
-                onChange={(event) =>
-                  void onFieldChange({
-                    record,
-                    field: "datasheet_not_required",
-                    value: event.target.checked,
-                  })
-                }
-              />
-              <span>Not required</span>
-            </label>
-          ) : null}
-          <ReadOnlyAttachmentCell
+          <AxisStatusCell
+            label="Datasheet"
+            value={documentationEvidenceStatusValue(record, "datasheet")}
+            options={EVIDENCE_STATUS_OPTIONS}
+            canEdit={canEdit && !specNa}
+            disabled={writing}
+            onChange={(value) => onFieldChange({ record, field: "datasheet_status", value })}
+          />
+          <DocumentationEvidenceAttachmentControl
             projectId={projectId}
-            assetIds={record.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
+            record={record}
+            axis="datasheet"
             assetUrlById={assetUrlById}
+            canEdit={canEdit}
+            writing={writing}
+            variant="card"
+            onDatasheetChange={onDatasheetChange}
+            onPhotoChange={onPhotoChange}
           />
         </section>
         <button
