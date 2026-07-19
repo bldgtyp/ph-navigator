@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:30 EDT
-STATUS: Planned — implementation not started
+STATUS: Phase 00 complete — Phase 01 next
 AUTHOR: Codex with Ed May
 SCOPE: Make `needed` the canonical PH-Navigator specification-status value
   while preserving historical project versions, external Honeybee
@@ -12,6 +12,7 @@ RELATED:
   - ./STATUS.md
   - ./decisions.md
   - ./research.md
+  - ./phase-00-inventory.md
   - ./phases/
   - ../../../context/technical-requirements/save-versioning.md
   - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md

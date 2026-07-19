@@ -114,12 +114,17 @@ keys/tones to `needed`, introduce `--report-status-needed: #d97706`, and retain
 non-status consumers. Leave Documentation write-error/zero-meter uses unchanged
 unless separately reclassified. Do not perform blind repo-wide replacement.
 
-## Current baseline gap
+## Schema baseline and production gap
 
-The checkout's schema constant is v7, while
-`backend/tests/project_document_schema/schema_fingerprint.json` still records
-v6 and fixture versions v1/v4. Phase 00 must close this before v8 work; otherwise
-schema-guard evidence is not trustworthy.
+Phase 00 reconciled the checkout's v7 schema constant and generated fingerprint
+with `backend/tests/project_document_schema/schema_fingerprint.json`. The v1/v4
+fixture corpus passes the strict chain to v7 with zero field-definition drift.
+
+Production still runs schema-v4 code. The Compatibility A release must
+therefore include the existing v4 → v7 chain and its corpus, backup,
+write-freeze, and rollback gates. The authenticated dashboard exposes the two
+project identities but not persisted per-version schema or draft counts; those
+are mandatory Phase 01 predeploy evidence.
 
 ## Production risks
 

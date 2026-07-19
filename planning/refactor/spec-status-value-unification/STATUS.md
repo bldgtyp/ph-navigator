@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:30 EDT
-STATUS: Planned — awaiting plan review
+STATUS: Phase 00 complete — Phase 01 next
 AUTHOR: Codex with Ed May
 SCOPE: Current state and implementation gates for specification-status value
   unification.
@@ -11,18 +11,17 @@ RELATED:
   - ./PLAN.md
   - ./decisions.md
   - ./research.md
+  - ./phase-00-inventory.md
 ---
 
 # Status — Specification-status value unification
 
 ## Current state
 
-Planning and codebase research are complete. No implementation code, tests,
-schema changes, production access, or production writes were performed in this
-planning pass.
-
-The packet is now implementation-ready, subject to Ed's review of the
-expand/contract rollout and the production-project interpretation below.
+Phase 00 is complete. The local schema-v7 baseline is internally consistent,
+the status surface inventory is classified, both production projects are
+identified, and the deployed production code baseline is schema v4. No status
+semantics, production body, draft, or saved version was changed.
 
 ## Accepted planning conclusions
 
@@ -42,45 +41,39 @@ expand/contract rollout and the production-project interpretation below.
 
 ## Next step
 
-Review/approve the planning packet. If accepted, start Phase 00:
+Start Compatibility Release A's entry gate. Before compatibility code is
+implemented, inventory every production saved-version schema and open draft
+and run the v4 → v7 candidate over the complete read-only corpus. The safe
+dashboard list does not expose those fields.
 
-1. reconcile the current branch's schema-v7 fingerprint/fixture baseline;
-2. identify the two production projects by stable id/name in the operator
-   checklist;
-3. implement Compatibility Release A only.
+## Phase 00 evidence
 
-## Known prerequisite
-
-Current checkout evidence:
-
-- branch: `codex/documentation-page-redesign`;
-- `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7`;
-- committed `schema_fingerprint.json` still reports schema version `6` and
-  fixture versions `v1`, `v4`;
-- unrelated working-tree edits exist in
-  `DocumentationRecordViews.tsx` and `StatusSelect.css`.
-
-Do not start v8 on a failing or internally inconsistent v7 baseline. Preserve
-the unrelated edits.
+The v7 guard and focused schema gates are green. Production runs schema-v4
+code, so Compatibility A must carry the full v4 → v7 rollout controls. Exact
+hashes, SHAs, commands, test results, and the classified surface inventory live
+only in `phase-00-inventory.md`; project names/ids remain in the gitignored
+operator worksheet.
 
 ## Open operator inputs (not design blockers)
 
-- Stable name/id of Production Project 1 and Production Project 2.
-- Current production API/web SHA and whether v7 has already been deployed.
+- Persisted schema-version and draft-count inventory for both production
+  projects before Compatibility A deploy.
 - Actual production backup/snapshot mechanism, retention, restore owner, and
   verified recovery procedure.
 - Duration of the Compatibility A observation/cache window before temporary
   adapters are removed.
 - Scheduling of the Ed/John write freeze for Canonical B.
 
-These must be filled during Phases 00/04; no production deploy proceeds while
-they are blank.
+The persisted schema/draft inventory is a Phase 01 entry gate. Backup/restore
+and write-freeze details are Phase 01 deployment gates and must be reconfirmed
+in Phase 04. The observation/cache window is a Phase 07 cleanup input. No
+production deploy proceeds while its applicable gate is blank.
 
 ## Phase ledger
 
 | Phase | State | Exit gate |
 | --- | --- | --- |
-| 00 Contract/baseline | Not started | v7 baseline green; project ids recorded |
+| 00 Contract/baseline | Complete | v7 baseline green; project ids recorded |
 | 01 Compatibility A | Not started | CI + both-project deployed smoke |
 | 02 v8 backend | Not started | corpus/exact-diff/domain/export gates green |
 | 03 Canonical UI/adapters | Not started | UI/wire/custom-option regressions green |
@@ -92,6 +85,7 @@ they are blank.
 ## Completion checklist
 
 - [ ] Compatibility A deployed and verified before Canonical B.
+- [x] Phase 00 v7 baseline, production identities, and status inventory complete.
 - [ ] Frozen v7 corpus covers all three built-in row paths.
 - [ ] v7 → v8 exact diff and idempotence proven.
 - [ ] Canonical built-in status is `needed` backend/frontend.

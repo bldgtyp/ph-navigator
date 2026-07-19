@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:30 EDT
-STATUS: Accepted planning contract — implementation not started
+STATUS: Accepted planning contract — Phase 00 complete
 AUTHOR: Codex with Ed May
 SCOPE: Product, persistence, compatibility, and rollout contract for canonical
   specification status `needed`.
@@ -106,9 +106,10 @@ web separately:
 
 - Compatibility release (schema v7): backend mutation boundaries accept both
   values but normalize to v7 `missing`; frontend reads tolerate both, displays
-  Needed everywhere, and continues emitting legacy `missing`. If production is
-  still v6, this compatibility work ships with the already-required v7 corpus,
-  write-freeze, and rollback gate rather than assuming v7 is already live.
+  Needed everywhere, and continues emitting legacy `missing`. Production is
+  still on schema-v4 code, so this compatibility work ships with the required
+  v4 → v7 corpus, write-freeze, and rollback gate rather than assuming v7 is
+  already live.
 - Canonical release (schema v8): upgrader/domain use `needed`; backend still
   accepts cached-client `missing` at one named request boundary; frontend emits
   `needed`.

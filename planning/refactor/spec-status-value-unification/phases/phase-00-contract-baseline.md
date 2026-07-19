@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex with Ed May
 SCOPE: Freeze the target contract and establish a trustworthy schema-v7 base.
 RELATED:
@@ -14,8 +14,8 @@ RELATED:
 
 ## Goal
 
-Start the migration from an internally consistent, CI-green schema-v7 branch
-and a complete surface/production inventory.
+Start the migration from an internally consistent schema-v7 branch with green
+focused schema-baseline gates and a complete surface/production inventory.
 
 ## Ordered steps
 
@@ -35,9 +35,11 @@ and a complete surface/production inventory.
    frozen historical fixture/raw body, or unrelated grammatical/data state.
 7. Record Production Project 1 and 2 stable names/ids in a gitignored operator
    worksheet under `working/`; do not commit project data.
-8. Record the deployed production API/web SHA and the schema-version inventory
-   of both production projects. Decide whether v7 is already the production
-   baseline or Compatibility A must join the v6 → v7 rollout.
+8. Record the deployed production API/web SHA and deployed-code schema. Record
+   the persisted schema-version inventory when a non-mutating authenticated
+   route is available; otherwise bind it explicitly to Compatibility A's
+   predeploy corpus audit. Decide whether v7 is already the production baseline
+   or Compatibility A must carry the full production → v7 rollout.
 9. If production is pre-v7, import the v7 release's corpus, write-freeze,
    backup, and post-first-v7-write roll-forward boundary into Phase 01 evidence.
 10. Confirm whether either production project has open user drafts before
@@ -63,7 +65,9 @@ audit in this phase.
 - v7 baseline is green and internally consistent.
 - Surface inventory is classified, not a blind word-replacement list.
 - Both production project ids are known.
-- Production SHA/schema baseline and the v7 rollout path are explicit.
+- Production SHA/deployed-code schema baseline and the v7 rollout path are
+  explicit; persisted-body schema counts are recorded or explicitly gated
+  before Compatibility A deploy.
 - Existing production draft state is known or explicitly marked unavailable.
 
 ## Stop conditions
@@ -77,4 +81,13 @@ audit in this phase.
 - branch/SHA;
 - schema constant, fingerprint version, and fixture versions;
 - commands/results;
-- production project ids/names and draft counts only (no bodies).
+- production project ids/names and draft counts in the gitignored operator
+  worksheet only (no bodies).
+
+## Completion evidence — 2026-07-19
+
+The v7 guard and focused schema gates are green. Production runs schema-v4
+code, so Compatibility A must carry v4 → v7 controls. Persisted schema/draft
+counts are a mandatory read-only Phase 01 entry gate. Exact evidence and the
+classified surface inventory live in `../phase-00-inventory.md`; production
+project names/ids remain in the gitignored operator worksheet.

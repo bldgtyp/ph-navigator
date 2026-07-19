@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:30 EDT
-STATUS: Detailed phased plan ready for review
+STATUS: Accepted phased plan — Phase 00 complete
 AUTHOR: Codex with Ed May
 SCOPE: Release and implementation sequence for canonical specification status
   `needed` with two production projects.
@@ -33,16 +33,16 @@ This is an expand/contract migration, not one atomic code edit.
 
 ### Phase 00 — Contract and baseline
 
-Reconcile the current branch and record the exact target. The documentation
-redesign branch already reports schema v7, but its committed schema fingerprint
-still records v6. Confirm the production API SHA and corpus schema: if v7 is
-not deployed yet, Compatibility A must ride with the v7 release and inherit its
-production audit/write-freeze/rollback gate. Do not start v8 until the v7
-baseline, fixtures, fingerprint, and focused schema tests are internally
-consistent.
+Phase 00 established a focused-schema-gates-green v7 branch and corrected its
+stale v6 fingerprint guard. Production's current document schema is v4.
+Compatibility A must therefore ride with the full v4 → v7 release and inherit
+its production corpus audit/write-freeze/rollback gate. Persisted per-project
+schema/draft counts are mandatory Phase 01 entry-gate evidence because the safe
+dashboard inventory does not expose them.
 
-Deliverables: `decisions.md`, `research.md`, exact surface inventory, production
-project identifiers, and a green v7 schema baseline.
+Deliverables complete: `decisions.md`, `research.md`, the committed
+`phase-00-inventory.md`, both production project identifiers in the gitignored
+operator worksheet, and a focused-schema-gates-green v7 baseline.
 
 Plan: `phases/phase-00-contract-baseline.md`.
 

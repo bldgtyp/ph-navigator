@@ -17,6 +17,15 @@ RELATED:
 Make old/new API and frontend combinations tolerate both status spellings
 without creating schema-v8 data.
 
+## Entry gate
+
+Before compatibility implementation begins, use the gitignored Phase 00
+operator worksheet to obtain an authenticated, read-only inventory of every
+saved-version schema and open draft for both production projects. Run the
+existing v4 → v7 candidate upgrader over a complete exported corpus. Stop on
+any future/invalid body, unexplained drift, or unaccounted draft. Do not mount
+an editor route merely to discover this evidence.
+
 ## Contract during Release A
 
 - Project-document schema remains v7.
@@ -48,9 +57,10 @@ without creating schema-v8 data.
    `/version.json`) containing the exact git SHA, test it, and update the deploy
    workflow/runbook to poll both API and web SHAs before app smoke.
 9. Run focused backend/frontend gates, then full `make ci`.
-10. If production is still v6, complete the v7 candidate-corpus audit, backup,
-   draft-resolution, write-freeze, and rollback gate before deploying A. Treat
-   first persisted v7 data as the existing v7 rollout's rollback cliff.
+10. Production currently runs schema-v4 code. After the entry-gate corpus is
+   accepted, establish the backup, resolve drafts deliberately, begin the write
+   freeze, and confirm the rollback gate before deploying A. Treat first
+   persisted v7 data as the existing v7 rollout's rollback cliff.
 11. After review/merge, Ed deploys Release A. Run authenticated read-only smoke
    on both production projects; record deployed API/web SHAs. Do not edit a
    real project as a smoke test.
@@ -72,7 +82,7 @@ without creating schema-v8 data.
   boundaries.
 - No v8 data exists. Code-only rollback is allowed only to an application that
   supports the highest schema already persisted; if A also introduced v7 to a
-  v6 production baseline, follow the v7 rollout's roll-forward/restore rule.
+  v4 production baseline, follow the v7 rollout's roll-forward/restore rule.
 
 ## Stop conditions
 
