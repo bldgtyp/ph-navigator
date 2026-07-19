@@ -119,7 +119,6 @@ export function DocumentationRecordRow({
             label="Datasheet"
             status={documentationEvidenceStatusValue(record, "datasheet")}
             assetIds={record.datasheet_asset_ids}
-            emptyLabel="Missing"
           >
             <DocumentationEvidenceAttachmentControl
               projectId={projectId}
@@ -137,7 +136,6 @@ export function DocumentationRecordRow({
             label="Photos"
             status={documentationEvidenceStatusValue(record, "photo")}
             assetIds={record.photo_asset_ids}
-            emptyLabel="Photo needed"
           >
             <DocumentationEvidenceAttachmentControl
               projectId={projectId}
@@ -184,13 +182,11 @@ function EvidenceCell({
   label,
   status,
   assetIds,
-  emptyLabel,
   children,
 }: {
   label: string;
   status: DocumentationEvidenceStatus;
   assetIds: readonly string[];
-  emptyLabel: string;
   children: React.ReactNode;
 }) {
   return (
@@ -200,7 +196,6 @@ function EvidenceCell({
     >
       <div className="documentation-cell-header">
         <span className="documentation-cell-label">{label}</span>
-        <EvidenceState status={status} assetIds={assetIds} emptyLabel={emptyLabel} />
       </div>
       {assetIds.length > 0 || status !== "na" ? children : null}
     </div>
@@ -296,36 +291,6 @@ export function AxisStatusCell<TValue extends string>({
         ))}
       </select>
     </label>
-  );
-}
-
-function EvidenceState({
-  status,
-  assetIds,
-  emptyLabel,
-}: {
-  status: DocumentationEvidenceStatus;
-  assetIds: readonly string[];
-  emptyLabel: string;
-}) {
-  if (status === "na") {
-    return (
-      <span className="documentation-evidence-state documentation-evidence-state--na">
-        not required
-      </span>
-    );
-  }
-  if (status === "needed") {
-    return (
-      <span className="documentation-evidence-state documentation-evidence-state--missing">
-        {emptyLabel}
-      </span>
-    );
-  }
-  return (
-    <span className="documentation-evidence-state documentation-evidence-state--attached">
-      {assetIds.length > 0 ? `${assetIds.length} attached` : "Complete"}
-    </span>
   );
 }
 
