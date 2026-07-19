@@ -1,93 +1,156 @@
 ---
 DATE: 2026-07-19
-TIME: 09:46 EDT
-STATUS: Proposed sequence — not started
-AUTHOR: Claude (Opus 4.8) for Ed May
+TIME: 14:30 EDT
+STATUS: Detailed phased plan ready for review
+AUTHOR: Codex with Ed May
+SCOPE: Release and implementation sequence for canonical specification status
+  `needed` with two production projects.
+RELATED:
+  - ./PRD.md
+  - ./decisions.md
+  - ./research.md
+  - ./phases/
 ---
 
-# PLAN — Spec-status value unification
+# Plan — Specification-status value unification
 
-Phased so the stored-data migration is settled first (it gates everything).
-Each phase ends green on `make ci`.
+## Release map
 
-## Phase 0 — Decide the migration mechanism (design, no code)
+This is an expand/contract migration, not one atomic code edit.
 
-Confirm how the document schema handles a value rename. Read
-`backend/features/project_document/document.py` (schema version + validate) and
-`context/technical-requirements/*` for the migration contract, plus the
-`project_backend_data_arch_review_2026_06_24` memory ("settle the document
-schema-migration mechanism before first real save").
+| Phase | Release | Goal | Production mutation |
+| --- | --- | --- | --- |
+| 00 | none | Lock contract, inventory, and v7 prerequisite | none |
+| 01 | Compatibility A | Make API/web version skew safe while v7 remains canonical | no schema change |
+| 02 | Canonical B code | Implement v7 → v8 and canonical backend contract | local/test only |
+| 03 | Canonical B code | Move frontend/API/MCP adapters and UI to `needed` | local/test only |
+| 04 | none | Audit both production projects and establish go/no-go | read-only; backup only |
+| 05 | Canonical B deploy | Deploy under write freeze; smoke before v8 writes | drafts may rewrite only after explicit gate |
+| 06 | Canonical B operate | Verify both projects and cross the v8 write boundary deliberately | ordinary draft/save only |
+| 07 | Cleanup C | Retire temporary client adapters; docs/closeout | no data rewrite |
 
-Choose:
-- **(preferred) Schema-version upgrade 7 → 8**: a forward migration function
-  that, on load of a v7 body, rewrites `specification_status: "missing"` →
-  `"needed"` in every material/glazing/frame row, then stamps v8. Enum becomes
-  strict `needed` with no `missing`.
-- **(fallback) Read-time alias**: a `field_validator(mode="before")` that maps
-  `"missing"` → `"needed"` on input so old bodies parse. Simpler, but leaves the
-  alias in the model indefinitely and stored bytes stay `missing`.
+## Sequence and dependencies
 
-Deliverable: one paragraph in `decisions.md` recording the choice + why.
+### Phase 00 — Contract and baseline
 
-## Phase 1 — Backend enum + defaults + migration
+Reconcile the current branch and record the exact target. The documentation
+redesign branch already reports schema v7, but its committed schema fingerprint
+still records v6. Do not start v8 until the v7 baseline, fixtures, fingerprint,
+and focused schema tests are internally consistent.
 
-- Rename the literal member in
-  `backend/features/project_document/envelope_models.py:27`:
-  `Literal["complete", "needed", "question", "na"]`.
-- Update every default `= "missing"` → `= "needed"`:
-  `envelope_models.py:252,303,365`; `commands/materials.py:125,316`;
-  `project_document/apertures/_ref_helpers.py:148,158`.
-- Update `hbjson_import.py:37` validation set.
-- Implement the Phase-0 migration (upgrade function or before-validator) and
-  bump `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` to 8 if going the upgrade route.
-- Delete/relax the shims: `documentation_summary.py:220` and
-  `status_summary.py:234` `_STATUS_BY_SPECIFICATION_STATUS` entries become
-  identity (or drop the mapping and pass through). Keep the `unknown` sentinel
-  handling intact.
-- Update schema-corpus fixtures under
-  `backend/tests/project_document_schema/fixtures/` (expected JSON currently
-  encodes the status options / values).
+Deliverables: `decisions.md`, `research.md`, exact surface inventory, production
+project identifiers, and a green v7 schema baseline.
 
-Verify: unit tests for the migration (v7 body with `missing` → v8 body with
-`needed`); `documentation_summary` / `status_summary` tests; envelope command
-tests. `make ci` (backend) green.
+Plan: `phases/phase-00-contract-baseline.md`.
 
-## Phase 2 — Frontend types + report-table key
+### Phase 01 — Compatibility release A
 
-- `frontend/src/features/envelope/types.ts:7`: `SpecificationStatus` →
-  `"complete" | "needed" | "question" | "na"`.
-- `frontend/src/shared/ui/report-table/StatusPill.tsx:3`: `ReportStatusKey`
-  `"missing"` → `"needed"`; update `.report-status-dot[data-status=...]` CSS and
-  any `data-status="missing"` consumers (`ReportTable.css`).
-- `MaterialsPanel.tsx`: the `STATUS_OPTIONS`/filter `value`+`status` keys move
-  from `missing` → `needed` (label is already "Needed"); `statusCounts` keys.
-- Decide on `--report-status-missing` token: either keep the token name (color
-  only, harmless) or rename to `--report-status-needed` for full consistency and
-  update all references. Record in `decisions.md`.
-- Sweep for `"missing"` spec-status literals in apertures panels
-  (glazings/frames) so their controls/filters use `needed`.
+Keep v7 storage and backend canonical `missing`, but make both stacks tolerate
+the coming value. Backend mutation inputs accept `missing | needed` and
+normalize to v7 `missing`. Frontend response boundaries accept either, display
+Needed on Materials/Glazings/Frames, and still serialize legacy `missing`.
 
-Verify: `pnpm exec tsc --noEmit`; envelope + apertures + documentation test
-files; visual check of all four discipline pages.
+This release makes the later API/web skew safe and is fully rollbackable because
+it creates no v8 data. Deploy and verify both production projects before Phase
+02/03 ships.
 
-## Phase 3 — Sweep, MCP, docs, closeout
+Plan: `phases/phase-01-compatibility-release.md`.
 
-- Grep the repo for remaining spec-status `"missing"` literals (exclude the
-  unrelated import/export token enums in `catalogs/*/import_export/tokens.py`
-  and the thermal `{"missing": True}` geometry flag — those are NOT spec status).
-- MCP schema/tools: confirm any spec-status enum surfaced to MCP reflects
-  `needed` (`context/technical-requirements/llm-mcp-schema.md`).
-- Update `context/GLOSSARY.md` and any status docs to name the canonical set.
-- Fold the accepted decisions back into `context/` per
-  `planning/.instructions.md` rule 4.
-- Full `make ci`; run the `simplify` + `docs-pass` skills; `make format`.
+### Phase 02 — v8 upgrader and canonical backend
 
-## Risk / rollback
+Add `_upgrade_v7_to_v8`, `UPGRADE_STEPS[7]`, schema v8, strict canonical
+`SpecificationStatus`, defaults/producers, frozen v7 corpus, exact-diff tests,
+seed updates, and summary pass-through. Add permanent Honeybee import/export
+adapters and keep one named cached-client request adapter.
 
-- Highest risk: mis-migrating stored production bodies. Mitigate: migration is
-  forward-only and idempotent (`missing → needed`, `needed → needed`); test
-  against a copied real version body before deploy. Deploy is Ed's call
-  (`context/DEVELOPMENT_WORKFLOW.md`).
-- If the schema-upgrade route is too heavy for one pass, ship the Phase-0
-  **read-time alias** first (unblocks the enum rename immediately), then do the
-  stored-byte upgrade as a follow-up so bytes eventually match.
+Plan: `phases/phase-02-v8-backend-migration.md`.
+
+### Phase 03 — Canonical frontend and API consumers
+
+Change both frontend unions, Materials/Apertures counts/filters/writes,
+Documentation built-in writes, report status keys, status tones, and tests to
+`needed`. Preserve `opt_status_needed`, `unknown`, generic evidence wording,
+and unrelated `missing` states. Verify MCP/GH outputs and native/external export
+behavior with the v8 backend.
+
+Plan: `phases/phase-03-canonical-ui-adapters.md`.
+
+### Phase 04 — Production preflight and go/no-go
+
+With candidate B built and CI-green, audit a complete copy/export of every
+saved version and draft for both production projects. Record exact replacement
+counts and hashes. Resolve live drafts, close old tabs, confirm both users have
+Compatibility A, establish a verified database restore point, and begin the
+write freeze.
+
+Plan: `phases/phase-04-production-preflight.md`.
+
+### Phase 05 — Canonical deploy and no-write smoke
+
+Ed triggers the production workflow. Wait for both API and web candidate SHAs,
+then perform public and authenticated read-only smoke while writes remain
+paused. Do not open a known stale draft until the go/no-go decision acknowledges
+that draft reads can persist v8 and change ETags.
+
+Plan: `phases/phase-05-deploy-no-write-smoke.md`.
+
+### Phase 06 — Two-project verification and v8 write boundary
+
+Verify Project 1, then Project 2, across Materials, Glazings, Frames,
+Documentation, Status, Equipment, Thermal Bridges, HBJSON/GH exports, and raw
+recovery download. Resume normal editing only after both read checks pass.
+Allow v8 persistence through the next legitimate draft/Save or Save As; do not
+fabricate a historical rewrite just to stamp a schema number.
+
+The first persisted v8 draft/version is the rollback cliff. Record its project,
+version/draft id, timestamp, and deployed SHA; from then on, default recovery is
+roll-forward.
+
+Plan: `phases/phase-06-project-verification-cutover.md`.
+
+### Phase 07 — Compatibility cleanup and closeout
+
+After Ed and John have refreshed and the observation window is clean, remove
+temporary PH-Navigator-client compatibility code that no longer protects a
+real client. Retain permanent v7 upgraders, frozen fixtures, raw-download
+behavior, and Honeybee adapters. Run `simplify`, `docs-pass`, Graphify update,
+full CI, context reconciliation, and archive closeout.
+
+Plan: `phases/phase-07-cleanup-closeout.md`.
+
+## Verification policy
+
+- Phase 00: focused schema-baseline gates only.
+- Phase 01: focused backend/frontend compatibility tests, full `make ci`, then
+  both-project production smoke after Ed deploys.
+- Phases 02–03 together: focused schema/domain/UI/export tests plus full
+  `make ci` before candidate B is eligible.
+- Phase 04: fixture audit, isolated DB/corpus audit, exact-diff report, backup
+  evidence, and explicit go/no-go. No writes.
+- Phases 05–06: public + authenticated production evidence under the runbook;
+  no CI rerun substitutes for production checks.
+- Phase 07: focused cleanup tests, `simplify`, `docs-pass`, Graphify, format,
+  and full CI.
+
+## Stop conditions
+
+Stop the rollout if any of these is true:
+
+- v7 baseline/fingerprint is not green;
+- a production body fails candidate validation;
+- changed-count does not equal legacy-value count at the three allowed paths;
+- the candidate diff touches any other semantic value;
+- any production draft is unaccounted for;
+- backup/restore availability is not verified;
+- Ed/John cannot pause writes and close/refresh old tabs;
+- API and web candidate SHAs are not both confirmed;
+- either project fails the read-only smoke;
+- a rollback is proposed after v8 persistence without restoring/repairing the
+  database.
+
+## Production authority
+
+Implementation agents may prepare code, tests, audit artifacts, and operator
+commands. They must not trigger `.github/workflows/deploy.yml`, modify
+production data, discard production drafts, or resume production writes unless
+Ed explicitly asks.

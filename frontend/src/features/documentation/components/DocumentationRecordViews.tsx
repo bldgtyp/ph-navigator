@@ -173,7 +173,7 @@ function EvidenceCell({
   );
 }
 
-export function DocumentationEvidenceAttachmentControl({
+function DocumentationEvidenceAttachmentControl({
   projectId,
   record,
   axis,
@@ -221,7 +221,7 @@ export function DocumentationEvidenceAttachmentControl({
   );
 }
 
-export function AxisStatusCell<TValue extends string>({
+function AxisStatusCell<TValue extends string>({
   label,
   value,
   options,

@@ -51,15 +51,16 @@ Below the header, per-axis filter chips show only records missing specs,
 datasheets, or photos. Filter chips are button toggles with text labels and
 `aria-pressed`; missing state is a work item, not an application error.
 
-Sections follow the documentation summary order:
+Sections follow the documentation summary order, which matches the nav-bar tab
+order:
 
+- Apertures;
 - Envelope;
 - Equipment;
-- Apertures;
 - Thermal Bridges.
 
 Each section has an anchor id, section-level rollups, a copy-link control, and
-a "How to photograph" modal trigger. Complete sections may render collapsed as
+a labeled "Photo Guide" button that opens the "How to photograph" modal. Complete sections may render collapsed as
 one-line stubs with an expand control. Incomplete sections remain collapsed by
 default but advertise that they need review; expansion state is local to the
 current browser session and hash navigation expands the matching section/group.
@@ -72,17 +73,17 @@ message.
 
 Rows use a unified evidence grid:
 
-- record identity: display name, optional sub-label, and an `Open owner` link
-  back to Equipment, Apertures, Envelope, or Thermal Bridges;
-- spec chip for viewers or a status select for editors;
-- datasheet status chip/select plus file strip or expanded upload zone;
-- photo status chip/select plus thumbnail strip or expanded upload zone.
+- record identity: display name, optional sub-label, and an `Open record` link
+  (an external-link icon revealed on hover of the record label) back to
+  Equipment, Apertures, Envelope, or Thermal Bridges;
+- spec/datasheet/photo status via the shared `StatusSelect` pill — an editable
+  `<select>` for editors, a read-only pill for viewers.
 
 Envelope rows also show a compact assembly strip as a material/assembly cue.
-Record names toggle the expanded row. The `Details` action opens a detail modal
-with identity fields, source table, specification status, photos, and
-datasheets. Editors get the same status and evidence controls in the modal;
-viewers get read-only evidence.
+Clicking anywhere in the summary row (except a status select or the open-record
+link) toggles the expanded row, and only one record is expanded at a time. The
+expanded panel shows the datasheet and photo evidence cells (upload zones / file
+strips); there is no separate detail modal.
 
 ## Editor writes
 

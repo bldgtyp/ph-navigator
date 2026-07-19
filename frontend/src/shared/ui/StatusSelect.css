@@ -53,7 +53,10 @@ span.status-select {
   --option-color: var(--report-status-complete);
 }
 
-.status-select[data-tone="na"],
+.status-select[data-tone="na"] {
+  --option-color: var(--report-status-na);
+}
+
 .status-select[data-tone="neutral"] {
   --option-color: var(--text-muted);
 }

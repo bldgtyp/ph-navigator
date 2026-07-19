@@ -194,6 +194,7 @@ the spec to reproduce.
 | Pill tabs / sub-tabs | `.pill-tab` / `.pill-tab-list`, `.app-subtabs` | in-page section switching |
 | Empty state | `.empty-state` | zero-data placeholder w/ heading + copy |
 | Autocomplete select | `AutocompleteSelect` / `.autocomplete-select*` | typeahead single-select |
+| Status select | `StatusSelect` / `.status-select` | documentation-status pill dropdown (editable `<select>` / read-only span), tone-colored via `--report-status-*` |
 | Menus | `.app-menu*` / `.account-menu*` / `.catalog-menu*` | topbar dropdown menus |
 | Forms | `.auth-form`, `.project-form`, `.settings-*`, `.form-error/-note` | labeled field stacks + validation |
 | Modal | `ModalDialog` / `DialogActions`; `.modal-backdrop/-panel/-header` | dialogs |

@@ -1,64 +1,94 @@
 ---
 DATE: 2026-07-19
-TIME: 09:46 EDT
-STATUS: Not started — planning only
-AUTHOR: Claude (Opus 4.8) for Ed May
-SCOPE: Rename the built-in specification-status value "missing" → "needed" so
-  every discipline (Apertures, Envelope, Equipment, Thermal Bridges) shares one
-  status vocabulary end-to-end (backend enum + stored JSONB + frontend), and
-  retire the backend "missing"→"needed" translation shims.
+TIME: 14:30 EDT
+STATUS: Planned — implementation not started
+AUTHOR: Codex with Ed May
+SCOPE: Make `needed` the canonical PH-Navigator specification-status value
+  while preserving historical project versions, external Honeybee
+  compatibility, and safe rollout across two production projects.
 RELATED:
-  - context/DATA_STORAGE.md (versioned JSONB documents)
-  - context/technical-requirements/ (document schema-migration mechanism)
-  - backend/features/project_document/document.py (CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7)
-  - Prompted by the 2026-07-19 documentation-page UI session, which unified the
-    *display* label ("Missing" → "Needed") on the Envelope/Materials page but
-    left the stored value as "missing" (label-only fix).
+  - ./PRD.md
+  - ./PLAN.md
+  - ./STATUS.md
+  - ./decisions.md
+  - ./research.md
+  - ./phases/
+  - ../../../context/technical-requirements/save-versioning.md
+  - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
 ---
 
-# Spec-status value unification (`missing` → `needed`)
+# Specification-status value unification
 
-Router for a cross-cutting refactor. Read order: this file → `PRD.md`
-(why + contract) → `PLAN.md` (phased sequence) → `STATUS.md` (current
-state / next step).
+Planning router for the built-in specification-status rename
+`missing` → `needed`.
 
-## One-paragraph problem
+Read in this order:
 
-The built-in `SpecificationStatus` enum uses the value **`"missing"`**, but the
-Documentation page (and the DataTable status option ids) speak **`"needed"`**.
-Today the backend papers over this with translation tables that rewrite
-`missing → needed` only for the documentation/status-summary feeds
-(`documentation_summary.py:220`, `status_summary.py:234`). The result: the same
-underlying state is called `missing`/"Missing" on Envelope/Materials and
-Apertures, but `needed`/"Needed" on Documentation. We want a single value —
-**`needed`** — everywhere, so Apertures, Envelope, Equipment, and Thermal
-Bridges are truly unified rather than reconciled by a shim.
+1. `PRD.md` — product and compatibility contract.
+2. `decisions.md` — accepted architecture and rollout decisions.
+3. `research.md` — current-code inventory and risks.
+4. `PLAN.md` — release/phase map.
+5. `phases/phase-00-*.md` through `phase-07-*.md` — executable handoffs.
+6. `STATUS.md` — current state, gates, and next action.
 
-## Why this is its own refactor (not part of the UI work)
+## Outcome
 
-The UI session already unified the **display** (shared `StatusSelect`
-component + "Needed" labels). What remains is a **value/data** change: the
-canonical enum member and, critically, **every saved project-document version's
-JSONB** currently stores `"specification_status": "missing"`. Changing the
-enum without migrating stored data breaks reads. That migration rides the
-document schema-version mechanism and is the real work here.
+PH-Navigator's canonical built-in `SpecificationStatus` becomes:
 
-## Scope at a glance
+```text
+complete | needed | question | na
+```
 
-| Layer | What changes |
-| --- | --- |
-| Backend enum | `SpecificationStatus` literal `"missing"` → `"needed"` (`envelope_models.py:27`) + all `= "missing"` defaults |
-| Stored JSONB | Schema-version bump + upgrade that rewrites `missing → needed` in every row that carries `specification_status` |
-| Backend shims | Delete/relax the `missing → needed` translation in `documentation_summary.py` + `status_summary.py` (becomes identity) |
-| Frontend types | `SpecificationStatus` union + `ReportStatusKey` `"missing"` → `"needed"` |
-| Frontend labels | Envelope/Materials already shows "Needed"; align the internal value + `report-status-*` key naming |
-| MCP / import | `hbjson_import.py` validation set; any importer that emits `"missing"` |
+Every status UI displays:
 
-## Out of scope
+```text
+Complete | Needed | Question | N/A
+```
 
-- The shared `StatusSelect` component and its pill styling (already shipped in
-  the 2026-07-19 UI session).
-- The `report-status-*` **color tokens** (orange/teal/green/grey) — only the
-  *key name* `missing` may be renamed, not the colors.
-- Equipment / Thermal Bridges *custom-status* option ids (`opt_status_needed`
-  et al.) already use "needed"; confirm, don't rewrite.
+This is semantic consistency, not one physical storage format:
+
+- Materials, Glazings, and Frames store the literal
+  `specification_status: "needed"` in current project documents.
+- Equipment and Thermal Bridges keep their existing stable DataTable option id
+  `custom_values.status = "opt_status_needed"`.
+- Documentation and Status summary APIs normalize both storage families to
+  `needed`.
+- Honeybee reference metadata remains an explicit external adapter:
+  internal `needed` exports as Honeybee `MISSING`, and imported `MISSING` /
+  `missing` normalizes to internal `needed`.
+
+## Production-data contract
+
+The two production projects use the established forward-only project-document
+upgrade lane. Schema v7 bodies are upgraded to v8 in memory; historical saved
+version rows are not bulk-rewritten. Existing drafts may rewrite when read,
+and later Save / Save As operations persist v8 through normal application
+flows.
+
+Before the v8 release, inventory and audit every saved version and draft for
+both projects, close or intentionally resolve live drafts, establish a verified
+database restore point, and pause Ed/John writes. After any v8 draft or version
+is persisted, old v7 code cannot safely replace the candidate; recovery becomes
+roll-forward unless the database is restored or explicitly repaired.
+
+## Scope boundary
+
+In scope:
+
+- canonical backend/frontend value and defaults;
+- v7 → v8 dict upgrader for `project_materials`, `project_glazings`, and
+  `project_frames`;
+- Documentation, Status, Materials, Glazings, and Frames UI/wire behavior;
+- frontend report/status tone key `needed`;
+- MCP, GH API, seed, fixture, and HBJSON boundary behavior;
+- compatibility release, production-corpus audit, rollout, and cleanup.
+
+Out of scope:
+
+- rewriting immutable historical `project_versions` rows;
+- changing Equipment/Thermal Bridges from stable option ids to literals;
+- removing the Documentation response-only `unknown` sentinel;
+- banning the ordinary English word `missing` from errors, evidence filters,
+  climate states, geometry warnings, or missing-option UI;
+- consolidating `StatusSelect` and DataTable status-pill CSS;
+- deploying to production without Ed's explicit instruction.

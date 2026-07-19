@@ -1,80 +1,167 @@
 ---
 DATE: 2026-07-19
-TIME: 09:46 EDT
-STATUS: Draft contract
-AUTHOR: Claude (Opus 4.8) for Ed May
+TIME: 14:30 EDT
+STATUS: Accepted planning contract — implementation not started
+AUTHOR: Codex with Ed May
+SCOPE: Product, persistence, compatibility, and rollout contract for canonical
+  specification status `needed`.
+RELATED:
+  - ./README.md
+  - ./decisions.md
+  - ./research.md
+  - ./PLAN.md
 ---
 
-# PRD — Spec-status value unification
+# PRD — Specification-status value unification
 
 ## Goal
 
-One specification-status vocabulary across all four disciplines
-(Apertures/Glazings, Apertures/Frames, Envelope/Materials, Equipment, Thermal
-Bridges): **`complete` · `needed` · `question` · `na`**, displayed as
-**Complete · Needed · Question · N/A**. No layer stores or reasons about
-`"missing"` for spec status.
+Use one user-facing specification-status vocabulary across Materials,
+Glazings, Frames, Equipment, Thermal Bridges, Documentation, and Status:
 
-## Current state (2026-07-19)
+| Canonical meaning | Display label |
+| --- | --- |
+| `complete` | Complete |
+| `needed` | Needed |
+| `question` | Question |
+| `na` | N/A |
 
-- Canonical enum: `SpecificationStatus = Literal["complete", "missing", "question", "na"]`
-  - backend `backend/features/project_document/envelope_models.py:27`
-  - frontend `frontend/src/features/envelope/types.ts:7`
-- Default value `"missing"` on the row models that carry it:
-  - `envelope_models.py:252` (ProjectMaterial), `:303`, `:365` (glazing/frame)
-  - `backend/features/envelope/commands/materials.py:125,316`
-  - `backend/features/project_document/apertures/_ref_helpers.py:148,158`
-- Translation shims that already rename `missing → needed` for their feeds:
-  - `backend/features/project_document/documentation_summary.py:220`
-    (`_STATUS_BY_SPECIFICATION_STATUS`)
-  - `backend/features/project_document/status_summary.py:234`
-- Validation set: `backend/features/envelope/hbjson_import.py:37`
-  (`{"complete","missing","question","na"}`)
-- Frontend report-table key: `ReportStatusKey = "missing" | "question" | "complete" | "na"`
-  (`frontend/src/shared/ui/report-table/StatusPill.tsx:3`) and the
-  `.report-status-dot[data-status="missing"]` CSS.
-- Documentation vocabulary already uses `needed` and adds an `unknown` sentinel:
-  `DocumentationSpecStatus = Literal["needed","question","complete","na","unknown"]`.
-- Equipment / Thermal Bridges use the **custom-status** path
-  (`documentation_summary.py:111` `status_source`), keyed by catalog
-  single-select option ids where "needed" is already `STATUS_OPTION_NEEDED`
-  (`frontend/src/shared/ui/data-table/status.ts:7`). These are already
-  "needed"; the divergence is the *built-in* enum used by Materials + Apertures.
+The built-in literal contract used by Materials/Glazings/Frames must no longer
+use `missing`. Equipment/Thermal Bridges retain their equivalent stable option
+ids, including `opt_status_needed`.
 
-## The hard part: stored JSONB
+## Current problem
 
-`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7`
-(`backend/features/project_document/document.py:213`). Every saved version's
-`body` JSONB contains `"specification_status": "missing"` on material, glazing,
-and frame rows. Production data is real
-(`context/PRODUCTION_DEPLOYMENT.md`) — renaming the enum without upgrading
-stored bodies makes old versions fail validation on read.
+Materials/Glazings/Frames currently use
+`complete | missing | question | na`. Documentation and Status feeds translate
+`missing` to `needed`; Materials labels it Needed while still storing
+`missing`; Apertures still visibly labels it Missing. Documentation editor
+writes translate `needed` back to `missing` for these three built-in tables.
 
-Decision required (see `PLAN.md`): **bump schema_version 7 → 8** with a forward
-upgrade that rewrites `missing → needed`, versus a **read-time normalization**
-alias. Prefer the schema-version upgrade so stored data is self-consistent and
-the enum stays strict.
+That creates four contracts for one state:
+
+- built-in project-document value: `missing`;
+- DataTable option id: `opt_status_needed`;
+- summary API value: `needed`;
+- visible label: either Missing or Needed depending on the surface.
+
+## Canonical internal contract
+
+After the v8 cutover:
+
+- Backend `SpecificationStatus` is
+  `Literal["complete", "needed", "question", "na"]`.
+- Frontend Envelope and Apertures `SpecificationStatus` unions match it.
+- Current typed document reads and current saves contain `needed`, never
+  `missing`, at `tables.project_materials[*].specification_status`,
+  `tables.project_glazings[*].specification_status`, and
+  `tables.project_frames[*].specification_status`.
+- Documentation and Status summary code passes canonical built-in values
+  through; custom-status option ids continue through their explicit option-id
+  adapters.
+- Shared status widgets use a `needed` status/tone key. The amber palette may
+  retain a compatibility alias for unrelated `missing` consumers.
+
+## Historical and external compatibility
+
+The word/value `missing` remains valid only in named compatibility contexts:
+
+1. Frozen v7 fixtures and raw downloads of historical saved versions.
+2. `_upgrade_v7_to_v8`, which recognizes the legacy stored value.
+3. A transitional request adapter for old/cached PH-Navigator clients.
+4. External Honeybee reference metadata. Installed `honeybee_ref` accepts
+   `COMPLETE | MISSING | QUESTION | NA`, not `NEEDED`.
+5. Generic non-status meanings such as missing evidence, a missing catalog row,
+   missing geometry, or missing climate data.
+
+These exceptions must be named and tested; they are not alternate canonical
+PH-Navigator states.
+
+## Project-document migration contract
+
+Use `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8` and a pure forward upgrader:
+
+- input: schema v7 raw dict;
+- rewrite only `"missing"` → `"needed"` in the three row lists named above;
+- preserve `complete`, `question`, `na`, already-`needed`, unknown unrelated
+  keys, row order, ids, and every non-target value;
+- stamp schema v8;
+- validate once against the current Pydantic model;
+- remain idempotent.
+
+Historical saved rows remain immutable and raw download remains raw. Typed
+reads upgrade in memory. Stale drafts may be rewritten by the existing draft
+upgrade path and receive a new draft ETag. Save overwrites an unlocked selected
+version with current schema; Save As creates a new current-schema version.
+
+No Alembic JSONB update and no bulk production-row rewrite belong in this
+refactor.
+
+## Release contract
+
+Use an expand/contract rollout because the production workflow deploys API and
+web separately:
+
+- Compatibility release (schema v7): backend mutation boundaries accept both
+  values but normalize to v7 `missing`; frontend reads tolerate both, displays
+  Needed everywhere, and continues emitting legacy `missing`.
+- Canonical release (schema v8): upgrader/domain use `needed`; backend still
+  accepts cached-client `missing` at one named request boundary; frontend emits
+  `needed`.
+- Cleanup release: remove temporary PH-Navigator-client adapters only after Ed
+  and John have refreshed and the agreed cache/observation window has passed.
+  Permanent Honeybee/file-format adapters remain.
+
+## Production-project contract
+
+Before the canonical release, identify both production projects by name/id and
+record, for every saved version and every user draft:
+
+- version/draft id, owner where applicable, active/locked state, schema version,
+  ETag, body size, and target-value counts;
+- candidate upgrade result, applied steps, validation result, and preview hash;
+- exact semantic diff count at the three permitted paths.
+
+Raw production artifacts stay under gitignored `working/`; planning docs record
+only ids/counts/hashes and gate outcomes. Resolve active drafts deliberately,
+close old tabs, pause writes, and record a verified database restore point
+before deployment.
 
 ## Acceptance criteria
 
-1. `SpecificationStatus` (backend + frontend) = `complete | needed | question | na`;
-   the string `"missing"` no longer appears as a spec-status **value** anywhere
-   (color-token key `--report-status-missing` may remain, or be renamed — see
-   decisions).
-2. A saved version created before the change reads back with
-   `specification_status: "needed"` where it previously held `"missing"`
-   (verified against a real fixture / migrated body).
-3. The `missing → needed` translation shims are gone (or reduced to an identity
-   the schema now guarantees), and `documentation_summary` / `status_summary`
-   pass through the value unchanged.
-4. Apertures/Glazings, Apertures/Frames, Envelope/Materials, Equipment, and
-   Thermal Bridges all present the identical option set and the same value on
-   the wire.
-5. `make ci` green; a regression test asserts old-body → migrated-body
-   `missing → needed`; existing spec-status tests updated.
+1. All in-scope UI surfaces display Complete / Needed / Question / N/A;
+   Apertures no longer displays Missing as a specification-status label.
+2. Current backend/frontend built-in status contracts use `needed` and current
+   PH-Navigator writes never persist `missing`.
+3. A frozen v7 body upgrades through v8 with an exact, idempotent diff limited
+   to schema version plus the three permitted row paths.
+4. All saved versions and drafts belonging to both production projects pass the
+   candidate upgrader before deploy; counts before/after reconcile exactly.
+5. Equipment/Thermal Bridges retain `opt_status_needed`; summary APIs still
+   return semantic `needed` for those tables.
+6. Documentation built-in writes emit `needed`; its response-only `unknown`
+   sentinel remains and presents/writes as Needed.
+7. Status-summary and documentation-summary built-in `missing → needed`
+   translation tables are removed; pass-through behavior is tested.
+8. Legacy Honeybee/HBJSON `MISSING` imports as internal `needed`; rich
+   Honeybee/Grasshopper export writes external `MISSING`; native current
+   round-trips preserve internal meaning.
+9. MCP and GH API current typed outputs expose `needed`, except the named rich
+   Honeybee reference adapter.
+10. Compatibility and canonical releases each pass focused gates plus full
+    `make ci`; the v8 candidate passes fixture, local/staging DB, and production
+    corpus audits.
+11. Both production projects pass authenticated read-only smoke after deploy;
+    later ordinary Save/Save As persists v8 without a forced historical rewrite.
+12. Rollback/roll-forward evidence records whether any v8 draft/version has
+    been persisted. No one redeploys v7 code across that boundary without a DB
+    restore or reviewed reverse repair.
 
 ## Non-goals
 
-- Changing status **colors** or the shared `StatusSelect` UI (shipped).
-- Merging `DocumentationSpecStatus`' `unknown` sentinel away (separate cleanup;
-  note it, don't chase it here unless trivial once values align).
+- Unifying every status table onto one storage representation.
+- Rewriting all historical saved bytes to v8.
+- Renaming generic grammatical uses of `missing`.
+- Changing status colors.
+- Combining status-pill CSS systems during the data migration.
+- Removing old-schema upgraders or frozen fixtures.
