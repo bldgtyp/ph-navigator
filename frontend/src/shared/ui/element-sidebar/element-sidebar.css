@@ -132,22 +132,28 @@
 
 .element-sidebar__row {
   align-items: center;
-  border-radius: var(--phn-control-radius);
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
+  /* Only the row-link (and, in manual mode, the grip) sit in flow; the action
+     cluster is absolutely positioned (below) so the label reads full-width at
+     rest. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 38px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 40px;
   min-width: 0;
   padding: var(--space-6) var(--space-6) var(--space-6) var(--space-10);
   position: relative;
 }
 
-.element-sidebar__row.is-active,
+/* Quiet-list split: hover is a barely-there NEUTRAL wash; only the selected row
+   carries teal. Selection must win over hover, so .is-active is ordered last. */
 .element-sidebar__row:hover {
-  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  background: var(--sidebar-row-hover);
 }
 
 .element-sidebar__row.is-active {
+  background: var(--accent-light);
+  color: var(--accent-text);
   font-weight: var(--fw-semibold);
 }
 
@@ -256,9 +262,10 @@
   max-width: 84px;
 }
 
-/* Manual-mode rows lead with a 6-dot drag handle column. */
+/* Manual-mode rows lead with a drag-handle column (the action cluster stays
+   absolute, so no trailing column is reserved). */
 .element-sidebar__row--draggable {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 .element-sidebar__row--draggable[data-dragging="true"] {
@@ -341,23 +348,44 @@
   white-space: nowrap;
 }
 
-/* Sidebar name + row-action tooltips use the shared <Tooltip> primitive
-   (shared/ui/tooltip) with named hover-delay tiers — no bespoke tooltip here. */
+/* Row name + row-action labels use native title/aria-label (no dark tooltip
+   bubble) so the quiet cluster stays uncluttered. The header Add/Collapse
+   buttons keep the shared <Tooltip> — they are icon-only chrome. */
 
+/* Quiet action cluster: a borderless ghost-button group absolutely pinned to
+   the row's right edge, fading in on hover/focus over a left→right scrim that
+   matches the row's current background so the label reads cleanly beneath it. */
 .element-sidebar__row-actions {
   align-items: center;
+  /* Scrim fades from transparent into the row's neutral hover wash. */
+  background: linear-gradient(90deg, transparent, var(--sidebar-row-hover) 40%);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  bottom: var(--space-4);
   display: inline-flex;
   gap: var(--space-2);
   opacity: 0;
+  padding-left: var(--space-32);
   pointer-events: none;
-  position: relative;
+  position: absolute;
+  right: var(--space-4);
+  top: var(--space-4);
+  transform: translateX(var(--space-6));
+  transition:
+    opacity var(--transition-fast) var(--ease),
+    transform var(--transition-fast) var(--ease);
   z-index: var(--z-base-elevated);
+}
+
+/* On the selected row the scrim matches the teal fill, not the neutral wash. */
+.element-sidebar__row.is-active .element-sidebar__row-actions {
+  background: linear-gradient(90deg, transparent, var(--accent-light) 40%);
 }
 
 .element-sidebar__row:hover .element-sidebar__row-actions,
 .element-sidebar__row:focus-within .element-sidebar__row-actions {
   opacity: 1;
   pointer-events: auto;
+  transform: translateX(0);
 }
 
 .element-sidebar__row:hover,
@@ -369,7 +397,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-7);
   color: var(--text-secondary);
   display: inline-flex;
   height: 24px;
@@ -383,7 +411,7 @@
 
 .element-sidebar__row-action:hover,
 .element-sidebar__row-action:focus-visible {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  background: var(--bg-card);
   color: var(--accent-text);
   outline: 0;
 }

@@ -272,7 +272,7 @@ describe("EnvelopePage", () => {
     }
   });
 
-  test("assembly sidebar shows the full assembly name on row hover", async () => {
+  test("assembly sidebar exposes the full assembly name via a native title", async () => {
     const longName = "R-AT Attic Framing Over Existing Board Sheathing";
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/envelope?")) {
@@ -289,41 +289,23 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const assemblyLink = await screen.findByRole("link", { name: longName });
-    await userEvent.hover(assemblyLink);
-
-    // Name tooltip opens on a medium hover delay via the shared <Tooltip>.
-    const tooltip = await screen.findByText(
-      longName,
-      { selector: ".app-tooltip" },
-      { timeout: 2000 },
-    );
-    expect(tooltip).toHaveAttribute("role", "tooltip");
-    expect(assemblyLink).toHaveAttribute("aria-describedby", tooltip.id);
+    // The 1A restyle drops the dark <Tooltip>; a native title surfaces the full
+    // name when the label truncates.
+    expect(assemblyLink).toHaveAttribute("title", longName);
   });
 
-  test("assembly sidebar command tooltips render outside the clipped list", async () => {
+  test("assembly sidebar row actions use a native title, not a dark tooltip", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByRole("link", { name: /WALL-C3/ });
     const renameButton = screen.getByRole("button", { name: "Rename assembly" });
-    expect(renameButton).not.toHaveAttribute("data-sidebar-tooltip");
 
+    // Native title + aria-label replace the removed shared <Tooltip>; no portalled
+    // tooltip node is created on hover.
+    expect(renameButton).toHaveAttribute("title", "Rename assembly");
+    expect(renameButton).toHaveAttribute("aria-label", "Rename assembly");
     await userEvent.hover(renameButton);
-
-    // Row-action tooltips open on a long hover delay via the shared <Tooltip>.
-    const tooltip = await screen.findByText(
-      "Rename assembly",
-      { selector: ".app-tooltip" },
-      { timeout: 2000 },
-    );
-    const sidebarList = document.querySelector(".element-sidebar__list");
-    expect(tooltip).toHaveTextContent("Rename assembly");
-    expect(tooltip).toHaveAttribute("role", "tooltip");
-    expect(sidebarList?.contains(tooltip)).toBe(false);
-    expect(tooltip.closest("[data-radix-popper-content-wrapper]")?.parentElement).toBe(
-      document.body,
-    );
-    expect(renameButton).toHaveAttribute("aria-describedby", tooltip.id);
+    expect(document.querySelector(".app-tooltip")).toBeNull();
   });
 
   test("unit toggle changes labels without changing canvas dimensions", async () => {
