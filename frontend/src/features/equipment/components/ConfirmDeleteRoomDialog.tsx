@@ -1,3 +1,4 @@
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { customTextValue } from "../lib/customValueReaders";
 import type { RoomRow } from "../types";
@@ -18,19 +19,14 @@ export function ConfirmDeleteRoomDialog(props: {
       onClose={props.onCancel}
     >
       <p>This removes the room from the active draft.</p>
-      <div className="modal-actions">
-        <button type="button" className="secondary-button" onClick={props.onCancel}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="danger-button"
-          onClick={props.onConfirm}
-          disabled={props.pending}
-        >
-          Delete room
-        </button>
-      </div>
+      <DialogActions
+        busy={props.pending}
+        error={null}
+        submitLabel={props.pending ? "Deleting…" : "Delete room"}
+        onClose={props.onCancel}
+        onConfirm={props.onConfirm}
+        danger
+      />
     </ModalDialog>
   );
 }

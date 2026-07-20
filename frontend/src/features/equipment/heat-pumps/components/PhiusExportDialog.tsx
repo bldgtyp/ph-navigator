@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { downloadBlob } from "../../../../shared/lib/downloadBlob";
+import { DialogActions } from "../../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { requestPhiusExport } from "../api";
 import { buildPhiusExportFilename } from "../lib/phius-export";
@@ -61,16 +62,22 @@ export function PhiusExportDialog({
           </p>
         ) : null}
         {state.status === "ready" ? <PhiusExportReadyBody payload={state.payload} /> : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            {state.status === "ready" ? "Cancel" : "Close"}
-          </button>
-          {state.status === "ready" ? (
-            <button type="button" onClick={handleContinue}>
-              {state.payload.warnings.length > 0 ? "Continue with gaps" : "Download CSV"}
+        {state.status === "ready" ? (
+          <DialogActions
+            busy={false}
+            error={null}
+            submitLabel={state.payload.warnings.length > 0 ? "Continue with gaps" : "Download CSV"}
+            onClose={onClose}
+            onConfirm={handleContinue}
+          />
+        ) : (
+          // Loading / error: no primary action, just a single dismiss.
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={onClose}>
+              Close
             </button>
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
     </ModalDialog>
   );

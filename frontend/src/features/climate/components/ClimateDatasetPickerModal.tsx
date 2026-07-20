@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
@@ -145,20 +146,16 @@ export function ClimateDatasetPickerModal({
       ) : !locationIsSet ? (
         <div className="climate-picker-guard">
           <p>Set the project location first — proximity needs a site.</p>
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onRequestSetLocation?.();
-              }}
-            >
-              Set the project location
-            </button>
-          </div>
+          <DialogActions
+            busy={false}
+            error={null}
+            submitLabel="Set the project location"
+            onClose={onClose}
+            onConfirm={() => {
+              onClose();
+              onRequestSetLocation?.();
+            }}
+          />
         </div>
       ) : (
         <div className="climate-picker-content">
@@ -207,19 +204,18 @@ export function ClimateDatasetPickerModal({
 
           {selected ? <SelectionPreview kind={kind} proximity={selected.proximity} /> : null}
 
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="button" onClick={attach} disabled={!selected || create.isPending}>
-              {create.isPending ? "Attaching…" : hasExisting ? "Replace current dataset" : "Attach"}
-            </button>
-          </div>
-          {create.error ? (
-            <p className="form-error">
-              {errorMessage(create.error, "Could not attach the dataset.")}
-            </p>
-          ) : null}
+          <DialogActions
+            busy={create.isPending}
+            error={
+              create.error ? errorMessage(create.error, "Could not attach the dataset.") : null
+            }
+            submitLabel={
+              create.isPending ? "Attaching…" : hasExisting ? "Replace current dataset" : "Attach"
+            }
+            onClose={onClose}
+            onConfirm={attach}
+            submitDisabled={!selected}
+          />
         </div>
       )}
     </ModalDialog>

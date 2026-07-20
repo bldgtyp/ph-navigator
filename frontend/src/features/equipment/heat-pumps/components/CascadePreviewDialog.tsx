@@ -46,15 +46,20 @@ export function BlockedDeleteDialog({
   onClose: () => void;
 }) {
   return (
-    <ModalDialog title={title} titleId="hp-cascade-blocked-title" onClose={onClose}>
+    <ModalDialog
+      title={title}
+      titleId="hp-cascade-blocked-title"
+      onClose={onClose}
+      dismissOnBackdrop
+    >
       <div className="project-form table-row-modal-form">
         <p className="form-error" role="alert">
           {message}
         </p>
         <CascadeReferenceList affected={affected} />
         <div className="modal-actions">
-          <button type="button" onClick={onClose}>
-            OK
+          <button type="button" className="secondary-button" onClick={onClose}>
+            Close
           </button>
         </div>
       </div>

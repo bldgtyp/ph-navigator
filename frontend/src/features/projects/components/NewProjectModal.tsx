@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useBtNumberAvailabilityQuery, useCreateProjectMutation } from "../hooks";
 import { availabilityLabel } from "../lib";
@@ -90,19 +91,17 @@ export function NewProjectModal({
             <input value={phiusNumber} onChange={(event) => setPhiusNumber(event.target.value)} />
           </label>
         ) : null}
-        {createProjectMutation.isError ? (
-          <p className="form-error" role="alert">
-            {errorMessage(createProjectMutation.error, "Could not create project.")}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" disabled={!canSubmit}>
-            {createProjectMutation.isPending ? "Creating..." : "Create project"}
-          </button>
-        </div>
+        <DialogActions
+          busy={createProjectMutation.isPending}
+          error={
+            createProjectMutation.isError
+              ? errorMessage(createProjectMutation.error, "Could not create project.")
+              : null
+          }
+          submitLabel={createProjectMutation.isPending ? "Creating…" : "Create project"}
+          onClose={onClose}
+          submitDisabled={!canSubmit}
+        />
       </form>
     </ModalDialog>
   );

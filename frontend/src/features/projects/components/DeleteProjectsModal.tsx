@@ -1,4 +1,5 @@
 import { errorMessage } from "../../../shared/lib/errors";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ProjectSummary } from "../types";
 
@@ -30,19 +31,14 @@ export function DeleteProjectsModal({
             </li>
           ))}
         </ul>
-        {error ? (
-          <p className="form-error" role="alert">
-            {errorMessage(error, "Could not delete selected projects.")}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" className="danger-button" disabled={isPending} onClick={onConfirm}>
-            {isPending ? "Deleting..." : actionLabel}
-          </button>
-        </div>
+        <DialogActions
+          busy={isPending}
+          error={error ? errorMessage(error, "Could not delete selected projects.") : null}
+          submitLabel={isPending ? "Deleting…" : actionLabel}
+          onClose={onCancel}
+          onConfirm={onConfirm}
+          danger
+        />
       </div>
     </ModalDialog>
   );

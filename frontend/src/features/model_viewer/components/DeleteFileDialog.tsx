@@ -1,3 +1,4 @@
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { HbjsonFile } from "../types";
 
@@ -27,19 +28,14 @@ export function DeleteFileDialog({
           '{file.display_name}' will be removed from the file list. The stored file follows the
           project's standard 90-day retention policy.
         </p>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" className="danger-button" disabled={isDeleting} onClick={onConfirm}>
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
-        </div>
+        <DialogActions
+          busy={isDeleting}
+          error={error}
+          submitLabel={isDeleting ? "Deleting…" : "Delete file"}
+          onClose={onCancel}
+          onConfirm={onConfirm}
+          danger
+        />
       </div>
     </ModalDialog>
   );

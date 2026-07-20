@@ -93,7 +93,7 @@ tests green) + `make ci`; live modal is reachable only via a right-click
 context menu (outside the browser-driver `--click` DSL), so verification is
 code + unit-test based for this phase.
 
-## Phase 03 — "own-footer, single-primary" partials → `DialogActions`
+## Phase 03 — "own-footer, single-primary" partials → `DialogActions` — ✅ DONE
 
 Bulk mechanical conversion; the biggest count of the "missing `.primary-button`"
 defect lives here. Group by feature area for parallel work:
@@ -110,6 +110,35 @@ defect lives here. Group by feature area for parallel work:
 - equipment: `ConfirmDeleteRoomDialog`, `PhiusExportDialog`, `BlockedDeleteDialog`
 - documentation: `DirectionsModal`
 - envelope: `SegmentDetailDialog`, `ProjectMaterialEditorModal`
+
+Delivered: converted the hand-rolled single-primary footers to `DialogActions`
+across catalogs (`FrameTypeCreateModal`, `MaterialEditorModal`), climate
+(`ClimateUploadModal`, both branches of `ClimateDatasetPickerModal`), projects
+(`NewProjectModal`, `ProjectSettingsModal` edit-mode; viewer-mode keeps a single
+"Close"), status (`StatusItemModal`, `StatusDeleteDialog`), model_viewer
+(`DeleteFileDialog`), project_document (`DraftRestoreDialog` two-choice styled;
+`SaveAsDialog` → DialogActions; `DiffDialog` was a **stranded** footer-less
+viewer — restored header Close + backdrop + resizable), equipment
+(`ConfirmDeleteRoomDialog`, `PhiusExportDialog` ready-state, `BlockedDeleteDialog`
+→ single "Close"), and envelope (`ProjectMaterialEditor` child footer +
+`SegmentDetailDialog` backdrop). Destructive confirms use `danger`; busy labels
+standardized to the "…" ellipsis; `DeleteFileDialog` primary is now "Delete file".
+`OneTimeLinkModal` "Done" → "Close" (info viewer). Bulk mechanical batch of 9 was
+implemented by gpt-5.5/Codex and reviewed here; the nuanced ones by Claude.
+
+Deliberate exceptions (already contract-compliant / would regress):
+- `SetLocationModal` — primary is already a styled `.primary-button` with a
+  MapPin icon + contextual multi-error layout; converting would drop the icon
+  for no visual gain. Left as-is.
+- 3× `ImportDialog` (materials/glazings/frames) — multi-stage wizards; the
+  report stage already uses a styled `primary-button` (Cancel + "Import N rows"),
+  the pick stage has no primary, the done stage is a single acknowledge. All
+  buttons already styled; DialogActions doesn't model the wizard stages. Left.
+- `DirectionsModal` — handled in Phase 00 as a read-only viewer (not a footer
+  conversion).
+- `CatalogOptionCascadeModal`, `WeatherStationPickerModal`,
+  `DocumentConfirmationDialog`/Save-Version dialog — multi-action, deferred to
+  Phase 04.
 
 ## Phase 04 — Multi-action footers (needs Phase 00 multi-slot)
 

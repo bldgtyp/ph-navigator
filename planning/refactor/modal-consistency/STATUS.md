@@ -14,7 +14,7 @@ RELATED:
 # Status — Modal Consistency Refactor
 
 **State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phases 00–02 complete; Phases 03–06 pending.
+(off `main`). Phases 00–03 complete; Phases 04–06 pending.
 
 ## Done
 
@@ -35,10 +35,11 @@ RELATED:
 
 ## Next step
 
-Phase 03 — bulk-convert the "own-footer, single-primary" partials to
-`DialogActions` (catalogs / climate / projects / admin / status / model_viewer /
-project_document / equipment / documentation / envelope). Biggest count of the
-missing-`.primary-button` defect.
+Phase 04 — multi-action footers via the `extraActions` slot:
+`DocumentConfirmationDialog` family (discard/unlock/stale-save/switch, up to 4
+buttons), `WeatherStationPickerModal` (3-button), `CatalogOptionCascadeModal`
+(retry/try-again/done). Also fold in the Save-Version commit dialog's
+`Saving...` → `Saving…` while there.
 
 ## Blockers / decisions
 
