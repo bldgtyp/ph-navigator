@@ -32,6 +32,11 @@ dumps when it is not, or when the damage predates the PITR window.
 
 ## Where things live
 
+- **The production database is `ph_navigator_74vs`**, on host
+  `dpg-d909olr7uimc7396sls0-a.ohio-postgres.render.com`. Render appended a suffix
+  to the `databaseName: ph_navigator` requested in `render.prod.yaml`, so no
+  config file in this repo states the live name — take it from Render's
+  "External Database URL". (`render.yaml`'s `ph_navigator_v2` is deleted staging.)
 - **R2 bucket** `phn-db-backups` (private, no public access, no CORS), keys:
   ```
   daily/ph_navigator/<YYYY>/<MM>/ph_navigator-<YYYYMMDD>T<HHMMSS>Z.dump.age
@@ -153,7 +158,7 @@ are configured correctly.
 
 | Date | Object restored | Counts matched | By |
 | --- | --- | --- | --- |
-| _(none yet — first drill pending Phases 00–02)_ | | | |
+| 2026-07-20 | `daily/ph_navigator/2026/07/ph_navigator-20260720T194939Z.dump.age` | ✅ 2 users / 5 projects / 7 versions / 0 drafts; bodies intact JSON | Ed + Claude |
 
 ## Rotation
 

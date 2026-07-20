@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
-TIME: 10:20 EDT
-STATUS: All agent-buildable phases built; Phases 00-02 + production drill are Ed's
+TIME: 15:55 EDT
+STATUS: OPERATING — first production backup + restore drill passed 2026-07-20
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Live state ledger for the database-backups feature.
 RELATED:
@@ -13,20 +13,21 @@ RELATED:
 
 # STATUS — Database Backups
 
-## State: code complete, not yet operating
+## State: OPERATING
 
-Phases 03–06 are built and merged/in review. Phases 00–02 need Ed at a console;
-until they are done **no backup is being taken**.
+All seven phases are done. The first production backup ran green on 2026-07-20
+(run `29773541404`, 967 KB, 26 tables) and was restored and verified the same
+day. Backups now run daily at 06:30 UTC.
 
 | Phase | State |
 | --- | --- |
-| 00 R2 bucket + tokens + lifecycle | ⛔ Ed — not started |
-| 01 `phn_backup` read-only role | ⛔ Ed — not started |
-| 02 age keypair + GitHub secrets | ⛔ Ed — not started |
+| 00 R2 bucket + tokens + lifecycle | ✅ bucket, 30/365 lifecycle, 2 scoped tokens; read token write-denial verified |
+| 01 `phn_backup` read-only role | ✅ created; dumps 26 tables; `CREATE TABLE` denied |
+| 02 age keypair + GitHub secrets | ✅ identity offline; 4 secrets + 2 variables set |
 | 03 Daily backup workflow | ✅ built (merged, `fd8c54c3`) |
 | 04 Weekly Dropbox pull | ✅ script + plist + `.last-success` stamp built; Ed installs |
-| 05 Restore + drill | ✅ `restore.sh` + `drill-local.sh` built and passing; production drill pending 00–02 |
-| 06 Docs + closeout | ✅ runbook + router wiring built; archive pending first production drill |
+| 05 Restore + drill | ✅ **production drill PASSED** — counts matched, bodies intact |
+| 06 Docs + closeout | ✅ runbook + router wiring; drill logged. Ready to archive |
 
 ## What is proven, and what is not
 
@@ -42,25 +43,27 @@ immediately — the first drill run caught two real bugs (`${VAR:=default}`
 overriding a deliberately empty store, and BSD `wc -c` padding breaking a size
 comparison) that would otherwise have surfaced as a failed 02:30 production job.
 
-**Not proven:** anything involving production or the cloud. The workflow has
-never run against the real database, no R2 bucket exists, and the real age
-recipient has never encrypted anything. The local drill deliberately cannot
-cover that.
+**Proven in production (2026-07-20):** the workflow dumped the real database
+(966,938 bytes, 26 tables), encrypted it to the real recipient, and stored it at
+`daily/ph_navigator/2026/07/ph_navigator-20260720T194939Z.dump.age`. Restoring
+that object with the offline identity reproduced production exactly — 2 users /
+5 projects / 7 project_versions / 0 drafts, all `body` values intact JSON. The
+run log contains no credential material.
 
-## Immediate next step — Ed
+**Found by doing it:** `create-readonly-role.sql` granted SELECT on tables but
+not sequences, so `pg_dump` failed on `user_action_log_id_seq`. Fixed in the
+file. Also: the live database is `ph_navigator_74vs`, not the `ph_navigator`
+declared in `render.prod.yaml` — Render appends a suffix, and no file in this
+repo had the real name. Now recorded in the runbook.
 
-1. **Phase 00** — create the `phn-db-backups` R2 bucket, two scoped tokens, and
-   the lifecycle rules (`ops/backup/r2-lifecycle.json` is the reference).
-2. **Phase 01** — run `ops/backup/create-readonly-role.sql` (pass
-   `-v db_name=ph_navigator`; production, *not* the `ph_navigator_v2` in
-   `render.yaml`). Fall back to the primary URL if `CREATEROLE` is unavailable.
-3. **Phase 02** — `age-keygen`, store the identity offline in both places, set
-   the four secrets and two variables.
-4. Dispatch "Backup Database" from `main` and watch it go green.
-5. Install the launchd job (Phase 04) and run the first production drill
-   (Phase 05), then log it in `context/DATABASE_BACKUPS.md`.
+## Remaining
 
-Only after step 4 does the system actually protect anything.
+1. Move `~/Downloads/phn-backup-identity.txt` into Apple Passwords and the
+   Dropbox key store, then delete it from Downloads. **Until this is done the
+   only copy of the decryption key is in a Downloads folder.**
+2. Install the launchd job for the weekly Dropbox pull (Phase 04).
+3. Delete the Phase 02 scratchpad file.
+4. Archive this folder per `planning/.instructions.md`.
 
 ## Open questions still unanswered
 
