@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned — implementation not started
+DATE: 2026-07-20
+TIME: 09:40 EDT
+STATUS: In progress — contract unchanged; Phase 03 built, success criteria 1–6 not yet met
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Behavior contract and success criteria for independent, off-site,
   encrypted Postgres backups + tested restore.
