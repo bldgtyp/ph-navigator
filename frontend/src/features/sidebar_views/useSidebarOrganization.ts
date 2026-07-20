@@ -119,7 +119,9 @@ export function useSidebarOrganization<T extends { id: string }>({
   );
 
   const onAddGroup = useCallback(
-    (label = "New group") => setViewState(addGroup(viewState, label)),
+    // 1A: new groups are created as "Untitled group" (the button reads "New
+    // group"); rename via the group Rename affordance.
+    (label = "Untitled group") => setViewState(addGroup(viewState, label)),
     [viewState, setViewState],
   );
   const onRenameGroup = useCallback(

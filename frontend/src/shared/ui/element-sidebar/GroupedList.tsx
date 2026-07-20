@@ -1,15 +1,21 @@
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { InlineHeaderNameEditor } from "../InlineHeaderNameEditor";
 import { SidebarActionButton, SortableRows } from "./rows";
 import type { ElementSidebarGroup, ElementSidebarOrganization, RowContext } from "./types";
 
 /**
- * The manual-mode group tree: each group as a collapsible section with its
- * member rows, then the ungrouped remainder. Assignment between groups is the
- * per-row "move to group" select (in `rows.tsx`); within-section order is drag;
- * group order is up/down buttons (kept simple/robust rather than nesting a
- * second drag context). The "new group" button is owned by `ElementSidebar`.
+ * The manual-mode group tree: each group renders as a lightweight divider (an
+ * uppercase label + trailing hairline rule, not a boxed card) above its member
+ * rows, then the ungrouped remainder. Assignment between groups is the per-row
+ * "move to group" select (in `rows.tsx`); within-section order is drag; group
+ * order is up/down buttons (kept simple/robust rather than nesting a second drag
+ * context). The "new group" button is owned by `ElementSidebar`.
+ *
+ * Collapsible groups are out of scope for 1A: groups always render expanded and
+ * no collapse chevron is shown, but the `collapsed_group_ids` view-state field
+ * and its `onToggleGroupCollapsed` plumbing are kept intact so a future "1B" can
+ * restore collapse without a schema migration.
  */
 export function GroupedList({
   ctx,
@@ -39,6 +45,7 @@ export function GroupedList({
         <section className="element-sidebar__group element-sidebar__group--ungrouped">
           <div className="element-sidebar__group-header">
             <span className="element-sidebar__group-label is-muted">Ungrouped</span>
+            <span className="element-sidebar__group-rule" aria-hidden="true" />
           </div>
           <SortableRows
             items={ungrouped}
@@ -70,7 +77,6 @@ function GroupSection({
   onEditingChange: (editing: boolean) => void;
 }) {
   const { idPrefix } = ctx;
-  const CollapseIcon = group.collapsed ? ChevronRight : ChevronDown;
 
   function moveGroup(direction: "up" | "down"): void {
     const ids = organization.groups.map((entry) => entry.id);
@@ -84,15 +90,6 @@ function GroupSection({
   return (
     <section id={`${idPrefix}-group-${group.id}`} className="element-sidebar__group">
       <div className="element-sidebar__group-header">
-        <button
-          type="button"
-          className="element-sidebar__group-collapse"
-          aria-expanded={!group.collapsed}
-          aria-label={`${group.collapsed ? "Expand" : "Collapse"} ${group.label}`}
-          onClick={() => organization.onToggleGroupCollapsed(group.id)}
-        >
-          <CollapseIcon size={14} aria-hidden="true" />
-        </button>
         {editing ? (
           <InlineHeaderNameEditor
             value={group.label}
@@ -107,7 +104,10 @@ function GroupSection({
             onSubmit={(label) => organization.onRenameGroup(group.id, label)}
           />
         ) : (
-          <span className="element-sidebar__group-label">{group.label}</span>
+          <>
+            <span className="element-sidebar__group-label is-muted">{group.label}</span>
+            <span className="element-sidebar__group-rule" aria-hidden="true" />
+          </>
         )}
         {ctx.canEdit && !editing ? (
           <span className="element-sidebar__group-actions">
@@ -143,7 +143,7 @@ function GroupSection({
           </span>
         ) : null}
       </div>
-      {group.collapsed ? null : group.items.length > 0 ? (
+      {group.items.length > 0 ? (
         <SortableRows
           items={group.items}
           ctx={ctx}
