@@ -12,6 +12,8 @@
 // keeps no document state — it only emits the command payload.
 
 import { useEffect, useState } from "react";
+import { DialogActions } from "../../../shared/ui/DialogActions";
+import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ApertureDriftEntry, RefFieldDelta } from "../drift-types";
 
 export type RefreshChoice = "catalog" | "yours" | "edit";
@@ -83,73 +85,68 @@ export function RefreshDialog({ open, entry, busy = false, onClose, onSave }: Re
   };
 
   return (
-    <div className="refresh-dialog__backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="refresh-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Refresh ${entry.element_name} from catalog`}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="refresh-dialog__header">
-          <h2>Refresh &lsquo;{entry.element_name}&rsquo; from catalog?</h2>
-          <p className="refresh-dialog__subtitle">
-            {entry.aperture_type_name} · {entry.target}
-          </p>
-        </header>
-        {entry.kind === "catalog_row_missing" ? (
-          <p className="refresh-dialog__missing" role="alert">
-            The catalog row for this ref has been removed. Repick from the catalog instead.
-          </p>
-        ) : (
-          <>
-            <div className="refresh-dialog__bulk">
-              <button type="button" onClick={() => bulk("catalog")}>
-                Take all from catalog
-              </button>
-              <button type="button" onClick={() => bulk("yours")}>
-                Keep all mine
-              </button>
-            </div>
-            <table className="refresh-dialog__table">
-              <thead>
-                <tr>
-                  <th>Field</th>
-                  <th>Catalog</th>
-                  <th>Yours</th>
-                  <th>Choice</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <RefreshRow
-                    key={row.delta.field_key}
-                    row={row}
-                    onChoose={(c) => setChoice(row.delta.field_key, c)}
-                    onEdit={(v) => setEditValue(row.delta.field_key, v)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-        <footer className="refresh-dialog__footer">
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
-          {entry.kind === "field_delta" ? (
-            <button
-              type="button"
-              className="refresh-dialog__save"
-              disabled={busy || rows.length === 0}
-              onClick={handleSave}
-            >
-              Save
+    <ModalDialog
+      title={`Refresh ‘${entry.element_name}’ from catalog?`}
+      titleId="refresh-dialog-title"
+      onClose={onClose}
+      resizable
+    >
+      <p className="modal-subtitle">
+        {entry.aperture_type_name} · {entry.target}
+      </p>
+      {entry.kind === "catalog_row_missing" ? (
+        <p className="refresh-dialog__missing" role="alert">
+          The catalog row for this ref has been removed. Repick from the catalog instead.
+        </p>
+      ) : (
+        <>
+          <div className="refresh-dialog__bulk">
+            <button type="button" onClick={() => bulk("catalog")}>
+              Take all from catalog
             </button>
-          ) : null}
-        </footer>
-      </div>
-    </div>
+            <button type="button" onClick={() => bulk("yours")}>
+              Keep all mine
+            </button>
+          </div>
+          <table className="refresh-dialog__table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Catalog</th>
+                <th>Yours</th>
+                <th>Choice</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <RefreshRow
+                  key={row.delta.field_key}
+                  row={row}
+                  onChoose={(c) => setChoice(row.delta.field_key, c)}
+                  onEdit={(v) => setEditValue(row.delta.field_key, v)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      {entry.kind === "field_delta" ? (
+        <DialogActions
+          busy={busy}
+          error={null}
+          submitLabel="Save"
+          onClose={onClose}
+          onConfirm={handleSave}
+          submitDisabled={rows.length === 0}
+        />
+      ) : (
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      )}
+    </ModalDialog>
   );
 }
 

@@ -197,13 +197,6 @@
   font-size: var(--fs-sm);
 }
 
-.catalog-option-cascade-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-8);
-  flex-wrap: wrap;
-}
-
 .catalog-option-cascade-progress {
   height: var(--space-8);
   overflow: hidden;

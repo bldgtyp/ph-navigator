@@ -176,8 +176,10 @@ describe("ImportDialog", () => {
 
     await user.upload(screen.getByTestId("import-dialog-file") as HTMLInputElement, jsonFile());
 
-    // While loading, close.
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    // While loading, close. The loading stage has no footer button and the
+    // header "Close" is off by default (modal contract), so dismiss via Escape,
+    // which ModalDialog still handles.
+    await user.keyboard("{Escape}");
 
     // Resolve the hanging preview AFTER close. With the conditional
     // mount the dialog is unmounted and the setState never fires.

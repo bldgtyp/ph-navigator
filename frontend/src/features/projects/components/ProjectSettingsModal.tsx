@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { ApiRequestError } from "../../../shared/api/client";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useUnitPreference } from "../../../lib/units";
 import { useMcpTokensQuery } from "../../mcp/hooks";
@@ -188,12 +189,6 @@ export function ProjectSettingsModal({
             projectId={project.id}
           />
         ) : null}
-        {validationError ? <p className="form-error">{validationError}</p> : null}
-        {updateProjectMutation.isError ? (
-          <p className="form-error" role="alert">
-            {settingsSaveError(updateProjectMutation.error)}
-          </p>
-        ) : null}
         {confirmDiscard ? (
           <div className="draft-banner settings-discard-warning">
             <span>You have unsaved changes. Discard?</span>
@@ -205,16 +200,26 @@ export function ProjectSettingsModal({
             </button>
           </div>
         ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={closeWithGuard}>
-            {isViewer ? "Close" : "Cancel"}
-          </button>
-          {!isViewer ? (
-            <button type="submit" disabled={!canSave}>
-              {isSaving ? "Saving..." : "Save"}
+        {isViewer ? (
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={closeWithGuard}>
+              Close
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : (
+          <DialogActions
+            busy={isSaving}
+            error={
+              validationError ??
+              (updateProjectMutation.isError
+                ? settingsSaveError(updateProjectMutation.error)
+                : null)
+            }
+            submitLabel={isSaving ? "Saving…" : "Save"}
+            onClose={closeWithGuard}
+            submitDisabled={!canSave}
+          />
+        )}
       </form>
     </ModalDialog>
   );

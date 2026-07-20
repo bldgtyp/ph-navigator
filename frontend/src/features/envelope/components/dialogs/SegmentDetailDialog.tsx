@@ -28,7 +28,12 @@ export function SegmentDetailDialog({
     : null;
 
   return (
-    <ModalDialog title="Segment details" titleId="envelope-segment-detail-title" onClose={onClose}>
+    <ModalDialog
+      title="Segment details"
+      titleId="envelope-segment-detail-title"
+      onClose={onClose}
+      dismissOnBackdrop
+    >
       <div className="modal-form">
         <SegmentMaterialFacts material={material} unitSystem={unitSystem} />
         <dl className="metadata-grid" aria-label="Segment details">

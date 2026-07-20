@@ -146,7 +146,7 @@ into these shared sheets:
 | `styles/reset.css` | element resets (`*`, `html`, `body`, inputs), `.sr-only` |
 | `styles/base.css` | the shared component library: buttons (`.primary-button`, `.secondary-button`, `.danger-button`, `.icon-button`, `.link-button`), `.chip` + variants, `.read-only-pill`, the three menu systems (`.app-menu*`, `.account-menu*`, `.catalog-menu*`), `.app-subtabs*` + `.pill-tab*`, `.autocomplete-select*`, forms (`.auth-form`, `.project-form`, `.settings-*`, `.form-error/-note`), page layouts (`.dashboard-page`, `.project-page`, `.project-row`, `.breadcrumbs`, `.page-heading`, …), `.empty-state`, `.diff-*` |
 | `styles/base-responsive.css` | the `<=760px` overrides for the above |
-| `styles/modals.css` | `.modal-backdrop`, `.modal-panel`, `.modal-header*`, `.modal-subtitle` |
+| `styles/modals.css` | `.modal-backdrop`, `.modal-panel` (+ `--resizable`), `.modal-header*`, `.modal-actions-extra`, `.modal-subtitle`. Modal contract in `context/DESIGN_SYSTEM.md`: `ModalDialog` + `DialogActions` only; footer Cancel is the dismiss; header Close/backdrop-dismiss are viewer opt-ins. |
 | `styles/panels.css` | the shared **card-panel recipe** (border + radius + card bg) used by `.auth-panel`, `.modal-panel`, `.project-list`, `.data-table-wrap`, `.status-*`, … + the blueprint-grid decoration |
 | `shared/ui/data-table/DataTable.css` | the DataTable grid |
 | `shared/ui/report-table/ReportTable.css` | report tables + status pills/chips |

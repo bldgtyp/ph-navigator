@@ -15,6 +15,8 @@ export function DirectionsModal({
       title={`How to photograph - ${section.title}`}
       titleId="documentation-directions-title"
       onClose={onClose}
+      showHeaderClose
+      dismissOnBackdrop
     >
       <div className="documentation-modal-body documentation-directions">
         {directions.map((direction) => (

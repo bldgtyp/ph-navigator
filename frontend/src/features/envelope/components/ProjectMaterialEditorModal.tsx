@@ -23,7 +23,13 @@ export function ProjectMaterialEditorModal({
       titleId="project-material-editor-title"
       onClose={onClose}
     >
-      <ProjectMaterialEditor material={material} busy={busy} error={error} onCommand={onCommand} />
+      <ProjectMaterialEditor
+        material={material}
+        busy={busy}
+        error={error}
+        onCancel={onClose}
+        onCommand={onCommand}
+      />
     </ModalDialog>
   );
 }

@@ -981,30 +981,6 @@
 
 /* ---- Phase 11: manufacturer-filters modal + picker hint ------------------ */
 
-.manufacturer-modal__backdrop {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal, 1000);
-}
-
-.manufacturer-modal {
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
-  min-width: min(640px, 92vw);
-  max-width: 92vw;
-  max-height: 88vh;
-  overflow: auto;
-  box-shadow: var(--shadow-dialog-strong);
-}
-.manufacturer-modal__header h2 {
-  margin: 0 0 0.75rem;
-  font-size: var(--fs-lg);
-}
 .manufacturer-modal__columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1023,16 +999,6 @@
   color: var(--phn-warning);
   font-size: var(--fs-sm);
 }
-.manufacturer-modal__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-.manufacturer-modal__save {
-  font-weight: var(--fw-semibold);
-}
-
 .manufacturer-column {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-control-radius);
@@ -1122,7 +1088,6 @@
 }
 
 .aperture-drift-modal__backdrop,
-.refresh-dialog__backdrop,
 .project-refs__backdrop {
   position: fixed;
   inset: 0;
@@ -1133,7 +1098,6 @@
   z-index: var(--z-modal, 1000);
 }
 .aperture-drift-modal,
-.refresh-dialog,
 .project-refs {
   background: var(--bg-card);
   border-radius: var(--radius-md);
@@ -1144,16 +1108,10 @@
   overflow: auto;
   box-shadow: var(--shadow-dialog-strong);
 }
-.refresh-dialog__header h2,
 .aperture-drift-modal__header h2,
 .project-refs__header h2 {
   margin: 0 0 0.5rem;
   font-size: var(--fs-lg);
-}
-.refresh-dialog__subtitle {
-  margin: 0 0 0.5rem;
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
 }
 .refresh-dialog__missing {
   padding: 0.5rem;
@@ -1195,16 +1153,12 @@
   margin-top: 0.25rem;
   width: 100%;
 }
-.refresh-dialog__footer,
 .aperture-drift-modal__footer,
 .project-refs__footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.75rem;
-}
-.refresh-dialog__save {
-  font-weight: var(--fw-semibold);
 }
 
 .aperture-drift-modal__list {

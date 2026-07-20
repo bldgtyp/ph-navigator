@@ -83,7 +83,6 @@ export function SegmentDialog({
           <SegmentActionsMenu onDelete={onDelete} />
         </>
       }
-      showHeaderClose={false}
     >
       <form
         id="envelope-segment-dialog-form"

@@ -9,6 +9,7 @@ import {
 } from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { FieldOption } from "../../../shared/ui/data-table";
 import { FRAME_TYPES_SINGLE_SELECT_FIELDS } from "../frame-types/fieldDefs";
@@ -276,19 +277,13 @@ export function FrameTypeCreateModal({
             onChange={(event) => updateForm("comments", event.target.value)}
           />
         </label>
-        {errorText ? (
-          <p className="form-error" role="alert">
-            {errorText}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" disabled={!canSubmit}>
-            {editorSubmitLabel(false, createMutation.isPending, "Create frame type")}
-          </button>
-        </div>
+        <DialogActions
+          busy={createMutation.isPending}
+          error={errorText}
+          submitLabel={editorSubmitLabel(false, createMutation.isPending, "Create frame type")}
+          onClose={onClose}
+          submitDisabled={!canSubmit}
+        />
       </form>
     </ModalDialog>
   );

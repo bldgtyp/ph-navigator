@@ -11,6 +11,7 @@ import {
 } from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useCreateMaterialMutation, useUpdateMaterialMutation } from "../hooks";
 import { MATERIAL_CATEGORY_OPTIONS, materialCategoryFromOptionId } from "../materials/fieldDefs";
@@ -273,19 +274,13 @@ export function MaterialEditorModal({
             onChange={(event) => updateForm("comments", event.target.value)}
           />
         </label>
-        {errorText ? (
-          <p className="form-error" role="alert">
-            {errorText}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" disabled={!canSubmit}>
-            {editorSubmitLabel(isEdit, activeMutation.isPending, "Create material")}
-          </button>
-        </div>
+        <DialogActions
+          busy={activeMutation.isPending}
+          error={errorText}
+          submitLabel={editorSubmitLabel(isEdit, activeMutation.isPending, "Create material")}
+          onClose={onClose}
+          submitDisabled={!canSubmit}
+        />
       </form>
     </ModalDialog>
   );

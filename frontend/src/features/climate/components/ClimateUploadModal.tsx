@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { uploadAsset } from "../../assets/hooks";
 import { useAttachWeatherFromUploadMutation } from "../hooks";
@@ -79,19 +80,14 @@ export function ClimateUploadModal({
             onPick={setDdyFile}
           />
         </div>
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" onClick={() => void submit()} disabled={!epwFile || busy}>
-            {busy ? "Uploading…" : "Upload & attach"}
-          </button>
-        </div>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
+        <DialogActions
+          busy={busy}
+          error={error}
+          submitLabel={busy ? "Uploading…" : "Upload & attach"}
+          onClose={onClose}
+          onConfirm={() => void submit()}
+          submitDisabled={!epwFile}
+        />
       </div>
     </ModalDialog>
   );

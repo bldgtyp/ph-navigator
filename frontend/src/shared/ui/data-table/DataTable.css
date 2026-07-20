@@ -662,19 +662,21 @@
   z-index: var(--z-modal);
 }
 
+/* Conformed to the shared `.modal-panel` box (modal contract): card surface,
+   --space-24 padding, shared shadow, 560px width. The Radix content is
+   fixed-positioned (not a child of the overlay), so it centres itself. */
 .data-table-alert-content {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 40px));
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
-  padding: var(--space-20);
-  min-width: 320px;
-  max-width: 480px;
+  padding: var(--space-24);
   z-index: calc(var(--z-modal) + 1);
-  box-shadow: var(--shadow-alert);
+  box-shadow: var(--phn-shadow);
 }
 
 .data-table-alert-title {
@@ -690,10 +692,13 @@
   line-height: var(--lh-body);
 }
 
+/* Footer shape mirrors the shared `.modal-actions` (Cancel left, primary right). */
 .data-table-alert-actions {
   display: flex;
-  gap: var(--space-8);
-  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-14);
+  justify-content: space-between;
+  margin-top: var(--space-16);
 }
 
 .data-table-shell .data-table-wrap {
@@ -1000,6 +1005,9 @@
   z-index: calc(var(--z-dropdown) + 30);
 }
 
+/* Conformed to the shared `.modal-panel` box + the resizable-panel affordance
+   (modal contract): card surface, --space-24 padding, shared shadow/radius,
+   560px width, and a lower-right resize grip since it is the scroll container. */
 .data-table-field-config-modal {
   position: fixed;
   top: 50%;
@@ -1007,15 +1015,16 @@
   transform: translate(-50%, -50%);
   z-index: calc(var(--z-dropdown) + 31);
   background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elev-2);
-  padding: var(--space-16);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  box-shadow: var(--phn-shadow);
+  padding: var(--space-24);
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  resize: both;
   min-width: 360px;
-  max-width: 480px;
-  width: calc(100vw - 48px);
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  min-height: 240px;
 }
 
 .data-table-field-config-confirmation-overlay {
@@ -1030,17 +1039,17 @@
   top: 50%;
   left: 50%;
   z-index: calc(var(--z-dropdown) + 33);
-  width: min(480px, calc(100vw - 48px));
+  width: min(560px, calc(100vw - 40px));
   transform: translate(-50%, -50%);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
   background: var(--bg-card);
-  box-shadow: var(--shadow-alert);
-  padding: var(--space-20);
+  box-shadow: var(--phn-shadow);
+  padding: var(--space-24);
 }
 
 .data-table-field-config-modal-formula {
-  max-width: min(720px, calc(100vw - 48px));
+  width: min(720px, calc(100vw - 40px));
 }
 
 .data-table-field-config-modal-title {
@@ -1295,13 +1304,6 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
-}
-
-.data-table-field-config-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-6);
-  padding-top: var(--space-4);
 }
 
 .data-table-field-config-modal-conflict {

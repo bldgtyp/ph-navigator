@@ -1,3 +1,4 @@
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { StatusItem } from "../types";
 
@@ -21,19 +22,14 @@ export function StatusDeleteDialog({
           Delete <strong>{item.title}</strong>? This removes it from the shared project status
           timeline.
         </p>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" className="danger-button" disabled={isDeleting} onClick={onConfirm}>
-            {isDeleting ? "Deleting..." : "Delete item"}
-          </button>
-        </div>
+        <DialogActions
+          busy={isDeleting}
+          error={error}
+          submitLabel={isDeleting ? "Deleting…" : "Delete item"}
+          onClose={onCancel}
+          onConfirm={onConfirm}
+          danger
+        />
       </div>
     </ModalDialog>
   );

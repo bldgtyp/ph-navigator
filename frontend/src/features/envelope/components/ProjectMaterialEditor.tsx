@@ -21,6 +21,7 @@ import {
   densityUnitLabel,
   specificHeatUnitLabel,
 } from "../../catalogs/components/unit-labels";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalUnitToggle } from "./ModalUnitToggle";
 import type { EnvelopeCommand, ProjectMaterial } from "../types";
 
@@ -149,12 +150,14 @@ export function ProjectMaterialEditor({
   busy,
   error,
   showNotes = true,
+  onCancel,
   onCommand,
 }: {
   material: ProjectMaterial;
   busy: boolean;
   error: string | null;
   showNotes?: boolean;
+  onCancel: () => void;
   onCommand: (command: UpdateProjectMaterialCommand) => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
@@ -337,18 +340,13 @@ export function ProjectMaterialEditor({
         </fieldset>
       ) : null}
 
-      <footer className="project-material-editor__footer">
-        {parseError || error ? (
-          <p className="form-error" role="alert">
-            {parseError ?? error}
-          </p>
-        ) : (
-          <span />
-        )}
-        <button type="submit" disabled={!canSubmit}>
-          Update material
-        </button>
-      </footer>
+      <DialogActions
+        busy={busy}
+        error={parseError ?? error}
+        submitLabel={busy ? "Updating…" : "Update material"}
+        onClose={onCancel}
+        submitDisabled={!canSubmit}
+      />
     </>
   );
 

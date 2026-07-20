@@ -11,6 +11,8 @@
 // on every save so a stale tab can't strand picks.
 
 import { useEffect, useState } from "react";
+import { DialogActions } from "../../../shared/ui/DialogActions";
+import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ApertureTypeEntry, ManufacturerFilters } from "../types";
 import { useManufacturerRoster } from "../hooks/useManufacturerRoster";
 import { inUseManufacturers } from "../lib/inUseManufacturers";
@@ -68,75 +70,73 @@ export function ManufacturerFiltersModal({
   };
 
   return (
-    <div className="manufacturer-modal__backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="manufacturer-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Configure manufacturer filters"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="manufacturer-modal__header">
-          <h2>Configure manufacturer filters</h2>
-        </header>
-        {frameRoster.isLoading || glazingRoster.isLoading ? (
-          <p className="manufacturer-modal__loading">Loading catalog rosters…</p>
-        ) : (
-          <div className="manufacturer-modal__columns">
-            <ManufacturerColumn
-              title="Frame manufacturers"
-              roster={frameRoster.roster}
-              inUse={frameInUse}
-              enabled={draft.frame_manufacturers_enabled}
-              readOnly={readOnly}
-              onChange={(next) =>
-                setDraft((prev) => ({ ...prev, frame_manufacturers_enabled: next }))
-              }
-              onClearAllNote={(count) =>
-                setNote(
-                  `${count} frame manufacturer${count === 1 ? "" : "s"} stayed enabled because they're in use.`,
-                )
-              }
-            />
-            <ManufacturerColumn
-              title="Glazing manufacturers"
-              roster={glazingRoster.roster}
-              inUse={glazingInUse}
-              enabled={draft.glazing_manufacturers_enabled}
-              readOnly={readOnly}
-              onChange={(next) =>
-                setDraft((prev) => ({ ...prev, glazing_manufacturers_enabled: next }))
-              }
-              onClearAllNote={(count) =>
-                setNote(
-                  `${count} glazing manufacturer${count === 1 ? "" : "s"} stayed enabled because they're in use.`,
-                )
-              }
-            />
-          </div>
-        )}
-        {note ? (
-          <p className="manufacturer-modal__note" role="status">
-            {note}
-          </p>
-        ) : null}
-        <footer className="manufacturer-modal__footer">
-          <button type="button" onClick={onClose}>
-            Cancel
+    <ModalDialog
+      title="Configure manufacturer filters"
+      titleId="manufacturer-filters-title"
+      onClose={onClose}
+      // Read-only is a viewer (click-away expected); edit is a form (protect
+      // the draft from a stray backdrop click).
+      dismissOnBackdrop={readOnly}
+      resizable
+    >
+      {frameRoster.isLoading || glazingRoster.isLoading ? (
+        <p className="manufacturer-modal__loading">Loading catalog rosters…</p>
+      ) : (
+        <div className="manufacturer-modal__columns">
+          <ManufacturerColumn
+            title="Frame manufacturers"
+            roster={frameRoster.roster}
+            inUse={frameInUse}
+            enabled={draft.frame_manufacturers_enabled}
+            readOnly={readOnly}
+            onChange={(next) =>
+              setDraft((prev) => ({ ...prev, frame_manufacturers_enabled: next }))
+            }
+            onClearAllNote={(count) =>
+              setNote(
+                `${count} frame manufacturer${count === 1 ? "" : "s"} stayed enabled because they're in use.`,
+              )
+            }
+          />
+          <ManufacturerColumn
+            title="Glazing manufacturers"
+            roster={glazingRoster.roster}
+            inUse={glazingInUse}
+            enabled={draft.glazing_manufacturers_enabled}
+            readOnly={readOnly}
+            onChange={(next) =>
+              setDraft((prev) => ({ ...prev, glazing_manufacturers_enabled: next }))
+            }
+            onClearAllNote={(count) =>
+              setNote(
+                `${count} glazing manufacturer${count === 1 ? "" : "s"} stayed enabled because they're in use.`,
+              )
+            }
+          />
+        </div>
+      )}
+      {note ? (
+        <p className="manufacturer-modal__note" role="status">
+          {note}
+        </p>
+      ) : null}
+      {readOnly ? (
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={onClose}>
+            Close
           </button>
-          {readOnly ? null : (
-            <button
-              type="button"
-              className="manufacturer-modal__save"
-              disabled={!isDirty}
-              onClick={() => void handleSave()}
-            >
-              Save
-            </button>
-          )}
-        </footer>
-      </div>
-    </div>
+        </div>
+      ) : (
+        <DialogActions
+          busy={false}
+          error={null}
+          submitLabel="Save"
+          onClose={onClose}
+          onConfirm={() => void handleSave()}
+          submitDisabled={!isDirty}
+        />
+      )}
+    </ModalDialog>
   );
 }
 

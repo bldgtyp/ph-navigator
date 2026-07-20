@@ -1107,22 +1107,6 @@
   outline: 0;
 }
 
-.project-material-editor__footer {
-  align-items: center;
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  gap: var(--space-12);
-  justify-content: space-between;
-  margin-top: var(--space-4);
-  padding-top: var(--space-14);
-}
-
-.project-material-editor__footer .form-error {
-  color: var(--phn-danger);
-  font-size: var(--fs-sm);
-  margin: 0;
-}
-
 @media (max-width: 520px) {
   .project-material-editor__grid {
     grid-template-columns: minmax(0, 1fr);

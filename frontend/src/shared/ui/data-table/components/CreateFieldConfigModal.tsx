@@ -313,7 +313,7 @@ export function CreateFieldConfigModal({
               </p>
             ) : null}
 
-            <div className="data-table-field-config-modal-footer">
+            <div className="modal-actions">
               <button
                 type="button"
                 className="secondary-button"
@@ -322,8 +322,8 @@ export function CreateFieldConfigModal({
               >
                 Cancel
               </button>
-              <button type="submit" disabled={!canSubmit}>
-                {pending ? "Adding..." : "Add field"}
+              <button type="submit" className="primary-button" disabled={!canSubmit}>
+                {pending ? "Adding…" : "Add field"}
               </button>
             </div>
           </form>

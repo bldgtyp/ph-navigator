@@ -51,8 +51,8 @@ export function OneTimeLinkModal({
           </button>
         </div>
         <div className="modal-actions">
-          <button type="button" className="primary-button" onClick={onClose}>
-            Done
+          <button type="button" className="secondary-button" onClick={onClose}>
+            Close
           </button>
         </div>
       </div>

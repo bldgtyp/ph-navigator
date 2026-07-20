@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { isStatusState, STATUS_STATE_OPTIONS } from "../lib";
 import type { StatusItem, StatusItemPayload, StatusState } from "../types";
@@ -110,19 +111,13 @@ export function StatusItemModal({
             </div>
           )}
         </div>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="submit" disabled={isSubmitting || itemTitle.trim().length === 0}>
-            {isSubmitting ? "Saving..." : "Save item"}
-          </button>
-        </div>
+        <DialogActions
+          busy={isSubmitting}
+          error={error}
+          submitLabel={isSubmitting ? "Saving…" : "Save item"}
+          onClose={onCancel}
+          submitDisabled={itemTitle.trim().length === 0}
+        />
       </form>
     </ModalDialog>
   );

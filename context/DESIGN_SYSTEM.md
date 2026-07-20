@@ -233,6 +233,26 @@ the spec to reproduce.
 6. **Files ≤ 500 lines** (`check:sizes`); feature CSS is TS-imported once by its
    route, never `@import`'d into `App.css`.
 
+## Modal contract (blessed pattern)
+
+Every modal is `ModalDialog` (the shell) + `DialogActions` (the footer). Do not
+hand-roll a backdrop, panel, or footer. The contract:
+
+- **Dismiss — one canonical path.** Footer `Cancel` (left) is the dismiss.
+  `ModalDialog`'s header "Close" is OFF by default (`showHeaderClose={false}`);
+  only read-only viewers with no footer opt back in with `showHeaderClose`.
+- **Footer — always `DialogActions`.** Cancel (`secondary-button`, left) + one
+  styled primary (`primary-button`, right); `danger` prop swaps the primary to
+  `danger-button`; `extraActions` adds secondary/tertiary buttons between the
+  two anchors. No bare/unstyled action buttons.
+- **Labels.** Cancel is literally "Cancel"; the primary is a specific verb
+  (`Create material`, `Delete room`, `Save`); busy state swaps to an ellipsis
+  form (`Saving…`).
+- **Box.** Shared `.modal-panel`. Oversized modals that scroll add
+  `.modal-panel--resizable` for the lower-right resize grip.
+- **Backdrop-click.** OFF by default (forms can't lose input to a stray click);
+  read-only viewers opt in with `dismissOnBackdrop`.
+
 ## Where the real thing lives
 
 | Layer | File | What |

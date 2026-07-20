@@ -1,6 +1,7 @@
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ProjectVersion } from "../../projects/types";
 import type { DiffSummary } from "../types";
@@ -27,11 +28,13 @@ export function DraftRestoreDialog({
           never committed to a version. Restore the draft to continue editing, or discard it and
           reload the last saved version.
         </p>
+        {/* A two-choice prompt (no neutral Cancel): Restore is the safe/expected
+            path (primary), Discard is destructive (danger). */}
         <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onDiscard} disabled={busy}>
+          <button type="button" className="danger-button" onClick={onDiscard} disabled={busy}>
             Discard draft
           </button>
-          <button type="button" onClick={onKeep} disabled={busy}>
+          <button type="button" className="primary-button" onClick={onKeep} disabled={busy}>
             Restore draft
           </button>
         </div>
@@ -84,14 +87,13 @@ export function SaveAsDialog({
           }))}
           onChange={(nextKind) => onKindChange(nextKind as SaveAsVersionKind)}
         />
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" disabled={busy || versionName.trim().length === 0}>
-            Create version
-          </button>
-        </div>
+        <DialogActions
+          busy={busy}
+          error={null}
+          submitLabel="Create version"
+          onClose={onClose}
+          submitDisabled={versionName.trim().length === 0}
+        />
       </form>
     </ModalDialog>
   );
@@ -117,7 +119,14 @@ export function DiffDialog({
   onClose: () => void;
 }) {
   return (
-    <ModalDialog title="Diff" titleId="diff-title" onClose={onClose}>
+    <ModalDialog
+      title="Diff"
+      titleId="diff-title"
+      onClose={onClose}
+      showHeaderClose
+      dismissOnBackdrop
+      resizable
+    >
       <div className="diff-panel">
         <AutocompleteSelect
           className="diff-target-control"

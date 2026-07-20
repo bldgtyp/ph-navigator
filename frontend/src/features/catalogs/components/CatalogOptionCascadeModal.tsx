@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../../../shared/lib/errors";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { getCatalogOptionJob, retryCatalogOptionJob } from "../api";
 import { catalogQueryKeys } from "../query-keys";
@@ -46,14 +47,13 @@ export function CatalogOptionCascadeProgressModal({
           <p className="form-error" role="alert">
             {errorMessage(jobQuery.error, "Could not load the catalog update status.")}
           </p>
-          <div className="catalog-option-cascade-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Close
-            </button>
-            <button type="button" onClick={() => void jobQuery.refetch()}>
-              Try again
-            </button>
-          </div>
+          <DialogActions
+            busy={false}
+            error={null}
+            submitLabel="Try again"
+            onClose={onClose}
+            onConfirm={() => void jobQuery.refetch()}
+          />
         </div>
       </ModalDialog>
     );
@@ -92,20 +92,19 @@ export function CatalogOptionCascadeProgressModal({
                 {errorMessage(retry.error, "Could not restart the catalog update.")}
               </p>
             ) : null}
-            <div className="catalog-option-cascade-actions">
-              <button type="button" className="secondary-button" onClick={onClose}>
-                Close
-              </button>
-              <button type="button" disabled={retry.isPending} onClick={() => retry.mutate()}>
-                {retry.isPending ? "Retrying…" : "Retry project update"}
-              </button>
-            </div>
+            <DialogActions
+              busy={retry.isPending}
+              error={null}
+              submitLabel={retry.isPending ? "Retrying…" : "Retry project update"}
+              onClose={onClose}
+              onConfirm={() => retry.mutate()}
+            />
           </>
         ) : null}
         {job?.status === "completed" ? (
-          <div className="catalog-option-cascade-actions">
-            <button type="button" onClick={onClose}>
-              Done
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={onClose}>
+              Close
             </button>
           </div>
         ) : null}

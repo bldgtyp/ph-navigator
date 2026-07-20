@@ -738,11 +738,6 @@ a:focus-visible {
   justify-content: flex-end;
 }
 
-.modal-actions-stack {
-  align-items: stretch;
-  flex-wrap: wrap;
-}
-
 .empty-state,
 .data-table-empty {
   padding: 28px;
