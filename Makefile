@@ -99,6 +99,12 @@ agent-browser-cleanup: ## Reap orphaned MCP browser tooling + stale profiles (ne
 	cd frontend && node scripts/agent-browser-cleanup.mjs $(if $(DRY),--dry-run,)
 
 typography-eval: agent-browser-ready ## Rendered typography sweep + contract evaluator (see frontend/scripts/typography-rendered-contract.json)
+	# The state manifest's record-modal state expands a Materials catalog row,
+	# so the (global) catalog must be non-empty (it is empty on a fresh CI DB).
+	# --skip-if-not-empty is required: this import is NOT idempotent and would
+	# otherwise duplicate the whole seed on every run. Scoped to the agent user
+	# so it never rewrites the ed@example.com dev login.
+	cd backend && uv run python -m scripts.seed_materials_catalog --skip-if-not-empty --email codex@example.com --display-name "Codex Agent"
 	cd frontend && node scripts/font-audit-sweep.mjs
 	cd frontend && node scripts/font-audit-eval.mjs
 

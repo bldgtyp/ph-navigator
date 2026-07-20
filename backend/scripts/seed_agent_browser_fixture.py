@@ -20,6 +20,9 @@ from features.project_document import repository as document_repository
 from features.project_document.document import ProjectDocumentV1, RoomRow, RoomsTableEnvelope
 from features.project_document.templates import empty_project_document
 from features.project_document.validation import body_size_bytes, document_etag, next_draft_etag, validate_document
+from features.project_status import repository as status_repository
+from features.project_status.constants import DEFAULT_TEMPLATE
+from features.project_status.models import StatusItemCreateRequest
 from features.projects.models import CreateProjectRequest
 from features.projects.repository import insert_project_with_initial_version
 from scripts._seed_paths import assert_local_dev_database
@@ -35,6 +38,13 @@ DEFAULT_FRONTEND_URL = "http://localhost:5173"
 # editing, /admin/users states) work hermetically — no hand-run
 # manage_user_access step, and grants survive a DB reset via re-seed.
 FIXTURE_GLOBAL_CAPABILITIES = ("catalog.edit", "admin.users.manage")
+
+# The Roadmap's "Add milestone" control only renders for an editor when the
+# project already has at least one status item (`StatusTab.tsx`), so a fixture
+# with an empty roadmap silently hides it and any sweep that clicks it times
+# out. Real projects get their roadmap from the default lifecycle template
+# (applied once via the Status page), so the fixture applies the same template
+# rather than inventing a milestone of its own.
 
 
 @dataclass(frozen=True)
@@ -107,6 +117,7 @@ def seed_agent_browser_fixture(
         _ensure_fixture_grants(conn, user.id)
         project = _upsert_fixture_project(conn, payload, user.id, saved_body)
         version_id = project["active_version_id"]
+        _ensure_fixture_status_items(conn, project["id"], user.id)
         draft_etag = document_repository.upsert_draft(
             conn,
             version_id,
@@ -200,6 +211,10 @@ def _ready_fixture(
         if draft is None or not _has_seeded_dirty_room(draft["body"]):
             return None
 
+        # Repair path: an existing fixture predating the milestone seed still
+        # needs one, and it is cheap to re-assert.
+        _ensure_fixture_status_items(conn, project["id"], user["id"])
+
     path = f"/projects/{project['id']}/apertures"
     normalized_frontend_url = frontend_url.rstrip("/")
     return AgentBrowserFixture(
@@ -217,6 +232,21 @@ def _ready_fixture(
 def _ensure_fixture_grants(conn: Connection[Any], user_id: UUID) -> None:
     for capability in FIXTURE_GLOBAL_CAPABILITIES:
         access_repository.ensure_global_grant(conn, user_id=user_id, capability=capability, granted_by=None)
+
+
+def _ensure_fixture_status_items(conn: Connection[Any], project_id: UUID, user_id: UUID) -> None:
+    """Apply the default lifecycle roadmap once, so the Roadmap controls render."""
+
+    if status_repository.count_status_items(conn, project_id) > 0:
+        return
+    for index, title in enumerate(DEFAULT_TEMPLATE, start=1):
+        status_repository.insert_status_item(
+            conn,
+            project_id,
+            StatusItemCreateRequest(title=title),
+            float(index),
+            user_id,
+        )
 
 
 def _has_seeded_dirty_room(body: object) -> bool:

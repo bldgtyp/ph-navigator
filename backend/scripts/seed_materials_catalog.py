@@ -17,6 +17,7 @@ import sys
 
 from fastapi import Request
 
+from database import connection
 from features.auth.service import create_or_update_user
 from features.catalogs.materials.import_export.service import commit_import, preview_import
 from scripts._seed_paths import MATERIALS_SEED_PATH, assert_local_dev_database, default_user_kwargs
@@ -51,9 +52,27 @@ def main() -> None:
     parser.add_argument("--email", default=DEFAULT_EMAIL)
     parser.add_argument("--display-name", default=DEFAULT_DISPLAY_NAME)
     parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser.add_argument(
+        "--skip-if-not-empty",
+        action="store_true",
+        help=(
+            "Exit without importing when the catalog already has rows. This import "
+            "is NOT idempotent -- preview matching does not recognise previously "
+            "seeded rows, so a second plain run duplicates the whole seed. Use this "
+            "flag for any automated caller that may run repeatedly."
+        ),
+    )
     args = parser.parse_args()
 
     assert_local_dev_database()
+
+    if args.skip_if_not_empty:
+        with connection() as conn:
+            existing = conn.execute("SELECT count(*) AS n FROM catalog_materials WHERE deleted_at IS NULL").fetchone()
+        count = int(existing["n"]) if existing else 0
+        if count:
+            print(f"Materials catalog already has {count} row(s); skipping seed.")
+            return
 
     if not args.seed.is_file():
         print(f"Seed file not found: {args.seed}", file=sys.stderr)
