@@ -116,7 +116,7 @@ const envelopePayload: EnvelopeReadResponse = {
       specific_heat_j_kgk: 2100,
       emissivity: 0.9,
       color: "#dce6c8",
-      specification_status: "missing",
+      specification_status: "needed",
       datasheet_asset_ids: [],
       source: null,
       url: null,

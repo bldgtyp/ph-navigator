@@ -45,7 +45,7 @@
 }
 
 .record-status-attention {
-  color: var(--report-status-missing);
+  color: var(--report-status-needed);
   font-weight: var(--fw-semibold);
 }
 
@@ -123,8 +123,8 @@
 
 .record-status-group-counts .needed {
   border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--report-status-missing) 12%, var(--bg-card));
-  color: var(--report-status-missing);
+  background: color-mix(in oklab, var(--report-status-needed) 12%, var(--bg-card));
+  color: var(--report-status-needed);
   padding: 3px var(--space-8);
 }
 
@@ -223,7 +223,7 @@
 }
 
 .record-status-leaf-counts .needed {
-  color: var(--report-status-missing);
+  color: var(--report-status-needed);
 }
 
 .record-status-leaf-content {
@@ -289,8 +289,8 @@
 }
 
 .record-status-chip--needed {
-  background: color-mix(in oklab, var(--report-status-missing) 13%, var(--bg-card));
-  color: var(--report-status-missing);
+  background: color-mix(in oklab, var(--report-status-needed) 13%, var(--bg-card));
+  color: var(--report-status-needed);
 }
 
 .record-status-chip--question {

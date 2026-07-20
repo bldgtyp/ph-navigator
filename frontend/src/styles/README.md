@@ -77,7 +77,7 @@ Source of truth is `styles/tokens.css` (+ `styles/brand/tokens.css`). Intent:
 | **Z-index** | `--z-base`, `--z-base-elevated`, `--z-sticky`, `--z-dropdown`, `--z-modal`, `--z-tooltip` | stacking (contract enforced by `check:z-index`) |
 | **Semantic** | `--phn-success/-warning/-danger` (+ `-bg`), `--phn-focus`, `--text-on-accent`, `--phn-control-height` | status, focus rings, control sizing |
 | **Charts** | `--chart-axis/-grid`, `--chart-1 … --chart-5` | recharts series (climate graphs) |
-| **Report table** | `--report-status-missing/-question/-complete/-na` | report-table status dots |
+| **Report table** | `--report-status-needed/-question/-complete/-na` | report-table status dots (`--report-status-missing` is a retained alias for non-status amber) |
 | **Scrim / overlay** | `--scrim`, `--scrim-slate`, `--surface-black-5`, `--text-on-swatch-muted` | backdrops, subtle black overlays, swatch text |
 | **Data table** | `--data-table-*` sizing + linked-record bg + the `--data-table-tint-*` axis-tint cascade | the DataTable grid |
 | **Info tooltip** | `--info-tooltip-bg/-fg` | shared `<InfoTooltip>` |

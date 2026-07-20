@@ -43,6 +43,11 @@ import type {
   ProjectGlazingUseSite,
   SpecificationStatus,
 } from "../types";
+import {
+  SPECIFICATION_STATUSES,
+  SPECIFICATION_STATUS_LABELS,
+  isSpecificationStatus,
+} from "../../project_document/specification-status";
 
 type ApertureSpecProduct = ProjectGlazingRead | ProjectFrameRead;
 type ApertureUseSite = ProjectGlazingUseSite | ProjectFrameUseSite;
@@ -69,14 +74,8 @@ type UseSiteTypeGroup = {
   siteCount: number;
 };
 
-const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
-
-const STATUS_LABEL: Record<SpecificationStatus, string> = {
-  missing: "Needed",
-  question: "Question",
-  complete: "Complete",
-  na: "N/A",
-};
+const STATUSES = SPECIFICATION_STATUSES;
+const STATUS_LABEL = SPECIFICATION_STATUS_LABELS;
 
 const SIDE_LABEL: Record<ApertureSide, string> = {
   top: "Top",
@@ -165,7 +164,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
 
   const statusCounts = useMemo(() => {
     const counts: Record<SpecificationStatus, number> = {
-      missing: 0,
+      needed: 0,
       question: 0,
       complete: 0,
       na: 0,
@@ -963,8 +962,4 @@ function ApertureDriftBadge({ entries }: { entries: ApertureDriftEntry[] }) {
 function formatDecimal(value: number | null | undefined, digits: number): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "--";
   return value.toFixed(digits);
-}
-
-function isSpecificationStatus(value: string): value is SpecificationStatus {
-  return (STATUSES as readonly string[]).includes(value);
 }

@@ -60,7 +60,7 @@ function glazing(overrides: Partial<ProjectGlazingRead> = {}): ProjectGlazingRea
     source: null,
     comments: null,
     catalog_origin: null,
-    specification_status: "missing",
+    specification_status: "needed",
     datasheet_asset_ids: ["asset_ds_1"],
     photo_asset_ids: [],
     use_sites: [

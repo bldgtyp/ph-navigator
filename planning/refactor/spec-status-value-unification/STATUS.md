@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Phase 02 implementation complete — Phase 03 required before merge
+STATUS: Candidate B implemented (Phases 02+03) — deployment pending
 AUTHOR: Codex with Ed May
 SCOPE: Current state and implementation gates for specification-status value
   unification.
@@ -18,16 +18,19 @@ RELATED:
 
 ## Current state
 
-Phase 02's schema-v8 backend is implemented and the backend suite is green
-(1456 passed). `needed` is now the strict canonical backend value: the v7 → v8
-upgrader, `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8`, canonical defaults and
-factories, typed summary pass-through, permanent Honeybee adapters, the frozen
-v7 corpus, and the audit CLI's rename diagnostics all landed. Phase 01's
-Release-A code remains implemented and undeployed.
+Candidate B is complete: Phase 02 (schema v8 canonical backend) and Phase 03
+(canonical frontend/API consumers) are both implemented, `make ci` is green,
+and the UI was browser-verified. `needed` is now canonical end to end —
+backend literal, storage schema, API payloads, and every status control, count,
+filter, and token in the UI.
 
-Phase 02 is deliberately not merge-eligible on its own: the shipping frontend
-still serializes `missing`, so Phase 03 must land with it. Nothing was deployed
-and no production body, draft, saved version, or status value was changed.
+Browser verification ran against the seeded starter project, whose saved body is
+still schema **v7** with legacy `missing` values, so it exercised the v7 → v8
+read path with real stored data rather than freshly-written v8 rows.
+
+Nothing was deployed. No production body, draft, saved version, or status value
+was changed. Release A remains implemented and undeployed; candidate B must not
+deploy ahead of it.
 
 ## Accepted planning conclusions
 
@@ -47,11 +50,16 @@ and no production body, draft, saved version, or status value was changed.
 
 ## Next step
 
-Implement Phase 03 (canonical frontend/API consumers) so candidate B is
-complete, then run full `make ci` across both phases. Ed's Release-A
-review/merge/deploy and the verified backup/restore gate remain open and
-unchanged — Phase 02/03 code must not deploy ahead of them. Do not use a real
-project mutation as a smoke test.
+**Ed's call — the remaining phases are production operations, not code.**
+Phase 04 (audit both production projects, verified restore point, write freeze,
+go/no-go), Phase 05 (deploy + no-write smoke), and Phase 06 (two-project
+verification and the deliberate v8 write boundary) all require Ed's explicit
+authorization; implementation agents must not trigger them. Phase 07 cleanup
+runs only after the post-deploy observation window.
+
+Before any of that: Ed reviews and merges the Release-A + candidate-B branch,
+and closes the verified backup/restore gate. Do not use a real project mutation
+as a smoke test.
 
 ## Phase 00 evidence
 
@@ -62,14 +70,18 @@ displays Needed across the specification-status UI, and adds exact API/web
 build-SHA deployment gates. Exact corpus hashes, project names/ids, commands,
 and operator results remain in the gitignored worksheet and audit artifacts.
 
-## Deferred to Phase 03/07
+## Deferred to Phase 07
 
-Backend-contract docs in `context/` were synced with this phase
-(`data-model.md`, `llm-mcp-schema.md`, `envelope-hbjson-import.md`,
-`envelope-hbjson-export.md`). The UI-presentation and normalization prose that
-still says `missing` — `context/ui/pages/envelope-tab.md`,
-`context/ui/pages/status-tab.md`, `context/technical-requirements/data-table.md`
-— is left for Phase 03, which is what makes those statements true end-to-end.
+`context/` is now fully synced: the backend-contract docs plus the UI-page and
+normalization prose (`ui/pages/envelope-tab.md`, `ui/pages/status-tab.md`,
+`technical-requirements/data-table.md`, `DESIGN_SYSTEM.md`, and the frontend
+styles README).
+
+One deliberate carry-forward: `--report-status-missing` remains as an alias of
+`--report-status-needed` for its non-status consumers (Climate data gaps,
+Documentation write errors and zero meters). Renaming it to something neutral is
+CSS-architecture work that D-8 and the Phase 03 stop conditions exclude from
+this rollout. See the Phase 03 as-built notes.
 
 ## Open operator inputs (not design blockers)
 
@@ -90,12 +102,12 @@ input. No production deploy proceeds while its applicable gate is blank.
 | --- | --- | --- |
 | 00 Contract/baseline | Complete | v7 baseline green; project ids recorded |
 | 01 Compatibility A | Implementation complete; deploy pending | CI + both-project deployed smoke |
-| 02 v8 backend | Implemented; merges with 03 | corpus/exact-diff/domain/export gates green |
-| 03 Canonical UI/adapters | Not started | UI/wire/custom-option regressions green |
-| 04 Production preflight | Not started | full corpus + restore point + go/no-go |
-| 05 Deploy/no-write smoke | Not started | both SHAs + both-project reads green |
-| 06 Project cutover | Not started | both projects verified; v8 boundary logged |
-| 07 Cleanup/closeout | Not started | adapters retired as approved; docs/CI/archive |
+| 02 v8 backend | Implemented | corpus/exact-diff/domain/export gates green |
+| 03 Canonical UI/adapters | Implemented | UI/wire/custom-option regressions green |
+| 04 Production preflight | Blocked on Ed (production op) | full corpus + restore point + go/no-go |
+| 05 Deploy/no-write smoke | Blocked on Ed (production op) | both SHAs + both-project reads green |
+| 06 Project cutover | Blocked on Ed (production op) | both projects verified; v8 boundary logged |
+| 07 Cleanup/closeout | Blocked on the observation window | adapters retired as approved; docs/CI/archive |
 
 ## Completion checklist
 
@@ -103,9 +115,9 @@ input. No production deploy proceeds while its applicable gate is blank.
 - [x] Phase 00 v7 baseline, production identities, and status inventory complete.
 - [x] Frozen v7 corpus covers all three built-in row paths.
 - [x] v7 → v8 exact diff and idempotence proven.
-- [ ] Canonical built-in status is `needed` backend/frontend.
+- [x] Canonical built-in status is `needed` backend/frontend.
 - [x] Apertures displays Needed, not Missing, for specification status.
-- [ ] Documentation built-in write emits `needed`.
+- [x] Documentation built-in write emits `needed`.
 - [x] Equipment/TB option ids remain unchanged.
 - [x] Summary built-in translation shims removed.
 - [x] Honeybee external `MISSING` compatibility proven.

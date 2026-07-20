@@ -9,7 +9,7 @@ import {
 } from "../equipment/types";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
-import { serializeReleaseASpecificationStatus } from "../project_document/specification-status";
+import { serializeSpecificationStatus } from "../project_document/specification-status";
 import {
   invalidateProjectDocumentEditorTableSlices,
   type BaseTableSlice,
@@ -214,7 +214,7 @@ async function updateApertureProductDocumentationField(
       : "update_project_frame";
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
+      ? { specification_status: serializeSpecificationStatus(change.value) }
       : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
@@ -242,7 +242,7 @@ async function updateEnvelopeDocumentationField(
   }
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
+      ? { specification_status: serializeSpecificationStatus(change.value) }
       : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned
+STATUS: Implemented — candidate B complete, not deployed
 AUTHOR: Codex with Ed May
 SCOPE: Move frontend status controls and current API consumers to canonical
   `needed`.
@@ -84,3 +84,40 @@ editor values, read-only pills, and network payloads.
 - Shared CSS consolidation expands the phase.
 - Frontend canonical writes are enabled without the Release-A backend being
   production-ready to accept them.
+
+## As-built notes (2026-07-19)
+
+- Steps 1–2 collapsed: both feature `types.ts` files already re-export the
+  union from `project_document/specification-status.ts`, so the rename had one
+  type edit site rather than two.
+- The rename removed the reason Materials, the Glazings/Frames spec report, and
+  Documentation each kept their own status option list (they differed only
+  because Materials said `missing`). They now share
+  `SPECIFICATION_STATUSES` / `SPECIFICATION_STATUS_LABELS` /
+  `SPECIFICATION_STATUS_OPTIONS` exported beside the union, and
+  `ReportStatusKey` / `StatusTone` derive from it instead of re-listing members.
+  A fifth status is now one edit, not four.
+- `serializeSpecificationStatus` accepts only `SpecificationStatus | "unknown"`.
+  Its callers pass `DocumentationSpecStatus`, so a legacy `missing` cannot
+  reach the write path; wire tolerance lives solely in
+  `normalizeSpecificationStatus` on the read path.
+- Step 9's matrix reuses `tests/status_field_helpers.py` rather than restating
+  the option-id contract, and `status_field_helpers` now re-exports the option
+  ids from `_status_field` instead of shadowing them with string copies.
+- Browser verification used the seeded `PHN V2 Starter Project`, whose saved
+  body is still **schema v7** with legacy `missing` in all three lists — so the
+  check exercised the v7 → v8 read path end to end, not just new data. Materials
+  rendered "Needed" with count 1 matching the one legacy row; Glazings likewise;
+  Status showed `needed` chips for both storage families; Documentation kept
+  "Missing datasheets/photos" wording alongside "Needed specs". The
+  `AGENT-BROWSER` fixture is empty of materials/glazings and cannot show this.
+
+## Deferred follow-up
+
+`--report-status-missing` survives as an alias of `--report-status-needed` for
+consumers that were never a specification status (Climate data gaps,
+Documentation write errors and zero meters). Two independent reviews noted the
+token is now misnamed for its remaining consumers and suggested a neutral name
+(e.g. `--accent-warn`). Deliberately **not** done here: D-8 and this phase's
+stop conditions exclude shared-CSS consolidation from the rollout. It belongs to
+Phase 07 or a separate CSS packet.

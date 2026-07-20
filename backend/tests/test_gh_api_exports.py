@@ -104,6 +104,22 @@ def test_simple_construction_round_trips_rich_properties() -> None:
     assert ref["image_refs"][0]["full_size_image_uri"] == "phn-asset:asset_photo_1"
 
 
+def test_rich_export_maps_canonical_needed_to_external_missing() -> None:
+    """D-6: installed `honeybee_ref` accepts only COMPLETE|MISSING|QUESTION|NA,
+    so PH-Navigator's canonical `needed` crosses the boundary as MISSING."""
+
+    body = _document()
+    material = _material("a")
+    material.specification_status = "needed"
+    body.tables.project_materials = [material]
+    body.tables.assemblies = [_simple_assembly()]
+
+    payload, warnings = export_rich_constructions(body)
+
+    assert warnings == []
+    assert payload["Simple Wall"]["materials"][0]["properties"]["ref"]["ref_status"] == "MISSING"
+
+
 def test_hybrid_layer_uses_equivalent_conductivity_and_keeps_base_thermal_mass() -> None:
     body = _document()
     body.tables.project_materials = [_material("ins", conductivity=0.035), _material("wood", conductivity=0.12)]

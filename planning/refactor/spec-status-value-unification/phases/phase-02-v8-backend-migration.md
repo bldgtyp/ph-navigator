@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Implemented — not merge-eligible until Phase 03 lands
+STATUS: Implemented — merges with Phase 03 as candidate B
 AUTHOR: Codex with Ed May
 SCOPE: Implement schema v8 and canonical backend status semantics.
 RELATED:

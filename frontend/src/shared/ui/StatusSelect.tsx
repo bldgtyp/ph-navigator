@@ -7,7 +7,10 @@
 
 // The colour families a status can take. Each maps to a --report-status-*
 // token (or the neutral --text-muted) in StatusSelect.css.
-export type StatusTone = "missing" | "question" | "complete" | "na" | "neutral";
+import type { SpecificationStatus } from "../../features/project_document/specification-status";
+
+/** Status tones are the specification statuses plus an unset "neutral". */
+export type StatusTone = SpecificationStatus | "neutral";
 
 export type StatusSelectOption<TValue extends string> = {
   value: TValue;

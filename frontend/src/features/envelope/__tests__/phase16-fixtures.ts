@@ -232,7 +232,7 @@ function edgeMaterials(): ProjectMaterial[] {
       specific_heat_j_kgk: null,
       emissivity: null,
       color: "#dcdcf5",
-      specification_status: "missing",
+      specification_status: "needed",
       datasheet_asset_ids: [],
       source: null,
       url: null,

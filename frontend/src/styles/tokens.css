@@ -11,7 +11,11 @@
   --bg-card: #ffffff;
 
   /* Report-table status dot colors. See shared/ui/report-table/. */
-  --report-status-missing: #d97706;
+  --report-status-needed: #d97706;
+  /* Non-status consumers of the same amber (Climate data gaps, Documentation
+     write errors and zero meters) still read this alias. Status-semantic
+     consumers use --report-status-needed. */
+  --report-status-missing: var(--report-status-needed);
   --report-status-question: #0ea5b7;
   --report-status-complete: #16a34a;
   --report-status-na: #9ca3af;

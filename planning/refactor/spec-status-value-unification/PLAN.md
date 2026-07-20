@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Phase 02 implementation complete — Phase 03 required before merge
+STATUS: Candidate B implemented (Phases 02+03) — deployment pending
 AUTHOR: Codex with Ed May
 SCOPE: Release and implementation sequence for canonical specification status
   `needed` with two production projects.
@@ -86,6 +86,11 @@ Documentation built-in writes, report status keys, status tones, and tests to
 `needed`. Preserve `opt_status_needed`, `unknown`, generic evidence wording,
 and unrelated `missing` states. Verify MCP/GH outputs and native/external export
 behavior with the v8 backend.
+
+Implemented 2026-07-19; `make ci` green and browser-verified. The status
+vocabulary is now declared once beside the union and shared by every surface.
+Candidate B is built and **not** deployed. See the phase doc's as-built notes,
+including the deferred `--report-status-missing` token rename.
 
 Plan: `phases/phase-03-canonical-ui-adapters.md`.
 

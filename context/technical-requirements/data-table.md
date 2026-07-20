@@ -278,8 +278,8 @@ status, notes, and owning-route metadata. Missing or invalid legacy status
 values normalize to `unknown`; they are never silently counted as Needed.
 The same projection also includes the project-owned Aperture Glazings, Aperture
 Frames, and Envelope Materials report records. Those tables retain their
-existing `specification_status` and `comments` fields: `missing` normalizes to
-dashboard `needed`, while `question`, `complete`, and `na` map directly.
+existing `specification_status` and `comments` fields, which since schema v8
+are the canonical `needed | question | complete | na` and map straight through.
 
 On the shared frontend renderer, only the built-in `field_key === "status"`
 single-select gets semantic status-chip treatment: Complete and Needed

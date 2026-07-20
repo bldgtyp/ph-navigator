@@ -407,7 +407,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "source": "Manufacturer datasheet 2024-Q2",
         "url": "https://example.com/xps.pdf",
         "comments": "Type IV per ASTM C578",
-        "specification_status": "complete",       // 'complete' | 'missing' | 'question' | 'na' — moved from segment (Q-ENV-2)
+        "specification_status": "complete",       // 'complete' | 'needed' | 'question' | 'na' — moved from segment (Q-ENV-2)
         "datasheet_asset_ids": ["asset_..."],     // QA submittal — project-only, never in catalog (Q-ENV-2.1)
         "catalog_origin": {
           "catalog_table": "materials",

@@ -58,8 +58,9 @@ include `focus={row_id}` so the virtualized DataTable scrolls to and focuses the
 exact row; the report-style Glazings, Frames, and Materials links open their
 owning report page. Edits remain on the owning surface.
 
-For Glazings, Frames, and Materials, `specification_status="missing"` normalizes
-to dashboard `needed`; `question`, `complete`, and `na` retain their meanings.
+For Glazings, Frames, and Materials, `specification_status="needed"` passes
+through to the dashboard `needed` state (schema v8 made the two spellings one);
+`question`, `complete`, and `na` retain their meanings.
 Their existing `comments` field supplies the summary note. No duplicate status
 or notes field is added.
 

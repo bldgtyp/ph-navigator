@@ -13,15 +13,24 @@ from typing import Any
 from features.project_document.tables._status_field import (
     STATUS_DEFAULT_OPTION_ID,
     STATUS_FIELD_KEY,
+    STATUS_OPTION_COMPLETE,
     STATUS_OPTION_IDS,
+    STATUS_OPTION_NA,
+    STATUS_OPTION_NEEDED,
+    STATUS_OPTION_QUESTION,
     status_option_key,
     status_option_list,
 )
 
-STATUS_OPTION_COMPLETE = "opt_status_complete"
-STATUS_OPTION_NEEDED = "opt_status_needed"
-STATUS_OPTION_QUESTION = "opt_status_question"
-STATUS_OPTION_NA = "opt_status_na"
+__all__ = [
+    "STATUS_OPTION_COMPLETE",
+    "STATUS_OPTION_NA",
+    "STATUS_OPTION_NEEDED",
+    "STATUS_OPTION_QUESTION",
+    "assert_status_field_def",
+    "assert_status_options",
+    "status_options_payload",
+]
 
 
 def status_options_payload() -> list[dict[str, Any]]:

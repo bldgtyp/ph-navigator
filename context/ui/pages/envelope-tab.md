@@ -269,7 +269,7 @@ material in one assembly do not create duplicate upload slots.
 
 **Layout** — one scrollable column of **material cards**, split into
 three zones. The top zone holds in-scope materials that are referenced by
-at least one segment and have a `specification_status` of `missing`,
+at least one segment and have a `specification_status` of `needed`,
 `question`, or `complete`. The second zone holds referenced `N/A`
 materials and visually recedes as background/reference items. The bottom
 zone holds unused project materials with no segment references; these
@@ -283,7 +283,7 @@ them explicitly.
 │  XPS                                                  📚  ↻          │
 │  Spray Foam · Conductivity 0.034 W/(m·K) · Density 35 kg/m³          │
 ├──────────────────────────────────────────────────────────────────────┤
-│  [Missing ▾]        [+ Notes]                                  ⋯     │
+│  [Needed ▾]         [+ Notes]                                  ⋯     │
 │                                                                      │
 │  Datasheets                                                          │
 │  ┌─────────────────────────────────────┐                             │
@@ -325,7 +325,7 @@ them explicitly.
 **Card sort order:**
 
 1. **Pending QA cards first** — `specification_status` of
-   `missing` or `question` — within that group sorted by
+   `needed` or `question` — within that group sorted by
    `naturalSortCompare(name)`.
 2. **Complete cards** — `specification_status == 'complete'`.
 3. **N/A cards** — referenced materials with

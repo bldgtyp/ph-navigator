@@ -42,15 +42,13 @@ import {
   countGroupedUseSitePhotos,
   groupMaterialUseSites,
 } from "./materials/use-site-groups";
+import {
+  SPECIFICATION_STATUSES,
+  SPECIFICATION_STATUS_LABELS,
+  SPECIFICATION_STATUS_OPTIONS,
+} from "../../project_document/specification-status";
 
-// Shared status vocabulary with the Documentation page: the backend value
-// "missing" is presented as "Needed" (same underlying value, unified label).
-const STATUS_OPTIONS: StatusSelectOption<SpecificationStatus>[] = [
-  { value: "missing", label: "Needed", tone: "missing" },
-  { value: "question", label: "Question", tone: "question" },
-  { value: "complete", label: "Complete", tone: "complete" },
-  { value: "na", label: "N/A", tone: "na" },
-];
+const STATUS_OPTIONS: StatusSelectOption<SpecificationStatus>[] = SPECIFICATION_STATUS_OPTIONS;
 
 export function MaterialsPanel({
   materials,
@@ -88,7 +86,7 @@ export function MaterialsPanel({
 
   const statusCounts = useMemo(() => {
     const counts: Record<SpecificationStatus, number> = {
-      missing: 0,
+      needed: 0,
       question: 0,
       complete: 0,
       na: 0,
@@ -137,10 +135,12 @@ export function MaterialsPanel({
 
   const filterOptions: StatusFilterOption<ReportStatusKey>[] = [
     { value: "all", label: "All", count: totalCount },
-    { value: "missing", status: "missing", label: "Needed", count: statusCounts.missing },
-    { value: "question", status: "question", label: "Question", count: statusCounts.question },
-    { value: "complete", status: "complete", label: "Complete", count: statusCounts.complete },
-    { value: "na", status: "na", label: "N/A", count: statusCounts.na },
+    ...SPECIFICATION_STATUSES.map((status) => ({
+      value: status,
+      status,
+      label: SPECIFICATION_STATUS_LABELS[status],
+      count: statusCounts[status],
+    })),
   ];
 
   const columns: ReportTableColumn<ProjectMaterial>[] = [

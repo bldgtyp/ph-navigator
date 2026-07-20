@@ -104,7 +104,8 @@ greys above — the greys are what actually renders.)*
 | `--phn-success` (+ `-bg`) | derived from `--accent-dark` | success |
 | `--phn-warning` (+ `-bg`) | warm amber (from `--highlight-text`) | warning |
 | `--phn-danger` (+ `-bg`) | crimson-derived | danger / destructive |
-| `--report-status-missing` | `#d97706` (amber) | report cell: missing evidence |
+| `--report-status-needed` | `#d97706` (amber) | report cell: specification status Needed |
+| `--report-status-missing` | alias of `--report-status-needed` | non-status amber: Climate data gaps, Documentation write errors/zero meters |
 | `--report-status-question` | `#0ea5b7` (cyan) | report cell: open question |
 | `--report-status-complete` | `#16a34a` (green) | report cell: complete |
 | `--report-status-na` | `#9ca3af` (grey) | report cell: N/A |

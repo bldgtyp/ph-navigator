@@ -303,8 +303,8 @@
   width: 8px;
 }
 
-.report-status-dot[data-status="missing"] {
-  background: var(--report-status-missing);
+.report-status-dot[data-status="needed"] {
+  background: var(--report-status-needed);
 }
 
 .report-status-dot[data-status="question"] {

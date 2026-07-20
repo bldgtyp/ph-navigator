@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeSpecificationStatus,
   normalizeSpecificationStatusRecord,
-  serializeReleaseASpecificationStatus,
+  serializeSpecificationStatus,
 } from "./specification-status";
 
-describe("Release-A specification-status response compatibility", () => {
+describe("specification-status response compatibility", () => {
   it.each([
-    ["missing", "missing"],
-    ["needed", "missing"],
+    ["needed", "needed"],
+    ["missing", "needed"],
     ["question", "question"],
     ["complete", "complete"],
     ["na", "na"],
-  ] as const)("normalizes %s to the schema-v7 internal value %s", (wire, expected) => {
+  ] as const)("normalizes %s to the canonical value %s", (wire, expected) => {
     expect(normalizeSpecificationStatus(wire)).toBe(expected);
   });
 
@@ -20,18 +20,18 @@ describe("Release-A specification-status response compatibility", () => {
     expect(
       normalizeSpecificationStatusRecord({
         id: "pglz_1",
-        specification_status: "needed",
+        specification_status: "missing",
         missing_catalog_reference: true,
       }),
     ).toEqual({
       id: "pglz_1",
-      specification_status: "missing",
+      specification_status: "needed",
       missing_catalog_reference: true,
     });
   });
 
   it("preserves row identity when the wire status is already canonical", () => {
-    const row = { id: "pglz_1", specification_status: "missing" as const };
+    const row = { id: "pglz_1", specification_status: "needed" as const };
 
     expect(normalizeSpecificationStatusRecord(row)).toBe(row);
   });
@@ -42,10 +42,14 @@ describe("Release-A specification-status response compatibility", () => {
     );
   });
 
-  it.each(["needed", "unknown"] as const)(
-    "serializes Documentation %s writes as schema-v7 missing",
+  it("serializes the response-only unknown sentinel as canonical needed", () => {
+    expect(serializeSpecificationStatus("unknown")).toBe("needed");
+  });
+
+  it.each(["needed", "question", "complete", "na"] as const)(
+    "serializes canonical %s unchanged",
     (status) => {
-      expect(serializeReleaseASpecificationStatus(status)).toBe("missing");
+      expect(serializeSpecificationStatus(status)).toBe(status);
     },
   );
 });

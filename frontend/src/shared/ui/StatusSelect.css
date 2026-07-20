@@ -41,8 +41,8 @@ span.status-select {
   cursor: default;
 }
 
-.status-select[data-tone="missing"] {
-  --option-color: var(--report-status-missing);
+.status-select[data-tone="needed"] {
+  --option-color: var(--report-status-needed);
 }
 
 .status-select[data-tone="question"] {

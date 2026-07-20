@@ -66,8 +66,8 @@ STATUS_TABLE_NAMES: tuple[str, ...] = (
 
 # `(option_id, label, color)` in display order. Colors mirror the
 # Materials / report-status semantic palette (frontend `--report-status-*`
-# tokens). "Needed" deliberately reuses the Materials `missing` amber: it
-# is the same incomplete-work state with a dashboard-friendly label.
+# tokens); "Needed" uses the same amber as the typed Materials/Glazings/Frames
+# `needed` status, because it is the same state in the other storage family.
 _STATUS_OPTIONS: tuple[tuple[str, str, str], ...] = (
     (STATUS_OPTION_COMPLETE, "Complete", "#16a34a"),
     (STATUS_OPTION_NEEDED, "Needed", "#d97706"),
