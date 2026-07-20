@@ -9,6 +9,7 @@ export function ModalDialog({
   headerAccessory,
   showHeaderClose = false,
   dismissOnBackdrop = false,
+  resizable = false,
 }: {
   id?: string;
   title: string;
@@ -24,6 +25,9 @@ export function ModalDialog({
   // to a stray click. Read-only viewers opt in with `dismissOnBackdrop` where
   // click-away is the expected gesture.
   dismissOnBackdrop?: boolean;
+  // Oversized, scrolling modals (tall forms, data-dense viewers) opt into the
+  // lower-right resize grip via `.modal-panel--resizable`.
+  resizable?: boolean;
 }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -58,7 +62,7 @@ export function ModalDialog({
     >
       <section
         id={id}
-        className="modal-panel"
+        className={resizable ? "modal-panel modal-panel--resizable" : "modal-panel"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

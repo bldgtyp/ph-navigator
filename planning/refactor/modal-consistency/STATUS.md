@@ -14,7 +14,7 @@ RELATED:
 # Status — Modal Consistency Refactor
 
 **State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phase 00 complete; Phases 01–06 pending.
+(off `main`). Phases 00–01 complete; Phases 02–06 pending.
 
 ## Done
 
@@ -35,8 +35,9 @@ RELATED:
 
 ## Next step
 
-Phase 01 — drop the redundant header "Close" app-wide (the highest-visibility
-sweep) and confirm every footer modal shows exactly one dismiss.
+Phase 02 — fix the shared `RowEditModal` footer once (Save → `primary-button`,
+Delete → `danger-button`, contract labels, resizable panel), cascading across
+the 7 row-edit modals.
 
 ## Blockers / decisions
 

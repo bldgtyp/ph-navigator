@@ -62,7 +62,6 @@ export function LengthDialog({
           />
         </>
       }
-      showHeaderClose={false}
     >
       <form id={`${dialogId}-form`} className="modal-form layer-thickness-form" onSubmit={submit}>
         <label className={showFieldLabel ? undefined : "sr-only"} htmlFor={fieldId}>

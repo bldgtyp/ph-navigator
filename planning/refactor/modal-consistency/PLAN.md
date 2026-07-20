@@ -52,7 +52,7 @@ documented in `DESIGN_SYSTEM.md` + `styles/README.md`. Footer-less consumers
   (they currently pass `showHeaderClose` implicitly true — audit whether any is
   a viewer that must now opt in).
 
-## Phase 01 — Drop the redundant header "Close" app-wide (highest-impact sweep)
+## Phase 01 — Drop the redundant header "Close" app-wide (highest-impact sweep) — ✅ DONE
 
 Mechanical, one-line-per-modal, resolves the 34 double-dismiss instances.
 
@@ -61,6 +61,18 @@ Mechanical, one-line-per-modal, resolves the 34 double-dismiss instances.
 - Add `showHeaderClose` back on the read-only viewers: `UserAuditModal`,
   `ConstructionDetailModal`, read-only `RecordDetailModal`.
 - Screenshot sweep: every modal has exactly one obvious dismiss.
+
+Delivered: the Phase-00 default flip already removed header Close from every
+footer modal. Removed the now-redundant `showHeaderClose={false}` from
+`SegmentDialog` + `LengthDialog`. Conformed `ConstructionDetailModal` to the
+standard viewer affordance — dropped its custom `X` icon-button close for
+`showHeaderClose` + `dismissOnBackdrop`, and made it `resizable` (dense layer
+table). `UserAuditModal` + `DirectionsModal` already opted in (Phase 00);
+read-only `RecordDetailModal` keeps its single footer "Close" (via
+`RowEditModal`), so no header Close is added there (would double-dismiss).
+Added a `resizable` prop to `ModalDialog` to apply `.modal-panel--resizable`.
+`CatalogOptionCascadeModal`'s conditional header Close is deferred to Phase 04
+(multi-action footer rework).
 
 ## Phase 02 — `RowEditModal` cluster (1 fix → 7 modals)
 
