@@ -102,26 +102,6 @@
   }
 }
 
-@media (max-width: 760px) {
-  .climate-picker-actions {
-    align-items: stretch;
-  }
-
-  .climate-picker-actions-secondary,
-  .climate-picker-actions-primary {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .climate-picker-actions-primary {
-    margin-left: 0;
-  }
-
-  .climate-picker-actions-primary button {
-    width: 100%;
-  }
-}
-
 /* --- Map: the picker's size for the shared `<ClimateMap>` (chrome lives in
    climate-map.css; live Leaflet basemap D-DP-6, positioned-pin fallback in
    tests). --- */
@@ -267,28 +247,6 @@
   margin: 0;
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
-}
-
-.climate-picker-actions {
-  gap: var(--space-12);
-  margin-top: var(--space-2);
-  padding-top: var(--space-16);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.climate-picker-actions-secondary,
-.climate-picker-actions-primary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-10);
-}
-
-.climate-picker-actions-primary {
-  margin-left: auto;
-}
-
-.climate-picker-actions-primary button {
-  min-width: 180px;
 }
 
 .climate-picker-warning {

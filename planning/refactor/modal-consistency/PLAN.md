@@ -140,13 +140,32 @@ Deliberate exceptions (already contract-compliant / would regress):
   `DocumentConfirmationDialog`/Save-Version dialog — multi-action, deferred to
   Phase 04.
 
-## Phase 04 — Multi-action footers (needs Phase 00 multi-slot)
+## Phase 04 — Multi-action footers (needs Phase 00 multi-slot) — ✅ DONE
 
 - `DocumentConfirmationDialog` family (discard / unlock / stale-save / switch —
   up to 4 buttons; the switch variant is HIGH severity).
 - `WeatherStationPickerModal` (3-button), `CatalogOptionCascadeProgressModal`
   (Retry/Try-again/Done states).
 - Use the `DialogActions` multi-action slot; establish button-priority order.
+
+Delivered: all five `DocumentConfirmationDialog` variants → `DialogActions`.
+Button priority is fixed by the shared anchors: Cancel (left), secondary/tertiary
+actions in `extraActions` (middle), the recommended primary (right). Specifically —
+discard: `danger` "Discard draft"; unlock: "Unlock version"; switch (4-button):
+Cancel · [Save As… then open, Discard changes(danger)] · **Save then open**;
+stale-save & locked-save (shared `StaleOrLockedActions` helper): Cancel ·
+[Discard draft(danger)] · **Save As**. The old "Keep draft" cancel-slot label is
+now the literal "Cancel" (per contract). `WeatherStationPickerModal` (both
+branches) → DialogActions with the shared "Upload Climate Data" `extraActions`.
+`CatalogOptionCascadeModal` error/failed states → DialogActions; the completed
+state's generic "Done" → a single "Close". Removed the now-orphaned
+`.climate-picker-actions*`, `.catalog-option-cascade-actions`, and
+`.modal-actions-stack` CSS. Verified by `App.test` (DocumentConfirmationDialog
+flows) + `WeatherStationPickerModal.test` + `make ci`.
+
+Minor tradeoff: the switch variant's locked-primary lost its hover tooltip
+("Locked versions cannot be saved directly.") since DialogActions' primary has
+no title slot — the modal body already explains the locked state.
 
 ## Phase 05 — Rogue: apertures bespoke backdrops → `ModalDialog`
 

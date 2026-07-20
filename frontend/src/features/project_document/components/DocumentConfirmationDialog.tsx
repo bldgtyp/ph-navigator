@@ -1,3 +1,4 @@
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import type { ConfirmationDialog, ConfirmationDialogActions } from "../types/versionControls";
 
@@ -20,14 +21,14 @@ export function DocumentConfirmationDialog({
       <ModalDialog title="Discard draft?" titleId="discard-draft-title" onClose={onCancel}>
         <div className="confirmation-panel">
           <p>This deletes the server draft and reloads the saved version body.</p>
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onCancel}>
-              Cancel
-            </button>
-            <button type="button" className="danger-button" onClick={onDiscard} disabled={busy}>
-              Discard draft
-            </button>
-          </div>
+          <DialogActions
+            busy={busy}
+            error={null}
+            submitLabel="Discard draft"
+            onClose={onCancel}
+            onConfirm={onDiscard}
+            danger
+          />
         </div>
       </ModalDialog>
     );
@@ -38,14 +39,13 @@ export function DocumentConfirmationDialog({
       <ModalDialog title="Unlock version?" titleId="unlock-version-title" onClose={onCancel}>
         <div className="confirmation-panel">
           <p>Unlocking allows direct edits and Save Version on this version.</p>
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onCancel}>
-              Cancel
-            </button>
-            <button type="button" onClick={onUnlock} disabled={busy}>
-              Unlock version
-            </button>
-          </div>
+          <DialogActions
+            busy={busy}
+            error={null}
+            submitLabel="Unlock version"
+            onClose={onCancel}
+            onConfirm={onUnlock}
+          />
         </div>
       </ModalDialog>
     );
@@ -60,35 +60,34 @@ export function DocumentConfirmationDialog({
             This draft has changes that have not been committed to a version. Save them into a
             version or discard them before opening {target.name}.
           </p>
-          <div className="modal-actions modal-actions-stack">
-            <button
-              type="button"
-              onClick={() => onSwitchSave(target)}
-              disabled={busy || isLocked}
-              title={isLocked ? "Locked versions cannot be saved directly." : undefined}
-            >
-              Save then open
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => onSwitchSaveAs(target)}
-              disabled={busy}
-            >
-              Save As... then open
-            </button>
-            <button
-              type="button"
-              className="danger-button"
-              onClick={() => onSwitchDiscard(target)}
-              disabled={busy}
-            >
-              Discard changes
-            </button>
-            <button type="button" className="secondary-button" onClick={onCancel}>
-              Cancel
-            </button>
-          </div>
+          <DialogActions
+            busy={busy}
+            error={null}
+            submitLabel="Save then open"
+            onClose={onCancel}
+            onConfirm={() => onSwitchSave(target)}
+            submitDisabled={isLocked}
+            extraActions={
+              <>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onSwitchSaveAs(target)}
+                  disabled={busy}
+                >
+                  Save As… then open
+                </button>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={() => onSwitchDiscard(target)}
+                  disabled={busy}
+                >
+                  Discard changes
+                </button>
+              </>
+            }
+          />
         </div>
       </ModalDialog>
     );
@@ -102,17 +101,12 @@ export function DocumentConfirmationDialog({
             The saved version changed while this draft was open. Save As preserves this draft in a
             new version, or discard it and reload the current saved body.
           </p>
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onCancel}>
-              Keep draft
-            </button>
-            <button type="button" className="secondary-button" onClick={onDiscard} disabled={busy}>
-              Discard draft
-            </button>
-            <button type="button" onClick={onSaveAs} disabled={busy}>
-              Save As
-            </button>
-          </div>
+          <StaleOrLockedActions
+            busy={busy}
+            onCancel={onCancel}
+            onDiscard={onDiscard}
+            onSaveAs={onSaveAs}
+          />
         </div>
       </ModalDialog>
     );
@@ -122,18 +116,43 @@ export function DocumentConfirmationDialog({
     <ModalDialog title="Version locked" titleId="locked-save-title" onClose={onCancel}>
       <div className="confirmation-panel">
         <p>This version was locked elsewhere. The draft is preserved; use Save As or discard it.</p>
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Keep draft
-          </button>
-          <button type="button" className="secondary-button" onClick={onDiscard} disabled={busy}>
-            Discard draft
-          </button>
-          <button type="button" onClick={onSaveAs} disabled={busy}>
-            Save As
-          </button>
-        </div>
+        <StaleOrLockedActions
+          busy={busy}
+          onCancel={onCancel}
+          onDiscard={onDiscard}
+          onSaveAs={onSaveAs}
+        />
       </div>
     </ModalDialog>
+  );
+}
+
+// The stale-save and locked-save variants share an identical footer: Cancel,
+// a destructive "Discard draft", and the "Save As" primary that preserves the
+// draft as a new version.
+function StaleOrLockedActions({
+  busy,
+  onCancel,
+  onDiscard,
+  onSaveAs,
+}: {
+  busy: boolean;
+  onCancel: () => void;
+  onDiscard: () => void;
+  onSaveAs: () => void;
+}) {
+  return (
+    <DialogActions
+      busy={busy}
+      error={null}
+      submitLabel="Save As"
+      onClose={onCancel}
+      onConfirm={onSaveAs}
+      extraActions={
+        <button type="button" className="danger-button" onClick={onDiscard} disabled={busy}>
+          Discard draft
+        </button>
+      }
+    />
   );
 }

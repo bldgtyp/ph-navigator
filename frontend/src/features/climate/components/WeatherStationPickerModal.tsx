@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import { useAttachWeatherFromCatalogMutation, useEpwRosterQuery } from "../hooks";
@@ -74,6 +75,14 @@ export function WeatherStationPickerModal({
     onOpenUploadModal?.();
   }
 
+  // "Upload Climate Data" is the shared secondary escape hatch in both the
+  // guard and the picker footers.
+  const uploadAction = onOpenUploadModal ? (
+    <button type="button" className="secondary-button" onClick={openUpload}>
+      Upload Climate Data
+    </button>
+  ) : undefined;
+
   return (
     <ModalDialog
       id="weather-picker"
@@ -86,29 +95,17 @@ export function WeatherStationPickerModal({
       ) : !locationIsSet ? (
         <div className="climate-picker-guard">
           <p>Set the project location first — the nearest stations need a site.</p>
-          <div className="modal-actions climate-picker-actions">
-            <div className="climate-picker-actions-secondary">
-              <button type="button" className="secondary-button" onClick={onClose}>
-                Cancel
-              </button>
-              {onOpenUploadModal ? (
-                <button type="button" className="secondary-button" onClick={openUpload}>
-                  Upload Climate Data
-                </button>
-              ) : null}
-            </div>
-            <div className="climate-picker-actions-primary">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onRequestSetLocation?.();
-                }}
-              >
-                Set the project location
-              </button>
-            </div>
-          </div>
+          <DialogActions
+            busy={false}
+            error={null}
+            submitLabel="Set the project location"
+            onClose={onClose}
+            onConfirm={() => {
+              onClose();
+              onRequestSetLocation?.();
+            }}
+            extraActions={uploadAction}
+          />
         </div>
       ) : (
         <div className="climate-picker-content">
@@ -138,28 +135,17 @@ export function WeatherStationPickerModal({
 
           {selected ? <WeatherSelectionPreview item={selected} /> : null}
 
-          <div className="modal-actions climate-picker-actions">
-            <div className="climate-picker-actions-secondary">
-              <button type="button" className="secondary-button" onClick={onClose}>
-                Cancel
-              </button>
-              {onOpenUploadModal ? (
-                <button type="button" className="secondary-button" onClick={openUpload}>
-                  Upload Climate Data
-                </button>
-              ) : null}
-            </div>
-            <div className="climate-picker-actions-primary">
-              <button type="button" onClick={runAttach} disabled={!selected || attach.isPending}>
-                {attach.isPending ? "Attaching…" : "Attach weather file"}
-              </button>
-            </div>
-          </div>
-          {attach.error ? (
-            <p className="form-error">
-              {errorMessage(attach.error, "Could not attach the weather file.")}
-            </p>
-          ) : null}
+          <DialogActions
+            busy={attach.isPending}
+            error={
+              attach.error ? errorMessage(attach.error, "Could not attach the weather file.") : null
+            }
+            submitLabel={attach.isPending ? "Attaching…" : "Attach weather file"}
+            onClose={onClose}
+            onConfirm={runAttach}
+            submitDisabled={!selected}
+            extraActions={uploadAction}
+          />
         </div>
       )}
     </ModalDialog>

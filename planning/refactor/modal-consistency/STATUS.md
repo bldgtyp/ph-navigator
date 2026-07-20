@@ -14,7 +14,7 @@ RELATED:
 # Status — Modal Consistency Refactor
 
 **State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phases 00–03 complete; Phases 04–06 pending.
+(off `main`). Phases 00–04 complete; Phases 05–06 pending.
 
 ## Done
 
@@ -35,11 +35,10 @@ RELATED:
 
 ## Next step
 
-Phase 04 — multi-action footers via the `extraActions` slot:
-`DocumentConfirmationDialog` family (discard/unlock/stale-save/switch, up to 4
-buttons), `WeatherStationPickerModal` (3-button), `CatalogOptionCascadeModal`
-(retry/try-again/done). Also fold in the Save-Version commit dialog's
-`Saving...` → `Saving…` while there.
+Phase 05 — rogue apertures bespoke backdrops → `ModalDialog`:
+`ManufacturerFiltersModal` and `RefreshDialog` (delete the copy-pasted
+`*-modal__` / `*-dialog__` backdrop+panel CSS, adopt `ModalDialog` +
+`DialogActions`; `RefreshDialog` is large/tabular → resizable).
 
 ## Blockers / decisions
 
