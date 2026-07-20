@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned — production authority required for access
+STATUS: Complete (2026-07-20) — executed in reduced form by agreement
 AUTHOR: Codex with Ed May
 SCOPE: Audit both production projects and establish the Canonical B go/no-go.
 RELATED:
@@ -102,3 +102,34 @@ result, previous/candidate Alembic heads, deploy-time DB/config classification,
 restore-point metadata without secrets, candidate API/web SHAs, draft
 dispositions, and GO/NO-GO. Do not commit raw bodies, credentials, URLs
 containing secrets, or personal data.
+
+## Outcome (2026-07-20)
+
+Executed in a **reduced form**, agreed with Ed because the app had zero active
+users at the time (local midnight) and no drafts were open.
+
+Done:
+
+- Both production projects inventoried through read-scoped MCP tokens:
+  Ayers Home (bt 2613, project `81203cdd-...`, one working version
+  `985208f3-...`) and Linde Home (bt 2524, project `2f2b0cbd-...`, one working
+  version `36cec711-...`). Both rows are `schema_version=4`; neither version is
+  locked; no drafts existed.
+- Candidate-v8 read audit run over every saved body — see Phase 06.
+- Verified restore point established: Render logical export of
+  `ph-navigator-db` at 2026-07-20 00:14 EDT, plus 3-day PITR. Recovery posture
+  is now documented durably in `context/PRODUCTION_DEPLOYMENT.md` ->
+  "Database Recovery".
+
+Deliberately skipped, and why:
+
+- **Write freeze / draft disposition** — moot. No users, no open drafts,
+  nothing to freeze or dispose of.
+- **Pre-deploy export** — the export was taken ~19 minutes *after* the deploy.
+  This is still a valid pre-v8 restore point because the deploy wrote no data:
+  both projects' rows remain `schema_version=4`, so the exported state is the
+  same v4 state a pre-deploy export would have captured.
+
+Residual risk accepted by Ed: PITR covers only 3 days on the Basic plan, so the
+arbitrary-timestamp rollback window closes 2026-07-23. After that, recovery
+depends on the retained logical exports.

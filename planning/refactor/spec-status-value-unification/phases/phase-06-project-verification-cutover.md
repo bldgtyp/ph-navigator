@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned — production authority required
+STATUS: Verification complete (2026-07-20) — v8 write boundary not yet crossed
 AUTHOR: Codex with Ed May
 SCOPE: Verify both production projects and deliberately enter normal schema-v8
   operation.
@@ -79,3 +79,37 @@ not implemented by this feature and must not be improvised in production.
 - Any external Honeybee export rejects Needed.
 - An old/cached tab sends a rejected status write.
 - A proposed rollback ignores persisted v8 rows.
+
+## Outcome (2026-07-20)
+
+Read-only verification through `project:read`-scoped MCP tokens (no
+`project:write`, so a draft could not be persisted). Saved versions only; no
+draft was opened. Tokens were revoked by Ed immediately afterward.
+
+**Typed family — the values the migration renamed:**
+
+| | Ayers Home (2613) | Linde Home (2524) |
+|---|---|---|
+| Stored row schema | 4 | 4 |
+| Typed read returns | **8** | **8** |
+| `project_materials` | 12 — na=6, needed=6 | 11 — complete=3, na=5, needed=3 |
+| `project_glazings` | 1 — needed=1 | 2 — needed=2 |
+| `project_frames` | 14 — needed=14 | 21 — needed=21 |
+| Legacy `missing` remaining | 0 | 0 |
+
+**DataTable option-id family — the values D-2 deliberately did NOT migrate:**
+Linde shows `thermal_bridges` opt_status_complete=5, `ventilators`
+opt_status_complete=2, and `pumps` / `hot_water_tanks` / `appliances`
+opt_status_needed — all ids intact. Ayers has no equipment rows yet. Status
+items read cleanly on both (4 each).
+
+The decisive detail: **stored rows still report `schema_version=4` while typed
+reads return 8.** The forward upgrade runs in memory and rewrote nothing, so
+both projects' data — and the rollback position — are untouched.
+
+### v8 write boundary: NOT yet crossed
+
+No v8 body has been persisted. The first ordinary draft/Save/Save As by Ed or
+John will be the cliff; from then on, app-only rollback is unavailable and
+recovery means restoring the database (D-9). Record project, version/draft id,
+timestamp, and deployed SHA when it happens.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned — Ed-triggered production phase
+STATUS: Complete (2026-07-20) — deploy verified, public smoke green
 AUTHOR: Codex with Ed May
 SCOPE: Deploy Canonical B and verify it without crossing the persistent v8
   write boundary.
@@ -73,3 +73,29 @@ does.
 - Status values/counts diverge from the preflight preview.
 - A stale draft rewrites unexpectedly.
 - Anyone resumes editing before Phase 06 GO.
+
+## Outcome (2026-07-20)
+
+Ed triggered the "Deploy Production" workflow by manual dispatch from `main`
+at commit `ef97b483dc130252a0391bcac5bef3835b1047d4`.
+
+Deploy gate — both markers matched the intended commit:
+
+| Check | Result |
+|---|---|
+| `api.ph-nav.com/api/v1/version` -> `git_sha` | `ef97b483...` |
+| `www.ph-nav.com/version.json` -> `git_sha` | `ef97b483...` |
+| `api/v1/ready` | `200`, `db:true`, 3.6 ms, pool healthy |
+| `www` / apex / `v0` | `200` / `301`->www / `200` |
+| CORS preflight | `200`, correct origin + credentials |
+| Unauthenticated `/api/v1/projects` | `401` |
+
+Stronger than the planned marker check: the deployed OpenAPI schema was read
+directly. `ProjectMaterial`, `ProjectGlazing`, `ProjectFrame` (plus Read and
+Update variants) and `StatusSummaryRecord` all advertise
+`['complete','needed','question','na']`. Across 53 enum sites mentioning either
+value, **none still offers `missing`** — proving the running build carries the
+v8 contract, not merely the right commit hash. The separate
+`['needed','complete','na']` enums are the unchanged evidence-status axis.
+
+No writes were performed.

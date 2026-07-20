@@ -254,6 +254,32 @@ connector.
 Render operations use the Render dashboard, Render CLI, or Render API with an
 operator-held token.
 
+## Database Recovery
+
+Two independent mechanisms cover the production Postgres
+(`ph-navigator-db`, `dpg-d909olr7uimc7396sls0-a`, plan `basic_256mb`):
+
+| Mechanism | Window | Notes |
+|---|---|---|
+| Point-in-Time Recovery | **3 days** | Restore to any timestamp in the window (Render → database → Recovery → Restore database). 7 days requires a Pro workspace. |
+| Logical export | **>= 7 days** retention | Render → database → Recovery → Export → Create export; downloadable `.dir.tar.gz`. Taken on demand, not on a schedule. |
+
+Consequences worth planning around:
+
+- PITR is the only mechanism that recovers an *arbitrary* moment, and it expires
+  after 3 days. Anything older can only be restored from a logical export that
+  someone chose to take.
+- Exports are **manual**. There is no automatic nightly export, so a
+  recovery point exists only if it was created deliberately. Take one before any
+  irreversible change — a forward-only schema migration, a bulk data edit, or a
+  destructive maintenance script.
+- A schema migration is not reversible by redeploying old code: once a body is
+  written at a newer `schema_version`, older application code rejects it as
+  schema-too-new. Past that point, recovery means restoring the database, not
+  rolling back the service.
+- Restore owner is Ed; restoring is a Render dashboard action and is never an
+  agent operation.
+
 ## Deployment Workflow
 
 Auto-deploy is off; the "Deploy Production" GitHub Actions workflow

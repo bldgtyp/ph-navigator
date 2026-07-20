@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Implementation complete — production deployment pending
+STATUS: Complete — deployed to production 2026-07-19 in commit ef97b483
 AUTHOR: Codex with Ed May
 SCOPE: Deploy a rollback-safe compatibility envelope while schema v7 remains
   canonical.

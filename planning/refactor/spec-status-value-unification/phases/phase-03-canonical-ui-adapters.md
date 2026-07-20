@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Implemented — candidate B complete, not deployed
+STATUS: Complete — deployed to production 2026-07-19 in commit ef97b483
 AUTHOR: Codex with Ed May
 SCOPE: Move frontend status controls and current API consumers to canonical
   `needed`.

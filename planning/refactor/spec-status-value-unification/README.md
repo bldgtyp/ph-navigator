@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
+DATE: 2026-07-20
 TIME: 11:30 EDT
-STATUS: Candidate B implemented (Phases 02+03) — deployment pending
+STATUS: Deployed and verified in production — only Phase 07 adapter retirement remains
 AUTHOR: Codex with Ed May
 SCOPE: Make `needed` the canonical PH-Navigator specification-status value
   while preserving historical project versions, external Honeybee
@@ -23,13 +23,13 @@ RELATED:
 Planning router for the built-in specification-status rename
 `missing` → `needed`.
 
-Current checkpoint: all code phases are done. Compatibility Release A
-(Phase 01) and Canonical Release B (Phases 02+03) are implemented, `make ci` is
-green, and the UI is browser-verified against a real stored schema-v7 body.
+Current checkpoint: **shipped**. Commit `ef97b483` deployed to production
+2026-07-19, carrying Compatibility Release A and Canonical Release B together.
+Both production projects verified read-only and passing: stored `schema_version=4`
+bodies read back as `8` with zero legacy `missing`, and nothing was rewritten.
 
-Everything that remains is a production operation and Ed's call: the
-backup/restore gate, merge, deploy, the two-project audit, and the deliberate v8
-write boundary. No production write or deploy was performed.
+Remaining: retire the two temporary cached-client adapters (Phase 07), which is
+blocked on the observation window and needs a second deploy.
 
 Read in this order:
 

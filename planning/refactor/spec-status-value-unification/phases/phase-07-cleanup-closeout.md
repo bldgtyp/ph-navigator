@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned
+STATUS: Open — doc/context half done 2026-07-20; adapter retirement blocked on the observation window
 AUTHOR: Codex with Ed May
 SCOPE: Remove temporary compatibility, reconcile durable docs, and archive the
   completed refactor.
@@ -70,3 +70,57 @@ compatibility adapters, truthful production evidence, and durable context docs.
 Do not use closeout to merge `StatusSelect` with DataTable status-pill CSS or to
 rename unrelated missing-data concepts. Record such work separately if still
 valuable.
+
+## Progress (2026-07-20)
+
+Done now, because none of it depends on the observation window:
+
+- Step 6 (context reconciliation) is complete. Synced across Phases 02–03 and
+  the production run: `technical-requirements/data-model.md`, `data-table.md`,
+  `api.md`, `save-versioning.md`, `llm-mcp-schema.md`,
+  `envelope-hbjson-import.md`, `envelope-hbjson-export.md`,
+  `ui/pages/envelope-tab.md`, `ui/pages/status-tab.md`, `DESIGN_SYSTEM.md`, and
+  `frontend/src/styles/README.md`. Three stale "schema is 6" claims that
+  predated this packet were corrected in passing.
+- New durable doc: `context/PRODUCTION_DEPLOYMENT.md` -> "Database Recovery"
+  records the PITR window, manual-export retention, restore owner, and the
+  fact that a forward-only schema migration is not undone by redeploying old
+  code. This closes the packet's long-standing "actual backup/restore
+  mechanism" open operator input.
+- Step 5 confirmed: summary translation shims are gone (typed pass-through);
+  custom option-id adapters remain.
+- Steps 8–9 (`simplify`, `docs-pass`, Graphify, format, full `make ci`) have
+  run at the end of Phases 02, 03, and this closeout.
+
+### Still open — and why
+
+**Steps 2–3, retiring the temporary client adapters.** Blocked, not forgotten:
+
+| Precondition | State |
+|---|---|
+| Canonical B healthy for the observation window | **Not met** — deployed 2026-07-19 ~23:55 EDT |
+| Ed and John have refreshed/reopened clients | **Not met** — John has not opened the app since deploy |
+| Both production projects passed Phase 06 | Met |
+| First v8 persistence + recovery mode recorded | **Not met** — no v8 body persisted yet |
+
+The adapters still in place, both harmless and cheap to keep:
+
+- `backend/features/envelope/specification_status_compat.py` — accepts a legacy
+  `missing` on public mutation DTOs, normalizes to `needed`.
+- `normalizeSpecificationStatus` / `WireSpecificationStatus` in
+  `frontend/src/features/project_document/specification-status.ts` — tolerates a
+  legacy `missing` on the read path.
+
+**Removal trigger:** Ed and John have each used the app normally since the
+deploy (guaranteeing fresh JS), and at least one v8 body has been persisted and
+recorded. Removal is a code change plus a **second production deploy**, so it
+should ride with other work rather than be deployed on its own.
+
+**Owner:** Ed. Retaining these means the phase is not fully contracted, so this
+packet stays active until they are gone.
+
+**Also carried:** the `--report-status-missing` token alias (see the Phase 03
+as-built notes) — a naming cleanup excluded from this rollout by D-8.
+
+Step 10 (archive) is deliberately **not** done: archiving now would file the
+packet away with its contraction step outstanding.
