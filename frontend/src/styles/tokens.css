@@ -128,6 +128,12 @@
   --data-table-hover-bg: color-mix(in oklab, var(--accent) 6%, var(--bg-card));
   --data-table-selected-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
   --data-table-linked-record-bg: rgb(233 238 249);
+  /* Element sidebar (shared/ui/element-sidebar): the "1A quiet list" splits row
+     hover from selection — hover is a barely-there NEUTRAL wash so only the
+     selected row carries the teal --accent-light. Neutral (not accent-tinted)
+     and theme-safe in both light and dark. The grip reuses --text-muted and the
+     action-cluster scrim reuses this token / --accent-light inline. */
+  --sidebar-row-hover: color-mix(in oklab, var(--text-primary) 5%, var(--bg-card));
   --font-primary: "Geist", sans-serif;
   --font-table: "Geist", sans-serif;
   /* Type scale (rem). 8 steps — the only font sizes allowed in component
