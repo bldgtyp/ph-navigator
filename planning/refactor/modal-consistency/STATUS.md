@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
-TIME: 17:50 EDT
-STATUS: Active
+TIME: 19:35 EDT
+STATUS: Implemented on branch
 AUTHOR: Claude with Ed May
 SCOPE: Current state of the modal-consistency refactor.
 RELATED:
@@ -13,49 +13,77 @@ RELATED:
 
 # Status — Modal Consistency Refactor
 
-**State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phases 00–05 complete; Phase 06 pending.
+**State: Implemented on branch `refactor/modal-consistency` (off `main`). All
+phases 00–06 complete and verified. Awaiting Ed's merge to `main`** — merge +
+dated archive of this packet is Ed's call (deploys/merges are never an agent's).
 
-## Done
+## Done — all phases complete
 
-- Static audit of all ~50 modal components (58 instances) via 9-agent fan-out →
-  `CATALOG.md`.
-- Three-tier conformance model + recurring-defect quantification → `PRD.md`.
-- Modal contract **ratified by Ed 2026-07-20**: canonical footer Cancel / drop
-  header Close; footer always `DialogActions`; specific labels; shared box with
-  resize handle when oversized; backdrop-click off for forms / on for viewers.
-- Phased plan → `PLAN.md`.
-- **Phase 00 (shared-component upgrades) — DONE.** `ModalDialog`
-  `showHeaderClose` default flipped to `false` + new `dismissOnBackdrop` prop;
-  `DialogActions` gained `danger` + `extraActions` slot; `.modal-panel--resizable`
-  + `.modal-actions-extra` CSS; contract documented in `DESIGN_SYSTEM.md` +
-  `styles/README.md`. Three footer-less consumers protected from the default
-  flip (`UserAuditModal`, `DirectionsModal` as viewers; `ProjectMaterialEditorModal`
-  with a Phase-03 TODO). Two modal tests updated for the new default.
+- Static audit of all ~50 modal components (58 instances) → `CATALOG.md`;
+  three-tier conformance model + defect quantification → `PRD.md`; contract
+  **ratified by Ed 2026-07-20**; phased plan → `PLAN.md` (per-phase delivery
+  notes in each section).
+- **Phase 00** — shared-component upgrades: `ModalDialog` `showHeaderClose`
+  default → `false`, new `dismissOnBackdrop` + `resizable` props; `DialogActions`
+  gained `danger` + `extraActions`; `.modal-panel--resizable` + `.modal-actions-extra`
+  CSS; contract documented in `DESIGN_SYSTEM.md` + `styles/README.md`.
+- **Phase 01** — header-Close sweep; conformed `ConstructionDetailModal`; dropped
+  redundant props.
+- **Phase 02** — `RowEditModal` footer → `DialogActions` (Save primary, Delete
+  danger extra, resizable), cascading to all 7 row-edit modals.
+- **Phase 03** — ~15 single-primary partials → `DialogActions` (catalogs /
+  climate / projects / status / model_viewer / project_document / equipment /
+  envelope); caught + fixed the stranded `DiffDialog` viewer.
+- **Phase 04** — multi-action footers via `extraActions`
+  (`DocumentConfirmationDialog` ×5 variants, `WeatherStationPickerModal`,
+  `CatalogOptionCascadeModal`); removed orphaned footer CSS.
+- **Phase 05** — apertures rogue modals (`ManufacturerFiltersModal`,
+  `RefreshDialog`) → `ModalDialog` + `DialogActions`; removed bespoke chrome CSS;
+  forms no longer dismiss on backdrop.
+- **Phase 06** — Radix data-table family conformed (D-3): chrome aligned to the
+  shared `.modal-panel` box + resize on `FieldConfigModal`; footers → `.modal-actions`
+  shape; four unstyled primaries styled.
 
 ## Next step
 
-Phase 06 — rogue data-table Radix family (D-3: keep Radix, conform the shell):
-`FieldConfigModal`, `CreateFieldConfigModal`, `ConfirmDestructiveDialog`,
-`ConfirmDeleteOptionDialog` (+ wrappers `DeleteDimensionDialog`,
-`CascadePreviewDialog`). Bring width/padding to the shared box, footer to the
-`DialogActions` shape, apply the header-Close rule, add resize to
-`FieldConfigModal`. Heaviest phase (`FieldConfigModal` ~960 lines).
+Ed's call: review the branch and merge to `main`. On merge, archive this packet
+to `planning/archive/dated/<merge-date>/modal-consistency/` and add a line to
+`planning/archive/README.md` (append-only). No further implementation work
+outstanding.
 
 ## Blockers / decisions
 
-None outstanding. Contract ratified (D-1); multi-action footer shape decided
-(D-2, `extraActions` slot); Radix family disposition decided (D-3, keep + conform).
+None. Contract ratified (D-1); multi-action footer shape (D-2, `extraActions`);
+Radix family disposition (D-3, keep + conform). See `decisions.md`.
 
-## Verification approach
+## Verification (evidence)
 
-Static audit only so far. Implementation phases each add: focused RTL tests for
-touched modals, `make format`, `make ci` for substantial phases, and a live
-browser screenshot (`agent-browser.mjs`) of each touched modal checked against
-the contract. Reachability varies (some modals need selected rows / admin /
-draft state) — screenshot the reachable ones, code-verify the rest.
+- Every phase: `make format` + `make ci` **green** (full local CI mirror —
+  frontend build + the complete vitest suite + all guards + backend).
+- Focused/updated RTL coverage for touched modals, e.g. the data-table suite
+  (1074 tests), `App.test` (DocumentConfirmationDialog flows),
+  `WeatherStationPickerModal`, `RowEditModal`/`recordDetailExpand`,
+  `ManufacturerFiltersModal`/`RefreshDialog`, `PhiusExportDialog`, `ImportDialog`.
+- Phase 00 ran the 4-agent `simplify` fan-out; Phase 03 ran two independent
+  review agents (all findings applied).
+- Live browser screenshot (`agent-browser.mjs`) of `NewProjectModal` confirmed
+  the live contract: shared panel, **Cancel (left) + styled Create Project
+  (right)**, no header Close. Most modals need selected-row / admin / draft state
+  and were code + unit-test verified (per the plan's reachability caveat).
+
+## Residual / deliberate deviations (all recorded in `PLAN.md`)
+
+- `SetLocationModal` left as-is (primary already styled + MapPin icon).
+- 3× `ImportDialog` wizards left as-is (report stage already styled; pick/done
+  stages don't fit the single-primary `DialogActions` shape).
+- `ConfirmDeleteOptionDialog` primary kept as "Delete" (title already specifies).
+- `EditUserFieldModal` still has a generic "OK" primary — a gold modal already on
+  `DialogActions`, out of the partial/rogue conversion scope; a candidate for a
+  future label-polish sweep.
+- The switch-variant `DocumentConfirmationDialog` locked-primary lost its hover
+  tooltip (DialogActions primary has no title slot; the body explains the state).
 
 ## Notes
 
-- `working/modal-consistency-catalog.md` was the scratch draft; the tracked copy
-  is `CATALOG.md` here. The scratch copy can be deleted.
+- `working/modal-consistency-catalog.md` scratch draft can be deleted; the
+  tracked copy is `CATALOG.md`.
