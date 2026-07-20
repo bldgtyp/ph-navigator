@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: D-1..D-10 stand as written; D-11 ACCEPTED and implemented 2026-07-20
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Decision log for the database-backups feature.
 RELATED:

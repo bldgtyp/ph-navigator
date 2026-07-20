@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: Built — runbook + router wiring committed; archive pending the first production drill
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Canonical runbook doc + wiring into the docs router, and the closeout gate.
 OWNER: Agent.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: Built — restore.sh + local drill committed and passing; production drill pending Phases 00-02
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: The restore procedure and the first (and recurring quarterly) restore
   drill that proves the backups are actually usable.

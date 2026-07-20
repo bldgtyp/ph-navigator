@@ -478,7 +478,40 @@ staging Blueprint re-provision, R2 dashboard/CORS setup, one-off seeds):
 
 ---
 
-## 9. Related docs
+## 9. Durability — what is backed up, and what is not
+
+The two stores have **different** protection, and the asymmetry is deliberate.
+
+| Class | Store | Protected by |
+| --- | --- | --- |
+| ① Relational metadata | Postgres | Render PITR (3d) **+ off-site encrypted daily dumps** (30 daily / 12 monthly) |
+| ② Versioned JSONB documents | Postgres | same — these are inside the dump |
+| ③ Dynamic per-project assets | R2 `ph-navigator-prod` | R2 durability only — **no independent backup** |
+| ④ Static climate bundles | R2 | R2 durability only — regenerable from source |
+
+**Postgres is fully backed up off-site.** A daily GitHub Actions job dumps the
+whole database, encrypts it with `age` to a key held offline, and stores it in a
+separate R2 bucket (`phn-db-backups`) outside Render. Operating since
+2026-07-20, restore drill passed. See `context/DATABASE_BACKUPS.md`.
+
+**Object-store bytes are not**, by decision (D-9 in the archived backup packet).
+Most assets are re-derivable from the Dropbox source files, and the documents —
+the irreplaceable part — live in Postgres.
+
+### The cross-store consequence
+
+Because Postgres is backed up and R2 is not, the two stores can be restored to
+**different points in time**. After a DB-only restore:
+
+- `project_assets` rows still reference R2 object keys.
+- If R2 is intact, those keys resolve and nothing is lost.
+- If R2 is not, the documents are structurally intact but some file **bytes** are
+  missing — a dangling reference, not a corrupt document.
+
+This is accepted for now. Anything that must survive independently of R2 belongs
+in Postgres, not the object store.
+
+## 10. Related docs
 
 - `context/ENVIRONMENT.md` — ports, env vars, Render/R2 setup & runbooks.
 - `context/TECH_STACK.md` — persistence & object-storage decision record.
@@ -486,3 +519,4 @@ staging Blueprint re-provision, R2 dashboard/CORS setup, one-off seeds):
 - `context/technical-requirements/attachments.md` — asset upload/attach contract.
 - `context/technical-requirements/save-versioning.md` — draft/version state machine.
 - `context/PRD.md` §5–§6, §12 — architecture overview and stack/deployment.
+- `context/DATABASE_BACKUPS.md` — off-site backup system + restore runbook.

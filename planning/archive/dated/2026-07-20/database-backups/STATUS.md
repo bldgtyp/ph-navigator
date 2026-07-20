@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 15:55 EDT
-STATUS: OPERATING — first production backup + restore drill passed 2026-07-20
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Live state ledger for the database-backups feature.
 RELATED:

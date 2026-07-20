@@ -626,6 +626,11 @@ token hashes are keyed and links use the canonical origin.
 - `make seed-dev-user` — seed the local editor account for browser/E2E auth
 - `make seed-agent-browser` — seed the dedicated Codex browser fixture and
   print a route that has a dirty draft/version controls
+- `make backup-drill-local` — round-trip the database backup scripts against
+  local Postgres (dump → encrypt → restore → verify) with a throwaway key and a
+  temp directory as the store. Touches no production data and needs no real
+  credentials. Run it after changing anything in `ops/backup/`; see
+  `context/DATABASE_BACKUPS.md`
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).

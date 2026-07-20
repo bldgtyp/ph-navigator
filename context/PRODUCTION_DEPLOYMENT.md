@@ -256,27 +256,35 @@ operator-held token.
 
 ## Database Recovery
 
-Two independent mechanisms cover the production Postgres
+Three independent mechanisms cover the production Postgres
 (`ph-navigator-db`, `dpg-d909olr7uimc7396sls0-a`, plan `basic_256mb`):
 
 | Mechanism | Window | Notes |
 |---|---|---|
 | Point-in-Time Recovery | **3 days** | Restore to any timestamp in the window (Render → database → Recovery → Restore database). 7 days requires a Pro workspace. |
 | Logical export | **>= 7 days** retention | Render → database → Recovery → Export → Create export; downloadable `.dir.tar.gz`. Taken on demand, not on a schedule. |
-| Off-site encrypted dumps | **30 daily + 12 monthly** | Outside Render entirely (R2 + Dropbox), `age`-encrypted. See `context/DATABASE_BACKUPS.md`. ⚠️ Built but **not yet operating** — needs the R2 bucket, backup role, and keys provisioned. |
+| Off-site encrypted dumps | **30 daily + 12 monthly** | **Operating since 2026-07-20.** Daily 06:30 UTC via the "Backup Database" workflow → `age`-encrypted → Cloudflare R2 `phn-db-backups`, outside Render entirely. Restore drill passed. Runbook: `context/DATABASE_BACKUPS.md`. |
 
 Consequences worth planning around:
 
 - PITR is the only mechanism that recovers an *arbitrary* moment, and it expires
-  after 3 days. Anything older can only be restored from a logical export that
-  someone chose to take, or — once it is operating — an off-site daily dump.
+  after 3 days. Anything older comes from an off-site daily dump (up to 30 days,
+  or 12 months of monthlies) or a logical export someone chose to take.
+- Prefer PITR when Render is healthy — it is faster and finer-grained. Reach for
+  the off-site dumps when Render is not, or when the damage predates the PITR
+  window.
 - Every Render-side copy lives **inside Render**, so an account suspension,
   compromise, or accidental service deletion takes the data and its backups
   together. That is the gap the off-site layer closes.
-- Render exports are **manual**. Until the off-site daily job is live there is no
-  automatic nightly export, so a recovery point exists only if it was created
-  deliberately. Take one before any irreversible change — a forward-only schema
-  migration, a bulk data edit, or a destructive maintenance script.
+- Render exports are **manual**, but the off-site job now runs nightly, so a
+  recovery point always exists (worst case ~24h old). Still take a Render export
+  or trigger a manual backup run before any irreversible change — a forward-only
+  schema migration, a bulk data edit, or a destructive maintenance script.
+- The production database is **`ph_navigator_74vs`**, not the `ph_navigator`
+  declared in `render.prod.yaml` — Render appended a suffix. Take the live name
+  from the "External Database URL" in the dashboard.
+- A second Postgres role exists: **`phn_backup`**, `SELECT`-only on `public`,
+  used solely by the backup job. It cannot write.
 - A schema migration is not reversible by redeploying old code: once a body is
   written at a newer `schema_version`, older application code rejects it as
   schema-too-new. Past that point, recovery means restoring the database, not

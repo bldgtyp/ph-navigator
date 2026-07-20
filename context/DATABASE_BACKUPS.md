@@ -5,7 +5,38 @@ database. If you are reading this during an incident, jump to
 [Restore](#restore-a-backup).
 
 Design rationale and the decision log live in
-`planning/features/database-backups/`; this file is what you operate from.
+`planning/archive/dated/2026-07-20/database-backups/`; this file is what you
+operate from.
+
+**Status: operating since 2026-07-20.** Daily backup runs at 06:30 UTC; the
+first production backup and restore drill both passed (logged below).
+
+> ## ⚠️ Outstanding setup items
+>
+> These were not finished when the feature was archived. Until item 1 is done,
+> a single laptop failure makes every backup permanently unreadable.
+>
+> 1. **The age private identity is only in `~/Downloads/phn-backup-identity.txt`.**
+>    Copy it into Apple Passwords ("PHN DB Backup — age identity") *and*
+>    `~/Dropbox/bldgtyp-00/00_PH_Tools/_backups/_keys/`, then delete it from
+>    Downloads. Two copies, both outside the backup folder itself.
+> 2. **The weekly Dropbox pull is not installed.** Until it is, the only copy of
+>    the backups lives in Cloudflare R2 — the system is 2-1-1, not 3-2-1. See
+>    "Install the weekly pull" below.
+>
+> Delete this block once both are done.
+
+## Install the weekly pull
+
+```bash
+sed "s#<REPO>#$PWD#" ops/backup/com.bldgtyp.phn-backup-pull.plist \
+  > ~/Library/LaunchAgents/com.bldgtyp.phn-backup-pull.plist
+launchctl load ~/Library/LaunchAgents/com.bldgtyp.phn-backup-pull.plist
+launchctl start com.bldgtyp.phn-backup-pull      # run once now to test
+```
+
+Requires the `phn-backups-ro` rclone remote, which is already configured.
+Verify with the staleness check under "Routine operations".
 
 ## What is protected
 
@@ -175,4 +206,4 @@ is read-only (D-4) but still grants read access to production data.
 - `context/PRODUCTION_DEPLOYMENT.md` — production topology, deploys, Render.
 - `context/DATA_STORAGE.md` — what lives in Postgres vs the object store.
 - `ops/backup/README.md` — operator index for the scripts.
-- `planning/features/database-backups/` — PRD, decisions (D-1…D-11), phases.
+- `planning/archive/dated/2026-07-20/database-backups/` — PRD, decisions (D-1…D-11), phases.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: In progress — criteria 1-4 built but unproven in production; 5-6 pending drill
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Behavior contract and success criteria for independent, off-site,
   encrypted Postgres backups + tested restore.

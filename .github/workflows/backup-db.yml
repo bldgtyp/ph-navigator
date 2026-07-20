@@ -17,7 +17,7 @@
 # Required repo variables (non-secret):
 #   BACKUP_R2_BUCKET             e.g. phn-db-backups
 #   BACKUP_AGE_RECIPIENT         age1... public key
-# Setup steps: planning/features/database-backups/phases/phase-02-encryption-keys.md
+# Setup steps: planning/archive/dated/2026-07-20/database-backups/phases/phase-02-encryption-keys.md
 #
 # `schedule` + `workflow_dispatch` only: fork pull requests can neither run this
 # job nor read its secrets.

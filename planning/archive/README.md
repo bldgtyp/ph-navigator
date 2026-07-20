@@ -3,6 +3,22 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-20
+
+- `database-backups` - Independent off-site encrypted Postgres backup plus a
+  tested restore path, now operating. Daily GitHub Actions job dumps production
+  with a least-privilege `phn_backup` role, encrypts with `age` to a recipient
+  whose private key is held offline, and stores to the Cloudflare R2 bucket
+  `phn-db-backups` (30 daily / 12 monthly, lifecycle-expired). Backup logic
+  lives in `ops/backup/*.sh` over a shared `config.sh` (D-11) rather than in
+  workflow YAML, which is what makes `make backup-drill-local` able to
+  round-trip the real scripts against local Postgres; that drill caught two
+  bugs before they could reach production. First production backup and restore
+  drill passed 2026-07-20 (2 users / 5 projects / 7 project_versions, bodies
+  intact). Runbook: `context/DATABASE_BACKUPS.md`, which also carries the two
+  outstanding setup items (move the age identity out of Downloads; install the
+  weekly Dropbox launchd pull).
+
 ## 2026-07-19
 
 - `heat-pump-display-name` - Documentation tab prerequisite: all four Heat

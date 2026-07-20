@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: In progress — all agent-buildable phases built; Phases 00-02 + drills are Ed's
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: High-level implementation sequence, ownership, and cost for the
   database-backups feature.

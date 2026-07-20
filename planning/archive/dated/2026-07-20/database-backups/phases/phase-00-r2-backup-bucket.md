@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
+DATE: 2026-07-20
 TIME: 16:20 EDT
-STATUS: Planned
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Provision the dedicated R2 backup bucket, scoped tokens, and lifecycle.
 OWNER: Ed (Cloudflare dashboard / API)

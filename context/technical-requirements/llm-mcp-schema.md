@@ -187,7 +187,7 @@ several times since the pre-launch baseline. Every bump uses the
 project-document upgrade lane: a read-time forward-only shim chain
 (live — see `save-versioning.md`), committed fixtures, an audit CLI
 drill, and the schema-bump checklist in
-`planning/features/beta-schema-evolution/schema-bump-checklist.md`.
+`planning/archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md`.
 
 Mechanisms:
 

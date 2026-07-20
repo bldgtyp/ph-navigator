@@ -17,7 +17,7 @@
 -- Requires the connecting user to have CREATEROLE. Check first with:
 --   SELECT rolname, rolcreaterole, rolsuper FROM pg_roles WHERE rolname = current_user;
 -- If CREATEROLE is not available, use the fallback documented in
--- planning/features/database-backups/phases/phase-01-readonly-role.md (Step 4).
+-- planning/archive/dated/2026-07-20/database-backups/phases/phase-01-readonly-role.md (Step 4).
 --
 -- Expect two harmless warnings on Render: "no privileges were granted for
 -- pg_stat_statements[_info]". Those views belong to a Render-owned extension,

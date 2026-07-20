@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: Built — workflow committed; body extracted to ops/backup/backup.sh per D-11
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: The scheduled GitHub Actions workflow that dumps, encrypts, and uploads
   the daily backup, with the monthly copy and integrity checks.

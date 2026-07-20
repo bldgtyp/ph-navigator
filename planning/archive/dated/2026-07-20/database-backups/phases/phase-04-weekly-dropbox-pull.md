@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 10:20 EDT
-STATUS: Built — pull script + launchd template committed; Ed installs on his Mac
+STATUS: Complete — operating in production since 2026-07-20; first backup + restore drill passed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Weekly pull of the R2 backup bucket to a Dropbox folder on Ed's Mac, so a
   copy lives on hardware Ed controls (the truly provider-independent tier).
