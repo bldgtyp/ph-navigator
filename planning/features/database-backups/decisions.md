@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Accepted directionally by Ed (2026-07-19); implementation pending review
+DATE: 2026-07-20
+TIME: 09:40 EDT
+STATUS: D-1..D-10 stand as written; D-11 opened during Phase 03, decide in Phase 04/05
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Decision log for the database-backups feature.
 RELATED:
@@ -118,3 +118,25 @@ focused. R2 is also independently very durable.
 `pull_request`. Secrets are unavailable to fork PRs by construction.
 **Why:** Prevents a fork PR from ever executing the backup job or reading the
 backup/DB secrets.
+
+## D-11 — Extract the backup body to `ops/backup/backup.sh`? (OPEN — decide in Phase 04/05)
+
+**Raised by:** the Phase 03 cleanup review, after the workflow was built.
+**The observation:** the dump/validate/encrypt/upload logic currently lives in
+the workflow YAML, so the only way to execute it is `workflow_dispatch` against
+the **production** database. Phases 04 and 05 put comparable logic in checked-in
+`ops/backup/*.sh`, so the feature would end up with pull-as-script and
+restore-as-script but backup-as-YAML.
+**The deeper alternative:** `ops/backup/backup.sh` reading its config from env,
+with the workflow reduced to install-deps + one invocation. That unlocks what
+Phase 05 actually wants — `backup.sh` against a local Docker PG16 →
+`restore.sh` into a scratch DB, a full round-trip drill with no production
+involvement and no offline key. A shared key-scheme helper would also stop the
+`daily/ph_navigator/<y>/<m>/…` convention from being independently re-derived by
+the workflow, the pull script, and the restore script, where a layout change
+would break the consumers as *empty results* rather than errors.
+**Why not done in Phase 03:** it expands Phase 03's scope and changes the shape
+of Phases 04–05, which are Ed's to approve. The workflow as built is correct;
+this is a structural improvement, not a fix.
+**Decide when:** writing Phase 04, before a second consumer hardcodes the key
+scheme.

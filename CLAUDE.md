@@ -12,7 +12,8 @@ docs may still use "V2" for the rewrite generation.
 
 Repo map: `backend/` (FastAPI + raw SQL + Alembic) · `frontend/` (Vite + React
 + TS) · `context/` (canonical reference — `context/README.md` is the full
-router) · `planning/` (feature PRDs, phases, reviews) · `research/` (V1
+router) · `ops/` (operator files for one-time infrastructure setup, e.g.
+`ops/backup/`) · `planning/` (feature PRDs, phases, reviews) · `research/` (V1
 precedent, **not** importable) · `working/` (gitignored scratch).
 
 ## Status

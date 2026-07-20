@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned — implementation not started (awaiting review)
+DATE: 2026-07-20
+TIME: 09:40 EDT
+STATUS: Phase 03 built (branch `feature/database-backups`); Phases 00–02 pending Ed
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Live state ledger for the database-backups feature.
 RELATED:
@@ -12,10 +12,15 @@ RELATED:
 
 # STATUS — Database Backups
 
-## State: Planned (review packet only)
+## State: Phase 03 built; no cloud resources yet
 
-No code, no cloud resources, no secrets created. This folder is a review
-artifact. Nothing under `.github/`, `ops/`, or `context/` has been written.
+On branch `feature/database-backups`: `.github/workflows/backup-db.yml` plus the
+`ops/backup/` operator files (`create-readonly-role.sql`, `r2-lifecycle.json`,
+`README.md`). Nothing under `context/` yet — the runbook is Phase 06.
+
+No cloud resources and no secrets exist. The workflow is inert until Ed
+completes Phases 00–02: without the secrets it fails preflight, and it has no
+push trigger, so merging it deploys nothing.
 
 ## What's decided
 
@@ -26,10 +31,12 @@ artifact. Nothing under `.github/`, `ops/`, or `context/` has been written.
 
 ## Immediate next step
 
-Ed reviews this packet (start with `phases/`). On approval, implementation
-proceeds in phase order per `PLAN.md`. Agent can build Phases 03–06 (code +
-docs) into a branch/PR immediately; Ed does the console/secret steps of Phases
-00–02 in parallel.
+Ed does Phases 00–02 (R2 bucket + tokens, `phn_backup` role, age keypair +
+GitHub secrets), then dispatches "Backup Database" for the first green run.
+`ops/backup/create-readonly-role.sql` and `ops/backup/r2-lifecycle.json` are the
+artifacts those phases need. Phases 04–06 (Dropbox pull, restore drill, runbook)
+are agent-buildable next and only need a real object in the bucket to verify
+against.
 
 ## Open questions for review
 

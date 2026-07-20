@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned — implementation not started
+DATE: 2026-07-20
+TIME: 09:40 EDT
+STATUS: In progress — Phase 03 built; 00–02 (Ed) and 04–06 outstanding
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: High-level implementation sequence, ownership, and cost for the
   database-backups feature.
@@ -42,18 +42,21 @@ green.
 Nothing the agent writes contains a secret. Everything secret is entered by Ed
 into Render, Cloudflare, GitHub, or his keychain.
 
-## Files this feature will add (when implementation is approved)
+## Files this feature adds (✅ = built)
 
 ```
-.github/workflows/backup-db.yml         # Phase 03 — daily dump job
-ops/backup/restore.sh                   # Phase 05 — fetch → decrypt → pg_restore → verify
-ops/backup/pull-to-dropbox.sh           # Phase 04 — rclone sync R2 → Dropbox
-ops/backup/com.bldgtyp.phn-backup-pull.plist   # Phase 04 — launchd template
-ops/backup/r2-lifecycle.json            # Phase 00 — lifecycle rules (apply via API or dashboard)
-ops/backup/create-readonly-role.sql     # Phase 01 — the phn_backup role SQL
-ops/backup/README.md                    # operator index for the above
-context/DATABASE_BACKUPS.md             # Phase 06 — canonical runbook
+✅ .github/workflows/backup-db.yml      # Phase 03 — daily dump job
+✅ ops/backup/r2-lifecycle.json         # Phase 00 — lifecycle rules (apply via dashboard)
+✅ ops/backup/create-readonly-role.sql  # Phase 01 — the phn_backup role SQL
+✅ ops/backup/README.md                 # operator index for the above
+   ops/backup/pull-to-dropbox.sh        # Phase 04 — rclone sync R2 → Dropbox
+   ops/backup/com.bldgtyp.phn-backup-pull.plist   # Phase 04 — launchd template
+   ops/backup/restore.sh                # Phase 05 — fetch → decrypt → pg_restore → verify
+   context/DATABASE_BACKUPS.md          # Phase 06 — canonical runbook
 ```
+
+The Phase 00/01 files shipped with Phase 03 because Ed's console work needs them
+in hand. `ops/` is a new top-level directory; it is now in `CLAUDE.md`'s repo map.
 
 Plus edits: a dispatch-table row in `CLAUDE.md`, a cross-link in
 `context/PRODUCTION_DEPLOYMENT.md`, and a `context/README.md` router line.

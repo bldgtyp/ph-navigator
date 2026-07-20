@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned — implementation not started (review packet)
+DATE: 2026-07-20
+TIME: 09:40 EDT
+STATUS: In progress — Phase 03 built; Phases 00–02 (Ed) and 04–06 outstanding
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Add an independent, off-site, encrypted backup of the production
   PH-Navigator Postgres database (the versioned JSONB project documents +
@@ -49,9 +49,9 @@ discovered a week later is unrecoverable. This feature closes both gaps.
 1. `PRD.md` — what we protect against, targets (RPO/RTO), retention, scope.
 2. `decisions.md` — the choices already made and the alternatives rejected.
 3. `PLAN.md` — the phase map, the who-does-what matrix, and cost.
-4. `phases/phase-00..06` — the detailed, step-by-step runbooks. **This is the
-   review meat.** Each phase marks whether Ed or the agent owns each step, gives
-   exact commands, a verification check, and a rollback.
+4. `phases/phase-00..06` — the detailed, step-by-step runbooks. Each phase marks
+   whether Ed or the agent owns each step, gives exact commands, a verification
+   check, and a rollback. Phase 03 is built; the rest are still plans.
 5. `STATUS.md` — current state, immediate next step, open questions.
 
 ## Shape at a glance
