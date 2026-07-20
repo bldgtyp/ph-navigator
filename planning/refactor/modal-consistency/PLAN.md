@@ -74,7 +74,7 @@ Added a `resizable` prop to `ModalDialog` to apply `.modal-panel--resizable`.
 `CatalogOptionCascadeModal`'s conditional header Close is deferred to Phase 04
 (multi-action footer rework).
 
-## Phase 02 — `RowEditModal` cluster (1 fix → 7 modals)
+## Phase 02 — `RowEditModal` cluster (1 fix → 7 modals) — ✅ DONE
 
 - Fix `frontend/src/shared/ui/data-table/row-edit.tsx`: footer via `DialogActions`
   (Save gets `primary-button`, Delete gets `danger-button`), contract labels,
@@ -82,6 +82,16 @@ Added a `resizable` prop to `ModalDialog` to apply `.modal-panel--resizable`.
 - Verifies across: `RoomModal`, `VentilatorRowModal`, `IndoorEquipRowModal`,
   `IndoorUnitRowModal`, `OutdoorEquipRowModal`, `OutdoorUnitRowModal`,
   `RecordDetailModal`.
+
+Delivered: edit mode now renders the footer through `DialogActions` — Save is a
+styled `primary-button` (was an unstyled submit), Delete rides the new
+`extraActions` slot as a `danger-button`, error uses the `DialogActions`
+`.form-error` slot. Read-only mode keeps its single "Close" viewer footer and
+gains backdrop dismiss; the panel is `resizable`. All 7 consumers inherit the
+fix. Verified by the row-edit + record-detail + heat-pump unit suites (268
+tests green) + `make ci`; live modal is reachable only via a right-click
+context menu (outside the browser-driver `--click` DSL), so verification is
+code + unit-test based for this phase.
 
 ## Phase 03 — "own-footer, single-primary" partials → `DialogActions`
 

@@ -14,7 +14,7 @@ RELATED:
 # Status — Modal Consistency Refactor
 
 **State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phases 00–01 complete; Phases 02–06 pending.
+(off `main`). Phases 00–02 complete; Phases 03–06 pending.
 
 ## Done
 
@@ -35,9 +35,10 @@ RELATED:
 
 ## Next step
 
-Phase 02 — fix the shared `RowEditModal` footer once (Save → `primary-button`,
-Delete → `danger-button`, contract labels, resizable panel), cascading across
-the 7 row-edit modals.
+Phase 03 — bulk-convert the "own-footer, single-primary" partials to
+`DialogActions` (catalogs / climate / projects / admin / status / model_viewer /
+project_document / equipment / documentation / envelope). Biggest count of the
+missing-`.primary-button` defect.
 
 ## Blockers / decisions
 

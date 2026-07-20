@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { parseNumberInput } from "../../../lib/units/format";
 import { AutocompleteSelect } from "../AutocompleteSelect";
+import { DialogActions } from "../DialogActions";
 import { ModalDialog } from "../ModalDialog";
 import { LinkedRecordPicker, type LinkedRecordPickerCandidate } from "./fields/linkedRecord/Picker";
 
@@ -45,7 +46,15 @@ export function RowEditModal({
   };
 
   return (
-    <ModalDialog title={title} titleId={titleId} onClose={onCancel}>
+    <ModalDialog
+      title={title}
+      titleId={titleId}
+      onClose={onCancel}
+      // Read-only mode is a viewer: click-away dismiss is expected. Edit mode
+      // is a form: no backdrop dismiss so unsaved input can't be lost.
+      dismissOnBackdrop={readOnly}
+      resizable
+    >
       <form className="project-form table-row-modal-form" noValidate onSubmit={handleSubmit}>
         {frozenReason ? (
           <div className="draft-banner draft-conflict-banner" role="alert">
@@ -57,32 +66,35 @@ export function RowEditModal({
             ) : null}
           </div>
         ) : null}
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
         {children}
-        <div className="modal-actions">
-          {onDelete && !readOnly ? (
-            <button
-              type="button"
-              className="danger-button"
-              onClick={onDelete}
-              disabled={deleteDisabled}
-            >
-              {deleteLabel ?? "Delete"}
+        {readOnly ? (
+          // View-only: the single dismiss reads "Close" (contract exception).
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={onCancel}>
+              {cancelLabel}
             </button>
-          ) : null}
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            {cancelLabel}
-          </button>
-          {!readOnly ? (
-            <button type="submit" disabled={submitDisabled}>
-              {submitLabel}
-            </button>
-          ) : null}
-        </div>
+          </div>
+        ) : (
+          <DialogActions
+            busy={isSaving}
+            error={error ?? null}
+            submitLabel={submitLabel}
+            onClose={onCancel}
+            submitDisabled={submitDisabled}
+            extraActions={
+              onDelete ? (
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={onDelete}
+                  disabled={deleteDisabled}
+                >
+                  {deleteLabel ?? "Delete"}
+                </button>
+              ) : undefined
+            }
+          />
+        )}
       </form>
     </ModalDialog>
   );
