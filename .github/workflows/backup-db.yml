@@ -51,10 +51,18 @@ jobs:
       RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
       RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.BACKUP_R2_ENDPOINT }}
       RCLONE_CONFIG_R2_ACL: private
-      BUCKET: ${{ vars.BACKUP_R2_BUCKET }}
+      # Whole destination prefix, in rclone notation (see ops/backup/config.sh).
+      PHN_BACKUP_STORE: R2:${{ vars.BACKUP_R2_BUCKET }}
       AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
       BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
     steps:
+      - name: Check out the backup scripts
+        uses: actions/checkout@v4
+        with:
+          # The job runs three shell scripts; it does not need the app tree.
+          sparse-checkout: ops/backup
+          sparse-checkout-cone-mode: false
+
       - name: Preflight — required secrets and variables are present
         run: |
           set -euo pipefail
@@ -64,7 +72,7 @@ jobs:
           missing=
           for name in BACKUP_DATABASE_URL RCLONE_CONFIG_R2_ACCESS_KEY_ID \
                       RCLONE_CONFIG_R2_SECRET_ACCESS_KEY RCLONE_CONFIG_R2_ENDPOINT \
-                      BUCKET AGE_RECIPIENT; do
+                      PHN_BACKUP_STORE AGE_RECIPIENT; do
             [ -n "${!name:-}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
@@ -80,58 +88,15 @@ jobs:
             | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/pgdg.gpg
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client-16 age rclone
+          # jq is preinstalled on GitHub runners, but backup.sh needs it, so
+          # declare it rather than depending on the image staying that way.
+          sudo apt-get install -y -qq postgresql-client-16 age rclone jq
           pg_dump --version && age --version && rclone version | head -1
 
       - name: Dump, encrypt, upload
         run: |
           set -euo pipefail
-          umask 077
-          work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
-          ts="$(date -u +%Y%m%dT%H%M%SZ)"; y="$(date -u +%Y)"; m="$(date -u +%m)"
-          dump="$work/ph_navigator-$ts.dump"
-
-          # 1) Consistent custom-format dump. --no-owner/--no-privileges keep a
-          #    restore into a fresh database clean (no Render-specific roles).
-          #    Dump to a file rather than piping straight to R2: a broken pipe
-          #    would otherwise upload a silently truncated "backup".
-          #    Custom format compresses at its default level; maxing it out costs
-          #    several times the CPU for a percent or two of size.
-          pg_dump --format=custom --no-owner --no-privileges \
-            --file="$dump" "$BACKUP_DATABASE_URL"
-
-          # 2) Prove the archive is well-formed and non-trivial before it ships.
-          #    `pg_restore --list` parses the table of contents, which catches
-          #    corruption a size check alone would miss.
-          tables="$(pg_restore --list "$dump" | grep -c 'TABLE DATA' || true)"
-          size="$(stat -c%s "$dump")"
-          echo "dump bytes: $size; TABLE DATA entries: $tables"
-          if [ "$size" -lt 20000 ] || [ "$tables" -lt 1 ]; then
-            echo "::error::Suspect dump ($size bytes, $tables tables) — refusing to upload." && exit 1
-          fi
-
-          # 3) Encrypt to the offline recipient. The runner holds only the public
-          #    half and cannot read this or any previous backup.
-          age -r "$AGE_RECIPIENT" -o "$dump.age" "$dump"
-
-          # 4) Upload today's object; add the monthly copy on the 1st (UTC).
-          key="daily/ph_navigator/$y/$m/ph_navigator-$ts.dump.age"
-          rclone copyto "$dump.age" "R2:$BUCKET/$key" --s3-no-check-bucket
-          echo "uploaded: $key"
-          #    The monthly copy is made server-side from the object just stored,
-          #    so it is byte-identical and costs no second upload.
-          if [ "$(date -u +%d)" = "01" ]; then
-            mkey="monthly/ph_navigator/$y/ph_navigator-$y-$m.dump.age"
-            rclone copyto "R2:$BUCKET/$key" "R2:$BUCKET/$mkey" --s3-no-check-bucket
-            echo "monthly: $mkey"
-          fi
-
-          # 5) Remote integrity — the stored object is readable and matches the
-          #    bytes we produced. Guards against a truncated or failed upload.
-          local_enc="$(stat -c%s "$dump.age")"
-          remote_enc="$(rclone size "R2:$BUCKET/$key" --json | jq -r '.bytes')"
-          echo "encrypted local=$local_enc remote=$remote_enc"
-          if [ "$local_enc" != "$remote_enc" ]; then
-            echo "::error::Remote size ($remote_enc) != local ($local_enc)." && exit 1
-          fi
-          echo "### DB backup OK — \`$key\` ($remote_enc bytes)" >> "$GITHUB_STEP_SUMMARY"
+          # All logic lives in ops/backup/backup.sh so the same code path can be
+          # exercised locally by ops/backup/drill-local.sh.
+          key="$(ops/backup/backup.sh)"
+          echo "### DB backup OK — \`$key\`" >> "$GITHUB_STEP_SUMMARY"

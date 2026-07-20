@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned
+DATE: 2026-07-20
+TIME: 10:20 EDT
+STATUS: Built — runbook + router wiring committed; archive pending the first production drill
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Canonical runbook doc + wiring into the docs router, and the closeout gate.
 OWNER: Agent.
@@ -12,6 +12,19 @@ RELATED:
 ---
 
 # Phase 06 — Docs and closeout
+
+## As built
+
+Steps 1–3 are done: `context/DATABASE_BACKUPS.md` is written, and the router
+wiring landed in `CLAUDE.md` (dispatch row), `context/README.md` (on-demand
+reference), and `context/PRODUCTION_DEPLOYMENT.md` (the "Database Recovery"
+section gained an off-site row, and its "no automatic nightly export" claim was
+corrected to say the off-site layer is built but not yet operating).
+
+Step 4's gate ran with `shellcheck -x` clean on all five scripts, as this phase
+asked. Step 5 is **not** done and cannot be: this feature is not `Complete`
+until a production drill has passed, which needs Phases 00–02 first. Do not
+archive the folder before then.
 
 **Goal:** the backup/restore system is discoverable and operable by a future
 person (or agent) with zero tribal knowledge, and the repo's status docs reflect

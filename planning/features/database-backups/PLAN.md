@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
-TIME: 09:40 EDT
-STATUS: In progress — Phase 03 built; 00–02 (Ed) and 04–06 outstanding
+TIME: 10:20 EDT
+STATUS: In progress — all agent-buildable phases built; Phases 00-02 + drills are Ed's
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: High-level implementation sequence, ownership, and cost for the
   database-backups feature.
@@ -45,21 +45,25 @@ into Render, Cloudflare, GitHub, or his keychain.
 ## Files this feature adds (✅ = built)
 
 ```
-✅ .github/workflows/backup-db.yml      # Phase 03 — daily dump job
+✅ .github/workflows/backup-db.yml      # Phase 03 — daily job; calls backup.sh
+✅ ops/backup/config.sh                 # D-11 — shared store location + key scheme
+✅ ops/backup/backup.sh                 # D-11 — dump → validate → encrypt → store
+✅ ops/backup/pull-to-dropbox.sh        # Phase 04 — rclone R2 → Dropbox
+✅ ops/backup/com.bldgtyp.phn-backup-pull.plist   # Phase 04 — launchd template
+✅ ops/backup/restore.sh                # Phase 05 — fetch → decrypt → restore → verify
+✅ ops/backup/drill-local.sh            # Phase 05 — local round-trip drill
 ✅ ops/backup/r2-lifecycle.json         # Phase 00 — lifecycle rules (apply via dashboard)
 ✅ ops/backup/create-readonly-role.sql  # Phase 01 — the phn_backup role SQL
-✅ ops/backup/README.md                 # operator index for the above
-   ops/backup/pull-to-dropbox.sh        # Phase 04 — rclone sync R2 → Dropbox
-   ops/backup/com.bldgtyp.phn-backup-pull.plist   # Phase 04 — launchd template
-   ops/backup/restore.sh                # Phase 05 — fetch → decrypt → pg_restore → verify
-   context/DATABASE_BACKUPS.md          # Phase 06 — canonical runbook
+✅ ops/backup/README.md                 # operator index
+✅ context/DATABASE_BACKUPS.md          # Phase 06 — canonical runbook
 ```
 
-The Phase 00/01 files shipped with Phase 03 because Ed's console work needs them
-in hand. `ops/` is a new top-level directory; it is now in `CLAUDE.md`'s repo map.
+Plus `make backup-drill-local`, a `CLAUDE.md` dispatch row, a `context/README.md`
+router line, and a corrected "Database Recovery" section in
+`context/PRODUCTION_DEPLOYMENT.md`.
 
-Plus edits: a dispatch-table row in `CLAUDE.md`, a cross-link in
-`context/PRODUCTION_DEPLOYMENT.md`, and a `context/README.md` router line.
+Every agent-buildable file exists. What remains is Ed's: Phases 00–02 (bucket,
+role, keys), installing the launchd job, and the first production drill.
 
 ## Cost estimate
 

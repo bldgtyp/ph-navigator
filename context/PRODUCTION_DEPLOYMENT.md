@@ -263,16 +263,20 @@ Two independent mechanisms cover the production Postgres
 |---|---|---|
 | Point-in-Time Recovery | **3 days** | Restore to any timestamp in the window (Render → database → Recovery → Restore database). 7 days requires a Pro workspace. |
 | Logical export | **>= 7 days** retention | Render → database → Recovery → Export → Create export; downloadable `.dir.tar.gz`. Taken on demand, not on a schedule. |
+| Off-site encrypted dumps | **30 daily + 12 monthly** | Outside Render entirely (R2 + Dropbox), `age`-encrypted. See `context/DATABASE_BACKUPS.md`. ⚠️ Built but **not yet operating** — needs the R2 bucket, backup role, and keys provisioned. |
 
 Consequences worth planning around:
 
 - PITR is the only mechanism that recovers an *arbitrary* moment, and it expires
   after 3 days. Anything older can only be restored from a logical export that
-  someone chose to take.
-- Exports are **manual**. There is no automatic nightly export, so a
-  recovery point exists only if it was created deliberately. Take one before any
-  irreversible change — a forward-only schema migration, a bulk data edit, or a
-  destructive maintenance script.
+  someone chose to take, or — once it is operating — an off-site daily dump.
+- Every Render-side copy lives **inside Render**, so an account suspension,
+  compromise, or accidental service deletion takes the data and its backups
+  together. That is the gap the off-site layer closes.
+- Render exports are **manual**. Until the off-site daily job is live there is no
+  automatic nightly export, so a recovery point exists only if it was created
+  deliberately. Take one before any irreversible change — a forward-only schema
+  migration, a bulk data edit, or a destructive maintenance script.
 - A schema migration is not reversible by redeploying old code: once a body is
   written at a newer `schema_version`, older application code rejects it as
   schema-too-new. Past that point, recovery means restoring the database, not

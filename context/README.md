@@ -83,6 +83,10 @@ Load these only when the task touches the relevant surface:
 - `DEVELOPMENT_WORKFLOW.md` — branch policy, build-minute discipline, CI
   expectations, the explicit "Deploy Production" workflow (Render auto-deploy
   is off; merging to `main` does not deploy), and deploy-aware closeout rules.
+- `DATABASE_BACKUPS.md` — the off-site encrypted backup system and the restore
+  runbook: what is and is not backed up, the R2/Dropbox layers alongside Render
+  PITR, routine operations, restore and disaster-recovery steps, the drill log,
+  and key/credential rotation.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `ui/pages/spaces-equipment-tab.md` when touching table behavior.
