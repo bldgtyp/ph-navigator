@@ -9,11 +9,17 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-agent-browser seed-agent-mcp smoke-mcp-local seed-perf-stress seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-perf e2e-report clean graphify-prune
+        backup-drill-local smoke seed-dev-user seed-agent-user seed-agent-browser seed-agent-mcp smoke-mcp-local seed-perf-stress seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-perf e2e-report clean graphify-prune
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
 TEST_DATABASE_URL ?= postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test
+
+# Local Postgres URLs for the dev database and its maintenance connection.
+# The backup drill dumps the first and creates its scratch database via the
+# second, so a port/password change lands in one place.
+DEV_DATABASE_URL ?= postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2
+ADMIN_DATABASE_URL ?= postgresql://phn:phn_local_only@localhost:5433/postgres
 
 # pytest-xdist worker count. `auto` = one worker per available CPU. Each
 # worker is routed to its own *_test_gw<N> database by tests/conftest.py;
@@ -236,6 +242,11 @@ format-check: ## Check backend and frontend formatting without writing files
 	cd frontend && pnpm run format:check
 
 # ─────────────── misc ───────────────
+
+backup-drill-local: db-wait ## Round-trip the backup scripts against local Postgres (no prod, no real key)
+	PHN_DRILL_SOURCE_URL="$(DEV_DATABASE_URL)" \
+	PHN_DRILL_ADMIN_URL="$(ADMIN_DATABASE_URL)" \
+	ops/backup/drill-local.sh
 
 smoke: db-up ## Verify the box is wired up (run after `make setup`)
 	cd backend && uv run python -c "import fastapi, psycopg, pydantic; print('backend ok')"

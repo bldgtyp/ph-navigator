@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned
+DATE: 2026-07-20
+TIME: 10:20 EDT
+STATUS: Built — pull script + launchd template committed; Ed installs on his Mac
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Weekly pull of the R2 backup bucket to a Dropbox folder on Ed's Mac, so a
   copy lives on hardware Ed controls (the truly provider-independent tier).
@@ -43,75 +43,25 @@ key store:
 ~/Dropbox/bldgtyp-00/00_PH_Tools/_backups/phn-db/
 ```
 
-## Proposed `ops/backup/pull-to-dropbox.sh`
+## As built
 
-```bash
-#!/usr/bin/env bash
-# Weekly: mirror the R2 DB-backup bucket into a Dropbox folder on this Mac.
-# Files are age-encrypted; this script never decrypts and needs no key.
-set -euo pipefail
+`ops/backup/pull-to-dropbox.sh` and `ops/backup/com.bldgtyp.phn-backup-pull.plist`
+are committed; those files are canonical. Deltas from the sketch above:
 
-REMOTE="phn-backups-ro:phn-db-backups"
-DEST="$HOME/Dropbox/bldgtyp-00/00_PH_Tools/_backups/phn-db"
-LOG="$HOME/Library/Logs/phn-backup-pull.log"
+- **Store config is shared, not hardcoded.** The script sources
+  `ops/backup/config.sh` and reads `PHN_BACKUP_STORE` (default
+  `phn-backups-ro:phn-db-backups`), so the remote and key scheme have one
+  definition across every script — decision D-11.
+- **A `.last-success` stamp** (UTC timestamp + newest key) is written into the
+  destination on every successful run. This tier has no equivalent of the daily
+  job's failure email — launchd records an exit nobody reads — so without a
+  stamp a dead pull is undetectable. The runbook has a staleness check.
+- `--fast-list` added; the `--immutable` / no-`--delete` policy is unchanged and
+  its reasoning now lives in the script.
+- Destination and log path are overridable (`PHN_BACKUP_DROPBOX_DIR`,
+  `PHN_BACKUP_LOG`); the defaults are the paths above.
 
-mkdir -p "$DEST"
-{
-  echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) pull start ==="
-  # Mirror daily/ and monthly/. --immutable: never rewrite an existing object
-  # (dumps are write-once). No --delete: keep the full local history even after
-  # R2 lifecycle expires the cloud copy, so the Dropbox tier retains longer.
-  rclone copy "$REMOTE" "$DEST" --immutable --create-empty-src-dirs -v
-  newest="$(ls -t "$DEST"/daily/ph_navigator/*/*/*.age 2>/dev/null | head -1 || true)"
-  echo "newest daily local: ${newest:-<none>}"
-  echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) pull done ==="
-} >> "$LOG" 2>&1
-```
-
-> Design choice: **no `--delete`**. R2 lifecycle prunes the cloud side (30/365
-> days). The Dropbox tier intentionally keeps everything it has ever pulled, so
-> the on-your-hardware copy can outlast the cloud retention. If that grows too
-> large years out, add a dated prune later — a good problem to have.
-
-## Proposed `ops/backup/com.bldgtyp.phn-backup-pull.plist` (launchd template)
-
-Install to `~/Library/LaunchAgents/`. Runs Sundays at 09:00 local. `<REPO>` is
-replaced with the absolute path to the checked-out repo (or copy the script to a
-stable path and point at that).
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>            <string>com.bldgtyp.phn-backup-pull</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/bash</string>
-    <string><REPO>/ops/backup/pull-to-dropbox.sh</string>
-  </array>
-  <key>StartCalendarInterval</key>
-  <dict>
-    <key>Weekday</key><integer>0</integer>   <!-- Sunday -->
-    <key>Hour</key><integer>9</integer>
-    <key>Minute</key><integer>0</integer>
-  </dict>
-  <!-- launchd runs a missed StartCalendarInterval job once after wake. -->
-  <key>StandardOutPath</key>  <string>/tmp/phn-backup-pull.out</string>
-  <key>StandardErrorPath</key><string>/tmp/phn-backup-pull.err</string>
-</dict>
-</plist>
-```
-
-Install / load:
-
-```bash
-cp ops/backup/com.bldgtyp.phn-backup-pull.plist ~/Library/LaunchAgents/
-# edit the <REPO> path first
-launchctl load ~/Library/LaunchAgents/com.bldgtyp.phn-backup-pull.plist
-launchctl start com.bldgtyp.phn-backup-pull      # run once now to test
-```
+The plist install command is in the file's own header comment.
 
 ## Verification
 

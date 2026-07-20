@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd template for the weekly R2 → Dropbox backup pull.
+
+  Install:
+    sed "s#<REPO>#$PWD#" ops/backup/com.bldgtyp.phn-backup-pull.plist \
+      > ~/Library/LaunchAgents/com.bldgtyp.phn-backup-pull.plist
+    launchctl load ~/Library/LaunchAgents/com.bldgtyp.phn-backup-pull.plist
+    launchctl start com.bldgtyp.phn-backup-pull    # run once now to test
+
+  Replace <REPO> with the absolute path to the checked-out repo, or copy the
+  script to a stable location and point at that instead — launchd will not
+  expand variables or ~ here.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.bldgtyp.phn-backup-pull</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string><REPO>/ops/backup/pull-to-dropbox.sh</string>
+  </array>
+
+  <!-- Sundays at 09:00 local. launchd runs one missed occurrence after wake,
+       so a Mac that was asleep still pulls once it comes back. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>9</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- The script keeps its own log; these capture anything that escapes it
+       (a missing rclone, a bad plist path). -->
+  <key>StandardOutPath</key>
+  <string>/tmp/phn-backup-pull.out</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/phn-backup-pull.err</string>
+</dict>
+</plist>

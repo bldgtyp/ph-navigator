@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-19
-TIME: 16:20 EDT
-STATUS: Planned
+DATE: 2026-07-20
+TIME: 10:20 EDT
+STATUS: Built — restore.sh + local drill committed and passing; production drill pending Phases 00-02
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: The restore procedure and the first (and recurring quarterly) restore
   drill that proves the backups are actually usable.
@@ -28,75 +28,45 @@ The **private age identity** (Phase 02) must be available — from Apple Passwor
 or the offline Dropbox key store. This is the only step that touches the private
 key.
 
-## Proposed `ops/backup/restore.sh`
+## As built
 
-```bash
-#!/usr/bin/env bash
-# Restore a PHN DB backup into a target database and sanity-check it.
-# Usage:
-#   ops/backup/restore.sh <r2-object-key> <target-db-url> <path-to-age-identity>
-# Example (drill into a local scratch DB):
-#   ops/backup/restore.sh \
-#     daily/ph_navigator/2026/07/ph_navigator-20260719T063000Z.dump.age \
-#     "postgresql://phn:phn@localhost:5433/phn_restore_test" \
-#     ~/secure/phn-backup-identity.txt
-set -euo pipefail
-KEY="$1"; TARGET_URL="$2"; IDENTITY="$3"
-REMOTE="phn-backups-ro:phn-db-backups"   # read-only rclone remote (Phase 04)
+`ops/backup/restore.sh` is committed and canonical. Deltas from the sketch above:
 
-work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
-umask 077
+- **Signature reordered and the key made optional:**
+  `restore.sh <target-db-url> <age-identity> [object-key]`. With no key it
+  resolves the newest daily via the shared `latest_daily_key` helper, replacing
+  the fragile `rclone lsf ... | sed 's#^#daily/#'` incantation the drill
+  procedure used to need.
+- **Fetch and decrypt are streamed** (`rclone cat | age -d`), so there is one
+  temp file rather than two. The plaintext still lands on disk before
+  `pg_restore`, so a broken transfer cannot half-restore a database.
+- **Row-count SQL is shared** with the drill via `row_counts_sql` in
+  `config.sh`, so the two cannot drift apart.
 
-echo "1/4 fetch $KEY"
-rclone copyto "$REMOTE/$KEY" "$work/backup.dump.age"
+### Plus a local round-trip drill — `ops/backup/drill-local.sh`
 
-echo "2/4 decrypt (needs the offline identity)"
-age -d -i "$IDENTITY" -o "$work/backup.dump" "$work/backup.dump.age"
+Not in the original plan; enabled by D-11 and the reason that decision was
+worth taking. `make backup-drill-local` runs the **real** `backup.sh` →
+`restore.sh` against local Postgres, using a throwaway age keypair and a temp
+directory as the store — no production, no R2, no offline key. It:
 
-echo "3/4 pg_restore into target"
-# --clean --if-exists lets you re-run into a non-empty scratch DB.
-pg_restore --no-owner --no-privileges --clean --if-exists \
-  --dbname "$TARGET_URL" "$work/backup.dump"
+- refuses to run against a database with no projects (an empty drill passes
+  vacuously and proves nothing);
+- forces the monthly-copy branch, which otherwise executes only on the 1st,
+  against production, untested;
+- asserts source and restored row counts match and every
+  `project_versions.body` is still a JSON object;
+- drops the scratch database and the key on exit.
 
-echo "4/4 sanity counts"
-psql "$TARGET_URL" -c "\
-  select 'users' t, count(*) n from users \
-  union all select 'projects', count(*) from projects \
-  union all select 'project_versions', count(*) from project_versions \
-  union all select 'project_version_drafts', count(*) from project_version_drafts;"
-echo "restore OK — compare counts against production, then drop the scratch DB."
-```
+It found two real bugs on first run (see D-11). What it does **not** cover:
+production credentials, the R2 bucket, and the real recipient — that is the
+quarterly production drill below.
 
-## Drill procedure (Ed, ~20 min, first time then quarterly)
+## Drill procedure
 
-1. **Record production truth** (from a read-only prod connection or the Render
-   dashboard SQL console):
-   ```sql
-   select count(*) from users;
-   select count(*) from projects;
-   select count(*) from project_versions;
-   ```
-2. **Spin up a scratch target** (local Docker PG16 is fine):
-   ```bash
-   createdb -h localhost -p 5433 -U phn phn_restore_test    # or CREATE DATABASE
-   ```
-3. **Run the restore** against the newest daily object:
-   ```bash
-   ops/backup/restore.sh \
-     "$(rclone lsf phn-backups-ro:phn-db-backups/daily --recursive | sort | tail -1 | sed 's#^#daily/#')" \
-     "postgresql://phn:phn@localhost:5433/phn_restore_test" \
-     "<path to age identity>"
-   ```
-4. **Compare** the printed counts to Step 1. They should match the most recent
-   nightly (small deltas from same-day activity are expected if prod changed
-   after the dump).
-5. **Spot-check a document body** is intact JSON:
-   ```sql
-   select id, jsonb_typeof(body) from project_versions limit 3;
-   ```
-6. **Tear down:** `dropdb phn_restore_test`. Delete any temp files.
-7. **Log the drill** in `context/DATABASE_BACKUPS.md` (date, object restored,
-   counts matched Y/N). Keeps an audit trail that restores actually work.
+The operating procedure now lives in `context/DATABASE_BACKUPS.md` → "Drills",
+which is where an operator will actually look for it, and where the drill log
+table lives. It is not duplicated here.
 
 ## What a real disaster recovery looks like (documented, not drilled)
 

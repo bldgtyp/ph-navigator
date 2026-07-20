@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
-TIME: 09:40 EDT
-STATUS: D-1..D-10 stand as written; D-11 opened during Phase 03, decide in Phase 04/05
+TIME: 10:20 EDT
+STATUS: D-1..D-10 stand as written; D-11 ACCEPTED and implemented 2026-07-20
 AUTHOR: Claude (Opus) with Ed May
 SCOPE: Decision log for the database-backups feature.
 RELATED:
@@ -119,8 +119,21 @@ focused. R2 is also independently very durable.
 **Why:** Prevents a fork PR from ever executing the backup job or reading the
 backup/DB secrets.
 
-## D-11 — Extract the backup body to `ops/backup/backup.sh`? (OPEN — decide in Phase 04/05)
+## D-11 — Extract the backup body to `ops/backup/backup.sh` (ACCEPTED 2026-07-20)
 
+**Decision:** accepted and implemented before Phase 04. `ops/backup/config.sh`
+holds the store location and key scheme; `backup.sh`, `pull-to-dropbox.sh`,
+`restore.sh`, and `drill-local.sh` all source it. The workflow is now
+install-deps + `ops/backup/backup.sh`.
+**Payoff, immediately realised:** `make backup-drill-local` runs the real
+`backup.sh` → `restore.sh` round-trip against local Postgres with a throwaway
+keypair and a temp directory as the "bucket" — no production, no R2, no offline
+key. It caught two genuine bugs on first run that would otherwise have surfaced
+as a failed 02:30 production job: `${VAR:=default}` overriding a deliberately
+empty remote, and BSD `wc -c` padding output so a size comparison never matched.
+Neither was reachable while the logic lived in YAML.
+
+**Original observation, kept for the record.**
 **Raised by:** the Phase 03 cleanup review, after the workflow was built.
 **The observation:** the dump/validate/encrypt/upload logic currently lives in
 the workflow YAML, so the only way to execute it is `workflow_dispatch` against
@@ -135,8 +148,5 @@ involvement and no offline key. A shared key-scheme helper would also stop the
 `daily/ph_navigator/<y>/<m>/…` convention from being independently re-derived by
 the workflow, the pull script, and the restore script, where a layout change
 would break the consumers as *empty results* rather than errors.
-**Why not done in Phase 03:** it expands Phase 03's scope and changes the shape
-of Phases 04–05, which are Ed's to approve. The workflow as built is correct;
-this is a structural improvement, not a fix.
-**Decide when:** writing Phase 04, before a second consumer hardcodes the key
-scheme.
+**Why it was not done in Phase 03:** it expanded Phase 03's scope and reshaped
+Phases 04–05, so it went to Ed as a decision rather than being taken silently.

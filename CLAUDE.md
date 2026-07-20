@@ -76,6 +76,7 @@ always-loaded fast-path.
 | writing/reviewing **MCP tools** | `context/mcp.md` + `context/technical-requirements/llm-mcp-schema.md` | thin wrapper over REST service layer; project-scoped bearer tokens; writes go to a draft then `save_draft` |
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
 | changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; deploys via the "Deploy Production" Actions workflow (auto-deploy off); staging is deleted unless recreated from `render.yaml` |
+| operating/changing **database backups / disaster recovery** | `context/DATABASE_BACKUPS.md` | DB dumps are off-site + `age`-encrypted with the private key offline; Render PITR is the short-window net; `make backup-drill-local` round-trips the scripts locally; keys and production drills are Ed's call |
 | **naming** / domain terms | `context/GLOSSARY.md` | — |
 | picking up a **story / phase** | `context/USER_STORIES.md` (redirect) → `planning/STATUS.md`, `technical-requirements/*`, `ui/pages/*` | MVP story bodies archived to `planning/archive/user-stories/`; live contracts are the tech-req + ui/pages files |
 
