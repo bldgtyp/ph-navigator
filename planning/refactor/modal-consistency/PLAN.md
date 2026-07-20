@@ -167,11 +167,23 @@ Minor tradeoff: the switch variant's locked-primary lost its hover tooltip
 ("Locked versions cannot be saved directly.") since DialogActions' primary has
 no title slot — the modal body already explains the locked state.
 
-## Phase 05 — Rogue: apertures bespoke backdrops → `ModalDialog`
+## Phase 05 — Rogue: apertures bespoke backdrops → `ModalDialog` — ✅ DONE
 
 - `ManufacturerFiltersModal`, `RefreshDialog`: delete the copy-pasted
   `*-modal__` / `*-dialog__` backdrop+panel CSS, adopt `ModalDialog` +
   `DialogActions`. `RefreshDialog` is large/tabular → resizable panel.
+
+Delivered: both adopted `ModalDialog` + `DialogActions`, `resizable`. Their
+bespoke backdrop dismissed on click even though they hold unsaved input — the
+shared shell now correctly does NOT dismiss forms on backdrop (edit mode);
+`ManufacturerFiltersModal`'s read-only viewer mode opts into `dismissOnBackdrop`
++ a single "Close". Read-only / catalog-row-missing states render a single
+"Close"; edit states use the Save primary. Removed the orphaned
+`.manufacturer-modal__{backdrop,header,footer,save}`, `.manufacturer-modal`
+panel, and the `.refresh-dialog__{backdrop,subtitle,footer,save}` / panel CSS
+(surgically split out of the rules shared with the still-rogue
+`aperture-drift-modal` / `project-refs`, which are out of scope). Verified by
+the ManufacturerFiltersModal + RefreshDialog suites + `make ci`.
 
 ## Phase 06 — Rogue: data-table Radix family (highest judgment)
 

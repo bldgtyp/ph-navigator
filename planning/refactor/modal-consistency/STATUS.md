@@ -14,7 +14,7 @@ RELATED:
 # Status — Modal Consistency Refactor
 
 **State:** Implementation in progress on branch `refactor/modal-consistency`
-(off `main`). Phases 00–04 complete; Phases 05–06 pending.
+(off `main`). Phases 00–05 complete; Phase 06 pending.
 
 ## Done
 
@@ -35,10 +35,12 @@ RELATED:
 
 ## Next step
 
-Phase 05 — rogue apertures bespoke backdrops → `ModalDialog`:
-`ManufacturerFiltersModal` and `RefreshDialog` (delete the copy-pasted
-`*-modal__` / `*-dialog__` backdrop+panel CSS, adopt `ModalDialog` +
-`DialogActions`; `RefreshDialog` is large/tabular → resizable).
+Phase 06 — rogue data-table Radix family (D-3: keep Radix, conform the shell):
+`FieldConfigModal`, `CreateFieldConfigModal`, `ConfirmDestructiveDialog`,
+`ConfirmDeleteOptionDialog` (+ wrappers `DeleteDimensionDialog`,
+`CascadePreviewDialog`). Bring width/padding to the shared box, footer to the
+`DialogActions` shape, apply the header-Close rule, add resize to
+`FieldConfigModal`. Heaviest phase (`FieldConfigModal` ~960 lines).
 
 ## Blockers / decisions
 

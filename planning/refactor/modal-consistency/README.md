@@ -50,6 +50,6 @@ Read in this order:
   resize handle.
 - **Backdrop-click:** off for forms, on for read-only viewers.
 
-Status: **In progress on `refactor/modal-consistency`. Phases 00–04 DONE;
-Phases 05–06 pending.** Contract ratified by Ed 2026-07-20; both former open
+Status: **In progress on `refactor/modal-consistency`. Phases 00–05 DONE;
+Phase 06 pending.** Contract ratified by Ed 2026-07-20; both former open
 questions decided (see `decisions.md`). See `STATUS.md` for detail.
