@@ -204,6 +204,7 @@ the spec to reproduce.
 | Report table | `shared/ui/report-table` (`report-status-chip`) | status-dot / status-chip report grids |
 | Info tooltip | `<InfoTooltip>` (ⓘ) | hover help; dark panel |
 | Inline header editor | `InlineHeaderNameEditor` | rename-on-hover header control |
+| Element sidebar | `shared/ui/element-sidebar` (`<ElementSidebar>`) | shared object-list rail (Envelope Assemblies, Aperture Types) — "1A Quiet List": ghost header, two-tab order control, neutral hover / teal-only selection, hover-reveal grip + ghost action cluster, groups-as-dividers |
 | Attachments | `shared/ui/attachments` | file chips/cells/panel (assets, envelope, equipment) |
 | Breadcrumbs / page heading / topbar | `.breadcrumbs` / `.page-heading` / `.topbar` | app chrome |
 | Unit toggle | `.topbar-unit-toggle` | SI ⇄ IP animated toggle |

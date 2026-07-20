@@ -53,53 +53,72 @@
   gap: var(--space-6);
 }
 
+/* Header + collapsed-rail chrome read as borderless "ghost" buttons (1A §4):
+   transparent at rest, a quiet neutral wash on hover — no border, no lift.
+   Scoped to the sidebar so the global bordered .icon-button is untouched for
+   its other callers. */
 .element-sidebar__tools .icon-button,
 .element-sidebar__add-collapsed {
-  position: relative;
-}
-
-/* Sort-mode toggle (editors only): alphabetical | manual. Manual turns on the
-   per-row drag handles below. */
-.element-sidebar__sortbar {
-  align-items: center;
-  display: flex;
-  gap: var(--space-8);
-  justify-content: space-between;
-  padding: var(--space-12) var(--space-18) 0;
-}
-
-.element-sidebar__sortbar-label {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-
-.element-sidebar__sort-toggle {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xs);
-  display: inline-flex;
-  overflow: hidden;
-}
-
-.element-sidebar__sort-option {
-  align-items: center;
   background: transparent;
   border: 0;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
+  height: 30px;
+  min-height: 30px;
+  min-width: 30px;
+  position: relative;
+  transition:
+    background var(--transition-fast) var(--ease),
+    color var(--transition-fast) var(--ease);
+  width: 30px;
+}
+
+.element-sidebar__tools .icon-button:hover:not(:disabled),
+.element-sidebar__add-collapsed:hover:not(:disabled) {
+  background: var(--sidebar-row-hover);
+  border-color: transparent;
+  color: var(--text-primary);
+  transform: none;
+}
+
+/* Sort-mode control (editors only): two understated text tabs sharing a bottom
+   hairline (1A §5). Manual turns on the per-row drag handles below. The active
+   tab is the only teal element here — everything else stays quiet. */
+.element-sidebar__sortbar {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-20);
+  margin: var(--space-16) var(--space-18) 0;
+}
+
+.element-sidebar__sort-tab {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
   cursor: pointer;
-  display: inline-flex;
   font-size: var(--fs-sm);
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-8);
+  font-weight: var(--fw-medium);
+  /* Overlap the container's 1px hairline so the 2px active underline lands on
+     the same baseline. */
+  margin-bottom: -1px;
+  padding: 0 0 var(--space-8);
+  transition:
+    color var(--transition-fast) var(--ease),
+    border-color var(--transition-fast) var(--ease);
 }
 
-.element-sidebar__sort-option + .element-sidebar__sort-option {
-  border-left: 1px solid var(--border-subtle);
-}
-
-.element-sidebar__sort-option[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
+.element-sidebar__sort-tab[aria-selected="true"] {
+  border-bottom-color: var(--accent);
   color: var(--accent-text);
   font-weight: var(--fw-semibold);
+}
+
+.element-sidebar__sort-tab:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .element-sidebar__list {
@@ -113,26 +132,35 @@
 
 .element-sidebar__row {
   align-items: center;
-  border-radius: var(--phn-control-radius);
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
+  /* Only the row-link (and, in manual mode, the grip) sit in flow; the action
+     cluster is absolutely positioned (below) so the label reads full-width at
+     rest. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 38px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 40px;
   min-width: 0;
   padding: var(--space-6) var(--space-6) var(--space-6) var(--space-10);
   position: relative;
 }
 
-.element-sidebar__row.is-active,
+/* Quiet-list split: hover is a barely-there NEUTRAL wash; only the selected row
+   carries teal. Selection must win over hover, so .is-active is ordered last. */
 .element-sidebar__row:hover {
-  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  background: var(--sidebar-row-hover);
 }
 
 .element-sidebar__row.is-active {
+  background: var(--accent-light);
+  color: var(--accent-text);
   font-weight: var(--fw-semibold);
 }
 
-/* Group tree (manual mode). */
+/* Group tree (manual mode): calm dividers, not boxes. Each group is an
+   uppercase label + a trailing hairline rule; members sit directly below with
+   no indent. Collapse chrome is intentionally absent (1A defers collapse to
+   1B), though the collapsed_group_ids view-state field is preserved. */
 .element-sidebar__group {
   display: grid;
   gap: var(--space-4);
@@ -141,27 +169,16 @@
 .element-sidebar__group-header {
   align-items: center;
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-6);
+  margin-top: var(--space-8);
   min-width: 0;
-  padding: var(--space-6) var(--space-4) var(--space-2) 0;
-}
-
-.element-sidebar__group-collapse {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: inline-flex;
-  height: 22px;
-  justify-content: center;
-  padding: 0;
-  width: 20px;
+  padding: 0 var(--space-4) 0 var(--space-6);
+  position: relative;
 }
 
 .element-sidebar__group-label {
   color: var(--text-primary);
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   min-width: 0;
@@ -171,19 +188,36 @@
 }
 
 .element-sidebar__group-label.is-muted {
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
+/* Trailing hairline that turns the group label into a divider. */
+.element-sidebar__group-rule {
+  background: var(--border-subtle);
+  flex: 1 1 auto;
+  height: 1px;
+}
+
+/* Group actions (up/down/rename/delete) mirror the row cluster: absolutely
+   pinned, revealed on header hover/focus over a scrim matched to the panel. */
 .element-sidebar__group-actions {
   align-items: center;
+  background: linear-gradient(90deg, transparent, var(--bg-card) 40%);
+  bottom: 0;
   display: inline-flex;
   gap: var(--space-2);
   opacity: 0;
+  padding-left: var(--space-24);
   pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity var(--transition-fast) var(--ease);
+  z-index: var(--z-base-elevated);
 }
 
 .element-sidebar__group-header:hover .element-sidebar__group-actions,
@@ -192,54 +226,54 @@
   pointer-events: auto;
 }
 
-/* Indent a group's rows under its header for tree hierarchy. */
-.element-sidebar__group .element-sidebar__row,
-.element-sidebar__group-empty {
-  margin-left: var(--space-8);
-}
-
 .element-sidebar__group-empty {
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-  margin-bottom: 0;
-  margin-top: 0;
+  margin: 0;
   padding: var(--space-4) var(--space-10);
 }
 
+/* Quiet ghost text button at the list end (replaces the dashed box). */
 .element-sidebar__new-group {
   align-items: center;
   background: transparent;
-  border: 1px dashed var(--border-subtle);
-  border-radius: var(--radius-xs);
+  border: 0;
+  border-radius: var(--radius-9);
   color: var(--text-secondary);
   cursor: pointer;
   display: inline-flex;
-  gap: var(--space-6);
-  justify-content: center;
-  margin-top: var(--space-8);
-  padding: var(--space-6);
+  gap: var(--space-8);
+  justify-content: flex-start;
+  margin-top: var(--space-6);
+  padding: var(--space-8);
+  transition:
+    background var(--transition-fast) var(--ease),
+    color var(--transition-fast) var(--ease);
   width: 100%;
 }
 
 .element-sidebar__new-group:hover,
 .element-sidebar__new-group:focus-visible {
-  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  background: var(--sidebar-row-hover);
   color: var(--accent-text);
   outline: 0;
 }
 
+/* Keyboard-accessible "move to group" select — quiet/borderless so it doesn't
+   reintroduce chrome into the row. */
 .element-sidebar__row-move {
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 0;
   border-radius: var(--radius-xs);
   color: var(--text-secondary);
   font-size: var(--fs-xs);
   max-width: 84px;
 }
 
-/* Manual-mode rows lead with a 6-dot drag handle column. */
+/* Manual-mode rows lead with a drag-handle column (the action cluster stays
+   absolute, so no trailing column is reserved). */
 .element-sidebar__row--draggable {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 .element-sidebar__row--draggable[data-dragging="true"] {
@@ -248,20 +282,30 @@
   z-index: var(--z-dropdown);
 }
 
+/* The grip reserves its column in manual mode (so switching sort modes never
+   shifts the icon/label) but stays faint at rest, coming to full strength only
+   when its row is hovered or keyboard-focused. */
 .element-sidebar__row-handle {
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: grab;
   display: inline-flex;
   height: 24px;
   justify-content: center;
+  opacity: 0.42;
   padding: 0;
   position: relative;
   touch-action: none;
+  transition: opacity var(--transition-fast) var(--ease);
   width: 18px;
   z-index: var(--z-base-elevated);
+}
+
+.element-sidebar__row:hover .element-sidebar__row-handle,
+.element-sidebar__row:focus-within .element-sidebar__row-handle {
+  opacity: 1;
 }
 
 .element-sidebar__row-handle:active {
@@ -322,23 +366,44 @@
   white-space: nowrap;
 }
 
-/* Sidebar name + row-action tooltips use the shared <Tooltip> primitive
-   (shared/ui/tooltip) with named hover-delay tiers — no bespoke tooltip here. */
+/* Row name + row-action labels use native title/aria-label (no dark tooltip
+   bubble) so the quiet cluster stays uncluttered. The header Add/Collapse
+   buttons keep the shared <Tooltip> — they are icon-only chrome. */
 
+/* Quiet action cluster: a borderless ghost-button group absolutely pinned to
+   the row's right edge, fading in on hover/focus over a left→right scrim that
+   matches the row's current background so the label reads cleanly beneath it. */
 .element-sidebar__row-actions {
   align-items: center;
+  /* Scrim fades from transparent into the row's neutral hover wash. */
+  background: linear-gradient(90deg, transparent, var(--sidebar-row-hover) 40%);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  bottom: var(--space-4);
   display: inline-flex;
   gap: var(--space-2);
   opacity: 0;
+  padding-left: var(--space-32);
   pointer-events: none;
-  position: relative;
+  position: absolute;
+  right: var(--space-4);
+  top: var(--space-4);
+  transform: translateX(var(--space-6));
+  transition:
+    opacity var(--transition-fast) var(--ease),
+    transform var(--transition-fast) var(--ease);
   z-index: var(--z-base-elevated);
+}
+
+/* On the selected row the scrim matches the teal fill, not the neutral wash. */
+.element-sidebar__row.is-active .element-sidebar__row-actions {
+  background: linear-gradient(90deg, transparent, var(--accent-light) 40%);
 }
 
 .element-sidebar__row:hover .element-sidebar__row-actions,
 .element-sidebar__row:focus-within .element-sidebar__row-actions {
   opacity: 1;
   pointer-events: auto;
+  transform: translateX(0);
 }
 
 .element-sidebar__row:hover,
@@ -350,7 +415,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-7);
   color: var(--text-secondary);
   display: inline-flex;
   height: 24px;
@@ -364,7 +429,7 @@
 
 .element-sidebar__row-action:hover,
 .element-sidebar__row-action:focus-visible {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  background: var(--bg-card);
   color: var(--accent-text);
   outline: 0;
 }
@@ -377,6 +442,24 @@
 
 .element-sidebar__row-action:disabled {
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+}
+
+/* Respect reduced-motion: keep the hover/focus reveals functional but drop the
+   fade/translate animations (the states still toggle, just instantly). */
+@media (prefers-reduced-motion: reduce) {
+  .element-sidebar__sort-tab,
+  .element-sidebar__tools .icon-button,
+  .element-sidebar__add-collapsed,
+  .element-sidebar__row-handle,
+  .element-sidebar__row-actions,
+  .element-sidebar__group-actions,
+  .element-sidebar__new-group {
+    transition: none;
+  }
+
+  .element-sidebar__row-actions {
+    transform: none;
+  }
 }
 
 @media (max-width: 768px) {

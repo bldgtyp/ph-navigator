@@ -1,11 +1,4 @@
-import {
-  ArrowDownAZ,
-  FolderPlus,
-  GripVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-} from "lucide-react";
+import { FolderPlus, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { GroupedList } from "./GroupedList";
 import { SortableRows, StaticRow } from "./rows";
@@ -16,6 +9,7 @@ import type {
   ElementSidebarNavigation,
   ElementSidebarOrganization,
   ElementSidebarRename,
+  ElementSidebarSortMode,
   RowContext,
 } from "./types";
 
@@ -149,7 +143,9 @@ export function ElementSidebar({
               id={`${idPrefix}-new-group`}
               type="button"
               className="element-sidebar__new-group"
-              onClick={organization.onAddGroup}
+              // Wrap so the click event isn't passed as onAddGroup's optional
+              // `label` argument (which would make the new group's name the event).
+              onClick={() => organization.onAddGroup()}
             >
               <FolderPlus size={14} aria-hidden="true" />
               New group
@@ -162,6 +158,11 @@ export function ElementSidebar({
   );
 }
 
+const SORT_MODE_TABS: { mode: ElementSidebarSortMode; label: string }[] = [
+  { mode: "alphabetical", label: "Alphabetical" },
+  { mode: "manual", label: "Manual" },
+];
+
 function SortModeToggle({
   idPrefix,
   title,
@@ -173,34 +174,22 @@ function SortModeToggle({
 }) {
   const { sortMode, onToggleSortMode } = organization;
   return (
-    <div className="element-sidebar__sortbar" role="group" aria-label={`${title} order`}>
-      <span className="element-sidebar__sortbar-label">Order</span>
-      <div className="element-sidebar__sort-toggle">
+    <div className="element-sidebar__sortbar" role="tablist" aria-label={`${title} order`}>
+      {SORT_MODE_TABS.map(({ mode, label }) => (
         <button
-          id={`${idPrefix}-sort-alphabetical`}
+          key={mode}
+          id={`${idPrefix}-sort-${mode}`}
           type="button"
-          className="element-sidebar__sort-option"
-          aria-pressed={sortMode === "alphabetical"}
+          role="tab"
+          className="element-sidebar__sort-tab"
+          aria-selected={sortMode === mode}
           onClick={() => {
-            if (sortMode !== "alphabetical") onToggleSortMode();
+            if (sortMode !== mode) onToggleSortMode();
           }}
         >
-          <ArrowDownAZ size={13} aria-hidden="true" />
-          A–Z
+          {label}
         </button>
-        <button
-          id={`${idPrefix}-sort-manual`}
-          type="button"
-          className="element-sidebar__sort-option"
-          aria-pressed={sortMode === "manual"}
-          onClick={() => {
-            if (sortMode !== "manual") onToggleSortMode();
-          }}
-        >
-          <GripVertical size={13} aria-hidden="true" />
-          Manual
-        </button>
-      </div>
+      ))}
     </div>
   );
 }

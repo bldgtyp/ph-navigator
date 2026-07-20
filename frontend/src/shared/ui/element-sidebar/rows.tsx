@@ -19,7 +19,6 @@ import { GripVertical, Pencil, type LucideIcon } from "lucide-react";
 import type { CSSProperties } from "react";
 import { NavLink } from "react-router-dom";
 import { InlineHeaderNameEditor } from "../InlineHeaderNameEditor";
-import { Tooltip, TOOLTIP_HOVER_DELAY } from "../tooltip";
 import type { ElementSidebarItem, ElementSidebarNavigation, RowContext } from "./types";
 
 /**
@@ -240,27 +239,27 @@ function ElementSidebarRowLink({
     </>
   );
 
-  return (
-    <Tooltip content={item.name} placement="top" hoverDelay={TOOLTIP_HOVER_DELAY.medium}>
-      {navigation.mode === "link" ? (
-        <NavLink
-          className="element-sidebar__row-link"
-          to={navigation.buildTo(item)}
-          {...item.linkData}
-        >
-          {inner}
-        </NavLink>
-      ) : (
-        <button
-          type="button"
-          className="element-sidebar__row-link"
-          onClick={() => navigation.onSelect(item.id)}
-          {...item.linkData}
-        >
-          {inner}
-        </button>
-      )}
-    </Tooltip>
+  // Native title (no dark tooltip bubble) surfaces the full name when the label
+  // truncates; the visible text is the accessible name.
+  return navigation.mode === "link" ? (
+    <NavLink
+      className="element-sidebar__row-link"
+      to={navigation.buildTo(item)}
+      title={item.name}
+      {...item.linkData}
+    >
+      {inner}
+    </NavLink>
+  ) : (
+    <button
+      type="button"
+      className="element-sidebar__row-link"
+      title={item.name}
+      onClick={() => navigation.onSelect(item.id)}
+      {...item.linkData}
+    >
+      {inner}
+    </button>
   );
 }
 
@@ -280,21 +279,20 @@ export function SidebarActionButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip content={label} placement="top" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
-      <button
-        id={id}
-        type="button"
-        className={danger ? "element-sidebar__row-action is-danger" : "element-sidebar__row-action"}
-        aria-label={label}
-        disabled={disabled}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onClick();
-        }}
-      >
-        <Icon size={13} aria-hidden="true" />
-      </button>
-    </Tooltip>
+    <button
+      id={id}
+      type="button"
+      className={danger ? "element-sidebar__row-action is-danger" : "element-sidebar__row-action"}
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      <Icon size={13} aria-hidden="true" />
+    </button>
   );
 }
