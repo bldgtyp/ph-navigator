@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:34 EDT
-STATUS: Not started
+STATUS: DONE (implemented + verified 2026-07-20)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 02 — row density, neutral-hover/teal-selection split, quiet ghost
   action cluster with gradient scrim, remove the dark tooltip.

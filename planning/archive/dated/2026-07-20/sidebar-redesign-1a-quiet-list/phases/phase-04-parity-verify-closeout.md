@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:38 EDT
-STATUS: Not started
+STATUS: DONE (implemented + verified 2026-07-20)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 04 — cross-page parity, adapter deltas, browser smoke, docs-pass,
   closeout gate.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:20 EDT
-STATUS: Active — open decisions await Ed before implementation
+STATUS: Complete — all decisions resolved + implemented 2026-07-20
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Decisions where 1A diverges from shipped behavior. Each has a
   recommendation; the ones marked ★ genuinely change scope and want Ed's call.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:25 EDT
-STATUS: Active
+STATUS: Complete — implemented + verified 2026-07-20 (see STATUS.md)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: High-level implementation sequence for the 1A sidebar restyle.
 RELATED: PRD.md, research.md, decisions.md, phases/

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:32 EDT
-STATUS: Not started
+STATUS: DONE (implemented + verified 2026-07-20)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 01 — ghost header buttons + the two-tab underline Order control.
 RELATED: ../PRD.md §4.2/§4.3, ../assets/1A-Quiet-List-Handoff.md §4/§5

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:30 EDT
-STATUS: Not started
+STATUS: DONE (implemented + verified 2026-07-20)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 00 — resolve 1A values to tokens; add the few genuinely-new tokens.
 RELATED: ../PRD.md §4, ../research.md §4, ../decisions.md D-1/D-6

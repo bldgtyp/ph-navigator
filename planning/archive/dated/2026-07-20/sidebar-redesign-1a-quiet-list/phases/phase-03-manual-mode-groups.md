@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:36 EDT
-STATUS: Not started
+STATUS: DONE (implemented + verified 2026-07-20)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 03 — hover-reveal grip, groups-as-dividers, ghost "New group",
   reduced-motion.

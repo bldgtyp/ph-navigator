@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:40 EDT
-STATUS: Active — planning complete, awaiting Ed's sign-off on open decisions
+STATUS: Complete — implemented + verified 2026-07-20 (see STATUS.md)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Router for the 1A "Quiet List" sidebar redesign feature.
 RELATED: context/DESIGN_SYSTEM.md, frontend/src/shared/ui/element-sidebar/

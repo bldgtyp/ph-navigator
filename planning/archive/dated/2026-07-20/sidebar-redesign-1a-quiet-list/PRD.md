@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 17:15 EDT
-STATUS: Active
+STATUS: Complete — implemented + verified 2026-07-20 (see STATUS.md)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Product/behavior contract for applying the Claude-Design "1A Quiet List"
   redesign to the shared element sidebar (Envelope Assemblies + Apertures).
