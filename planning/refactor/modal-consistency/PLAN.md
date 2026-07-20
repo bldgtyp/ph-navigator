@@ -185,7 +185,7 @@ panel, and the `.refresh-dialog__{backdrop,subtitle,footer,save}` / panel CSS
 `aperture-drift-modal` / `project-refs`, which are out of scope). Verified by
 the ManufacturerFiltersModal + RefreshDialog suites + `make ci`.
 
-## Phase 06 — Rogue: data-table Radix family (highest judgment)
+## Phase 06 — Rogue: data-table Radix family (highest judgment) — ✅ DONE
 
 - Decide per PRD Open-Q #2 (recommend: keep Radix, conform the shell).
 - Targets: `FieldConfigModal`, `CreateFieldConfigModal`, `ConfirmDestructiveDialog`,
@@ -195,6 +195,29 @@ the ManufacturerFiltersModal + RefreshDialog suites + `make ci`.
   the header-Close rule, add resize to `FieldConfigModal`.
 - Heaviest phase — `FieldConfigModal` alone is ~960 lines with three nested
   bespoke chrome surfaces (main dialog + confirmation alert + conflict banner).
+
+Delivered (D-3: kept the `@radix-ui` primitives, conformed the shell):
+- Chrome CSS aligned to the shared `.modal-panel` box — `--border-card`,
+  `--phn-radius`, `--phn-shadow`, `--space-24` padding, 560px width — on
+  `.data-table-alert-content`, `.data-table-field-config-modal` (formula variant
+  720px), and `.data-table-field-config-confirmation-content`. `FieldConfigModal`
+  got `resize: both` + min bounds (it's the scroll container).
+- Footers conformed to the shared `.modal-actions` shape (Cancel left / primary
+  right): `.data-table-alert-actions` restyled to `space-between`; the two
+  field-config footers now use `.modal-actions` directly (orphaned
+  `.data-table-field-config-modal-footer` CSS removed).
+- Styled the four previously-unstyled primary buttons (`FieldConfigModal` Save +
+  its confirmation action + the conflict "Keep my changes"; `CreateFieldConfigModal`
+  "Add field") with `.primary-button`; "Adding..." → "Adding…".
+- Header-Close rule already satisfied — the Radix dialogs have no header close
+  (sr-only titles); footer Cancel is the dismiss.
+- `ConfirmDestructiveDialog` / `ConfirmDeleteOptionDialog` footers were already
+  `.secondary-button` + `.danger-button`; only their chrome needed conforming.
+- Verified by the full data-table suite (1074 tests) + `make ci`.
+
+Deliberate deviation: `ConfirmDeleteOptionDialog`'s primary stays "Delete" (not
+"Delete option") — the dialog title already reads `Delete option "X"?`, and the
+label is exercised across several option-delete flows; kept to avoid churn.
 
 ---
 

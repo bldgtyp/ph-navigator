@@ -709,6 +709,7 @@ export function FieldConfigModal({
                   <AlertDialog.Action asChild>
                     <button
                       type="button"
+                      className="primary-button"
                       onClick={() => {
                         setPendingConfirmation((current) => {
                           current?.resolve(true);
@@ -729,7 +730,7 @@ export function FieldConfigModal({
                 This field changed elsewhere — review the new value to continue.
               </p>
               <div className="data-table-field-config-modal-conflict-actions">
-                <button type="button" onClick={handleKeepConflict}>
+                <button type="button" className="primary-button" onClick={handleKeepConflict}>
                   Keep my changes
                 </button>
                 <button type="button" className="secondary-button" onClick={handleDiscardConflict}>
@@ -909,13 +910,13 @@ export function FieldConfigModal({
                 {submitError}
               </p>
             ) : null}
-            <div className="data-table-field-config-modal-footer">
+            <div className="modal-actions">
               <Dialog.Close asChild>
                 <button type="button" className="secondary-button" disabled={pending}>
                   Cancel
                 </button>
               </Dialog.Close>
-              <button type="submit" disabled={!canSave}>
+              <button type="submit" className="primary-button" disabled={!canSave}>
                 {pending ? "Saving…" : "Save"}
               </button>
             </div>
