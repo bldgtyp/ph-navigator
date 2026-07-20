@@ -145,7 +145,7 @@ def project_glazing_from_ref(ref: GlazingRef, *, id: str) -> ProjectGlazing:
     return ProjectGlazing(
         **payload,
         id=id,
-        specification_status="missing",
+        specification_status="needed",
         datasheet_asset_ids=[],
     )
 
@@ -155,7 +155,7 @@ def project_frame_from_ref(ref: FrameRef, *, id: str) -> ProjectFrame:
     return ProjectFrame(
         **payload,
         id=id,
-        specification_status="missing",
+        specification_status="needed",
         datasheet_asset_ids=[],
     )
 

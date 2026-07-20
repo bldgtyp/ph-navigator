@@ -406,7 +406,7 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
     )
     updated_materials = cast(list[dict[str, object]], updated["project_materials"])
     assert updated["source"] == "draft"
-    assert updated_materials[0]["specification_status"] == "missing"
+    assert updated_materials[0]["specification_status"] == "needed"
 
     with connection() as conn:
         draft = conn.execute(

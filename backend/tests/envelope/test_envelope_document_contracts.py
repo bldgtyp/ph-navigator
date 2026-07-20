@@ -33,7 +33,7 @@ def project_material(**overrides: Any) -> dict[str, Any]:
         "source": None,
         "url": None,
         "comments": None,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": ["asset_01HXABCDEF0123456789ABCD"],
         "datasheet_not_required": False,
         "catalog_origin": None,
@@ -266,7 +266,7 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
         json={"rows": replacement_rows},
     )
     assert updated.status_code == 200
-    assert updated.json()["rows"][-1]["specification_status"] == "missing"
+    assert updated.json()["rows"][-1]["specification_status"] == "needed"
 
     draft = client.get(envelope_url(project_id, version_id, source="draft"))
     assert draft.status_code == 200

@@ -20,13 +20,26 @@ def test_project_document_upgrade_audit_reports_fixture_corpus() -> None:
     report = audit_inputs(iter_fixture_inputs())
 
     assert report["ok"] is True
-    assert report["total_bodies"] == 4
-    assert report["schema_versions"] == {"1": 2, "4": 2}
+    assert report["total_bodies"] == 5
+    assert report["schema_versions"] == {"1": 2, "4": 2, "7": 1}
     assert report["invalid_count"] == 0
     assert report["future_version_count"] == 0
     largest = report["body_size_bytes"]["largest"]
     assert largest is not None
     assert largest["body_size_bytes"] > 0
+
+
+def test_project_document_upgrade_audit_reports_specification_status_rename_evidence() -> None:
+    records = {record["source"]: record for record in audit_inputs(iter_fixture_inputs())["records"]}
+
+    rename = records["fixture:v7/mixed_specification_statuses.json"]["specification_status_rename"]
+
+    assert rename is not None
+    for table_name in ("project_materials", "project_glazings", "project_frames"):
+        path = f"tables.{table_name}"
+        # One legacy value per list, and exactly that row rewritten.
+        assert rename[path]["legacy_value_count"] == 1
+        assert rename[path]["changed_paths"] == [f"{path}[0].specification_status"]
 
 
 def test_project_document_upgrade_audit_classifies_invalid_and_future_bodies(

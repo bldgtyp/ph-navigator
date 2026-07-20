@@ -95,7 +95,8 @@ Run per distinct incoming material (deduped by
 6. **create_new** — project-only `ProjectMaterial` (`catalog_origin = null`):
    copies the file's thermal props + color; `category` defaults to `"Other"`
    (not exported); `specification_status` carries the file's value if valid
-   else `"missing"`; datasheets are dropped (project-scoped asset ids).
+   else `"needed"`; Honeybee's external `MISSING` reads back as internal
+   `needed` (either case) via `envelope/honeybee_specification_status.py`; datasheets are dropped (project-scoped asset ids).
 
 ## Construction collision policy (D5)
 

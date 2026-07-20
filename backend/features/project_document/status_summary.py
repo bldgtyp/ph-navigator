@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from features.project_document.envelope_models import SpecificationStatus
+from features.project_document.envelope_models import SPECIFICATION_STATUSES, SpecificationStatus
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
@@ -23,7 +23,7 @@ from features.project_document.tables.contracts import read_table_envelope
 from features.project_document.validation import document_etag
 from features.projects.access import ProjectAccess
 
-StatusSummaryState = Literal["needed", "question", "complete", "na", "unknown"]
+StatusSummaryState = SpecificationStatus | Literal["unknown"]
 StatusSummaryDestinationKind = Literal[
     "equipment_tab",
     "heat_pump_leaf",
@@ -230,13 +230,6 @@ _STATUS_BY_OPTION_ID: dict[str, StatusSummaryState] = {
     STATUS_OPTION_NA: "na",
 }
 
-_STATUS_BY_SPECIFICATION_STATUS: dict[SpecificationStatus, StatusSummaryState] = {
-    "missing": "needed",
-    "question": "question",
-    "complete": "complete",
-    "na": "na",
-}
-
 
 def get_draft_status_summary(version_id: UUID, access: ProjectAccess) -> ProjectStatusSummaryResponse:
     from features.project_document.store import get_current_document_view
@@ -319,11 +312,7 @@ def _summary_record(
 ) -> StatusSummaryRecord:
     if status_source == "specification_status":
         raw_status = getattr(row, "specification_status", None)
-        status = (
-            _STATUS_BY_SPECIFICATION_STATUS.get(cast("SpecificationStatus", raw_status), "unknown")
-            if isinstance(raw_status, str)
-            else "unknown"
-        )
+        status = cast("StatusSummaryState", raw_status) if raw_status in SPECIFICATION_STATUSES else "unknown"
     else:
         raw_status = custom_values.get("status")
         status = _STATUS_BY_OPTION_ID.get(raw_status, "unknown") if isinstance(raw_status, str) else "unknown"

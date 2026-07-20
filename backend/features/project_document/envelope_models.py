@@ -9,7 +9,7 @@ family-check helper live here too because every consumer
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -24,7 +24,8 @@ CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
 CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
 AssemblyType = Literal["wall", "floor", "roof", "other"]
 AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
-SpecificationStatus = Literal["complete", "missing", "question", "na"]
+SpecificationStatus = Literal["complete", "needed", "question", "na"]
+SPECIFICATION_STATUSES: frozenset[str] = frozenset(get_args(SpecificationStatus))
 EvidenceStatus = Literal["needed", "complete", "na"]
 
 APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
@@ -249,7 +250,7 @@ class ProjectMaterial(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus = "missing"
+    specification_status: SpecificationStatus = "needed"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     datasheet_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
@@ -300,7 +301,7 @@ class ProjectGlazing(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus = "missing"
+    specification_status: SpecificationStatus = "needed"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
     datasheet_status: EvidenceStatus = "needed"
@@ -362,7 +363,7 @@ class ProjectFrame(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus = "missing"
+    specification_status: SpecificationStatus = "needed"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
     datasheet_status: EvidenceStatus = "needed"

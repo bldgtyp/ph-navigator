@@ -68,7 +68,7 @@ def _project_glazing(row_id: str, name: str, *, record_id: str, **overrides: Any
         "id": row_id,
         **{key: value for key, value in _glazing_ref(record_id=record_id).items() if key != "datasheet_url"},
         "name": name,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
     }
     row.update(overrides)
@@ -80,7 +80,7 @@ def _project_frame(row_id: str, name: str, *, record_id: str, **overrides: Any) 
         "id": row_id,
         **{key: value for key, value in _frame_ref(record_id=record_id).items() if key != "datasheet_url"},
         "name": name,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
     }
     row.update(overrides)
@@ -114,7 +114,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
     aperture_slice = client.get(_draft_apertures_url(project_id, version_id)).json()
     glazing = next(row for row in aperture_slice["project_glazings"] if row["id"] == "pglz_used")
     assert glazing["manufacturer"] == "Updated Glass Co"
-    assert glazing["specification_status"] == "missing"
+    assert glazing["specification_status"] == "needed"
     assert glazing["datasheet_not_required"] is True
     assert glazing["photo_not_required"] is True
     assert glazing["catalog_origin"]["local_overrides"] == ["comments", "manufacturer"]
@@ -137,7 +137,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
     aperture_slice = client.get(_draft_apertures_url(project_id, version_id)).json()
     frame = next(row for row in aperture_slice["project_frames"] if row["id"] == "pfrm_used")
     assert frame["width_mm"] == 98.0
-    assert frame["specification_status"] == "missing"
+    assert frame["specification_status"] == "needed"
     assert frame["datasheet_not_required"] is True
     assert frame["photo_not_required"] is True
 

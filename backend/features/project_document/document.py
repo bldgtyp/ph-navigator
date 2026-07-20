@@ -38,6 +38,7 @@ from features.project_document.envelope_models import (
     APERTURE_DEFAULT_GLAZING_NAME,
     CATALOG_RECORD_ID_PATTERN,
     CATALOG_VERSION_ID_PATTERN,
+    SPECIFICATION_STATUSES,
     ApertureElement,
     ApertureElementFrames,
     ApertureOperation,
@@ -210,7 +211,13 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # FieldDef like every other equipment table; the upgrade backfills
 # `custom_values["name"]` from the typed `tag` so no row renders a blank
 # identity.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7
+#
+# v8: the built-in specification status of project materials, glazings, and
+# frames renames its "missing" member to "needed" so those typed literals match
+# the Equipment/Thermal-Bridges `opt_status_needed` option and the Needed label
+# the UI has always shown. Value replacement only — no row is added, dropped, or
+# re-derived. External Honeybee `MISSING` stays `MISSING` behind named adapters.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -365,7 +372,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[7] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[8] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -489,6 +496,7 @@ __all__ = [
     "SPACE_TYPES_TYPED_COLUMN_FIELD_KEYS",
     "SpaceTypeRow",
     "SpaceTypesTableEnvelope",
+    "SPECIFICATION_STATUSES",
     "SpecificationStatus",
     "THERMAL_BRIDGE_OPTION_KEYS",
     "THERMAL_BRIDGE_STATUS_OPTION_KEY",

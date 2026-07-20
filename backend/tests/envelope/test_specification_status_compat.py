@@ -1,4 +1,4 @@
-"""Release-A compatibility contract for built-in specification statuses."""
+"""Cached-client compatibility contract for built-in specification statuses."""
 
 from __future__ import annotations
 
@@ -36,13 +36,13 @@ from tests.envelope.test_envelope_document_contracts import envelope_body, proje
     ],
 )
 @pytest.mark.parametrize("input_status", ["missing", "needed"])
-def test_public_commands_normalize_release_a_inputs_to_schema_v7_missing(
+def test_public_commands_normalize_cached_client_inputs_to_canonical_needed(
     command: dict[str, object], input_status: str
 ) -> None:
     command["specification_status"] = input_status
     parsed = EnvelopeCommandRequest.model_validate({"command": command})
 
-    assert parsed.command.model_dump(mode="json")["specification_status"] == "missing"
+    assert parsed.command.model_dump(mode="json")["specification_status"] == "needed"
 
 
 @pytest.mark.parametrize(
@@ -60,10 +60,10 @@ def test_public_commands_still_reject_unrelated_statuses(kind: str, id_key: str)
         )
 
 
-def test_table_mutation_normalizes_needed_without_loosening_persisted_model() -> None:
-    raw = project_material(specification_status="needed")
+def test_table_mutation_normalizes_legacy_missing_without_loosening_persisted_model() -> None:
+    raw = project_material(specification_status="missing")
 
-    assert ProjectMaterialMutation.model_validate(raw).specification_status == "missing"
+    assert ProjectMaterialMutation.model_validate(raw).specification_status == "needed"
     with pytest.raises(ValidationError):
         ProjectMaterial.model_validate(raw)
 

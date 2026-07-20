@@ -304,7 +304,7 @@ def test_project_aperture_product_datasheet_references_are_discoverable() -> Non
             "color": None,
             "source": None,
             "comments": None,
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": ["asset_glazing_pdf"],
             "catalog_origin": None,
         }
@@ -329,7 +329,7 @@ def test_project_aperture_product_datasheet_references_are_discoverable() -> Non
             "color": None,
             "source": None,
             "comments": None,
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": ["asset_frame_pdf"],
             "catalog_origin": None,
         }

@@ -100,7 +100,7 @@ def test_project_glazing_and_frame_models_mirror_material_contract() -> None:
         {
             "id": "pglz_test",
             **{key: value for key, value in _glazing_ref().items() if key != "datasheet_url"},
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": [],
         }
     )
@@ -108,7 +108,7 @@ def test_project_glazing_and_frame_models_mirror_material_contract() -> None:
         {
             "id": "pfrm_test",
             **{key: value for key, value in _frame_ref().items() if key != "datasheet_url"},
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": [],
         }
     )
@@ -133,7 +133,7 @@ def test_aperture_refs_must_resolve_to_flat_project_entities() -> None:
         {
             "id": "pglz_default",
             **{key: value for key, value in _glazing_ref().items() if key != "datasheet_url"},
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": [],
         }
     ]
@@ -141,7 +141,7 @@ def test_aperture_refs_must_resolve_to_flat_project_entities() -> None:
         {
             "id": "pfrm_default",
             **{key: value for key, value in _frame_ref().items() if key != "datasheet_url"},
-            "specification_status": "missing",
+            "specification_status": "needed",
             "datasheet_asset_ids": [],
         }
     ]

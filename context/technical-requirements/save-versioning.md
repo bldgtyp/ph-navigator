@@ -154,7 +154,7 @@ Properties:
   stored draft. Save re-runs full-document validation as a final gate.
 - **Read-time forward-only upgrade is the live schema-migration
   mechanism.** Drafts and saved versions tag the body with
-  `schema_version: N`; current is `6`
+  `schema_version: N`; current is `8`
   (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`,
   `backend/features/project_document/document.py`), up from the
   pre-launch clean-baseline squash. `backend/features/project_document/store.py`

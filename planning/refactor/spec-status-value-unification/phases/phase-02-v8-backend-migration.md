@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 14:35 EDT
-STATUS: Planned
+STATUS: Implemented — not merge-eligible until Phase 03 lands
 AUTHOR: Codex with Ed May
 SCOPE: Implement schema v8 and canonical backend status semantics.
 RELATED:
@@ -90,3 +90,27 @@ with Phase 03 and full `make ci` is green.
 - Exact diff touches any non-target path.
 - Rich Honeybee round-trip cannot preserve semantics.
 - A saved historical row must be mutated for typed reads to work.
+
+## As-built notes (2026-07-19)
+
+Implemented as planned, with these clarifications worth carrying forward:
+
+- The permanent Honeybee adapters live in one module,
+  `backend/features/envelope/honeybee_specification_status.py`, and all three
+  crossings route through it. It exposes two export spellings because the
+  formats differ: Honeybee-authored files use `MISSING`, while our own native
+  HBJSON export has always written lower case. Imports accept either case and
+  either spelling.
+- The summary states (`StatusSummaryState`, `DocumentationSpecStatus`) are now
+  declared as `SpecificationStatus | Literal["unknown"]` rather than a
+  hand-listed literal, so a future status change is a type error instead of a
+  silently out-of-contract API value. `SPECIFICATION_STATUSES` is exported
+  beside the literal in `envelope_models.py` and shared by every consumer.
+- The frozen v7 corpus case is `v7/inputs/mixed_specification_statuses.json`:
+  one row per status in each of the three lists, legacy `missing` first. Its
+  committed input → expected diff is exactly `schema_version` plus three
+  values. The audit CLI's new `specification_status_rename` block reports
+  per-path `legacy_value_count` and `changed_paths` for the Phase 04 audit.
+- `specification_status_compat.py` is still load-bearing for the *shipping*
+  frontend, which serializes `missing` until Phase 03 renames it — not only
+  for stale caches. It cannot be removed on an observation window alone.

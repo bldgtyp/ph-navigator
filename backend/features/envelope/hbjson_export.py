@@ -8,6 +8,7 @@ from typing import Any
 
 from starlette import status
 
+from features.envelope.honeybee_specification_status import to_native_ref_status
 from features.envelope.thermal import ThermalIssue, thermal_issues
 from features.project_document.document import Assembly, AssemblyLayer, ProjectDocumentV1, ProjectMaterial
 from features.shared.errors import api_error
@@ -166,7 +167,7 @@ def _energy_material_payload(
             "ref": {
                 "type": "EnergyMaterialRefProperties",
                 "external_identifiers": {"ph_nav": material.id},
-                "ref_status": material.specification_status,
+                "ref_status": to_native_ref_status(material.specification_status),
                 "document_refs": [{"asset_id": asset_id} for asset_id in material.datasheet_asset_ids],
             },
         },

@@ -12,7 +12,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic exterior cladding for the seeded 2x4 wall.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     },
@@ -28,7 +28,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic wood structural sheathing.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     },
@@ -44,7 +44,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic cavity insulation for 2x4 stud bays.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     },
@@ -60,7 +60,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic SPF 2x4 framing.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     },
@@ -76,7 +76,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic interior gypsum board.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     },
@@ -92,7 +92,7 @@
       "source": "PHN seed data",
       "url": null,
       "comments": "Generic homogeneous concrete assembly material.",
-      "specification_status": "missing",
+      "specification_status": "needed",
       "datasheet_asset_ids": [],
       "catalog_origin": null
     }

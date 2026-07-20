@@ -391,6 +391,42 @@ def _upgrade_v6_to_v7(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+#: The only document paths whose rows carry a typed built-in specification
+#: status. Equipment and Thermal Bridges keep their DataTable option ids
+#: (``opt_status_needed``) and are deliberately not traversed here.
+SPECIFICATION_STATUS_TABLE_PATHS: tuple[str, ...] = (
+    "project_materials",
+    "project_glazings",
+    "project_frames",
+)
+
+
+def _upgrade_v7_to_v8(raw: dict[str, object]) -> dict[str, object]:
+    """Rename the built-in specification status ``missing`` to ``needed``.
+
+    Exact value replacement on three row lists: no other value, row, or path is
+    touched, so a body already carrying ``needed`` upgrades byte-identically.
+    """
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    for table_name in SPECIFICATION_STATUS_TABLE_PATHS:
+        path = f"tables.{table_name}"
+        tables[table_name] = [_rename_missing_specification_status(row) for row in _list(tables.get(table_name), path)]
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 8
+    return upgraded
+
+
+def _rename_missing_specification_status(row: object) -> object:
+    if not isinstance(row, Mapping):
+        return row
+    row_mapping = cast(Mapping[str, object], row)
+    if row_mapping.get("specification_status") != "missing":
+        return row
+    return {**row_mapping, "specification_status": "needed"}
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
@@ -399,6 +435,7 @@ UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     4: _upgrade_v4_to_v5,
     5: _upgrade_v5_to_v6,
     6: _upgrade_v6_to_v7,
+    7: _upgrade_v7_to_v8,
 }
 
 

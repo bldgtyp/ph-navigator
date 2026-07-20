@@ -10,6 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from features.project_document.envelope_models import (
+    SPECIFICATION_STATUSES,
     Assembly,
     AssemblySegment,
     EvidenceStatus,
@@ -28,7 +29,7 @@ from features.project_document.tables.contracts import read_table_envelope
 from features.project_document.validation import document_etag
 from features.projects.access import ProjectAccess
 
-DocumentationSpecStatus = Literal["needed", "question", "complete", "na", "unknown"]
+DocumentationSpecStatus = SpecificationStatus | Literal["unknown"]
 DocumentationEvidenceStatus = EvidenceStatus
 
 
@@ -214,13 +215,6 @@ _STATUS_BY_OPTION_ID: dict[str, DocumentationSpecStatus] = {
     STATUS_OPTION_QUESTION: "question",
     STATUS_OPTION_COMPLETE: "complete",
     STATUS_OPTION_NA: "na",
-}
-
-_STATUS_BY_SPECIFICATION_STATUS: dict[SpecificationStatus, DocumentationSpecStatus] = {
-    "missing": "needed",
-    "question": "question",
-    "complete": "complete",
-    "na": "na",
 }
 
 
@@ -455,11 +449,11 @@ def _custom_status(custom_values: Mapping[str, object]) -> DocumentationSpecStat
 
 def _row_spec_status(row: object) -> DocumentationSpecStatus:
     raw_status = getattr(row, "specification_status", None)
-    return _specification_status(cast("SpecificationStatus", raw_status)) if isinstance(raw_status, str) else "unknown"
+    return _specification_status(raw_status)
 
 
-def _specification_status(status: SpecificationStatus) -> DocumentationSpecStatus:
-    return _STATUS_BY_SPECIFICATION_STATUS.get(status, "unknown")
+def _specification_status(status: object) -> DocumentationSpecStatus:
+    return cast("DocumentationSpecStatus", status) if status in SPECIFICATION_STATUSES else "unknown"
 
 
 def _evidence_status(row: object, key: str) -> DocumentationEvidenceStatus:

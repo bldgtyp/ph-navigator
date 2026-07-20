@@ -275,7 +275,7 @@ def _create_project_material(material: ImportedMaterial) -> ProjectMaterial:
         specific_heat_j_kgk=_non_negative_or_none(material.specific_heat_j_kgk),
         emissivity=_unit_interval_or_none(material.emissivity),
         color=material.color,
-        specification_status=material.specification_status or "missing",
+        specification_status=material.specification_status or "needed",
     )
 
 

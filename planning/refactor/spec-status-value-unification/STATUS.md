@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Phase 01 implementation complete — production deployment pending
+STATUS: Phase 02 implementation complete — Phase 03 required before merge
 AUTHOR: Codex with Ed May
 SCOPE: Current state and implementation gates for specification-status value
   unification.
@@ -18,11 +18,16 @@ RELATED:
 
 ## Current state
 
-Phase 01's Release-A code is implemented and CI-green. The complete read-only
-production entry corpus contained two schema-v4 saved bodies across the two
-named projects and no open drafts; both bodies passed the existing v4 → v7
-candidate and strict structural validation. No production body, draft, saved
-version, service, or status value was changed.
+Phase 02's schema-v8 backend is implemented and the backend suite is green
+(1456 passed). `needed` is now the strict canonical backend value: the v7 → v8
+upgrader, `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8`, canonical defaults and
+factories, typed summary pass-through, permanent Honeybee adapters, the frozen
+v7 corpus, and the audit CLI's rename diagnostics all landed. Phase 01's
+Release-A code remains implemented and undeployed.
+
+Phase 02 is deliberately not merge-eligible on its own: the shipping frontend
+still serializes `missing`, so Phase 03 must land with it. Nothing was deployed
+and no production body, draft, saved version, or status value was changed.
 
 ## Accepted planning conclusions
 
@@ -42,10 +47,11 @@ version, service, or status value was changed.
 
 ## Next step
 
-Ed reviews and merges the Release-A candidate, then completes the verified
-backup/restore and rollback gate before explicitly triggering production
-deployment. After both API/web SHA markers match, run authenticated read-only
-smoke on both projects. Do not use a real project mutation as a smoke test.
+Implement Phase 03 (canonical frontend/API consumers) so candidate B is
+complete, then run full `make ci` across both phases. Ed's Release-A
+review/merge/deploy and the verified backup/restore gate remain open and
+unchanged — Phase 02/03 code must not deploy ahead of them. Do not use a real
+project mutation as a smoke test.
 
 ## Phase 00 evidence
 
@@ -55,6 +61,15 @@ The v7 guard and focused schema gates remain green. Release A accepts either
 displays Needed across the specification-status UI, and adds exact API/web
 build-SHA deployment gates. Exact corpus hashes, project names/ids, commands,
 and operator results remain in the gitignored worksheet and audit artifacts.
+
+## Deferred to Phase 03/07
+
+Backend-contract docs in `context/` were synced with this phase
+(`data-model.md`, `llm-mcp-schema.md`, `envelope-hbjson-import.md`,
+`envelope-hbjson-export.md`). The UI-presentation and normalization prose that
+still says `missing` — `context/ui/pages/envelope-tab.md`,
+`context/ui/pages/status-tab.md`, `context/technical-requirements/data-table.md`
+— is left for Phase 03, which is what makes those statements true end-to-end.
 
 ## Open operator inputs (not design blockers)
 
@@ -75,7 +90,7 @@ input. No production deploy proceeds while its applicable gate is blank.
 | --- | --- | --- |
 | 00 Contract/baseline | Complete | v7 baseline green; project ids recorded |
 | 01 Compatibility A | Implementation complete; deploy pending | CI + both-project deployed smoke |
-| 02 v8 backend | Not started | corpus/exact-diff/domain/export gates green |
+| 02 v8 backend | Implemented; merges with 03 | corpus/exact-diff/domain/export gates green |
 | 03 Canonical UI/adapters | Not started | UI/wire/custom-option regressions green |
 | 04 Production preflight | Not started | full corpus + restore point + go/no-go |
 | 05 Deploy/no-write smoke | Not started | both SHAs + both-project reads green |
@@ -86,14 +101,14 @@ input. No production deploy proceeds while its applicable gate is blank.
 
 - [ ] Compatibility A deployed and verified before Canonical B.
 - [x] Phase 00 v7 baseline, production identities, and status inventory complete.
-- [ ] Frozen v7 corpus covers all three built-in row paths.
-- [ ] v7 → v8 exact diff and idempotence proven.
+- [x] Frozen v7 corpus covers all three built-in row paths.
+- [x] v7 → v8 exact diff and idempotence proven.
 - [ ] Canonical built-in status is `needed` backend/frontend.
 - [x] Apertures displays Needed, not Missing, for specification status.
 - [ ] Documentation built-in write emits `needed`.
-- [ ] Equipment/TB option ids remain unchanged.
-- [ ] Summary built-in translation shims removed.
-- [ ] Honeybee external `MISSING` compatibility proven.
+- [x] Equipment/TB option ids remain unchanged.
+- [x] Summary built-in translation shims removed.
+- [x] Honeybee external `MISSING` compatibility proven.
 - [ ] Both production projects' versions/drafts audited with hashes/counts.
 - [ ] Verified restore point and write freeze recorded.
 - [ ] Both deployed SHAs and read-only smokes recorded.

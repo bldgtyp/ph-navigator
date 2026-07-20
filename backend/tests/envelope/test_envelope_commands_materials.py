@@ -68,7 +68,7 @@ def test_catalog_pick_copies_once_and_reuses_project_material(
     copied = next(material for material in first_json["project_materials"] if material["name"] == "XPS")
     assert copied["catalog_origin"]["catalog_record_id"] == catalog["id"]
     assert copied["catalog_origin"]["catalog_version_id"] is None
-    assert copied["specification_status"] == "missing"
+    assert copied["specification_status"] == "needed"
     assert first_json["assemblies"][0]["layers"][1]["segments"][0]["project_material_id"] == copied["id"]
 
     second = client.post(
@@ -146,7 +146,7 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
         material for material in edited.json()["project_materials"] if material["id"] == custom["id"]
     )
     assert edited_material["conductivity_w_mk"] == pytest.approx(0.041)
-    assert edited_material["specification_status"] == "missing"
+    assert edited_material["specification_status"] == "needed"
 
     noted = client.post(
         command_url(project_id, version_id),

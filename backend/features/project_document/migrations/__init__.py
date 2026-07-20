@@ -1,6 +1,7 @@
 """Project-document schema evolution entry points."""
 
 from features.project_document.migrations.upgrade import (
+    SPECIFICATION_STATUS_TABLE_PATHS,
     ProjectDocumentMigrationError,
     SchemaVersionInvalidError,
     SchemaVersionMissingError,
@@ -10,6 +11,7 @@ from features.project_document.migrations.upgrade import (
 )
 
 __all__ = [
+    "SPECIFICATION_STATUS_TABLE_PATHS",
     "ProjectDocumentMigrationError",
     "SchemaVersionInvalidError",
     "SchemaVersionMissingError",

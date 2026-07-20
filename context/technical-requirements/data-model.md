@@ -431,7 +431,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "color": "#dbeafe",
         "source": "Manufacturer datasheet",
         "comments": null,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
         "catalog_origin": { "catalog_table": "glazing_types", "catalog_record_id": "rec..." }
       }
@@ -456,7 +456,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "color": "#aabbcc",
         "source": "Manufacturer datasheet",
         "comments": null,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
         "catalog_origin": { "catalog_table": "frame_types", "catalog_record_id": "rec..." }
       }
@@ -972,7 +972,7 @@ Rules (post-Phase 1b):
 - **Current schema-version contract:** the project-document schema was
   squashed to a clean baseline once during pre-launch dev-only churn,
   and has bumped forward several times since
-  (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`, currently `6`, `Literal[6]`
+  (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`, currently `8`, `Literal[8]`
   on `ProjectDocumentV1.schema_version` — `backend/features/project_document/document.py`).
   Each bump documented there (Space-Types promoted to a top-level table,
   the record-identity model, Heat Pumps' four-leaf-table consolidation,

@@ -17,9 +17,9 @@ from features.project_document.validation import validate_document
 
 
 class ProjectMaterialMutation(ProjectMaterial):
-    """Public table-row DTO; the stored ``ProjectMaterial`` remains strict v7."""
+    """Public table-row DTO; the stored ``ProjectMaterial`` remains strict v8."""
 
-    specification_status: CompatibleSpecificationStatus = "missing"
+    specification_status: CompatibleSpecificationStatus = "needed"
 
 
 class ProjectMaterialsReplaceRequest(BaseModel):

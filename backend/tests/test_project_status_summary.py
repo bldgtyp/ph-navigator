@@ -162,7 +162,7 @@ def test_summary_projects_aperture_and_envelope_specification_status() -> None:
                 ProjectGlazing(
                     id="pglz_triple",
                     name="Triple glazing",
-                    specification_status="missing",
+                    specification_status="needed",
                     comments="Confirm final SHGC.",
                 )
             ],

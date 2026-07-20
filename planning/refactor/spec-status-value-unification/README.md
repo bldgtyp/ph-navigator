@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Phase 01 implementation complete — production deployment pending
+STATUS: Phase 02 implementation complete — Phase 03 required before merge
 AUTHOR: Codex with Ed May
 SCOPE: Make `needed` the canonical PH-Navigator specification-status value
   while preserving historical project versions, external Honeybee
@@ -23,10 +23,12 @@ RELATED:
 Planning router for the built-in specification-status rename
 `missing` → `needed`.
 
-Current checkpoint: Compatibility Release A is implemented and CI-green. Its
-read-only two-project entry audit passed; Ed's backup/restore gate, deploy, and
-authenticated production smoke remain pending. No production write or deploy
-was performed during implementation.
+Current checkpoint: Compatibility Release A is implemented and CI-green (its
+read-only two-project entry audit passed), and Canonical Release B's backend
+half — Phase 02, schema v8 — is implemented on top of it. Phase 03 must land
+before either is merge-eligible, because the shipping frontend still writes
+`missing`. Ed's backup/restore gate, deploy, and authenticated production smoke
+remain pending. No production write or deploy was performed.
 
 Read in this order:
 

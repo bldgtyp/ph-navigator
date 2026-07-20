@@ -35,6 +35,7 @@ from honeybee_energy_ref.image_ref import ImageReference
 from starlette import status
 
 from features.assets.base import asset_locator
+from features.envelope.honeybee_specification_status import to_external_ref_status
 from features.gh_api.export_helpers import reject_duplicate_names
 from features.gh_api.models import GhWarning
 from features.project_document.document import ProjectDocumentV1
@@ -180,7 +181,7 @@ def _apply_references(hb_material: EnergyMaterial, material: ProjectMaterial, se
         locator = asset_locator(asset_id)
         ref.add_image_ref(ImageReference(thumbnail_image_uri=locator, full_size_image_uri=locator))
     ref.add_external_identifier("ph_nav", material.id)
-    ref.ref_status = material.specification_status
+    ref.ref_status = to_external_ref_status(material.specification_status)
     ref.lock()
 
 

@@ -294,6 +294,7 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
         "_upgrade_v4_to_v5",
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
     )
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
@@ -337,6 +338,7 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
         "_upgrade_v4_to_v5",
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
     )
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
@@ -380,6 +382,7 @@ def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields()
         "_upgrade_v4_to_v5",
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
     )
     assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
         pump_keys
@@ -403,7 +406,13 @@ def test_project_document_v3_upgrade_adds_room_ventilator_field() -> None:
 
     field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
     assert result.original_schema_version == 3
-    assert result.applied_steps == ("_upgrade_v3_to_v4", "_upgrade_v4_to_v5", "_upgrade_v5_to_v6", "_upgrade_v6_to_v7")
+    assert result.applied_steps == (
+        "_upgrade_v3_to_v4",
+        "_upgrade_v4_to_v5",
+        "_upgrade_v5_to_v6",
+        "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
+    )
     assert field_keys[field_keys.index("space_type_id") + 1] == "ventilator_id"
 
 
@@ -433,7 +442,12 @@ def test_project_document_v4_upgrade_adds_heat_pump_display_name_and_backfills_f
     result = upgrade_project_document(raw)
 
     assert result.original_schema_version == 4
-    assert result.applied_steps == ("_upgrade_v4_to_v5", "_upgrade_v5_to_v6", "_upgrade_v6_to_v7")
+    assert result.applied_steps == (
+        "_upgrade_v4_to_v5",
+        "_upgrade_v5_to_v6",
+        "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
+    )
     leaves = result.document.tables.equipment.heat_pumps
     for envelope in (leaves.outdoor_equip, leaves.indoor_equip, leaves.outdoor_units, leaves.indoor_units):
         field_keys = [field.field_key for field in envelope.field_defs]
@@ -461,13 +475,80 @@ def test_project_document_v6_upgrade_backfills_documentation_evidence_statuses()
 
     rows = result.document.tables.equipment.pumps.rows
     assert result.original_schema_version == 6
-    assert result.applied_steps == ("_upgrade_v6_to_v7",)
+    assert result.applied_steps == ("_upgrade_v6_to_v7", "_upgrade_v7_to_v8")
     assert rows[0].datasheet_status == "na"
     assert rows[0].photo_status == "complete"
     assert rows[1].datasheet_status == "complete"
     assert rows[1].photo_status == "na"
     assert rows[2].datasheet_status == "needed"
     assert rows[2].photo_status == "needed"
+
+
+def test_project_document_v7_upgrade_renames_specification_status_missing_to_needed() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 7
+    tables = cast(dict[str, Any], raw["tables"])
+    tables["project_materials"] = [
+        {"id": "pmat_1", "name": "Batt", "category": "Insulation", "specification_status": "missing"},
+        {"id": "pmat_2", "name": "Board", "category": "Board", "specification_status": "complete"},
+    ]
+    tables["project_glazings"] = [
+        {"id": "pglz_1", "name": "Triple", "specification_status": "missing"},
+        {"id": "pglz_2", "name": "Double", "specification_status": "question"},
+    ]
+    tables["project_frames"] = [
+        {"id": "pfrm_1", "name": "uPVC", "specification_status": "missing"},
+        {"id": "pfrm_2", "name": "Existing", "specification_status": "na"},
+    ]
+
+    result = upgrade_project_document(raw)
+
+    document_tables = result.document.tables
+    assert result.original_schema_version == 7
+    assert result.applied_steps == ("_upgrade_v7_to_v8",)
+    assert [row.specification_status for row in document_tables.project_materials] == ["needed", "complete"]
+    assert [row.specification_status for row in document_tables.project_glazings] == ["needed", "question"]
+    assert [row.specification_status for row in document_tables.project_frames] == ["needed", "na"]
+
+
+def test_project_document_v7_upgrade_preserves_a_transitional_body_already_carrying_needed() -> None:
+    """A body written mid-rollout may already hold ``needed``; upgrading is a no-op.
+
+    Deliberately a unit test rather than a frozen v7 fixture: ``needed`` was
+    never a legitimate persisted v7 value, so admitting one to the corpus would
+    misrepresent the baseline.
+    """
+
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 7
+    cast(dict[str, Any], raw["tables"])["project_materials"] = [
+        {"id": "pmat_1", "name": "Batt", "category": "Insulation", "specification_status": "needed"}
+    ]
+
+    result = upgrade_project_document(raw)
+
+    assert [row.specification_status for row in result.document.tables.project_materials] == ["needed"]
+
+
+def test_project_document_v7_upgrade_accepts_absent_and_empty_specification_status_tables() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 7
+    tables = cast(dict[str, Any], raw["tables"])
+    tables["project_materials"] = []
+    tables["project_glazings"] = []
+    tables["project_frames"] = []
+
+    result = upgrade_project_document(raw)
+
+    assert result.document.tables.project_materials == []
+    assert result.document.tables.project_glazings == []
+    assert result.document.tables.project_frames == []
 
 
 def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:

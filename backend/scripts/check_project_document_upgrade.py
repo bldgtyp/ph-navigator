@@ -24,6 +24,7 @@ from features.project_document.fielddef_drift import (
     total_fielddef_drift,
 )
 from features.project_document.migrations import (
+    SPECIFICATION_STATUS_TABLE_PATHS,
     ProjectDocumentMigrationError,
     SchemaVersionTooNewError,
     upgrade_project_document,
@@ -49,6 +50,19 @@ AuditFailureCode = Literal[
 ]
 
 
+class SpecificationStatusRenameReport(TypedDict):
+    """Per-path evidence for the v7 -> v8 ``missing`` -> ``needed`` rename.
+
+    ``legacy_value_count`` is what the stored body carried and ``changed_paths``
+    is what the upgrade actually rewrote. The two must agree row-for-row; a
+    mismatch means the migration inferred something instead of replacing a
+    value, and is a rollout stop condition.
+    """
+
+    legacy_value_count: int
+    changed_paths: list[str]
+
+
 class AuditRecord(TypedDict):
     source: str
     schema_version: int | None
@@ -62,6 +76,7 @@ class AuditRecord(TypedDict):
     preview_path: str | None
     fielddef_drift_count: int
     fielddef_drift: list[TableFieldDefDriftReport] | None
+    specification_status_rename: dict[str, SpecificationStatusRenameReport] | None
 
 
 class LargestBody(TypedDict):
@@ -234,6 +249,7 @@ def _audit_one(
         "preview_path": None,
         "fielddef_drift_count": 0,
         "fielddef_drift": None,
+        "specification_status_rename": None,
     }
     try:
         result = upgrade_project_document(item.body)
@@ -267,7 +283,58 @@ def _audit_one(
         "preview_path": str(preview_path) if preview_path is not None else None,
         "fielddef_drift_count": fielddef_drift_count,
         "fielddef_drift": fielddef_drift,
+        "specification_status_rename": (
+            _specification_status_rename(item.body, result.upgraded_raw_body)
+            if result.original_schema_version < 8
+            else None
+        ),
     }
+
+
+def _specification_status_rename(
+    source: object, upgraded: dict[str, object]
+) -> dict[str, SpecificationStatusRenameReport]:
+    """Report, per table path, the legacy values found and the rows rewritten.
+
+    The two sides are counted independently — the source body for what was
+    stored, the upgraded body for what the migration actually rewrote — so a
+    disagreement between them is real evidence rather than a restatement.
+    """
+
+    source_tables = _tables(source)
+    upgraded_tables = _tables(upgraded)
+    report: dict[str, SpecificationStatusRenameReport] = {}
+    for table_name in SPECIFICATION_STATUS_TABLE_PATHS:
+        before = _row_statuses(source_tables.get(table_name))
+        after = _row_statuses(upgraded_tables.get(table_name))
+        report[f"tables.{table_name}"] = {
+            "legacy_value_count": before.count("missing"),
+            "changed_paths": [
+                f"tables.{table_name}[{index}].specification_status"
+                for index, (was, now) in enumerate(zip(before, after, strict=False))
+                if was != now
+            ],
+        }
+    return report
+
+
+def _tables(body: object) -> dict[str, object]:
+    """Read ``tables`` tolerantly — unlike the upgrade helpers, an audit of a
+    junk body must report on it rather than raise."""
+
+    if not isinstance(body, dict):
+        return {}
+    tables = cast(dict[str, object], body).get("tables")
+    return cast(dict[str, object], tables) if isinstance(tables, dict) else {}
+
+
+def _row_statuses(rows: object) -> list[object]:
+    if not isinstance(rows, list):
+        return []
+    return [
+        cast(dict[str, object], row).get("specification_status") if isinstance(row, dict) else None
+        for row in cast(list[object], rows)
+    ]
 
 
 def _load_json_file(path: Path) -> object:

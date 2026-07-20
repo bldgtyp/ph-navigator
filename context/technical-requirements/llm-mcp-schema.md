@@ -181,7 +181,7 @@ can be added later if CI starts checking committed generated artifacts.
 when it was saved must remain openable forever. No production release
 ships if it breaks reads of any prior document `schema_version`.
 
-**Current state.** `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is `6`
+**Current state.** `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is `8`
 (`backend/features/project_document/document.py`) and has bumped
 several times since the pre-launch baseline. Every bump uses the
 project-document upgrade lane: a read-time forward-only shim chain

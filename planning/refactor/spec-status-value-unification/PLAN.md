@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-19
 TIME: 11:30 EDT
-STATUS: Phase 01 implementation complete — production deployment pending
+STATUS: Phase 02 implementation complete — Phase 03 required before merge
 AUTHOR: Codex with Ed May
 SCOPE: Release and implementation sequence for canonical specification status
   `needed` with two production projects.
@@ -71,6 +71,11 @@ Add `_upgrade_v7_to_v8`, `UPGRADE_STEPS[7]`, schema v8, strict canonical
 `SpecificationStatus`, defaults/producers, frozen v7 corpus, exact-diff tests,
 seed updates, and summary pass-through. Add permanent Honeybee import/export
 adapters and keep one named cached-client request adapter.
+
+Implemented 2026-07-19; backend suite green. The v7 → v8 diff is exactly
+`schema_version` plus the three permitted status values, and idempotence holds.
+Not merge-eligible alone — Phase 03 must ship with it. See the phase doc's
+as-built notes.
 
 Plan: `phases/phase-02-v8-backend-migration.md`.
 

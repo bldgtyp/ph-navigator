@@ -16,6 +16,7 @@ from typing import Any, cast
 
 from starlette import status
 
+from features.envelope.honeybee_specification_status import from_external_ref_status
 from features.project_document.envelope_models import (
     AssemblyOrientation,
     AssemblyType,
@@ -34,7 +35,6 @@ DEFAULT_LAYER_WIDTH_MM = 1000.0
 _ASSEMBLY_TYPES = frozenset({"wall", "floor", "roof", "other"})
 _ASSEMBLY_TYPE_PREFIXES: dict[str, AssemblyType] = {"W_": "wall", "R_": "roof", "F_": "floor"}
 _ORIENTATIONS = frozenset({"first_layer_outside", "last_layer_outside"})
-_SPECIFICATION_STATUSES = frozenset({"complete", "missing", "question", "na"})
 
 
 class ImportParseError(Exception):
@@ -356,7 +356,7 @@ def _imported_material(source_key: str, material: dict[str, Any], ph_nav: dict[s
         # Export writes all three absorptances from the single emissivity; read any one back.
         emissivity=_as_optional_float(material.get("thermal_absorptance")),
         color=_material_color(material),
-        specification_status=_coerce_specification_status(_ref_status(material)),
+        specification_status=from_external_ref_status(_ref_status(material)),
     )
 
 
@@ -384,12 +384,6 @@ def _coerce_orientation(value: object) -> AssemblyOrientation:
     if isinstance(value, str) and value in _ORIENTATIONS:
         return cast(AssemblyOrientation, value)
     return "first_layer_outside"
-
-
-def _coerce_specification_status(value: object) -> SpecificationStatus | None:
-    if isinstance(value, str) and value in _SPECIFICATION_STATUSES:
-        return cast(SpecificationStatus, value)
-    return None
 
 
 def _meters_to_mm(value: object) -> float:

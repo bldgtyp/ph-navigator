@@ -33,7 +33,7 @@ All endpoints live under a versioned prefix: `/api/v1/...`. Hard rules:
 - **Document body schema versioning is independent** from API
   versioning. `/api/v1` upgrades project-document bodies forward at
   read time toward the current schema (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION`,
-  currently `6`) and rejects bodies it cannot upgrade. See
+  currently `8`) and rejects bodies it cannot upgrade. See
   `save-versioning.md` for the read-time upgrade mechanism and §10.5 for
   the schema-bump discipline (dict-to-dict upgraders, fixtures, audit CLI).
 - **Deprecation marking.** Endpoints scheduled for removal carry a

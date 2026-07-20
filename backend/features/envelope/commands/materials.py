@@ -122,7 +122,7 @@ def new_hand_entered_material(
     specific_heat_j_kgk: float | None,
     emissivity: float | None,
     color: str | None,
-    specification_status: SpecificationStatus = "missing",
+    specification_status: SpecificationStatus = "needed",
 ) -> ProjectMaterial:
     """Build a fresh project-only material (no catalog origin, no datasheets).
 
@@ -313,7 +313,7 @@ def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
         source=row["source"],
         url=row["url"],
         comments=row["comments"],
-        specification_status="missing",
+        specification_status="needed",
         datasheet_asset_ids=[],
         catalog_origin=CatalogOrigin(
             catalog_table="materials",

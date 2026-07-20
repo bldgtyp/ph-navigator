@@ -25,7 +25,7 @@ def _glazing(**overrides: Any) -> dict[str, Any]:
         "color": None,
         "source": None,
         "comments": None,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
         "catalog_origin": None,
     }
@@ -53,7 +53,7 @@ def _frame(**overrides: Any) -> dict[str, Any]:
         "color": None,
         "source": None,
         "comments": None,
-        "specification_status": "missing",
+        "specification_status": "needed",
         "datasheet_asset_ids": [],
         "catalog_origin": None,
     }

@@ -167,8 +167,11 @@ Every emitted `EnergyMaterial` carries
 }
 ```
 
-- `ref_status` mirrors the project material's `specification_status`
-  (e.g. `missing`, `pending`, `complete`).
+- `ref_status` mirrors the project material's `specification_status`,
+  translated to the Honeybee token set by
+  `envelope/honeybee_specification_status.py`: internal `needed` exports as
+  `missing` here (and as `MISSING` in the rich Honeybee/GH export), because
+  installed `honeybee_ref` accepts only `COMPLETE | MISSING | QUESTION | NA`.
 - `document_refs` lists every `datasheet_asset_id` attached to the
   project material, in document order. Asset IDs are stable, in-project
   references; resolving them to URLs is the consumer's job.
