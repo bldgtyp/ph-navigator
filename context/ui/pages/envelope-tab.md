@@ -57,29 +57,46 @@ active-assembly canvas/workbench (right). Same shell pattern as the
 Apertures tab. The assembly visual is the primary object, not a decorative
 preview.
 
-**Sidebar (US-ENV-2):**
+**Sidebar (US-ENV-2):** the shared **element sidebar**
+(`frontend/src/shared/ui/element-sidebar/`, one component behind both this and
+the Apertures list — see the design-system component inventory). Styled to the
+"1A Quiet List" direction (restrained, low-chrome, Linear/Things-like):
 
 ```
 ┌─────────────────────────────┐
-│ + Add new assembly          │
+│ Assemblies            +  ▣  │  ← bold title + borderless ghost buttons
+│ Alphabetical   Manual       │  ← two-tab underline order control
 ├─────────────────────────────┤
-│ FLOOR-FC3R                  │
-│ FLOOR-FC6R                  │
-│ ROOF-RC5R           ✏  📑  ✕│  ← hover-revealed actions
-│ WALL-C3                     │
-│ WALL-SE-30a                 │
-│ WALL-SE-80                  │
-│ ...                         │
+│ ▦ EW-01 Exterior Wall       │  ← type icon + label; selected row = teal fill
+│ ▦ EW-02 Party Wall  ✏ ⬡ ⧉ ✕│  ← hover-revealed ghost action cluster
+│ ▤ FC-01 Floor Slab          │
+│ ⌂ RC-01 Roof                │
 └─────────────────────────────┘
 ```
 
-- Sticky add-button at top.
-- Naturally-sorted list (`WALL-C2 < WALL-C10 < WALL-SE-30a`).
-- Active row highlighted.
-- Hover reveals `Edit name (✏) · Duplicate (📑) · Delete (✕)`
-  icons (logged-in editor on unlocked version only).
-- All edit affordances hidden when version is locked or when the
-  visitor is a Viewer.
+- **Header:** bold title + two ghost (borderless) icon buttons — Add (`+`) and
+  Collapse (`▣`); quiet neutral wash on hover.
+- **Order control** (editors, unlocked version): two text tabs sharing a bottom
+  hairline — **Alphabetical** (natural sort, `WALL-C2 < WALL-C10 < WALL-SE-30a`;
+  not draggable) and **Manual** (drag-to-reorder + group affordances). The active
+  tab is semibold accent-text with a 2px accent underline. The chosen mode
+  persists per-user via `user_sidebar_views` view-state (not the document).
+- **Rows** (40 px): leading assembly-type icon (wall/roof/floor/other), label,
+  and a hover/`:focus-within`-revealed cluster of borderless ghost actions —
+  `Rename (✏) · Change type (⬡) · Duplicate (⧉) · Delete (✕)` — that fades in
+  over a gradient scrim so the label reads full-width at rest. No dark tooltip
+  (native `title` + `aria-label`). Hover is a neutral wash; **only the selected
+  row carries the teal fill**.
+- **Manual mode** adds a hover-reveal drag grip (faint at rest) in a reserved
+  slot, groups rendered as lightweight uppercase-label + hairline-rule dividers
+  (not boxes; collapse chrome is deferred to a future "1B" but the
+  `collapsed_group_ids` field is preserved), and a quiet ghost "New group"
+  button. Group assignment is drag-across-a-divider or the keyboard-accessible
+  "move to group" select.
+- All editor affordances (order tabs, grip, action cluster, New group) are hidden
+  when the version is locked or the visitor is a Viewer — it renders as a calm
+  read-only list.
+- `prefers-reduced-motion: reduce` disables the fade/translate transitions.
 
 **Right side — active assembly content (US-ENV-3, 4):**
 

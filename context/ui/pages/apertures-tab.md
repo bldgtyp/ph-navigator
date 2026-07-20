@@ -22,6 +22,20 @@ Bare `/projects/{id}/apertures` redirects to Builder.
 skylights): left-rail list of aperture-type entries; clicking an entry opens the
 per-aperture-type editor (rows, columns, frames, glazings, operation).
 
+The left rail is the shared **element sidebar**
+(`frontend/src/shared/ui/element-sidebar/`), the same component behind the
+Envelope Assemblies list, styled to the "1A Quiet List" direction: bold title +
+ghost Add/Collapse buttons, a two-tab **Alphabetical / Manual** underline order
+control, 40 px rows with neutral hover and teal-only selection, a
+hover/`:focus-within`-revealed ghost action cluster (`Rename · Duplicate ·
+Delete`, no dark tooltip) over a gradient scrim, and — in Manual mode — a
+hover-reveal drag grip, groups-as-dividers, and a quiet "New group" button.
+Order/manual/group state persists per-user via `user_sidebar_views` view-state.
+Aperture rows are **iconless** (unlike Envelope's assembly-type icons); they keep
+the reserved icon slot empty so alignment matches. All editor affordances are
+hidden for viewers / locked versions. See the design-system component inventory
+for the shared component.
+
 Use the shared builder shell: object browser/list on the left, visual
 aperture editor in the center, computed U-w / dimension summary near
 the top, and inspector/details or editable breakdown table adjacent to

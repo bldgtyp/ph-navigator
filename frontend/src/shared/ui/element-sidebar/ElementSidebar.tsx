@@ -9,6 +9,7 @@ import type {
   ElementSidebarNavigation,
   ElementSidebarOrganization,
   ElementSidebarRename,
+  ElementSidebarSortMode,
   RowContext,
 } from "./types";
 
@@ -157,6 +158,11 @@ export function ElementSidebar({
   );
 }
 
+const SORT_MODE_TABS: { mode: ElementSidebarSortMode; label: string }[] = [
+  { mode: "alphabetical", label: "Alphabetical" },
+  { mode: "manual", label: "Manual" },
+];
+
 function SortModeToggle({
   idPrefix,
   title,
@@ -169,30 +175,21 @@ function SortModeToggle({
   const { sortMode, onToggleSortMode } = organization;
   return (
     <div className="element-sidebar__sortbar" role="tablist" aria-label={`${title} order`}>
-      <button
-        id={`${idPrefix}-sort-alphabetical`}
-        type="button"
-        role="tab"
-        className="element-sidebar__sort-tab"
-        aria-selected={sortMode === "alphabetical"}
-        onClick={() => {
-          if (sortMode !== "alphabetical") onToggleSortMode();
-        }}
-      >
-        Alphabetical
-      </button>
-      <button
-        id={`${idPrefix}-sort-manual`}
-        type="button"
-        role="tab"
-        className="element-sidebar__sort-tab"
-        aria-selected={sortMode === "manual"}
-        onClick={() => {
-          if (sortMode !== "manual") onToggleSortMode();
-        }}
-      >
-        Manual
-      </button>
+      {SORT_MODE_TABS.map(({ mode, label }) => (
+        <button
+          key={mode}
+          id={`${idPrefix}-sort-${mode}`}
+          type="button"
+          role="tab"
+          className="element-sidebar__sort-tab"
+          aria-selected={sortMode === mode}
+          onClick={() => {
+            if (sortMode !== mode) onToggleSortMode();
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
