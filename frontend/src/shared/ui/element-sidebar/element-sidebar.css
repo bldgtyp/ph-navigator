@@ -53,53 +53,72 @@
   gap: var(--space-6);
 }
 
+/* Header + collapsed-rail chrome read as borderless "ghost" buttons (1A §4):
+   transparent at rest, a quiet neutral wash on hover — no border, no lift.
+   Scoped to the sidebar so the global bordered .icon-button is untouched for
+   its other callers. */
 .element-sidebar__tools .icon-button,
 .element-sidebar__add-collapsed {
-  position: relative;
-}
-
-/* Sort-mode toggle (editors only): alphabetical | manual. Manual turns on the
-   per-row drag handles below. */
-.element-sidebar__sortbar {
-  align-items: center;
-  display: flex;
-  gap: var(--space-8);
-  justify-content: space-between;
-  padding: var(--space-12) var(--space-18) 0;
-}
-
-.element-sidebar__sortbar-label {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-}
-
-.element-sidebar__sort-toggle {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xs);
-  display: inline-flex;
-  overflow: hidden;
-}
-
-.element-sidebar__sort-option {
-  align-items: center;
   background: transparent;
   border: 0;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
+  height: 30px;
+  min-height: 30px;
+  min-width: 30px;
+  position: relative;
+  transition:
+    background var(--transition-fast) var(--ease),
+    color var(--transition-fast) var(--ease);
+  width: 30px;
+}
+
+.element-sidebar__tools .icon-button:hover:not(:disabled),
+.element-sidebar__add-collapsed:hover:not(:disabled) {
+  background: var(--sidebar-row-hover);
+  border-color: transparent;
+  color: var(--text-primary);
+  transform: none;
+}
+
+/* Sort-mode control (editors only): two understated text tabs sharing a bottom
+   hairline (1A §5). Manual turns on the per-row drag handles below. The active
+   tab is the only teal element here — everything else stays quiet. */
+.element-sidebar__sortbar {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-20);
+  margin: var(--space-16) var(--space-18) 0;
+}
+
+.element-sidebar__sort-tab {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
   cursor: pointer;
-  display: inline-flex;
   font-size: var(--fs-sm);
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-8);
+  font-weight: var(--fw-medium);
+  /* Overlap the container's 1px hairline so the 2px active underline lands on
+     the same baseline. */
+  margin-bottom: -1px;
+  padding: 0 0 var(--space-8);
+  transition:
+    color var(--transition-fast) var(--ease),
+    border-color var(--transition-fast) var(--ease);
 }
 
-.element-sidebar__sort-option + .element-sidebar__sort-option {
-  border-left: 1px solid var(--border-subtle);
-}
-
-.element-sidebar__sort-option[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
+.element-sidebar__sort-tab[aria-selected="true"] {
+  border-bottom-color: var(--accent);
   color: var(--accent-text);
   font-weight: var(--fw-semibold);
+}
+
+.element-sidebar__sort-tab:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .element-sidebar__list {

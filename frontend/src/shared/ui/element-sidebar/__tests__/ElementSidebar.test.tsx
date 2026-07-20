@@ -69,16 +69,19 @@ const group = (id: string, label: string, items: ElementSidebarItem[]): ElementS
 });
 
 describe("ElementSidebar organization", () => {
-  test("no organization renders no sort toggle and no drag handles", () => {
+  test("no organization renders no sort tabs and no drag handles", () => {
     renderSidebar(undefined);
-    expect(screen.queryByRole("group", { name: "Aperture Types order" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Aperture Types order" })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Reorder / })).toBeNull();
   });
 
-  test("alphabetical mode shows the toggle with A–Z pressed and no drag handles", () => {
+  test("alphabetical mode shows the tabs with Alphabetical selected and no drag handles", () => {
     renderSidebar(makeOrg());
-    expect(screen.getByRole("button", { name: "A–Z" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Manual" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("tab", { name: "Alphabetical" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Manual" })).toHaveAttribute("aria-selected", "false");
     expect(screen.queryByRole("button", { name: /^Reorder / })).toBeNull();
   });
 
@@ -86,11 +89,11 @@ describe("ElementSidebar organization", () => {
     const onToggleSortMode = vi.fn();
     renderSidebar(makeOrg({ onToggleSortMode }));
 
-    await userEvent.click(screen.getByRole("button", { name: "Manual" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Manual" }));
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
 
-    // Clicking the already-active option does not re-toggle.
-    await userEvent.click(screen.getByRole("button", { name: "A–Z" }));
+    // Clicking the already-active tab does not re-toggle.
+    await userEvent.click(screen.getByRole("tab", { name: "Alphabetical" }));
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
   });
 
