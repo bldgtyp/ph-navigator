@@ -111,6 +111,9 @@ describe("ElementSidebar organization", () => {
     renderSidebar(makeOrg({ sortMode: "manual", onAddGroup }));
     await userEvent.click(screen.getByRole("button", { name: "New group" }));
     expect(onAddGroup).toHaveBeenCalledTimes(1);
+    // Must be called with no arguments so the click event can't become the new
+    // group's label (onAddGroup's optional `label` param would otherwise capture it).
+    expect(onAddGroup).toHaveBeenCalledWith();
   });
 
   test("grouped mode renders group sections, an Ungrouped remainder, and move selects", () => {

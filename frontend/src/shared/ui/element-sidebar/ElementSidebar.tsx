@@ -142,7 +142,9 @@ export function ElementSidebar({
               id={`${idPrefix}-new-group`}
               type="button"
               className="element-sidebar__new-group"
-              onClick={organization.onAddGroup}
+              // Wrap so the click event isn't passed as onAddGroup's optional
+              // `label` argument (which would make the new group's name the event).
+              onClick={() => organization.onAddGroup()}
             >
               <FolderPlus size={14} aria-hidden="true" />
               New group
