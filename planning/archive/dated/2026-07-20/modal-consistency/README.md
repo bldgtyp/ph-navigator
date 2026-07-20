@@ -50,7 +50,7 @@ Read in this order:
   resize handle.
 - **Backdrop-click:** off for forms, on for read-only viewers.
 
-Status: **Implemented on branch `refactor/modal-consistency` — all phases 00–06
-complete and `make ci`-verified; awaiting Ed's merge to `main` (merge + dated
-archive is Ed's call).** Contract ratified by Ed 2026-07-20; both former open
-questions decided (see `decisions.md`). See `STATUS.md` for the full evidence.
+Status: **Complete — all phases 00–06 landed and `make ci`-verified; merged to
+`main` via #42 (2026-07-20) and archived here.** Contract ratified by Ed
+2026-07-20 and folded into `context/DESIGN_SYSTEM.md`. See `STATUS.md` for the
+full evidence and the deliberate deviations.

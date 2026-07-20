@@ -1,9 +1,9 @@
 ---
 DATE: 2026-07-20
-TIME: 19:35 EDT
-STATUS: Implemented on branch
+TIME: 19:45 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
-SCOPE: Current state of the modal-consistency refactor.
+SCOPE: Final state of the modal-consistency refactor (archived).
 RELATED:
   - ./README.md
   - ./PRD.md
@@ -13,9 +13,10 @@ RELATED:
 
 # Status — Modal Consistency Refactor
 
-**State: Implemented on branch `refactor/modal-consistency` (off `main`). All
-phases 00–06 complete and verified. Awaiting Ed's merge to `main`** — merge +
-dated archive of this packet is Ed's call (deploys/merges are never an agent's).
+**State: Complete. Merged to `main` via #42 (2026-07-20) and archived here.**
+All phases 00–06 landed and `make ci`-verified; the contract is folded into
+`context/DESIGN_SYSTEM.md`. Merging was Ed's call. (Merging does not deploy —
+production deploys are a separate, explicit step.)
 
 ## Done — all phases complete
 
@@ -46,10 +47,9 @@ dated archive of this packet is Ed's call (deploys/merges are never an agent's).
 
 ## Next step
 
-Ed's call: review the branch and merge to `main`. On merge, archive this packet
-to `planning/archive/dated/<merge-date>/modal-consistency/` and add a line to
-`planning/archive/README.md` (append-only). No further implementation work
-outstanding.
+None — refactor complete, merged, and archived. Follow-up candidates only:
+`EditUserFieldModal`'s generic "OK" primary (label-polish sweep) and the
+deliberate deviations listed below.
 
 ## Blockers / decisions
 

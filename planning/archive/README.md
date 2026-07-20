@@ -5,6 +5,19 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-07-20
 
+- `modal-consistency` - Cross-cutting refactor giving every modal/dialog one
+  visual + interaction contract: `ModalDialog` + `DialogActions`, footer
+  **Cancel** as the canonical dismiss (header "Close" off by default, kept only
+  on read-only viewers), styled action buttons, `danger`/`extraActions` for
+  destructive & multi-action footers, a shared box with a resize grip when
+  oversized, and backdrop-click off for forms / on for viewers. Seven phases
+  (00 shared-component contract → 01 header-Close sweep → 02 RowEditModal
+  cluster → 03 single-primary partials → 04 multi-action footers → 05 apertures
+  rogue migration → 06 Radix data-table family conformed, D-3 keep+conform).
+  `make ci` green each phase; Phase 03's bulk batch implemented by Codex/gpt-5.5
+  and reviewed here; live `NewProjectModal` screenshot confirmed the rendered
+  contract. Contract folded into `context/DESIGN_SYSTEM.md` ("Modal contract").
+  Merged to `main` via #42.
 - `database-backups` - Independent off-site encrypted Postgres backup plus a
   tested restore path, now operating. Daily GitHub Actions job dumps production
   with a least-privilege `phn_backup` role, encrypts with `age` to a recipient
