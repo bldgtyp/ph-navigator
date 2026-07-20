@@ -7,7 +7,8 @@ export function ModalDialog({
   onClose,
   children,
   headerAccessory,
-  showHeaderClose = true,
+  showHeaderClose = false,
+  dismissOnBackdrop = false,
 }: {
   id?: string;
   title: string;
@@ -15,7 +16,14 @@ export function ModalDialog({
   onClose: () => void;
   children: ReactNode;
   headerAccessory?: ReactNode;
+  // The modal contract makes footer `Cancel` the canonical dismiss, so the
+  // top-right header "Close" is OFF by default. Read-only viewers with no
+  // footer opt back in with `showHeaderClose` (it becomes their only dismiss).
   showHeaderClose?: boolean;
+  // Backdrop-click dismiss is OFF by default so forms can't lose unsaved input
+  // to a stray click. Read-only viewers opt in with `dismissOnBackdrop` where
+  // click-away is the expected gesture.
+  dismissOnBackdrop?: boolean;
 }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -35,7 +43,19 @@ export function ModalDialog({
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" role="presentation">
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onClick={
+        dismissOnBackdrop
+          ? (event) => {
+              // Only a click on the backdrop itself dismisses; clicks that
+              // bubble up from the panel/its contents must not.
+              if (event.target === event.currentTarget) onClose();
+            }
+          : undefined
+      }
+    >
       <section
         id={id}
         className="modal-panel"

@@ -16,6 +16,25 @@
   box-shadow: var(--phn-shadow);
 }
 
+/* Oversized, data-dense modals (forms/tables that scroll) opt into a
+   user-drag resize affordance. Because `.modal-panel` already scrolls
+   (`overflow: auto`), `resize` makes the browser draw a corner grip; the
+   min/max bounds keep the panel usable and inside the viewport. */
+.modal-panel--resizable {
+  resize: both;
+  min-width: 320px;
+  min-height: 200px;
+  max-width: calc(100vw - 40px);
+}
+
+/* Secondary/tertiary footer actions (DialogActions `extraActions`) sit
+   between the anchored Cancel (left) and primary (right). */
+.modal-actions-extra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
 .modal-header h2 {
   margin: 0;
   font-size: var(--fs-lg);

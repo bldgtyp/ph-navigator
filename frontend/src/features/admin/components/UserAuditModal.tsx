@@ -12,6 +12,8 @@ export function UserAuditModal({ user, onClose }: { user: AdminUser; onClose: ()
       title={`Recent activity — ${user.email}`}
       titleId="user-audit-title"
       onClose={onClose}
+      showHeaderClose
+      dismissOnBackdrop
     >
       <div className="modal-body admin-audit">
         {auditQuery.isLoading ? <p>Loading…</p> : null}

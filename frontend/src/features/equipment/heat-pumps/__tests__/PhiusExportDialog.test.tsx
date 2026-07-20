@@ -126,8 +126,9 @@ describe("PhiusExportDialog", () => {
     render(<PhiusExportDialog projectId="p-1" btNumber="2426" onClose={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("server down"));
-    // Two "Close" buttons in error state: header close + modal-actions close.
-    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(2);
+    // Header "Close" is off by default (modal contract); the only dismiss in
+    // the error state is the footer Cancel, which degrades to "Close" here.
+    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Download CSV" })).not.toBeInTheDocument();
   });
 });

@@ -13,7 +13,8 @@ RELATED:
 
 # Status — Modal Consistency Refactor
 
-**State:** Planning complete. No implementation started. No app code changed.
+**State:** Implementation in progress on branch `refactor/modal-consistency`
+(off `main`). Phase 00 complete; Phases 01–06 pending.
 
 ## Done
 
@@ -24,11 +25,18 @@ RELATED:
   header Close; footer always `DialogActions`; specific labels; shared box with
   resize handle when oversized; backdrop-click off for forms / on for viewers.
 - Phased plan → `PLAN.md`.
+- **Phase 00 (shared-component upgrades) — DONE.** `ModalDialog`
+  `showHeaderClose` default flipped to `false` + new `dismissOnBackdrop` prop;
+  `DialogActions` gained `danger` + `extraActions` slot; `.modal-panel--resizable`
+  + `.modal-actions-extra` CSS; contract documented in `DESIGN_SYSTEM.md` +
+  `styles/README.md`. Three footer-less consumers protected from the default
+  flip (`UserAuditModal`, `DirectionsModal` as viewers; `ProjectMaterialEditorModal`
+  with a Phase-03 TODO). Two modal tests updated for the new default.
 
 ## Next step
 
-Phase 00 (shared-component upgrades) — **unblocked, ready to start.** Both
-former blockers are decided (see `decisions.md` D-2, D-3).
+Phase 01 — drop the redundant header "Close" app-wide (the highest-visibility
+sweep) and confirm every footer modal shows exactly one dismiss.
 
 ## Blockers / decisions
 

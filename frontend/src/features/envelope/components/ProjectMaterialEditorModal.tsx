@@ -22,6 +22,10 @@ export function ProjectMaterialEditorModal({
       title={`Edit material — ${material.name}`}
       titleId="project-material-editor-title"
       onClose={onClose}
+      // TODO(modal-consistency Phase 03): the child editor's footer has no
+      // Cancel, so header Close is the only dismiss for now. Replace with a
+      // DialogActions footer (Cancel + "Update material") and drop this prop.
+      showHeaderClose
     >
       <ProjectMaterialEditor material={material} busy={busy} error={error} onCommand={onCommand} />
     </ModalDialog>

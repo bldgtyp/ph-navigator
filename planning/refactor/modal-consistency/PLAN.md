@@ -27,9 +27,16 @@ Contract acceptance checklist (apply per modal, every phase):
 
 ---
 
-## Phase 00 — Contract + shared-component upgrades (enabling)
+## Phase 00 — Contract + shared-component upgrades (enabling) — ✅ DONE
 
 No per-feature modal touched yet; this makes the contract expressible.
+
+Delivered: `showHeaderClose` default flipped to `false` + `dismissOnBackdrop`
+prop on `ModalDialog`; `danger` + `extraActions` slot on `DialogActions`;
+`.modal-panel--resizable` + `.modal-actions-extra` in `modals.css`; contract
+documented in `DESIGN_SYSTEM.md` + `styles/README.md`. Footer-less consumers
+`UserAuditModal` / `DirectionsModal` (viewers) and `ProjectMaterialEditorModal`
+(form, Phase-03 TODO) protected from the flip.
 
 - `ModalDialog`: flip `showHeaderClose` default to `false`. Add whatever the
   backdrop-click policy needs (e.g. `dismissOnBackdrop?: boolean`, default
