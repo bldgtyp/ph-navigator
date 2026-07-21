@@ -81,8 +81,12 @@ export type ElementSidebarOrganization = {
   onAddGroup: () => void;
   onRenameGroup: (groupId: string, label: string) => void;
   onDeleteGroup: (groupId: string) => void;
-  /** Assign an item to a group, or to `null` for ungrouped. */
-  onMoveItem: (itemId: string, groupId: string | null) => void;
+  /**
+   * Drop-driven move: place an item into a container (a group id, or `null` for
+   * the ungrouped remainder) so that container's members become `orderedIds`.
+   * Cross-group assignment is drag-only; the item is removed from its old group.
+   */
+  onMoveItemToContainer: (itemId: string, groupId: string | null, orderedIds: string[]) => void;
   onReorderGroups: (orderedGroupIds: string[]) => void;
   onReorderGroupMembers: (groupId: string, orderedIds: string[]) => void;
   onToggleGroupCollapsed: (groupId: string) => void;
@@ -99,7 +103,4 @@ export type RowContext = {
   rename: ElementSidebarRename;
   editingId: string | null;
   setEditingId: (id: string | null) => void;
-  /** Group targets for the per-row "move to group" control; empty hides it. */
-  groupTargets: { id: string; label: string }[];
-  onMoveItem: (itemId: string, groupId: string | null) => void;
 };

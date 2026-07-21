@@ -64,9 +64,9 @@ the Apertures list — see the design-system component inventory). Styled to the
 
 ```
 ┌─────────────────────────────┐
-│ Assemblies            +  ▣  │  ← bold title + borderless ghost buttons
-│ Alphabetical   Manual       │  ← two-tab underline order control
+│ Assemblies         ⇅  ▣  +  │  ← bold title + ghost Sort/Collapse/Add buttons
 ├─────────────────────────────┤
+│ ───────────  +  ──────────  │  ← add-group divider (Manual mode, list top)
 │ ▦ EW-01 Exterior Wall       │  ← type icon + label; selected row = teal fill
 │ ▦ EW-02 Party Wall  ✏ ⬡ ⧉ ✕│  ← hover-revealed ghost action cluster
 │ ▤ FC-01 Floor Slab          │
@@ -74,13 +74,13 @@ the Apertures list — see the design-system component inventory). Styled to the
 └─────────────────────────────┘
 ```
 
-- **Header:** bold title + two ghost (borderless) icon buttons — Add (`+`) and
-  Collapse (`▣`); quiet neutral wash on hover.
-- **Order control** (editors, unlocked version): two text tabs sharing a bottom
-  hairline — **Alphabetical** (natural sort, `WALL-C2 < WALL-C10 < WALL-SE-30a`;
-  not draggable) and **Manual** (drag-to-reorder + group affordances). The active
-  tab is semibold accent-text with a 2px accent underline. The chosen mode
-  persists per-user via `user_sidebar_views` view-state (not the document).
+- **Header:** bold title + three ghost (borderless) icon buttons — Sort (`⇅`),
+  Collapse (`▣`), Add (`+`); quiet neutral wash on hover.
+- **Sort-order menu** (editors, unlocked version): the `⇅` button opens a radio
+  menu (the shared `AppMenu`) with **Alphabetical** (natural sort,
+  `WALL-C2 < WALL-C10 < WALL-SE-30a`; not draggable) and **Manual**
+  (drag-to-reorder + group affordances). The chosen mode persists per-user via
+  `user_sidebar_views` view-state (not the document).
 - **Rows** (40 px): leading assembly-type icon (wall/roof/floor/other), label,
   and a hover/`:focus-within`-revealed cluster of borderless ghost actions —
   `Rename (✏) · Change type (⬡) · Duplicate (⧉) · Delete (✕)` — that fades in
@@ -90,12 +90,15 @@ the Apertures list — see the design-system component inventory). Styled to the
 - **Manual mode** adds a hover-reveal drag grip (faint at rest) in a reserved
   slot, groups rendered as lightweight uppercase-label + hairline-rule dividers
   (not boxes; collapse chrome is deferred to a future "1B" but the
-  `collapsed_group_ids` field is preserved), and a quiet ghost "New group"
-  button. Group assignment is drag-across-a-divider or the keyboard-accessible
-  "move to group" select.
-- All editor affordances (order tabs, grip, action cluster, New group) are hidden
-  when the version is locked or the visitor is a Viewer — it renders as a calm
-  read-only list.
+  `collapsed_group_ids` field is preserved), and an **add-group divider** (a
+  centered `+` hairline line at the top of the list). Group assignment is
+  **drag-between-groups** — drag a row onto any group or the Ungrouped remainder
+  (all share one `DndContext`); an empty group shows a "· · ·" drop placeholder.
+  Keyboard users move rows across groups via the dnd-kit keyboard sensor. (The
+  old per-row "move to group" select was retired.)
+- All editor affordances (sort menu, grip, action cluster, add-group divider) are
+  hidden when the version is locked or the visitor is a Viewer — it renders as a
+  calm read-only list.
 - `prefers-reduced-motion: reduce` disables the fade/translate transitions.
 
 **Right side — active assembly content (US-ENV-3, 4):**

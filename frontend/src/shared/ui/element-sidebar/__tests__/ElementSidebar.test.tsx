@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import {
@@ -28,7 +28,7 @@ function makeOrg(over: Partial<ElementSidebarOrganization> = {}): ElementSidebar
     onAddGroup: () => undefined,
     onRenameGroup: () => undefined,
     onDeleteGroup: () => undefined,
-    onMoveItem: () => undefined,
+    onMoveItemToContainer: () => undefined,
     onReorderGroups: () => undefined,
     onReorderGroupMembers: () => undefined,
     onToggleGroupCollapsed: () => undefined,
@@ -69,54 +69,61 @@ const group = (id: string, label: string, items: ElementSidebarItem[]): ElementS
 });
 
 describe("ElementSidebar organization", () => {
-  test("no organization renders no sort tabs and no drag handles", () => {
+  test("no organization renders no sort control and no drag handles", () => {
     renderSidebar(undefined);
-    expect(screen.queryByRole("tablist", { name: "Aperture Types order" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Aperture Types order" })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Reorder / })).toBeNull();
   });
 
-  test("alphabetical mode shows the tabs with Alphabetical selected and no drag handles", () => {
+  test("the sort menu shows Alphabetical checked in alphabetical mode; no drag handles", async () => {
     renderSidebar(makeOrg());
-    expect(screen.getByRole("tab", { name: "Alphabetical" })).toHaveAttribute(
-      "aria-selected",
+    // The control is a quiet icon trigger; the modes live behind it.
+    await userEvent.click(screen.getByRole("button", { name: "Aperture Types order" }));
+    expect(screen.getByRole("menuitemradio", { name: "Alphabetical" })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
-    expect(screen.getByRole("tab", { name: "Manual" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("menuitemradio", { name: "Manual" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
     expect(screen.queryByRole("button", { name: /^Reorder / })).toBeNull();
   });
 
-  test("clicking Manual toggles sort mode", async () => {
+  test("choosing Manual from the sort menu toggles sort mode", async () => {
     const onToggleSortMode = vi.fn();
     renderSidebar(makeOrg({ onToggleSortMode }));
 
-    await userEvent.click(screen.getByRole("tab", { name: "Manual" }));
+    await userEvent.click(screen.getByRole("button", { name: "Aperture Types order" }));
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Manual" }));
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
 
-    // Clicking the already-active tab does not re-toggle.
-    await userEvent.click(screen.getByRole("tab", { name: "Alphabetical" }));
+    // Choosing the already-active mode does not re-toggle.
+    await userEvent.click(screen.getByRole("button", { name: "Aperture Types order" }));
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Alphabetical" }));
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
   });
 
-  test("manual mode with no groups renders drag handles + a New group button", () => {
+  test("manual mode with no groups renders drag handles + an Add group control", () => {
     renderSidebar(makeOrg({ sortMode: "manual" }));
     expect(screen.getByRole("button", { name: "Reorder W1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reorder W2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "New group" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add group" })).toBeInTheDocument();
     // No group headers, so no move-to-group selects yet.
     expect(screen.queryByRole("combobox", { name: /Move .* to group/ })).toBeNull();
   });
 
-  test("New group button creates a group", async () => {
+  test("Add group control creates a group", async () => {
     const onAddGroup = vi.fn();
     renderSidebar(makeOrg({ sortMode: "manual", onAddGroup }));
-    await userEvent.click(screen.getByRole("button", { name: "New group" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add group" }));
     expect(onAddGroup).toHaveBeenCalledTimes(1);
     // Must be called with no arguments so the click event can't become the new
     // group's label (onAddGroup's optional `label` param would otherwise capture it).
     expect(onAddGroup).toHaveBeenCalledWith();
   });
 
-  test("grouped mode renders group sections, an Ungrouped remainder, and move selects", () => {
+  test("grouped mode renders group sections + an Ungrouped remainder, with draggable rows and no move select", () => {
     const [w1, w2, w3] = makeItems("W1", "W2", "W3");
     renderSidebar(
       makeOrg({
@@ -137,14 +144,13 @@ describe("ElementSidebar organization", () => {
     expect(
       screen.getByText("Ungrouped", { selector: ".element-sidebar__group-label" }),
     ).toBeInTheDocument();
-    // Each item gets a move-to-group select whose only option beyond Ungrouped is North.
-    const moveSelect = screen.getByRole("combobox", { name: "Move W1 to group" });
-    expect(within(moveSelect).getByRole("option", { name: "North" })).toBeInTheDocument();
-    expect(within(moveSelect).getByRole("option", { name: "Ungrouped" })).toBeInTheDocument();
+    // Assignment is drag-only now: every row has a drag handle, and the old
+    // per-row "move to group" select is gone.
+    expect(screen.getByRole("button", { name: "Reorder W1" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: /Move .* to group/ })).toBeNull();
   });
 
-  test("moving an item via the select reports the target group", async () => {
-    const onMoveItem = vi.fn();
+  test("an empty group still renders a drop zone so items can be dragged into it", () => {
     const [w1, w2] = makeItems("W1", "W2");
     renderSidebar(
       makeOrg({
@@ -152,16 +158,12 @@ describe("ElementSidebar organization", () => {
         hasGroups: true,
         groups: [group("g_north", "North", [])],
         ungrouped: [w1!, w2!],
-        onMoveItem,
       }),
       [w1!, w2!],
     );
-
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: "Move W1 to group" }),
-      "g_north",
-    );
-    expect(onMoveItem).toHaveBeenCalledWith("w1", "g_north");
+    // The empty group shows its dots drop-target placeholder rather than collapsing
+    // away; the accessible label is preserved for screen readers.
+    expect(screen.getAllByLabelText("Empty — drag items here").length).toBeGreaterThanOrEqual(1);
   });
 
   test("groups always render expanded — collapse chrome is dropped for 1A", () => {

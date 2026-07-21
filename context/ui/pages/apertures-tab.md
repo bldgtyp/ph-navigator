@@ -25,11 +25,14 @@ per-aperture-type editor (rows, columns, frames, glazings, operation).
 The left rail is the shared **element sidebar**
 (`frontend/src/shared/ui/element-sidebar/`), the same component behind the
 Envelope Assemblies list, styled to the "1A Quiet List" direction: bold title +
-ghost Add/Collapse buttons, a two-tab **Alphabetical / Manual** underline order
-control, 40 px rows with neutral hover and teal-only selection, a
-hover/`:focus-within`-revealed ghost action cluster (`Rename · Duplicate ·
-Delete`, no dark tooltip) over a gradient scrim, and — in Manual mode — a
-hover-reveal drag grip, groups-as-dividers, and a quiet "New group" button.
+ghost Sort/Collapse/Add buttons, where **Sort** is a quiet `⇅` ghost button that
+opens an **Alphabetical / Manual** radio menu (the shared `AppMenu`), 40 px rows
+with neutral hover and teal-only selection, a hover/`:focus-within`-revealed
+ghost action cluster (`Rename · Duplicate · Delete`, no dark tooltip) over a
+gradient scrim, and — in Manual mode — a hover-reveal drag grip,
+groups-as-dividers with **drag-between-groups** assignment (drag a row onto
+another group; empty groups show a "· · ·" drop placeholder), and an
+**add-group divider** — a centered `+` hairline line at the top of the list.
 Order/manual/group state persists per-user via `user_sidebar_views` view-state.
 Aperture rows are **iconless** (unlike Envelope's assembly-type icons); they keep
 the reserved icon slot empty so alignment matches. All editor affordances are

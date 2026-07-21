@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mcpTokenQueryKeys } from "../mcp/hooks";
 import { projectDocumentTableQueryKeys } from "../project_document/query-keys";
 import { projectQueryKeys } from "../projects/query-keys";
+import { clearSidebarViewStateCache } from "../sidebar_views/hooks";
 import type { UnitSystem } from "../../lib/units/types";
 import { fetchCurrentSession, signIn, signOut, updateUnitsPreference } from "./api";
 
@@ -39,6 +40,9 @@ export function useSignOutMutation() {
       queryClient.removeQueries({ queryKey: projectQueryKeys.all });
       queryClient.removeQueries({ queryKey: projectDocumentTableQueryKeys.all });
       queryClient.removeQueries({ queryKey: mcpTokenQueryKeys.all });
+      // Sign-out is a client navigation (no hard reload), so drop the module-level
+      // sidebar-order cache too — the next user must not inherit this one's order.
+      clearSidebarViewStateCache();
     },
   });
 }

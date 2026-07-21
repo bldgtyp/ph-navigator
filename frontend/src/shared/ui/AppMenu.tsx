@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { MoreVertical, type LucideIcon } from "lucide-react";
+import { Tooltip } from "./tooltip";
 import { useOutsidePointerDown } from "./useOutsidePointerDown";
 
 type AppMenuContextValue = {
@@ -25,6 +26,7 @@ function useAppMenuClose() {
 export function AppMenu({
   label,
   title = label,
+  tooltip,
   children,
   className,
   defaultOpen = false,
@@ -32,6 +34,11 @@ export function AppMenu({
 }: {
   label: string;
   title?: string;
+  /**
+   * Shared `<Tooltip>` bubble for the trigger (matching other chrome buttons).
+   * When set, the native `title` is dropped so the two hints don't double up.
+   */
+  tooltip?: ReactNode;
   children: ReactNode;
   className?: string;
   defaultOpen?: boolean;
@@ -43,6 +50,19 @@ export function AppMenu({
 
   useOutsidePointerDown(rootRef, open, close);
 
+  const trigger = (
+    <button
+      type="button"
+      className="app-menu__trigger"
+      aria-label={label}
+      aria-expanded={open}
+      title={tooltip ? undefined : title}
+      onClick={() => setOpen((current) => !current)}
+    >
+      <TriggerIcon size={18} aria-hidden="true" />
+    </button>
+  );
+
   return (
     <AppMenuContext.Provider value={{ close }}>
       <div
@@ -53,16 +73,13 @@ export function AppMenu({
           if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) close();
         }}
       >
-        <button
-          type="button"
-          className="app-menu__trigger"
-          aria-label={label}
-          aria-expanded={open}
-          title={title}
-          onClick={() => setOpen((current) => !current)}
-        >
-          <TriggerIcon size={18} aria-hidden="true" />
-        </button>
+        {tooltip ? (
+          <Tooltip content={tooltip} placement="bottom">
+            {trigger}
+          </Tooltip>
+        ) : (
+          trigger
+        )}
         {open ? (
           <div className="app-menu__panel" role="menu">
             {children}

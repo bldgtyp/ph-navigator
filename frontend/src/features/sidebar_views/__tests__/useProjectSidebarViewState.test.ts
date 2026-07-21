@@ -9,7 +9,7 @@ vi.mock("../api", () => ({
 
 // Imported after the mock so the hook captures the mocked functions.
 import * as api from "../api";
-import { useProjectSidebarViewState } from "../hooks";
+import { clearSidebarViewStateCache, useProjectSidebarViewState } from "../hooks";
 import { DEFAULT_SIDEBAR_VIEW_STATE, type SidebarViewState } from "../types";
 
 const fetchMock = api.fetchSidebarView as ReturnType<typeof vi.fn>;
@@ -37,6 +37,7 @@ function renderHarness(args: { enabled?: boolean; debounceMs?: number } = {}) {
 }
 
 beforeEach(() => {
+  clearSidebarViewStateCache();
   fetchMock.mockReset();
   saveMock.mockReset();
   deleteMock.mockReset();
@@ -111,6 +112,25 @@ describe("useProjectSidebarViewState", () => {
 
     expect(saveMock).toHaveBeenCalledTimes(1);
     expect(saveMock).toHaveBeenCalledWith(PROJECT_ID, VIEW_KEY, manualState(["a", "b", "c"]));
+  });
+
+  test("a second mount seeds from cache immediately — no default-order flash", async () => {
+    fetchMock.mockResolvedValue({
+      view_state_schema_version: 1,
+      view_state: manualState(["b", "a"]),
+      updated_at: "2026-07-16T00:00:00Z",
+    });
+    // First mount loads + caches the saved manual order.
+    const first = renderHarness();
+    await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+    expect(first.result.current.viewState).toEqual(manualState(["b", "a"]));
+    first.unmount();
+
+    // Navigate back: the remount must render the saved order on the very first
+    // render with no loading flag (the fetch only revalidates in the background).
+    const second = renderHarness();
+    expect(second.result.current.isLoading).toBe(false);
+    expect(second.result.current.viewState).toEqual(manualState(["b", "a"]));
   });
 
   test("reset deletes the saved row and returns to defaults", async () => {

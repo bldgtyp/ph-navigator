@@ -1,7 +1,8 @@
-import { FolderPlus, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
+import { ArrowUpDown, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { GroupedList } from "./GroupedList";
 import { SortableRows, StaticRow } from "./rows";
+import { AppMenu, AppMenuRadioItem } from "../AppMenu";
 import { Tooltip } from "../tooltip";
 import type {
   ElementSidebarAdd,
@@ -71,10 +72,6 @@ export function ElementSidebar({
     rename,
     editingId,
     setEditingId,
-    groupTargets: isGrouped
-      ? organization!.groups.map((group) => ({ id: group.id, label: group.label }))
-      : [],
-    onMoveItem: organization?.onMoveItem ?? (() => undefined),
   };
 
   const addButton = add ? (
@@ -101,6 +98,9 @@ export function ElementSidebar({
       <div className="element-sidebar__header">
         {collapsed ? null : <h2>{title}</h2>}
         <div className="element-sidebar__tools">
+          {collapsed || !organization ? null : (
+            <SortModeMenu title={title} organization={organization} />
+          )}
           <Tooltip content={collapsed ? "Expand sidebar" : "Collapse sidebar"} placement="bottom">
             <button
               id={`${idPrefix}-toggle`}
@@ -121,36 +121,18 @@ export function ElementSidebar({
           {collapsed ? null : addButton}
         </div>
       </div>
-      {collapsed || !organization ? null : (
-        <SortModeToggle idPrefix={idPrefix} title={title} organization={organization} />
-      )}
       {collapsed ? null : (
         <div id={`${idPrefix}-list`} className="element-sidebar__list">
+          {isManual && organization ? (
+            <AddGroupControl idPrefix={idPrefix} onAddGroup={organization.onAddGroup} />
+          ) : null}
           {!isManual || !organization ? (
             items.map((item) => <StaticRow key={item.id} item={item} ctx={rowContext} />)
           ) : isGrouped ? (
             <GroupedList ctx={rowContext} organization={organization} />
           ) : (
-            <SortableRows
-              items={items}
-              ctx={rowContext}
-              currentGroupId={null}
-              onReorder={organization.onReorder}
-            />
+            <SortableRows items={items} ctx={rowContext} onReorder={organization.onReorder} />
           )}
-          {isManual && organization ? (
-            <button
-              id={`${idPrefix}-new-group`}
-              type="button"
-              className="element-sidebar__new-group"
-              // Wrap so the click event isn't passed as onAddGroup's optional
-              // `label` argument (which would make the new group's name the event).
-              onClick={() => organization.onAddGroup()}
-            >
-              <FolderPlus size={14} aria-hidden="true" />
-              New group
-            </button>
-          ) : null}
         </div>
       )}
       {collapsed ? addButton : null}
@@ -158,38 +140,68 @@ export function ElementSidebar({
   );
 }
 
-const SORT_MODE_TABS: { mode: ElementSidebarSortMode; label: string }[] = [
+/**
+ * Add-group affordance (manual mode, editors): a quiet divider line matching the
+ * group rules, with a centered "+" and an "Add group" tooltip. Sits at the TOP
+ * of the list so creating a group is a header-level action, not a footer button.
+ */
+function AddGroupControl({ idPrefix, onAddGroup }: { idPrefix: string; onAddGroup: () => void }) {
+  return (
+    <Tooltip content="Add group" placement="bottom">
+      <button
+        id={`${idPrefix}-add-group`}
+        type="button"
+        className="element-sidebar__add-group"
+        aria-label="Add group"
+        // Wrap so the click event isn't passed as onAddGroup's optional `label`
+        // argument (which would make the new group's name the event).
+        onClick={() => onAddGroup()}
+      >
+        <span className="element-sidebar__add-group-line" aria-hidden="true" />
+        <Plus size={14} aria-hidden="true" />
+        <span className="element-sidebar__add-group-line" aria-hidden="true" />
+      </button>
+    </Tooltip>
+  );
+}
+
+const SORT_MODE_OPTIONS: { mode: ElementSidebarSortMode; label: string }[] = [
   { mode: "alphabetical", label: "Alphabetical" },
   { mode: "manual", label: "Manual" },
 ];
 
-function SortModeToggle({
-  idPrefix,
+/**
+ * Sort-mode control (editors only): a quiet ghost icon-button in the header
+ * tools cluster that opens a two-option radio menu (Alphabetical / Manual),
+ * rather than a persistent full-width tab row. The active mode is also implied
+ * by the list itself (manual shows grips, group dividers, and the add-group line).
+ */
+function SortModeMenu({
   title,
   organization,
 }: {
-  idPrefix: string;
   title: string;
   organization: ElementSidebarOrganization;
 }) {
   const { sortMode, onToggleSortMode } = organization;
   return (
-    <div className="element-sidebar__sortbar" role="tablist" aria-label={`${title} order`}>
-      {SORT_MODE_TABS.map(({ mode, label }) => (
-        <button
+    <AppMenu
+      label={`${title} order`}
+      tooltip="Sort order"
+      className="element-sidebar__sort-menu"
+      triggerIcon={ArrowUpDown}
+    >
+      {SORT_MODE_OPTIONS.map(({ mode, label }) => (
+        <AppMenuRadioItem
           key={mode}
-          id={`${idPrefix}-sort-${mode}`}
-          type="button"
-          role="tab"
-          className="element-sidebar__sort-tab"
-          aria-selected={sortMode === mode}
+          checked={sortMode === mode}
           onClick={() => {
             if (sortMode !== mode) onToggleSortMode();
           }}
         >
           {label}
-        </button>
+        </AppMenuRadioItem>
       ))}
-    </div>
+    </AppMenu>
   );
 }
