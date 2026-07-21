@@ -20,7 +20,7 @@ export function toElementSidebarOrganization(
     onAddGroup: org.onAddGroup,
     onRenameGroup: org.onRenameGroup,
     onDeleteGroup: org.onDeleteGroup,
-    onMoveItem: org.onMoveItem,
+    onMoveItemToContainer: org.onMoveItemToContainer,
     onReorderGroups: org.onReorderGroups,
     onReorderGroupMembers: org.onReorderGroupMembers,
     onToggleGroupCollapsed: org.onToggleGroupCollapsed,

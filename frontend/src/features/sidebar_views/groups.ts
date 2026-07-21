@@ -86,21 +86,27 @@ export function deleteGroup(viewState: SidebarViewState, groupId: string): Sideb
 }
 
 /**
- * Assign an item to a group (or to `null` for ungrouped). The item is removed
- * from every group's `member_ids` first, then appended to the target group.
+ * Move `itemId` into a container so that container's members become exactly
+ * `orderedIds` (the drag helper computes this list with `itemId` already at its
+ * dropped position). `targetGroupId === null` targets the ungrouped section,
+ * whose order lives in `order`; a group id targets that group's `member_ids`.
+ * The item is first removed from every group so a cross-group move is atomic.
+ * The single-container reorder cases are handled by `setGroupMemberOrder` /
+ * the `order` field directly; this op is for drops that change membership.
  */
-export function moveItemToGroup(
+export function moveItemToContainer(
   viewState: SidebarViewState,
   itemId: string,
-  groupId: string | null,
+  targetGroupId: string | null,
+  orderedIds: string[],
 ): SidebarViewState {
   const groups = viewState.groups.map((group) => {
+    if (group.id === targetGroupId) return { ...group, member_ids: orderedIds };
     const without = group.member_ids.filter((id) => id !== itemId);
-    if (group.id === groupId) return { ...group, member_ids: [...without, itemId] };
-    if (without.length === group.member_ids.length) return group;
-    return { ...group, member_ids: without };
+    return without.length === group.member_ids.length ? group : { ...group, member_ids: without };
   });
-  return { ...viewState, sort_mode: "manual", groups };
+  const order = targetGroupId === null ? orderedIds : viewState.order;
+  return { ...viewState, sort_mode: "manual", groups, order };
 }
 
 export function reorderGroups(

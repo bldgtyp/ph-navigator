@@ -3,7 +3,7 @@ import {
   addGroup,
   buildSidebarTree,
   deleteGroup,
-  moveItemToGroup,
+  moveItemToContainer,
   renameGroup,
   reorderGroups,
   setGroupMemberOrder,
@@ -47,8 +47,11 @@ export type UseSidebarOrganizationResult<T extends { id: string }> = {
   onAddGroup: (label?: string) => void;
   onRenameGroup: (groupId: string, label: string) => void;
   onDeleteGroup: (groupId: string) => void;
-  /** Assign an item to a group, or to `null` for ungrouped. */
-  onMoveItem: (itemId: string, groupId: string | null) => void;
+  /**
+   * Drop-driven move: place an item into a container (group id, or `null` for
+   * ungrouped) so that container's members become exactly `orderedIds`.
+   */
+  onMoveItemToContainer: (itemId: string, groupId: string | null, orderedIds: string[]) => void;
   onReorderGroups: (orderedGroupIds: string[]) => void;
   onReorderGroupMembers: (groupId: string, orderedIds: string[]) => void;
   onToggleGroupCollapsed: (groupId: string) => void;
@@ -132,9 +135,9 @@ export function useSidebarOrganization<T extends { id: string }>({
     (groupId: string) => setViewState(deleteGroup(viewState, groupId)),
     [viewState, setViewState],
   );
-  const onMoveItem = useCallback(
-    (itemId: string, groupId: string | null) =>
-      setViewState(moveItemToGroup(viewState, itemId, groupId)),
+  const onMoveItemToContainer = useCallback(
+    (itemId: string, groupId: string | null, orderedIds: string[]) =>
+      setViewState(moveItemToContainer(viewState, itemId, groupId, orderedIds)),
     [viewState, setViewState],
   );
   const onReorderGroups = useCallback(
@@ -167,7 +170,7 @@ export function useSidebarOrganization<T extends { id: string }>({
     onAddGroup,
     onRenameGroup,
     onDeleteGroup,
-    onMoveItem,
+    onMoveItemToContainer,
     onReorderGroups,
     onReorderGroupMembers,
     onToggleGroupCollapsed,

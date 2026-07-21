@@ -1,21 +1,48 @@
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCorners,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { InlineHeaderNameEditor } from "../InlineHeaderNameEditor";
-import { SidebarActionButton, SortableRows } from "./rows";
-import type { ElementSidebarGroup, ElementSidebarOrganization, RowContext } from "./types";
+import {
+  UNGROUPED_CONTAINER,
+  computeSidebarDrop,
+  containerDroppableId,
+  type DropContainer,
+} from "./dnd";
+import { RowOverlay, SidebarActionButton, SortableRow } from "./rows";
+import type {
+  ElementSidebarGroup,
+  ElementSidebarItem,
+  ElementSidebarOrganization,
+  RowContext,
+} from "./types";
 
 /**
- * The manual-mode group tree: each group renders as a lightweight divider (an
- * uppercase label + trailing hairline rule, not a boxed card) above its member
- * rows, then the ungrouped remainder. Assignment between groups is the per-row
- * "move to group" select (in `rows.tsx`); within-section order is drag; group
- * order is up/down buttons (kept simple/robust rather than nesting a second drag
- * context). The "new group" button is owned by `ElementSidebar`.
+ * The manual-mode group tree. All groups plus the ungrouped remainder share ONE
+ * `DndContext` so a row can be dragged from any container into any other; each
+ * container is a droppable `SortableContext` (empty ones still accept drops).
+ * A `DragOverlay` renders the floating row so it can leave its origin container.
+ * Within-container drops reorder; cross-container drops reassign the row.
  *
- * Collapsible groups are out of scope for 1A: groups always render expanded and
- * no collapse chevron is shown, but the `collapsed_group_ids` view-state field
- * and its `onToggleGroupCollapsed` plumbing are kept intact so a future "1B" can
- * restore collapse without a schema migration.
+ * Each group renders as a lightweight divider (uppercase label + hairline rule,
+ * not a boxed card). Group order is up/down buttons; item→group assignment is
+ * drag only (the old per-row "move to group" select was retired). Collapsible
+ * groups stay out of scope for 1A, but `collapsed_group_ids` is preserved.
  */
 export function GroupedList({
   ctx,
@@ -25,10 +52,48 @@ export function GroupedList({
   organization: ElementSidebarOrganization;
 }) {
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const { groups, ungrouped } = organization;
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const containers: DropContainer[] = [
+    ...groups.map((group) => ({ id: group.id, itemIds: group.items.map((item) => item.id) })),
+    { id: UNGROUPED_CONTAINER, itemIds: ungrouped.map((item) => item.id) },
+  ];
+
+  const activeItem =
+    activeId === null
+      ? null
+      : ([...groups.flatMap((group) => group.items), ...ungrouped].find(
+          (item) => item.id === activeId,
+        ) ?? null);
+
+  function handleDragEnd(event: DragEndEvent): void {
+    setActiveId(null);
+    const { active, over } = event;
+    const drop = computeSidebarDrop(String(active.id), over ? String(over.id) : null, containers);
+    if (drop.kind === "reorder") {
+      if (drop.containerId === UNGROUPED_CONTAINER) organization.onReorder(drop.orderedIds);
+      else organization.onReorderGroupMembers(drop.containerId, drop.orderedIds);
+    } else if (drop.kind === "move") {
+      const targetGroupId =
+        drop.targetContainerId === UNGROUPED_CONTAINER ? null : drop.targetContainerId;
+      organization.onMoveItemToContainer(drop.itemId, targetGroupId, drop.orderedIds);
+    }
+  }
+
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={(event: DragStartEvent) => setActiveId(String(event.active.id))}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       {groups.map((group, index) => (
         <GroupSection
           key={group.id}
@@ -41,21 +106,55 @@ export function GroupedList({
           onEditingChange={(editing) => setEditingGroupId(editing ? group.id : null)}
         />
       ))}
-      {ungrouped.length > 0 ? (
-        <section className="element-sidebar__group element-sidebar__group--ungrouped">
-          <div className="element-sidebar__group-header">
-            <span className="element-sidebar__group-label is-muted">Ungrouped</span>
-            <span className="element-sidebar__group-rule" aria-hidden="true" />
-          </div>
-          <SortableRows
-            items={ungrouped}
-            ctx={ctx}
-            currentGroupId={null}
-            onReorder={organization.onReorder}
-          />
-        </section>
-      ) : null}
-    </>
+      <UngroupedSection items={ungrouped} ctx={ctx} />
+      <DragOverlay>{activeItem ? <RowOverlay item={activeItem} /> : null}</DragOverlay>
+    </DndContext>
+  );
+}
+
+/** A container's droppable body: its member rows, or an empty-state placeholder
+ * that keeps the zone tall enough to accept a drop. */
+function ContainerBody({
+  containerId,
+  items,
+  ctx,
+}: {
+  containerId: string;
+  items: ElementSidebarItem[];
+  ctx: RowContext;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: containerDroppableId(containerId) });
+  return (
+    <div
+      ref={setNodeRef}
+      className={
+        isOver ? "element-sidebar__group-body is-drop-target" : "element-sidebar__group-body"
+      }
+    >
+      <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+        {items.length > 0 ? (
+          items.map((item) => <SortableRow key={item.id} item={item} ctx={ctx} />)
+        ) : (
+          // A quiet dots placeholder reads as "empty" at a glance (prose read as
+          // "full"); the label is kept accessible for screen readers.
+          <p className="element-sidebar__group-empty" aria-label="Empty — drag items here">
+            <span aria-hidden="true">· · ·</span>
+          </p>
+        )}
+      </SortableContext>
+    </div>
+  );
+}
+
+function UngroupedSection({ items, ctx }: { items: ElementSidebarItem[]; ctx: RowContext }) {
+  return (
+    <section className="element-sidebar__group element-sidebar__group--ungrouped">
+      <div className="element-sidebar__group-header">
+        <span className="element-sidebar__group-label is-muted">Ungrouped</span>
+        <span className="element-sidebar__group-rule" aria-hidden="true" />
+      </div>
+      <ContainerBody containerId={UNGROUPED_CONTAINER} items={items} ctx={ctx} />
+    </section>
   );
 }
 
@@ -143,16 +242,7 @@ function GroupSection({
           </span>
         ) : null}
       </div>
-      {group.items.length > 0 ? (
-        <SortableRows
-          items={group.items}
-          ctx={ctx}
-          currentGroupId={group.id}
-          onReorder={(ids) => organization.onReorderGroupMembers(group.id, ids)}
-        />
-      ) : (
-        <p className="element-sidebar__group-empty">Empty — move items here.</p>
-      )}
+      <ContainerBody containerId={group.id} items={group.items} ctx={ctx} />
     </section>
   );
 }

@@ -22,19 +22,18 @@ import { InlineHeaderNameEditor } from "../InlineHeaderNameEditor";
 import type { ElementSidebarItem, ElementSidebarNavigation, RowContext } from "./types";
 
 /**
- * A drag-reorderable section of rows (a group's members, the ungrouped
- * remainder, or the whole flat manual list). `currentGroupId` labels which
- * section these rows live in for the per-row "move to group" control.
+ * A drag-reorderable section of rows for the flat manual list (no groups). It
+ * owns its own single-container `DndContext`; the grouped tree instead shares
+ * one `DndContext` across containers (see `GroupedList`) and renders
+ * {@link SortableRow} directly.
  */
 export function SortableRows({
   items,
   ctx,
-  currentGroupId,
   onReorder,
 }: {
   items: ElementSidebarItem[];
   ctx: RowContext;
-  currentGroupId: string | null;
   onReorder: (orderedIds: string[]) => void;
 }) {
   const sensors = useSensors(
@@ -56,7 +55,7 @@ export function SortableRows({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableRow key={item.id} item={item} ctx={ctx} currentGroupId={currentGroupId} />
+          <SortableRow key={item.id} item={item} ctx={ctx} />
         ))}
       </SortableContext>
     </DndContext>
@@ -70,20 +69,19 @@ export function StaticRow({ item, ctx }: { item: ElementSidebarItem; ctx: RowCon
       id={`${ctx.idPrefix}-row-${item.id}`}
       className={isActive ? "element-sidebar__row is-active" : "element-sidebar__row"}
     >
-      <ElementSidebarRowBody item={item} ctx={ctx} currentGroupId={null} />
+      <ElementSidebarRowBody item={item} ctx={ctx} />
     </div>
   );
 }
 
-function SortableRow({
-  item,
-  ctx,
-  currentGroupId,
-}: {
-  item: ElementSidebarItem;
-  ctx: RowContext;
-  currentGroupId: string | null;
-}) {
+/**
+ * One sortable row. Used by the flat list (its own DndContext) and by each
+ * grouped container's `SortableContext`. In the grouped tree a `DragOverlay`
+ * renders the floating copy, so the in-place row is dimmed while dragging (a CSS
+ * descendant rule under `.element-sidebar__group-body`); in the flat list the
+ * row itself lifts as it drags.
+ */
+export function SortableRow({ item, ctx }: { item: ElementSidebarItem; ctx: RowContext }) {
   const isActive = item.id === ctx.activeId;
   const sortable = useSortable({ id: item.id, disabled: ctx.editingId === item.id });
   const style: CSSProperties = {
@@ -115,21 +113,45 @@ function SortableRow({
       >
         <GripVertical size={14} aria-hidden="true" />
       </button>
-      <ElementSidebarRowBody item={item} ctx={ctx} currentGroupId={currentGroupId} />
+      <ElementSidebarRowBody item={item} ctx={ctx} />
+    </div>
+  );
+}
+
+/** The leading icon + name shown inside a row link and its drag-overlay copy. */
+function RowLabel({ item }: { item: ElementSidebarItem }) {
+  const LeadingIcon = item.leadingIcon;
+  return (
+    <>
+      {LeadingIcon ? (
+        <LeadingIcon
+          className="element-sidebar__row-icon"
+          size={14}
+          strokeWidth={1.8}
+          aria-hidden="true"
+        />
+      ) : null}
+      <span className="element-sidebar__row-name">{item.name}</span>
+    </>
+  );
+}
+
+/** The floating row rendered inside the grouped tree's `DragOverlay`. */
+export function RowOverlay({ item }: { item: ElementSidebarItem }) {
+  return (
+    <div className="element-sidebar__row element-sidebar__row--draggable is-overlay">
+      <span className="element-sidebar__row-handle" aria-hidden="true">
+        <GripVertical size={14} />
+      </span>
+      <span className="element-sidebar__row-link">
+        <RowLabel item={item} />
+      </span>
     </div>
   );
 }
 
 /** The editor-or-link plus the row-action buttons — shared by static and sortable rows. */
-function ElementSidebarRowBody({
-  item,
-  ctx,
-  currentGroupId,
-}: {
-  item: ElementSidebarItem;
-  ctx: RowContext;
-  currentGroupId: string | null;
-}) {
+function ElementSidebarRowBody({ item, ctx }: { item: ElementSidebarItem; ctx: RowContext }) {
   const isEditing = ctx.editingId === item.id;
   return (
     <>
@@ -156,9 +178,6 @@ function ElementSidebarRowBody({
           className="element-sidebar__row-actions"
           aria-label={`${ctx.title} actions`}
         >
-          {ctx.groupTargets.length > 0 ? (
-            <MoveToGroupSelect item={item} ctx={ctx} currentGroupId={currentGroupId} />
-          ) : null}
           <SidebarActionButton
             id={`${ctx.idPrefix}-rename-${item.id}`}
             label={ctx.rename.actionLabel}
@@ -183,40 +202,6 @@ function ElementSidebarRowBody({
   );
 }
 
-/**
- * Assigns a row to a group. A native `<select>` (not a popover) so its dropdown
- * escapes the sidebar list's `overflow: auto` clipping and stays keyboard- and
- * screen-reader-accessible.
- */
-function MoveToGroupSelect({
-  item,
-  ctx,
-  currentGroupId,
-}: {
-  item: ElementSidebarItem;
-  ctx: RowContext;
-  currentGroupId: string | null;
-}) {
-  return (
-    <select
-      id={`${ctx.idPrefix}-move-${item.id}`}
-      className="element-sidebar__row-move"
-      aria-label={`Move ${item.name} to group`}
-      value={currentGroupId ?? ""}
-      disabled={ctx.actionDisabled}
-      onClick={(event) => event.stopPropagation()}
-      onChange={(event) => ctx.onMoveItem(item.id, event.target.value || null)}
-    >
-      <option value="">Ungrouped</option>
-      {ctx.groupTargets.map((group) => (
-        <option key={group.id} value={group.id}>
-          {group.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 function ElementSidebarRowLink({
   item,
   navigation,
@@ -224,21 +209,6 @@ function ElementSidebarRowLink({
   item: ElementSidebarItem;
   navigation: ElementSidebarNavigation;
 }) {
-  const LeadingIcon = item.leadingIcon;
-  const inner = (
-    <>
-      {LeadingIcon ? (
-        <LeadingIcon
-          className="element-sidebar__row-icon"
-          size={14}
-          strokeWidth={1.8}
-          aria-hidden="true"
-        />
-      ) : null}
-      <span className="element-sidebar__row-name">{item.name}</span>
-    </>
-  );
-
   // Native title (no dark tooltip bubble) surfaces the full name when the label
   // truncates; the visible text is the accessible name.
   return navigation.mode === "link" ? (
@@ -248,7 +218,7 @@ function ElementSidebarRowLink({
       title={item.name}
       {...item.linkData}
     >
-      {inner}
+      <RowLabel item={item} />
     </NavLink>
   ) : (
     <button
@@ -258,7 +228,7 @@ function ElementSidebarRowLink({
       onClick={() => navigation.onSelect(item.id)}
       {...item.linkData}
     >
-      {inner}
+      <RowLabel item={item} />
     </button>
   );
 }

@@ -3,7 +3,7 @@ import {
   addGroup,
   buildSidebarTree,
   deleteGroup,
-  moveItemToGroup,
+  moveItemToContainer,
   renameGroup,
   reorderGroups,
   setGroupMemberOrder,
@@ -76,17 +76,20 @@ describe("group mutations", () => {
     expect(buildSidebarTree(items("a"), next).ungrouped.map((i) => i.id)).toEqual(["a"]);
   });
 
-  test("moveItemToGroup reassigns from any group to the target", () => {
-    const vs = state({ groups: [group("g1", "a", "b"), group("g2")] });
-    const next = moveItemToGroup(vs, "a", "g2");
+  test("moveItemToContainer places the item in the target group at the given order and removes it from its old group", () => {
+    const vs = state({ groups: [group("g1", "a", "b"), group("g2", "c")] });
+    // Drag 'a' into g2 between existing members: caller passes the resulting order.
+    const next = moveItemToContainer(vs, "a", "g2", ["c", "a"]);
     expect(next.groups[0]!.member_ids).toEqual(["b"]);
-    expect(next.groups[1]!.member_ids).toEqual(["a"]);
+    expect(next.groups[1]!.member_ids).toEqual(["c", "a"]);
+    expect(next.sort_mode).toBe("manual");
   });
 
-  test("moveItemToGroup with null ungroups the item", () => {
-    const vs = state({ groups: [group("g1", "a", "b")] });
-    const next = moveItemToGroup(vs, "a", null);
+  test("moveItemToContainer to ungrouped writes `order` and clears the item from all groups", () => {
+    const vs = state({ groups: [group("g1", "a", "b")], order: ["c"] });
+    const next = moveItemToContainer(vs, "a", null, ["a", "c"]);
     expect(next.groups[0]!.member_ids).toEqual(["b"]);
+    expect(next.order).toEqual(["a", "c"]);
   });
 
   test("reorderGroups honors the given order and appends unknowns", () => {

@@ -68,15 +68,16 @@ cd frontend
 # Screenshot a route (signs in automatically):
 node scripts/agent-browser.mjs /projects/<id>/apertures --out /tmp/a.png
 
-# Drive a flow, then shoot (clicks run in order; selectors are Playwright locators):
+# Drive a flow, then shoot (clicks run in order; selectors are Playwright locators).
+# Sort is now a menu: open it, then pick Manual (there is no #...-sort-manual id):
 node scripts/agent-browser.mjs /projects/<id>/apertures \
-  --click "text=Close" --click "#aperture-sidebar-sort-manual" --out /tmp/manual.png
+  --click "text=Close" --click "[aria-label='Aperture Types order']" --click "text=Manual" --out /tmp/manual.png
 
 # Verify PERSISTENCE across reload: the app debounces saves ~500ms, so a run that
 # clicks-then-closes too fast never fires the PUT. Use --settle to wait it out,
 # then re-run clean and confirm the state stuck:
 node scripts/agent-browser.mjs /projects/<id>/apertures \
-  --click "text=Close" --click "#aperture-sidebar-sort-manual" --settle 1200 --out /tmp/set.png
+  --click "text=Close" --click "[aria-label='Aperture Types order']" --click "text=Manual" --settle 1200 --out /tmp/set.png
 node scripts/agent-browser.mjs /projects/<id>/apertures --click "text=Close" --out /tmp/reload.png
 
 # Public page, no sign-in; full-page shot; watch it live:
