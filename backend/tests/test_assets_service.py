@@ -17,7 +17,7 @@ from features.assets.service import AssetService
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
 from tests.builders.assets import insert_project_asset
-from tests.test_project_document import ORIGIN, create_project, signed_in_client
+from tests.test_project_document import ORIGIN, create_project, save_url, signed_in_client
 
 
 class FakeR2Client:
@@ -90,6 +90,10 @@ def _clear_fake_asset_service() -> None:
 
 def _draft_pumps_url(project_id: object, version_id: object) -> str:
     return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/pumps"
+
+
+def _assets_url(project_id: object) -> str:
+    return f"/api/v1/projects/{project_id}/assets"
 
 
 def _asset_url(project_id: object, asset_id: str, suffix: str = "") -> str:
@@ -194,6 +198,23 @@ def _create_project_with_pump(client: TestClient) -> tuple[dict[str, object], di
     return project, response.json()
 
 
+def _save_pump_with_datasheet(client: TestClient, project_id: object, version_id: object, asset_id: str) -> None:
+    initial = client.get(_draft_pumps_url(project_id, version_id)).json()
+    payload = _pump_payload()
+    payload["pumps"][0]["datasheet_asset_ids"] = [asset_id]
+    draft = client.put(
+        _draft_pumps_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+    assert draft.status_code == 200
+    saved = client.post(
+        save_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": initial["version_etag"]},
+    )
+    assert saved.status_code == 200
+
+
 def test_pumps_replace_rejects_missing_attachment_asset(clean_document_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -271,6 +292,73 @@ def test_pumps_replace_rejects_pending_attachment_asset(clean_document_tables: N
 
     assert response.status_code == 409
     assert response.json()["error_code"] == "asset_upload_incomplete"
+
+
+def test_anonymous_asset_registry_only_lists_referenced_assets(clean_document_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    insert_project_asset(
+        project_id=project_id,
+        asset_id="asset_referenced_datasheet",
+        original_filename="referenced-datasheet.pdf",
+    )
+    insert_project_asset(
+        project_id=project_id,
+        asset_id="asset_unreferenced_datasheet",
+        original_filename="unreferenced-datasheet.pdf",
+    )
+    _save_pump_with_datasheet(editor, project_id, version_id, "asset_referenced_datasheet")
+
+    viewer = TestClient(app)
+    response = viewer.get(_assets_url(project_id))
+
+    assert response.status_code == 200
+    items = response.json()
+    assert [item["id"] for item in items] == ["asset_referenced_datasheet"]
+    assert items[0]["original_filename"] == "referenced-datasheet.pdf"
+
+
+def test_anonymous_asset_registry_hides_unreferenced_item(clean_document_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    insert_project_asset(project_id=project_id, asset_id="asset_referenced_datasheet")
+    insert_project_asset(project_id=project_id, asset_id="asset_unreferenced_datasheet")
+    _save_pump_with_datasheet(editor, project_id, version_id, "asset_referenced_datasheet")
+
+    viewer = TestClient(app)
+
+    allowed = viewer.get(_asset_url(project_id, "asset_referenced_datasheet"))
+    assert allowed.status_code == 200
+    assert allowed.json()["id"] == "asset_referenced_datasheet"
+
+    blocked = viewer.get(_asset_url(project_id, "asset_unreferenced_datasheet"))
+    assert blocked.status_code == 404
+    assert blocked.json()["error_code"] == "asset_not_found"
+
+
+def test_signed_in_asset_registry_still_lists_project_assets(clean_document_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    insert_project_asset(project_id=project_id, asset_id="asset_referenced_datasheet")
+    insert_project_asset(project_id=project_id, asset_id="asset_unreferenced_datasheet")
+    _save_pump_with_datasheet(editor, project_id, version_id, "asset_referenced_datasheet")
+
+    listed = editor.get(_assets_url(project_id))
+    assert listed.status_code == 200
+    assert {item["id"] for item in listed.json()} == {
+        "asset_referenced_datasheet",
+        "asset_unreferenced_datasheet",
+    }
+
+    item = editor.get(_asset_url(project_id, "asset_unreferenced_datasheet"))
+    assert item.status_code == 200
+    assert item.json()["id"] == "asset_unreferenced_datasheet"
 
 
 def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean_document_tables: None) -> None:

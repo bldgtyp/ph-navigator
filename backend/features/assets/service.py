@@ -275,6 +275,12 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
         return uploaded
 
     def get_asset(self, access: ProjectAccess, asset_id: str) -> AssetRow:
+        asset = self._get_asset_for_project(access, asset_id)
+        if access.user is None and not self._asset_is_referenced(access, asset_id):
+            raise asset_not_found()
+        return asset
+
+    def _get_asset_for_project(self, access: ProjectAccess, asset_id: str) -> AssetRow:
         with connection() as conn:
             asset = asset_row_or_none(repository.get_asset_by_id(conn, access.project_id, asset_id))
         if asset is None:
@@ -299,7 +305,11 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
         if kind and kind not in all_asset_kinds():
             raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_unknown_kind", "Unknown asset kind.")
         with connection() as conn:
-            return asset_rows(repository.list_assets(conn, access.project_id, kind=kind))
+            assets = asset_rows(repository.list_assets(conn, access.project_id, kind=kind))
+        if access.user is None:
+            referenced = self._referenced_asset_ids_for_access(access)
+            return [asset for asset in assets if asset.id in referenced]
+        return assets
 
     def patch_display_name(self, access: ProjectAccess, asset_id: str, display_name: str) -> AssetRow:
         require_editor_user(access)
@@ -326,7 +336,7 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
     def get_asset_urls(
         self, access: ProjectAccess, asset_id: str, *, require_reference_for_anonymous: bool = True
     ) -> AssetUrlsResponse:
-        asset = self.get_asset(access, asset_id)
+        asset = self._get_asset_for_project(access, asset_id)
         if asset.upload_status != "uploaded":
             raise api_error(status.HTTP_409_CONFLICT, "asset_upload_incomplete", "Asset upload is not complete.")
         if access.user is None and require_reference_for_anonymous and not self._asset_is_referenced(access, asset_id):
