@@ -15,8 +15,10 @@ from fastapi.testclient import TestClient
 
 from config import settings
 from database import connection, transaction
+from features.auth import service as auth_service
 from features.auth.cookies import set_session_cookie
 from features.auth.passwords import hash_password, verify_password
+from features.auth.rate_limit import reserve_login_verification_slot, reset_login_rate_limiter
 from features.auth.service import create_or_update_user, now_utc, session_expires_at
 from main import app
 from scripts import seed_frame_catalog, seed_glazing_catalog, seed_materials_catalog, seed_user
@@ -31,6 +33,17 @@ def clean_auth_tables() -> Iterator[None]:
     yield
     with transaction() as conn:
         conn.execute("TRUNCATE user_action_log, sessions, users RESTART IDENTITY CASCADE")
+
+
+@pytest.fixture()
+def login_rate_limit(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setattr(settings, "login_rate_limit_enabled", True)
+    monkeypatch.setattr(settings, "login_rate_limit_per_ip_per_minute", 10)
+    monkeypatch.setattr(settings, "login_rate_limit_per_account_per_minute", 10)
+    monkeypatch.setattr(settings, "login_password_verify_concurrency_limit", 4)
+    reset_login_rate_limiter()
+    yield
+    reset_login_rate_limiter()
 
 
 def test_argon2_password_hash_verifies() -> None:
@@ -370,6 +383,122 @@ def test_unknown_email_login_is_generic_and_logged(clean_auth_tables: None) -> N
     with connection() as conn:
         row = conn.execute("SELECT action, email FROM user_action_log ORDER BY created_at DESC LIMIT 1").fetchone()
     assert row == {"action": "login_failed", "email": "missing@example.com"}
+
+
+def test_login_rate_limit_allows_success_inside_budget(
+    clean_auth_tables: None,
+    login_rate_limit: None,
+) -> None:
+    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.10"},
+        json={"email": "ed@example.com", "password": "password"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["user"]["email"] == "ed@example.com"
+
+
+def test_login_ip_rate_limit_rejects_before_argon2_and_audit_write(
+    clean_auth_tables: None,
+    login_rate_limit: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "login_rate_limit_per_ip_per_minute", 1)
+    calls = 0
+
+    def fake_verify_password(password: str, password_hash: str) -> bool:
+        nonlocal calls
+        calls += 1
+        return False
+
+    monkeypatch.setattr(auth_service, "verify_password", fake_verify_password)
+    client = TestClient(app)
+
+    first = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.20"},
+        json={"email": "missing-one@example.com", "password": "wrong"},
+    )
+    second = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.20"},
+        json={"email": "missing-two@example.com", "password": "wrong"},
+    )
+
+    assert first.status_code == 401
+    assert second.status_code == 429
+    assert second.json()["error_code"] == "rate_limited"
+    assert calls == 1
+    with connection() as conn:
+        row = conn.execute("SELECT count(*) AS n FROM user_action_log WHERE action = 'login_failed'").fetchone()
+    assert row == {"n": 1}
+
+
+def test_login_account_rate_limit_applies_across_ips(
+    clean_auth_tables: None,
+    login_rate_limit: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "login_rate_limit_per_account_per_minute", 1)
+    calls = 0
+
+    def fake_verify_password(password: str, password_hash: str) -> bool:
+        nonlocal calls
+        calls += 1
+        return False
+
+    monkeypatch.setattr(auth_service, "verify_password", fake_verify_password)
+    client = TestClient(app)
+
+    first = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.30"},
+        json={"email": "missing@example.com", "password": "wrong"},
+    )
+    second = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.31"},
+        json={"email": " missing@example.com ", "password": "wrong"},
+    )
+
+    assert first.status_code == 401
+    assert second.status_code == 429
+    assert calls == 1
+
+
+def test_login_concurrency_limit_rejects_before_argon2(
+    clean_auth_tables: None,
+    login_rate_limit: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "login_password_verify_concurrency_limit", 1)
+    calls = 0
+
+    def fake_verify_password(password: str, password_hash: str) -> bool:
+        nonlocal calls
+        calls += 1
+        return False
+
+    monkeypatch.setattr(auth_service, "verify_password", fake_verify_password)
+    client = TestClient(app)
+
+    with reserve_login_verification_slot():
+        response = client.post(
+            "/api/v1/auth/login",
+            headers={"Origin": ORIGIN, "X-Forwarded-For": "203.0.113.40"},
+            json={"email": "missing@example.com", "password": "wrong"},
+        )
+
+    assert response.status_code == 429
+    assert response.json()["error_code"] == "rate_limited"
+    assert calls == 0
+    with connection() as conn:
+        row = conn.execute("SELECT count(*) AS n FROM user_action_log WHERE action = 'login_failed'").fetchone()
+    assert row == {"n": 0}
 
 
 def test_mutating_api_requires_allowed_origin(clean_auth_tables: None) -> None:

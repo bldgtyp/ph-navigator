@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     password_argon2_time_cost: int = 3
     password_argon2_memory_cost: int = 65536
     password_argon2_parallelism: int = 4
+    # Public login governance. The route equalizes known/unknown-user timing
+    # with Argon2, so reject excess work before password verification or audit
+    # writes. In-process limits match the single-instance deployment model.
+    login_rate_limit_enabled: bool = True
+    login_rate_limit_per_ip_per_minute: int = 20
+    login_rate_limit_per_account_per_minute: int = 10
+    login_password_verify_concurrency_limit: int = 4
 
     # Database
     database_url: str = Field(default="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2")

@@ -15,6 +15,7 @@ from features.auth import repository
 from features.auth.cookies import queue_session_cookie_clear, queue_session_cookie_refresh
 from features.auth.models import AuthSessionResponse, UnitSystem, UserPublic
 from features.auth.passwords import hash_password, verify_password
+from features.auth.rate_limit import enforce_login_attempt_budget, reserve_login_verification_slot
 from features.shared.errors import api_error
 from features.shared.http import client_ip
 
@@ -85,6 +86,8 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
     agent = user_agent(request)
     now = now_utc()
 
+    enforce_login_attempt_budget(email, request)
+
     with connection() as conn:
         user_row = repository.get_user_by_email(conn, email)
     # An invited/pending user has no usable password yet. Verify against the
@@ -92,7 +95,8 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
     # they cannot sign in.
     can_authenticate = has_usable_password(user_row)
     password_hash = str(user_row["password_hash"]) if (can_authenticate and user_row) else DUMMY_PASSWORD_HASH
-    password_valid = verify_password(password, password_hash) and can_authenticate
+    with reserve_login_verification_slot():
+        password_valid = verify_password(password, password_hash) and can_authenticate
     user_is_active = bool(user_row and user_row["is_active"])
 
     if user_row is None or not user_is_active or not password_valid:
