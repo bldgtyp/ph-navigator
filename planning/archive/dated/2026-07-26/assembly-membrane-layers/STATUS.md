@@ -263,8 +263,10 @@ recorded; and eight real layers plus membranes still exporting.
 **None — the feature is complete.** Possible follow-ups, none of them
 committed to:
 
-- The `vapor_sd_equivalent_m` field is still unclaimed by either this feature
-  or `assembly-condensation-risk` (see Dependencies below).
+- ~~The `vapor_sd_equivalent_m` field is still unclaimed by either this feature
+  or `assembly-condensation-risk`.~~ **Settled 2026-07-26:** the vapour field
+  pair belongs to `assembly-condensation-risk` Phase 1, where its own `PRD.md`
+  §4 and §8 already specify and schedule it. Nothing is owed from here.
 - The "perfect wall" four-control-layer set (water / air / vapour / thermal
   designations) would extend the Phase 3 annotation pattern cleanly, but PRD
   §5 deliberately scoped this to one designation.
@@ -277,11 +279,14 @@ committed to:
   `assembly-boundary-conditions` Phase 1, is separate and still open.)
 - **Shares:** the `vapor_sd_equivalent_m` material field defined in
   `../../../../features/assembly-condensation-risk/PRD.md` §4. Whichever feature ships first
-  should land that field; the other consumes it. **Phase 1 did not land it** —
-  the phase table scopes Phase 1 to `air_permeance_l_s_m2_at_75pa` only, so the
-  sd field is still unclaimed by either feature. Adding it is now a
-  well-trodden path: `air_permeance_l_s_m2_at_75pa` in commit history is a
-  complete worked example of threading one nullable material field end-to-end.
+  should land that field; the other consumes it. **This feature deliberately did
+  not** — its phase table scoped Phase 1 to `air_permeance_l_s_m2_at_75pa` only.
+  **Resolved 2026-07-26:** with membranes complete, the vapour pair
+  (`vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m`) is unambiguously
+  `assembly-condensation-risk`'s own Phase 1, per its `PRD.md` §4/§8. Adding it
+  is a well-trodden path now: `air_permeance_l_s_m2_at_75pa` in commit history
+  is a complete worked example of threading one nullable material field
+  end-to-end.
 
 ## Blockers
 
