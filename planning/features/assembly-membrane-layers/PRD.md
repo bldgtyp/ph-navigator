@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 12:15 EDT
-STATUS: Accepted — Phases 1-2 implemented (see ./STATUS.md); Phases 3-4 pending
+STATUS: Accepted — Phases 1-3 implemented (see ./STATUS.md); Phase 4 pending
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Membrane / sheet-good layers in the Assembly Builder (WRBs, vapour-control
   layers, coatings), plus an air-barrier designation on the assembly section.
@@ -235,7 +235,7 @@ extend to them cleanly, but one designation at a time.
 | --- | --- |
 | **1** ✅ | `membrane` catalog category (migration), `air_permeance_l_s_m2_at_75pa` column + drift keys + IP/SI display, material-picker support, **exclusion of membrane layers from the R calculation** — shipped 2026-07-26, see `STATUS.md` |
 | **2** ✅ | Membrane layer rendering (hairline + distinct treatment), single-segment validation, layer-height modal copy — shipped 2026-07-26, see `STATUS.md` |
-| **3** | Air-barrier designation: field, set/clear control, bold-line rendering, **plus the ASTM E2178 permeance check on the designated face** |
+| **3** ✅ | Air-barrier designation: field, set/clear control, bold-line rendering, **plus the ASTM E2178 permeance check on the designated face** — shipped 2026-07-26, see `STATUS.md` |
 | **4** | Export/import: omit membranes from the HBJSON construction, carry them in `ph_nav` for lossless round-trip; deliberate PHPP drop |
 
 Phases 1–2 unblock `assembly-condensation-risk` Phase 2. Phase 3 is independent

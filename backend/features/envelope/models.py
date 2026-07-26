@@ -12,6 +12,8 @@ from features.envelope.phpp_types import ExportReason
 from features.envelope.specification_status_compat import CompatibleSpecificationStatus
 from features.project_document.document import (
     Assembly,
+    AssemblyAirBarrier,
+    AssemblyFace,
     AssemblyOrientation,
     AssemblyType,
     EvidenceStatus,
@@ -59,10 +61,32 @@ class ProjectMaterialUseSite(BaseModel):
     photo_asset_ids: list[str] = Field(default_factory=list)
 
 
+AirBarrierState = Literal["pass", "fail", "unknown"]
+
+
+class AirBarrierStatus(BaseModel):
+    """Derived verdict on the designated air-barrier face (ASTM E2178).
+
+    ``unknown`` is deliberately distinct from ``pass``: a face whose material
+    has no recorded permeance has not been shown to qualify. Read-only and
+    never persisted — recomputed from the document on every read.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    state: AirBarrierState
+    layer_id: str
+    face: AssemblyFace
+    air_permeance_l_s_m2_at_75pa: float | None = None
+    criterion_l_s_m2_at_75pa: float | None = None
+
+
 class AssemblyRead(Assembly):
     """Assembly document row plus read-only status flags."""
 
     status: AssemblyThermalStatus
+    # None when no face is designated; see `envelope/air_barrier.py`.
+    air_barrier_status: AirBarrierStatus | None = None
 
 
 class ProjectMaterialRead(ProjectMaterial):
@@ -251,6 +275,20 @@ class DeleteLayerCommand(BaseModel):
     kind: Literal["delete_layer"]
     assembly_id: str
     layer_id: str
+
+
+class SetAssemblyAirBarrierCommand(BaseModel):
+    """Designate one face of one layer as the assembly's air barrier.
+
+    Also the clear command: `air_barrier: null` removes the designation, so
+    the section's "Mark as air barrier" toggle is one command, not two.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["set_assembly_air_barrier"]
+    assembly_id: str
+    air_barrier: AssemblyAirBarrier | None = None
 
 
 class AddSegmentCommand(BaseModel):
@@ -527,6 +565,7 @@ EnvelopeCommand = Annotated[
     | AddLayerCommand
     | UpdateLayerThicknessCommand
     | DeleteLayerCommand
+    | SetAssemblyAirBarrierCommand
     | AddSegmentCommand
     | UpdateSegmentCommand
     | DeleteSegmentCommand

@@ -82,6 +82,19 @@ export function AssemblySvgCanvas({
           />
         );
       })}
+      {geometry.airBarrier ? (
+        <line
+          className="assembly-svg-air-barrier"
+          data-testid="assembly-svg-air-barrier"
+          data-face={geometry.airBarrier.face}
+          x1={0}
+          x2={geometry.airBarrier.widthMm}
+          y1={geometry.airBarrier.yMm}
+          y2={geometry.airBarrier.yMm}
+        >
+          <title>{`Air barrier: ${geometry.airBarrier.face} face`}</title>
+        </line>
+      ) : null}
     </svg>
   );
 }

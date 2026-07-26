@@ -57,6 +57,7 @@ class name. The dispatch registry is
 |------|-------|---------|-------------------|
 | `add_layer` | `AddLayerCommand` | Insert a new layer above/below a target layer; null `target_layer_id` appends. New layer inherits the target's width. | `assembly_not_found`, `layer_not_found` |
 | `update_layer_thickness` | `UpdateLayerThicknessCommand` | Set layer `thickness_mm` (> 0). | `assembly_not_found`, `layer_not_found` |
+| `set_assembly_air_barrier` | `SetAssemblyAirBarrierCommand` | Designate `{layer_id, face}` as the assembly's air barrier, or clear it with `air_barrier: null`. | `assembly_not_found`, `layer_not_found` |
 | `delete_layer` | `DeleteLayerCommand` | Remove a layer. | `last_layer` (assemblies keep ≥1 layer), `layer_not_found`. |
 
 ### Segment commands

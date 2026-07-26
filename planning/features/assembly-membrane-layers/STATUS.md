@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 12:15 EDT
-STATUS: Phases 1-2 complete — Phases 3-4 pending
+STATUS: Phases 1-3 complete — Phase 4 pending
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -15,7 +15,7 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | --- | --- | --- |
 | **1** — category, air permeance, R exclusion | ✅ **DONE** 2026-07-26 | see below |
 | **2** — membrane rendering + single-segment validation | ✅ **DONE** 2026-07-26 | see below |
-| **3** — air-barrier designation + E2178 check | ⏳ pending | |
+| **3** — air-barrier designation + E2178 check | ✅ **DONE** 2026-07-26 | see below |
 | **4** — export/import (`ph_nav` round-trip, PHPP drop) | ⏳ pending | |
 
 ### Phase 1 — what shipped
@@ -126,7 +126,7 @@ The fixture was reset afterwards.
 
 ## State
 
-**PRD drafted. Phases 1-2 implemented.** Spun out of the `assembly-condensation-risk`
+**PRD drafted. Phases 1-3 implemented.** Spun out of the `assembly-condensation-risk`
 research on 2026-07-26 once it became clear that membranes dominate a wall's
 vapour resistance and that PHN cannot represent them at all.
 
@@ -162,13 +162,53 @@ Resolved 2026-07-26 (Ed, second review) — **all four open questions closed**:
 - Air barrier modelled as a **face annotation** on the assembly, explicitly
   outside the condensation math (§5).
 
+### Phase 3 — what shipped
+
+- **`Assembly.air_barrier: {layer_id, face} | None`** on the document, with a
+  validator rejecting a designation that points at no layer of the assembly —
+  a dangling one would render nothing and silently mislead. `delete_layer`
+  clears the designation rather than blocking the delete or leaving the
+  document invalid.
+- **One command, `set_assembly_air_barrier`,** does both set and clear
+  (`air_barrier: null`), so the control is a single toggle rather than a pair.
+- **`envelope/air_barrier.py`** derives the ASTM E2178 verdict on the
+  designated face and returns it as read-only `air_barrier_status` on the
+  assembly. Three states, and **`unknown` is deliberately distinct from
+  `pass`** (PRD §9 criterion 5a): a face with no recorded permeance has not
+  been shown to qualify, and implying otherwise is the exact failure the check
+  exists to prevent. On a split face the *leakiest* material governs — air
+  finds the worst path — and one unrecorded material is enough to withhold a
+  pass for the whole face.
+- **A bold continuous rule on the designated face** in the section. The face
+  is orientation-relative, not top/bottom: under `last_layer_outside` a
+  layer's exterior face is its *bottom* edge, under `first_layer_outside` its
+  top. Both directions are pinned by test, because getting it backwards draws
+  a confidently wrong drawing.
+- **The control lives in the Segment Properties dialog** as a layer-scoped
+  section — the place you already land when you click into a layer. Copy says
+  plainly that the designation feeds neither the thermal nor the condensation
+  calculation, per PRD §5's constraint that the UI must not imply otherwise.
+
+### Phase 3 verification
+
+Full backend and frontend gates. Browser-verified on the same six-layer wall:
+designating the WRB's exterior face drew the rule at y=172.7 in the section —
+exactly the WRB's bottom edge, which is the exterior face under
+`last_layer_outside` — and the dialog reported "Meets the ASTM E2178
+air-barrier material criterion (0.0012 vs 0.02 L/(s-m2) @ 75Pa)". Fixture
+reset afterwards.
+
+**Deliberately not built:** the full "perfect wall" four-control-layer set
+(water / air / vapour / thermal). The same annotation pattern extends to them
+cleanly, but one designation at a time (PRD §5).
+
 ## Next step
 
-**Phase 3** — the air-barrier designation: the `Assembly.air_barrier`
-`{layer_id, face}` field, a set/clear control on the section, bold-line
-rendering at the designated face, and the ASTM E2178 check against that face's
-`air_permeance_l_s_m2_at_75pa` (flag above 0.02 L/(s·m²) @ 75 Pa; say
-"unknown" rather than implying a pass when the value is null).
+**Phase 4** — export and import: omit membranes from the HBJSON construction
+(an `EnergyMaterial` needs a positive conductivity, which membranes no longer
+have), carry them in the `ph_nav` extension block so a PHN → HBJSON → PHN
+round trip stays lossless, and drop them from the PHPP U-Values export
+deliberately rather than silently. See `PRD.md` §7.
 
 ## Dependencies
 

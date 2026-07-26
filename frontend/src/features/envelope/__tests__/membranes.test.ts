@@ -4,7 +4,7 @@ import { materialById } from "../lib";
 import { MEMBRANE_DISPLAY_THICKNESS_MM, MEMBRANE_MIN_HIT_HEIGHT_PX } from "../canvas-constants";
 import { canvasHitBox } from "../canvas-hit-box";
 import { isMembraneLayer, isMembraneMaterial } from "../membranes";
-import type { Assembly, AssemblyLayer, ProjectMaterial } from "../types";
+import type { Assembly, AssemblyFace, AssemblyLayer, ProjectMaterial } from "../types";
 
 function material(overrides: Partial<ProjectMaterial> = {}): ProjectMaterial {
   return {
@@ -52,6 +52,8 @@ function assembly(layers: AssemblyLayer[]): Assembly {
     name: "TEST",
     type: "wall",
     orientation: "first_layer_outside",
+    air_barrier: null,
+    air_barrier_status: null,
     status: { is_complete: true, flags: [] },
     layers: layers.map((entry, index) => ({ ...entry, order: index })),
   };
@@ -131,6 +133,47 @@ describe("buildAssemblyCanvasGeometry", () => {
 
     expect(geometry.layers[0]?.isMembrane).toBe(false);
     expect(geometry.layers[0]?.heightMm).toBe(140);
+  });
+});
+
+describe("air-barrier line placement", () => {
+  const byId = materialById([material()]);
+  // Two 100 mm layers: layer 0 spans y 0–100, layer 1 spans y 100–200.
+  const layers = [layer("lyr_outer", 100, ["pmat_insul"]), layer("lyr_inner", 100, ["pmat_insul"])];
+
+  function lineY(orientation: Assembly["orientation"], face: AssemblyFace): number | undefined {
+    const base = assembly(layers);
+    const geometry = buildAssemblyCanvasGeometry(
+      { ...base, orientation, air_barrier: { layer_id: "lyr_outer", face } },
+      byId,
+    );
+    return geometry.airBarrier?.yMm;
+  }
+
+  test("no designation draws no line", () => {
+    expect(buildAssemblyCanvasGeometry(assembly(layers), byId).airBarrier).toBeNull();
+  });
+
+  // "Interior" and "exterior" are orientation-relative, not top/bottom. Drawing
+  // the rule on the wrong side of the layer is a silently wrong drawing, which
+  // is worse than none — so pin both orientations.
+  test("first_layer_outside puts the exterior face at the layer's top edge", () => {
+    expect(lineY("first_layer_outside", "exterior")).toBe(0);
+    expect(lineY("first_layer_outside", "interior")).toBe(100);
+  });
+
+  test("last_layer_outside flips it: the exterior face is the bottom edge", () => {
+    expect(lineY("last_layer_outside", "exterior")).toBe(100);
+    expect(lineY("last_layer_outside", "interior")).toBe(0);
+  });
+
+  test("a designation pointing at no layer of this assembly draws nothing", () => {
+    const base = assembly(layers);
+    const geometry = buildAssemblyCanvasGeometry(
+      { ...base, air_barrier: { layer_id: "lyr_gone", face: "interior" } },
+      byId,
+    );
+    expect(geometry.airBarrier).toBeNull();
   });
 });
 

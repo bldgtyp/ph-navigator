@@ -195,6 +195,27 @@ sub-pixel at any usable zoom. Consequences, all driven from
 The membrane category also removes the layer from the U-value calculation
 entirely — see `../../technical-requirements/envelope-thermal-preview.md`.
 
+**Air-barrier designation.** An assembly may mark one *face* of one layer as
+its air barrier (`Assembly.air_barrier = {layer_id, face}`), drawn as a bold
+continuous rule on that face — the convention architects already read. A face,
+not a layer and not a material: the air barrier is sometimes a dedicated
+membrane and just as often the interior face of spray foam or the taped face of
+sheathing, so the same material is the air barrier in one assembly and not in
+another.
+
+- Set and cleared from the Segment Properties modal's **Air barrier** section
+  (one `set_assembly_air_barrier` command; `air_barrier: null` clears).
+- "Interior" and "exterior" are relative to `orientation`, not to top/bottom of
+  the drawing. Deleting the designated layer clears the designation.
+- The backend returns a read-only `air_barrier_status` carrying the **ASTM
+  E2178** verdict for the designated face: `pass`, `fail`, or `unknown`.
+  `unknown` is not `pass` — a face with no recorded `air_permeance_l_s_m2_at_75pa`
+  has not been shown to meet the 0.02 L/(s·m²) @ 75 Pa material criterion, and
+  the copy says exactly that.
+- **It feeds no calculation.** ISO 13788 ignores air leakage entirely, so the
+  designation must never reach the condensation engine, and the UI must not
+  imply that it does.
+
 **Segment Properties modal (US-ENV-6):**
 
 ```

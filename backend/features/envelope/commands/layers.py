@@ -12,6 +12,7 @@ from features.envelope.models import (
     AddSegmentCommand,
     DeleteLayerCommand,
     DeleteSegmentCommand,
+    SetAssemblyAirBarrierCommand,
     UpdateLayerThicknessCommand,
     UpdateSegmentCommand,
     UpdateSegmentUseSiteNotesCommand,
@@ -51,9 +52,33 @@ def delete_layer(body: ProjectDocumentV1, command: DeleteLayerCommand) -> Projec
             raise api_error(status.HTTP_409_CONFLICT, "last_layer", "An assembly must keep at least one layer.")
         if not any(layer.id == command.layer_id for layer in assembly.layers):
             ops.not_found("layer", command.layer_id)
+        # An air-barrier designation on the layer being removed would dangle;
+        # clear it rather than block the delete or leave an invalid document.
+        air_barrier = assembly.air_barrier
+        if air_barrier is not None and air_barrier.layer_id == command.layer_id:
+            air_barrier = None
         return assembly.model_copy(
-            update={"layers": ops.renumber_layers([layer for layer in assembly.layers if layer.id != command.layer_id])}
+            update={
+                "layers": ops.renumber_layers([layer for layer in assembly.layers if layer.id != command.layer_id]),
+                "air_barrier": air_barrier,
+            }
         )
+
+    return ops.update_assembly(body, command.assembly_id, updater)
+
+
+def set_assembly_air_barrier(
+    body: ProjectDocumentV1,
+    command: SetAssemblyAirBarrierCommand,
+) -> ProjectDocumentV1:
+    """Designate — or, with a null payload, clear — the assembly's air-barrier face."""
+
+    def updater(assembly: Assembly) -> Assembly:
+        if command.air_barrier is not None and all(
+            layer.id != command.air_barrier.layer_id for layer in assembly.layers
+        ):
+            ops.not_found("layer", command.air_barrier.layer_id)
+        return assembly.model_copy(update={"air_barrier": command.air_barrier})
 
     return ops.update_assembly(body, command.assembly_id, updater)
 

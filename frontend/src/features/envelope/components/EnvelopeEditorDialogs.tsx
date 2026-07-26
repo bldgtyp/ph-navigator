@@ -178,6 +178,16 @@ export function EnvelopeEditorDialogs({
       <SegmentDialog
         title="Segment properties"
         segment={dialog.segment}
+        layerId={dialog.layer.id}
+        airBarrier={dialog.assembly.air_barrier}
+        airBarrierStatus={dialog.assembly.air_barrier_status}
+        onSetAirBarrier={(air_barrier) =>
+          onCommand({
+            kind: "set_assembly_air_barrier",
+            assembly_id: dialog.assembly.id,
+            air_barrier,
+          })
+        }
         // Membranes are continuous full-width sheets, so width and steel-stud
         // geometry are meaningless for them — the dialog hides both.
         isMembraneLayer={isMembraneLayer(dialog.layer, materialsById)}

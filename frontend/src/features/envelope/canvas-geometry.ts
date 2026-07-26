@@ -1,6 +1,12 @@
 import { MEMBRANE_DISPLAY_THICKNESS_MM } from "./canvas-constants";
 import { isMembraneLayer } from "./membranes";
-import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "./types";
+import type {
+  Assembly,
+  AssemblyFace,
+  AssemblyLayer,
+  AssemblySegment,
+  ProjectMaterial,
+} from "./types";
 
 export type AssemblyCanvasLayerGeometry = {
   layer: AssemblyLayer;
@@ -31,11 +37,22 @@ export type AssemblyCanvasSegmentGeometry = {
   hitRoomBelowMm: number;
 };
 
+export type AssemblyCanvasAirBarrierGeometry = {
+  layerId: string;
+  face: AssemblyFace;
+  // Y of the designated face itself, in drawing millimetres — the top edge of
+  // the layer for its interior face, the bottom edge for its exterior one.
+  yMm: number;
+  widthMm: number;
+};
+
 export type AssemblyCanvasGeometry = {
   widthMm: number;
   heightMm: number;
   layers: AssemblyCanvasLayerGeometry[];
   segments: AssemblyCanvasSegmentGeometry[];
+  // Null when the assembly designates no air barrier.
+  airBarrier: AssemblyCanvasAirBarrierGeometry | null;
 };
 
 /**
@@ -91,6 +108,37 @@ export function buildAssemblyCanvasGeometry(
     heightMm: Math.max(1, yMm),
     layers,
     segments,
+    airBarrier: airBarrierGeometry(assembly, layers, widthMm),
+  };
+}
+
+/**
+ * Place the air-barrier rule on the designated face.
+ *
+ * "Interior" and "exterior" are orientation-relative, not top/bottom: the
+ * section draws layers in stored order, and `last_layer_outside` means the
+ * bottom of the drawing faces outdoors. So the exterior face of a layer is its
+ * *bottom* edge in that orientation and its *top* edge in the other. Getting
+ * this backwards would draw the line on the wrong side of the layer — a
+ * silently wrong drawing, which is worse than no drawing.
+ */
+function airBarrierGeometry(
+  assembly: Assembly,
+  layers: AssemblyCanvasLayerGeometry[],
+  widthMm: number,
+): AssemblyCanvasAirBarrierGeometry | null {
+  const designation = assembly.air_barrier;
+  if (!designation) return null;
+  const target = layers.find((entry) => entry.layer.id === designation.layer_id);
+  if (!target) return null;
+
+  const exteriorIsBelow = assembly.orientation === "last_layer_outside";
+  const atLayerBottom = designation.face === (exteriorIsBelow ? "exterior" : "interior");
+  return {
+    layerId: designation.layer_id,
+    face: designation.face,
+    yMm: atLayerBottom ? target.yMm + target.heightMm : target.yMm,
+    widthMm,
   };
 }
 

@@ -5,7 +5,13 @@ import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { useOutsidePointerDown } from "../../../../shared/ui/useOutsidePointerDown";
 import type { CatalogMaterial } from "../../../catalogs/types";
 import { useLengthDraft } from "../../hooks/useLengthDraft";
-import type { AssemblySegment, ProjectMaterial } from "../../types";
+import type {
+  AirBarrierStatus,
+  AssemblyAirBarrier,
+  AssemblyFace,
+  AssemblySegment,
+  ProjectMaterial,
+} from "../../types";
 import { ModalUnitToggle } from "../ModalUnitToggle";
 import { SegmentMaterialPicker } from "./SegmentMaterialPicker";
 import { SegmentMaterialFacts } from "./SegmentMaterialFacts";
@@ -13,6 +19,10 @@ import { SegmentMaterialFacts } from "./SegmentMaterialFacts";
 export function SegmentDialog({
   title,
   segment,
+  layerId,
+  airBarrier,
+  airBarrierStatus,
+  onSetAirBarrier,
   isMembraneLayer,
   materials,
   catalogMaterials,
@@ -28,6 +38,11 @@ export function SegmentDialog({
 }: {
   title: string;
   segment: AssemblySegment;
+  layerId: string;
+  // The assembly's designation, if any — may point at a different layer.
+  airBarrier: AssemblyAirBarrier | null;
+  airBarrierStatus: AirBarrierStatus | null;
+  onSetAirBarrier: (airBarrier: AssemblyAirBarrier | null) => void;
   // The segment sits in a membrane layer: a continuous full-width sheet with
   // no width divisions and no stud geometry to describe.
   isMembraneLayer: boolean;
@@ -111,6 +126,12 @@ export function SegmentDialog({
           onOpenCatalogPicker={onOpenCatalogPicker}
         />
         <SegmentMaterialFacts material={material} unitSystem={unitSystem} />
+        <AirBarrierSection
+          layerId={layerId}
+          airBarrier={airBarrier}
+          airBarrierStatus={airBarrierStatus}
+          onSetAirBarrier={onSetAirBarrier}
+        />
         {isMembraneLayer ? (
           <p id="envelope-segment-membrane-note" className="segment-dialog-note">
             Membranes are continuous full-width sheets, so this layer takes a single segment with no
@@ -156,6 +177,90 @@ export function SegmentDialog({
         />
       </form>
     </ModalDialog>
+  );
+}
+
+/**
+ * Designate this layer's interior or exterior face as the assembly's air
+ * barrier, or clear the designation.
+ *
+ * An assembly has exactly one air barrier, so picking a face here moves it off
+ * whatever layer held it before — the copy says so rather than letting the
+ * change look local. The ASTM E2178 verdict is shown only when this layer is
+ * the one designated; it comes from the backend, which owns the criterion.
+ */
+function AirBarrierSection({
+  layerId,
+  airBarrier,
+  airBarrierStatus,
+  onSetAirBarrier,
+}: {
+  layerId: string;
+  airBarrier: AssemblyAirBarrier | null;
+  airBarrierStatus: AirBarrierStatus | null;
+  onSetAirBarrier: (airBarrier: AssemblyAirBarrier | null) => void;
+}) {
+  const designatedFace = airBarrier?.layer_id === layerId ? airBarrier.face : null;
+  const elsewhere = airBarrier !== null && airBarrier.layer_id !== layerId;
+  const status = airBarrierStatus?.layer_id === layerId ? airBarrierStatus : null;
+
+  return (
+    <section
+      id="envelope-segment-air-barrier-section"
+      className="segment-dialog-section"
+      role="group"
+      aria-labelledby="envelope-segment-air-barrier-heading"
+    >
+      <h3 id="envelope-segment-air-barrier-heading" className="segment-dialog-section-heading">
+        Air barrier
+      </h3>
+      <div className="segment-air-barrier-options">
+        {(["interior", "exterior"] as AssemblyFace[]).map((face) => (
+          <label key={face} className="checkbox-row">
+            <input
+              type="radio"
+              name="envelope-segment-air-barrier-face"
+              checked={designatedFace === face}
+              onChange={() => onSetAirBarrier({ layer_id: layerId, face })}
+            />
+            {face === "interior" ? "This layer's interior face" : "This layer's exterior face"}
+          </label>
+        ))}
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="envelope-segment-air-barrier-face"
+            checked={designatedFace === null}
+            onChange={() => onSetAirBarrier(null)}
+          />
+          {elsewhere ? "Not this layer" : "Not designated"}
+        </label>
+      </div>
+      {status ? <AirBarrierVerdict status={status} /> : null}
+      <p className="segment-dialog-note">
+        A drawing and communication convention. It does not feed the thermal or condensation
+        calculations — those methods ignore air leakage entirely.
+      </p>
+    </section>
+  );
+}
+
+function AirBarrierVerdict({ status }: { status: AirBarrierStatus }) {
+  if (status.state === "unknown") {
+    return (
+      <p className="segment-dialog-note" role="status">
+        This face has no recorded air permeance, so it has not been shown to meet the ASTM E2178
+        material criterion.
+      </p>
+    );
+  }
+  const measured = status.air_permeance_l_s_m2_at_75pa;
+  const criterion = status.criterion_l_s_m2_at_75pa;
+  return (
+    <p className={`segment-dialog-note is-${status.state}`} role="status">
+      {status.state === "pass" ? "Meets" : "Does not meet"} the ASTM E2178 air-barrier material
+      criterion ({measured} vs {criterion} L/(s-m2) @ 75Pa).
+    </p>
   );
 }
 
