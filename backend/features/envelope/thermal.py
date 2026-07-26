@@ -246,6 +246,12 @@ def thermal_issues(
             thermal_layers += 1
         if layer.thickness_mm <= 0:
             issues.append(_thermal_issue("invalid_geometry", assembly, layer_index, layer))
+        if is_membrane and len(layer.segments) > 1:
+            # Membranes are continuous, and the commands enforce that on the
+            # way in. A split one can only come from a document written before
+            # the rule or edited by hand — flag it rather than let the exports
+            # quietly keep segment 0 and drop the rest.
+            issues.append(_thermal_issue("invalid_geometry", assembly, layer_index, layer))
         for segment_index, segment in enumerate(layer.segments):
             if segment.width_mm <= 0 or (
                 segment.steel_stud_spacing_mm is not None and segment.steel_stud_spacing_mm <= 0

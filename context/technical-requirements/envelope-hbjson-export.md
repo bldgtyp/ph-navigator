@@ -60,18 +60,50 @@ Per assembly:
   "ph_nav": {
     "assembly_id": "<asm_id>",
     "assembly_type": "wall | floor | roof | other",
-    "orientation": "first_layer_outside | last_layer_outside"
+    "orientation": "first_layer_outside | last_layer_outside",
+    "air_barrier": { "layer_id": "<lyr_id>", "face": "interior | exterior" } | null,
+    "membrane_layers": [ ... see below ... ]
   },
-  "materials": [ ... layer materials, outside → inside ... ]
+  "materials": [ ... layer materials, outside → inside, membranes excluded ... ]
 }
 ```
 
 The construction-level `ph_nav` block carries the assembly fields the
-Honeybee shape cannot express (`type`, `orientation`) plus the native
-`assembly_id`. These are **additive round-trip fields** — Honeybee
+Honeybee shape cannot express (`type`, `orientation`, `air_barrier`) plus the
+native `assembly_id`. These are **additive round-trip fields** — Honeybee
 consumers ignore the `ph_nav` key, while the inverse import
 (`envelope-hbjson-import`) reads them to re-create the assembly
 losslessly. Same for the per-layer/segment `ph_nav` fields below.
+
+### Membrane layers are omitted from `materials[]`
+
+A layer whose every assigned segment carries a `membrane` material (WRB,
+vapour retarder, paint) is **not emitted as an `EnergyMaterial`**. It cannot
+be: an `EnergyMaterial` requires a positive `conductivity`, and membranes
+deliberately have none — they are excluded from PHN's R calculation
+(`envelope-thermal-preview.md`).
+
+Dropping them silently would be data loss on a PHN → GH → PHN round trip, so
+they ride the construction's `ph_nav` instead:
+
+```json
+"membrane_layers": [
+  {
+    "outside_index": 1,
+    "layer_id": "<lyr_id>",
+    "segment_id": "<seg_id>",
+    "thickness_mm": 0.15,
+    "width_mm": 1000.0,
+    "material": { "project_material_id": "...", "name": "...", "category": "membrane",
+                  "air_permeance_l_s_m2_at_75pa": 0.0012, "...": "..." }
+  }
+]
+```
+
+`outside_index` is the layer's position in the **full** outside→inside list,
+membranes included — so import splices them back without depending on how many
+were dropped before it. `air_permeance_l_s_m2_at_75pa` and `category` have no
+honeybee home at all; this block is the only thing keeping them.
 
 ## Identifier rules
 

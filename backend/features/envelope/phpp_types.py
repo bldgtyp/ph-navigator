@@ -10,4 +10,4 @@ from __future__ import annotations
 from typing import Literal
 
 UnitSystem = Literal["IP", "SI"]
-ExportReason = Literal["too_many_layers", "too_many_pathways", "incomplete_materials"]
+ExportReason = Literal["too_many_layers", "too_many_pathways", "incomplete_materials", "no_thermal_layers"]

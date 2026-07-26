@@ -27,6 +27,7 @@ import re
 import zipfile
 from dataclasses import dataclass, field
 
+from features.envelope.membranes import is_membrane_layer
 from features.envelope.phpp_types import ExportReason, UnitSystem
 from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document.document import (
@@ -96,6 +97,9 @@ class AssemblyExportPlan:
     section_percentages: list[float] = field(default_factory=list)
     total_thickness_cm: float = 0.0
     u_value_w_m2k: float | None = None
+    # Membrane layers omitted from `rows` — see `build_assembly_export_plan`.
+    # Empty for an assembly with none, and for every failed plan.
+    dropped_membrane_layer_ids: list[str] = field(default_factory=list)
 
 
 def build_assembly_export_plan(
@@ -107,7 +111,14 @@ def build_assembly_export_plan(
     Failure precedence (only one reason is surfaced) is most-actionable first:
     ``incomplete_materials`` → ``too_many_layers`` → ``too_many_pathways``.
     """
-    layers = _layers_outside_to_inside(assembly)
+    all_layers = _layers_outside_to_inside(assembly)
+    # PHPP does not enter membranes on the U-Values worksheet — they carry no
+    # R and the sheet has only eight slots. Dropping them is deliberate, and
+    # noted on the plan rather than left silent: the row budget below is
+    # counted *after* the drop, so a WRB can no longer push an eight-layer
+    # assembly over the limit.
+    layers = [layer for layer in all_layers if not is_membrane_layer(layer, materials_by_id)]
+    dropped_membranes = [layer.id for layer in all_layers if is_membrane_layer(layer, materials_by_id)]
     # One thermal pass yields both the completeness flags and the reference
     # U-value; ``status.flags`` carries the same codes ``thermal_issues`` would.
     thermal = calculate_assembly_thermal(assembly, materials_by_id)
@@ -116,11 +127,17 @@ def build_assembly_export_plan(
     if set(thermal.status.flags) & _INCOMPLETE_MATERIAL_CODES:
         return _failed_plan(assembly, "incomplete_materials")
 
-    # 2. Row budget.
+    # 2. Nothing left to write. An assembly of nothing but membranes has no
+    #    U-value and no rows; without this it would resolve to a single 100%
+    #    section and export a blank CSV labelled "exportable".
+    if not layers:
+        return _failed_plan(assembly, "no_thermal_layers")
+
+    # 3. Row budget.
     if len(layers) > PHPP_MAX_UVALUE_ROWS:
         return _failed_plan(assembly, "too_many_layers", layer_count=len(layers))
 
-    # 3. Section resolution from per-layer width-fraction profiles.
+    # 4. Section resolution from per-layer width-fraction profiles.
     shared_profile = _resolve_section_profile(layers)
     if shared_profile is None or len(shared_profile) > PHPP_MAX_SECTIONS:
         return _failed_plan(assembly, "too_many_pathways")
@@ -132,8 +149,12 @@ def build_assembly_export_plan(
         exportable=True,
         rows=rows,
         section_percentages=[fraction * 100.0 for fraction in shared_profile],
-        total_thickness_cm=sum(layer.thickness_mm for layer in layers) / 10.0,
+        # Total thickness reports the *physical* assembly, membranes included:
+        # they are really there, and a section that under-measures is worse
+        # than one carrying a sub-millimetre term.
+        total_thickness_cm=sum(layer.thickness_mm for layer in all_layers) / 10.0,
         u_value_w_m2k=thermal.u_effective_w_m2k,
+        dropped_membrane_layer_ids=dropped_membranes,
     )
 
 
@@ -197,6 +218,11 @@ def _failure_message(reason: ExportReason, layer_count: int | None) -> str:
         return (
             f"Cannot export: assembly needs more than {PHPP_MAX_SECTIONS} heat-flow pathways "
             f"(PHPP allows up to {PHPP_MAX_SECTIONS} area sections)."
+        )
+    if reason == "no_thermal_layers":
+        return (
+            "Cannot export: every layer is a membrane. Membranes are not entered on the "
+            "PHPP U-Values worksheet, so this assembly has no rows to write."
         )
     return "Cannot export: assembly has missing materials or conductivities."
 

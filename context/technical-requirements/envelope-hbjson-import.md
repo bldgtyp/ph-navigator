@@ -118,7 +118,18 @@ outside-in normalization), `is_continuous_insulation`, and
 `steel_stud_spacing_mm` all round-trip. **Lossy** by design: a homogeneous
 layer's segment width (not exported → defaults to 1000 mm; thermally
 irrelevant for a full-width segment) and, on create-new, `category` +
-datasheets.
+datasheets — **except for membranes**, whose `category` and
+`air_permeance_l_s_m2_at_75pa` are carried explicitly (see below), because
+losing the category would turn an imported WRB back into an ordinary layer
+that demands a conductivity it does not have.
+
+**Membrane layers and the air-barrier designation** ride the construction's
+`ph_nav` block rather than `materials[]` (see `envelope-hbjson-export.md`).
+Import splices membranes back at their recorded `outside_index` — *before* the
+orientation reversal, since those indices are outside→inside — and re-points
+the air-barrier designation at whatever layer id the rebuilt assembly minted.
+A malformed or foreign `air_barrier` is dropped rather than raised: import is
+forgiving, and losing an annotation beats failing the construction.
 
 ## Rejections (typed 422 unless noted)
 

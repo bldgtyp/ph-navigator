@@ -5,6 +5,7 @@ import type { PhppExportReason, PhppPreflightItem } from "../types";
 const PHPP_EXPORT_REASON_LABELS: Record<PhppExportReason, string> = {
   too_many_layers: "more than 8 layers",
   too_many_pathways: "more than 3 heat-flow pathways",
+  no_thermal_layers: "only membrane layers, which PHPP does not enter",
   incomplete_materials: "missing materials or conductivities",
 };
 

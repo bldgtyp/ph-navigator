@@ -16,8 +16,10 @@ from typing import Any, cast
 
 from starlette import status
 
+from features.catalogs.materials.models import MEMBRANE_CATEGORY_ID
 from features.envelope.honeybee_specification_status import from_external_ref_status
 from features.project_document.envelope_models import (
+    SPECIFICATION_STATUSES,
     AssemblyOrientation,
     AssemblyType,
     SpecificationStatus,
@@ -32,9 +34,16 @@ LIBRARY_TYPE = "PHNavigatorOpaqueConstructionLibrary"
 # ``create_assembly``'s default).
 DEFAULT_LAYER_WIDTH_MM = 1000.0
 
+# Fallback thickness for a membrane whose exported value is missing or
+# nonsensical (a hand-edited file). 0.15 mm is 6-mil poly — the canonical
+# sheet good — and the document requires a positive thickness.
+DEFAULT_MEMBRANE_THICKNESS_MM = 0.15
+DEFAULT_MEMBRANE_NAME = "Membrane"
+
 _ASSEMBLY_TYPES = frozenset({"wall", "floor", "roof", "other"})
 _ASSEMBLY_TYPE_PREFIXES: dict[str, AssemblyType] = {"W_": "wall", "R_": "roof", "F_": "floor"}
 _ORIENTATIONS = frozenset({"first_layer_outside", "last_layer_outside"})
+_ASSEMBLY_FACES = frozenset({"interior", "exterior"})
 
 
 class ImportParseError(Exception):
@@ -70,6 +79,10 @@ class ImportedMaterial:
     emissivity: float | None
     color: str | None
     specification_status: SpecificationStatus | None
+    # Only membranes carry these: a honeybee `EnergyMaterial` has no field for
+    # either, so they survive a round trip solely through `ph_nav`.
+    category: str | None = None
+    air_permeance_l_s_m2_at_75pa: float | None = None
 
 
 @dataclass(frozen=True)
@@ -99,6 +112,10 @@ class ImportedConstruction:
     type: AssemblyType
     orientation: AssemblyOrientation
     layers: list[ImportedLayer]
+    # `{layer_id, face}` as exported, keyed by the *source* layer id — the
+    # rebuilt assembly may mint fresh ids, so the caller remaps it. None for a
+    # foreign file or an assembly with no designation.
+    air_barrier: dict[str, Any] | None = None
 
 
 @dataclass
@@ -235,6 +252,12 @@ def _parse_construction(
     layers_outside_in = [
         _parse_layer(layer_payload, materials) for layer_payload in _as_list(construction.get("materials"))
     ]
+    # Membranes were omitted from `materials[]` on export (an `EnergyMaterial`
+    # needs a positive conductivity, which they have none of) and carried in
+    # `ph_nav` instead. Splice them back at their recorded positions so the
+    # round trip is lossless; a foreign file has no such block and is
+    # unaffected.
+    layers_outside_in = _splice_membrane_layers(layers_outside_in, _as_list(ph_nav.get("membrane_layers")), materials)
     orientation = _coerce_orientation(ph_nav.get("orientation"))
     # ``materials[]`` is canonically outside → inside. Reversing for
     # ``last_layer_outside`` restores the original document order (the inverse
@@ -249,7 +272,111 @@ def _parse_construction(
         type=_resolve_assembly_type(ph_nav.get("assembly_type"), identifier),
         orientation=orientation,
         layers=layers,
+        air_barrier=_parse_air_barrier(ph_nav.get("air_barrier")),
     )
+
+
+def _parse_air_barrier(value: object) -> dict[str, Any] | None:
+    """Accept only a well-formed designation; a malformed one is dropped, not raised.
+
+    Import is forgiving by design — a foreign or hand-edited file should lose an
+    annotation, not fail the whole construction.
+    """
+    if not isinstance(value, dict):
+        return None
+    payload = cast(dict[str, Any], value)
+    layer_id = _as_optional_str(payload.get("layer_id"))
+    face = _as_optional_str(payload.get("face"))
+    if layer_id is None or face not in _ASSEMBLY_FACES:
+        return None
+    return {"layer_id": layer_id, "face": face}
+
+
+def _splice_membrane_layers(
+    layers_outside_in: list[ImportedLayer],
+    membrane_payloads: list[Any],
+    materials: dict[str, ImportedMaterial],
+) -> list[ImportedLayer]:
+    """Reinsert the exported membrane layers at their outside→inside indices.
+
+    Insertions are applied in ascending index order, so each one lands at the
+    position it recorded — the same reason a caller inserting into a list walks
+    forwards rather than backwards. An index past the end appends, which is the
+    honest fallback for a hand-edited file rather than a hard failure.
+    """
+    if not membrane_payloads:
+        return layers_outside_in
+
+    entries: list[tuple[int, ImportedLayer]] = []
+    for payload in membrane_payloads:
+        if not isinstance(payload, dict):
+            continue
+        membrane = cast(dict[str, Any], payload)
+        material = _as_dict(membrane.get("material"))
+        source_key = _register_membrane_material(material, materials)
+        thickness_mm = _as_optional_float(membrane.get("thickness_mm"))
+        width_mm = _as_optional_float(membrane.get("width_mm"))
+        entries.append(
+            (
+                int(_as_optional_float(membrane.get("outside_index")) or 0),
+                ImportedLayer(
+                    thickness_mm=thickness_mm if thickness_mm and thickness_mm > 0 else DEFAULT_MEMBRANE_THICKNESS_MM,
+                    segments=[
+                        ImportedSegment(
+                            source_material_key=source_key,
+                            width_mm=width_mm if width_mm and width_mm > 0 else DEFAULT_LAYER_WIDTH_MM,
+                            is_continuous_insulation=False,
+                            steel_stud_spacing_mm=None,
+                            source_segment_id=_as_optional_str(membrane.get("segment_id")),
+                        )
+                    ],
+                    source_layer_id=_as_optional_str(membrane.get("layer_id")),
+                ),
+            )
+        )
+
+    spliced = list(layers_outside_in)
+    for index, layer in sorted(entries, key=lambda entry: entry[0]):
+        # Clamp both ends. An unclamped negative index would be read as
+        # Python's own insert-before-the-end, quietly landing the layer in the
+        # middle of a hand-edited file rather than at the start.
+        spliced.insert(max(0, min(index, len(spliced))), layer)
+    return spliced
+
+
+def _register_membrane_material(
+    material: dict[str, Any],
+    materials: dict[str, ImportedMaterial],
+) -> str:
+    """Register a membrane from its `ph_nav` payload — no honeybee shape to read."""
+    # A membrane with no name still has a real thickness and position. Falling
+    # back to a placeholder keeps the layer; returning None would delete it
+    # from the assembly with nothing surfaced to the user.
+    name = _as_optional_str(material.get("name")) or DEFAULT_MEMBRANE_NAME
+    source_key = _as_optional_str(material.get("project_material_id")) or f"__membrane__{name}"
+    if source_key not in materials:
+        catalog_origin = material.get("catalog_origin")
+        materials[source_key] = ImportedMaterial(
+            source_key=source_key,
+            name=name,
+            catalog_origin=cast(dict[str, Any], catalog_origin) if isinstance(catalog_origin, dict) else None,
+            # Membranes have no conductivity by design; the thermal engine
+            # excludes them, so importing one must not invent a value.
+            conductivity_w_mk=None,
+            density_kg_m3=_as_optional_float(material.get("density_kg_m3")),
+            specific_heat_j_kgk=_as_optional_float(material.get("specific_heat_j_kgk")),
+            emissivity=_as_optional_float(material.get("emissivity")),
+            color=_as_optional_str(material.get("color")),
+            specification_status=_membrane_specification_status(material.get("specification_status")),
+            category=_as_optional_str(material.get("category")) or MEMBRANE_CATEGORY_ID,
+            air_permeance_l_s_m2_at_75pa=_as_optional_float(material.get("air_permeance_l_s_m2_at_75pa")),
+        )
+    return source_key
+
+
+def _membrane_specification_status(value: object) -> SpecificationStatus | None:
+    """The membrane block stores PHN's own status verbatim, not a honeybee ref status."""
+    return cast(SpecificationStatus, value) if value in SPECIFICATION_STATUSES else None
 
 
 def _parse_layer(

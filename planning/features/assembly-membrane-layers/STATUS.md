@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 12:15 EDT
-STATUS: Phases 1-3 complete — Phase 4 pending
+STATUS: All four phases complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -16,7 +16,7 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | **1** — category, air permeance, R exclusion | ✅ **DONE** 2026-07-26 | see below |
 | **2** — membrane rendering + single-segment validation | ✅ **DONE** 2026-07-26 | see below |
 | **3** — air-barrier designation + E2178 check | ✅ **DONE** 2026-07-26 | see below |
-| **4** — export/import (`ph_nav` round-trip, PHPP drop) | ⏳ pending | |
+| **4** — export/import (`ph_nav` round-trip, PHPP drop) | ✅ **DONE** 2026-07-26 | see below |
 
 ### Phase 1 — what shipped
 
@@ -126,7 +126,7 @@ The fixture was reset afterwards.
 
 ## State
 
-**PRD drafted. Phases 1-3 implemented.** Spun out of the `assembly-condensation-risk`
+**PRD drafted. All four phases implemented.** Spun out of the `assembly-condensation-risk`
 research on 2026-07-26 once it became clear that membranes dominate a wall's
 vapour resistance and that PHN cannot represent them at all.
 
@@ -202,13 +202,72 @@ reset afterwards.
 (water / air / vapour / thermal). The same annotation pattern extends to them
 cleanly, but one designation at a time (PRD §5).
 
+### Phase 4 — what shipped
+
+- **HBJSON omits membranes from the construction.** An `EnergyMaterial`
+  requires a positive conductivity and membranes deliberately have none, so
+  emitting one was never valid — the export just hadn't noticed yet.
+- **They ride `ph_nav.membrane_layers` instead**, each with the
+  `outside_index` it occupies in the *full* outside→inside layer list, so the
+  importer splices them back without depending on how many were dropped
+  before it. `category` and `air_permeance_l_s_m2_at_75pa` have no honeybee
+  home at all; this block is the only thing keeping them across a round trip.
+- **The air-barrier designation round-trips too**, re-pointed at whatever
+  layer id the rebuilt assembly minted (`_safe_id` can mint a fresh one, and a
+  designation aimed at a stale id would fail the document validator). A
+  malformed designation is dropped rather than raised — import is forgiving by
+  design, and losing an annotation beats failing the construction.
+- **PHPP drops membranes from the U-Values rows deliberately**, recorded on
+  `dropped_membrane_layer_ids` rather than left silent. The 8-row budget is
+  counted *after* the drop, so a WRB can no longer push a real eight-layer
+  assembly over the limit; Total Thickness still reports the physical
+  assembly.
+
+**Five defects, four of them found in review rather than by the passing tests:**
+
+1. **An all-membrane assembly produced a blank CSV labelled "exportable"** — it
+   resolved to a single 100 % section with zero rows. Now fails with a new
+   `no_thermal_layers` export reason that says why.
+2. **The air barrier was exported and never read back**, so the round trip this
+   phase exists to guarantee lost it. Now restored, and re-pointed at whatever
+   layer id the rebuilt assembly minted.
+3. **The fix for (2) broke every multi-layer foreign import.** Memoizing minted
+   layer ids by `source_layer_id` collapsed them onto one id when that id is
+   `None` — which it is for *every* layer of a raw honeybee construction — so
+   the uniqueness validator rejected the assembly. Only single-layer foreign
+   fixtures existed, so nothing caught it. **The first attempt at this fix also
+   silently didn't apply** (the formatter had reflowed the line being matched);
+   the new regression test is what surfaced that.
+4. **A negative `outside_index`** was read as Python's own insert-before-the-end
+   and landed the layer mid-stack instead of prepending. Now clamped at both ends.
+5. **A membrane with no recorded name dropped its whole layer** — thickness,
+   position and all — silently. It now falls back to a placeholder name and
+   keeps the layer.
+
+The recurring lesson, and the one worth carrying forward: every place that
+assumed "layers" and "layers with an R-value" were the same set needed
+revisiting once membranes existed, and the passing tests said nothing about
+any of it.
+
+### Phase 4 verification
+
+Full backend and frontend gates. Round-trip coverage in
+`tests/envelope/test_envelope_membrane_exports.py`: membranes restored in
+order and at the right indices, in **both** orientations (`materials[]` is
+canonically outside→inside, so the flip has to survive the splice); the
+air-barrier designation restored; a malformed one dropped; the PHPP drop
+recorded; and eight real layers plus membranes still exporting.
+
 ## Next step
 
-**Phase 4** — export and import: omit membranes from the HBJSON construction
-(an `EnergyMaterial` needs a positive conductivity, which membranes no longer
-have), carry them in the `ph_nav` extension block so a PHN → HBJSON → PHN
-round trip stays lossless, and drop them from the PHPP U-Values export
-deliberately rather than silently. See `PRD.md` §7.
+**None — the feature is complete.** Possible follow-ups, none of them
+committed to:
+
+- The `vapor_sd_equivalent_m` field is still unclaimed by either this feature
+  or `assembly-condensation-risk` (see Dependencies below).
+- The "perfect wall" four-control-layer set (water / air / vapour / thermal
+  designations) would extend the Phase 3 annotation pattern cleanly, but PRD
+  §5 deliberately scoped this to one designation.
 
 ## Dependencies
 

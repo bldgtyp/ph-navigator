@@ -146,8 +146,12 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   the PHPP **U-Values** worksheet, bundled into a ZIP
   (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. An
   assembly that can't be represented in PHPP (>8 layers, >3 / inconsistent
-  heat-flow pathways, or incomplete materials) is written as a one-line error
-  CSV rather than dropped. When any assembly is blocked, a confirm/cancel modal
+  heat-flow pathways, incomplete materials, or nothing but membrane layers) is
+  written as a one-line error CSV rather than dropped. **Membrane layers are
+  dropped from the worksheet rows deliberately** — PHPP does not enter them,
+  they carry no R, and the 8-row budget is counted after the drop so a WRB
+  cannot push a real 8-layer assembly over the limit. Total Thickness still
+  reports the physical assembly, membranes included. When any assembly is blocked, a confirm/cancel modal
   (`PhppExportWarningDialog`) lists them with friendly reasons before the
   download proceeds ("Download anyway" / "Cancel").
 - **Upload constructions HBJSON** (editors only).

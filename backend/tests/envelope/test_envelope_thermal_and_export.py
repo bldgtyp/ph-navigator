@@ -575,6 +575,10 @@ def test_hbjson_export_emits_homogeneous_round_trip_ph_nav(
         "assembly_id": "asm_wall_c3",
         "assembly_type": "wall",
         "orientation": "first_layer_outside",
+        "air_barrier": None,
+        # No membranes in this assembly; the key is always present so importers
+        # can read it without probing.
+        "membrane_layers": [],
     }
     layer_material = construction["materials"][0]
     assert layer_material["ph_nav"]["layer_id"] == "lyr_insul"

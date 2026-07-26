@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 12:15 EDT
-STATUS: Phases 1-3 complete — Phase 4 pending
+STATUS: Complete — all four phases shipped 2026-07-26
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for membrane layers + air-barrier designation.
 RELATED: ./PRD.md, ./STATUS.md, ../assembly-condensation-risk/

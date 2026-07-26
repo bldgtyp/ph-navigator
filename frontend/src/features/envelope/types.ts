@@ -379,7 +379,11 @@ export type EnvelopeAttachmentChange =
   | EnvelopeAttachmentChangeArgs[];
 
 // Mirrors `backend/features/envelope/phpp_types.ExportReason`.
-export type PhppExportReason = "too_many_layers" | "too_many_pathways" | "incomplete_materials";
+export type PhppExportReason =
+  | "too_many_layers"
+  | "too_many_pathways"
+  | "incomplete_materials"
+  | "no_thermal_layers";
 
 export type PhppPreflightItem = {
   id: string;

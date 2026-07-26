@@ -37,6 +37,7 @@ from features.envelope.import_models import (
 from features.project_document.custom_fields import normalize_display_name
 from features.project_document.document import (
     Assembly,
+    AssemblyAirBarrier,
     AssemblyLayer,
     AssemblySegment,
     ProjectDocumentV1,
@@ -266,17 +267,21 @@ def _resolve_one_material(
 def _create_project_material(material: ImportedMaterial) -> ProjectMaterial:
     return new_hand_entered_material(
         name=material.name,
-        # The export does not carry `category`; create-new defaults it (D4 / Phase 1 plan).
-        category="Other",
+        # The export does not carry `category` for ordinary materials, so
+        # create-new defaults it (D4 / Phase 1 plan). Membranes are the
+        # exception: their `ph_nav` block carries the category, and losing it
+        # would turn an imported WRB back into an ordinary layer that demands
+        # a conductivity it does not have.
+        category=material.category or "Other",
         # Clamp the file's values to the model's domain (a hand-edited file may
         # carry out-of-range numbers a native export never would).
         conductivity_w_mk=_positive_or_none(material.conductivity_w_mk),
         density_kg_m3=_non_negative_or_none(material.density_kg_m3),
         specific_heat_j_kgk=_non_negative_or_none(material.specific_heat_j_kgk),
         emissivity=_unit_interval_or_none(material.emissivity),
-        # HBJSON has no air-permeance equivalent, so an imported material
-        # starts with it unrecorded rather than guessed.
-        air_permeance_l_s_m2_at_75pa=None,
+        # Carried only for membranes, via `ph_nav`; honeybee has no field for
+        # it, so an ordinary imported material starts unrecorded.
+        air_permeance_l_s_m2_at_75pa=_non_negative_or_none(material.air_permeance_l_s_m2_at_75pa),
         color=material.color,
         specification_status=material.specification_status or "needed",
     )
@@ -366,9 +371,25 @@ def _build_assembly(
     resolution_map: dict[str, str],
     name: str,
 ) -> Assembly:
+    # `_safe_id` mints a fresh id when the source one is missing or malformed,
+    # so the air-barrier designation has to be remapped through the ids the
+    # layers actually ended up with — pointing at a source id the assembly no
+    # longer uses would fail the document validator.
+    #
+    # Only *keyed* source ids are recorded. A foreign honeybee construction has
+    # `source_layer_id is None` on every layer, so keying on None would collapse
+    # them all onto one minted id and fail the uniqueness validator.
+    layer_ids_by_source: dict[str, str] = {}
+
+    def layer_id_for(source_layer_id: str | None) -> str:
+        minted = _safe_id(source_layer_id, ID_PREFIX_LAYER)
+        if source_layer_id is not None:
+            layer_ids_by_source[source_layer_id] = minted
+        return minted
+
     layers = [
         AssemblyLayer(
-            id=_safe_id(layer.source_layer_id, ID_PREFIX_LAYER),
+            id=layer_id_for(layer.source_layer_id),
             order=layer_index,
             thickness_mm=layer.thickness_mm,
             segments=[
@@ -391,7 +412,21 @@ def _build_assembly(
         type=construction.type,
         orientation=construction.orientation,
         layers=layers,
+        air_barrier=_rebuilt_air_barrier(construction.air_barrier, layer_ids_by_source),
     )
+
+
+def _rebuilt_air_barrier(
+    imported: dict[str, Any] | None,
+    layer_ids_by_source: dict[str, str],
+) -> AssemblyAirBarrier | None:
+    """Re-point the designation at the rebuilt layer, or drop it if that layer is gone."""
+    if imported is None:
+        return None
+    rebuilt_layer_id = layer_ids_by_source.get(imported["layer_id"])
+    if rebuilt_layer_id is None:
+        return None
+    return AssemblyAirBarrier(layer_id=rebuilt_layer_id, face=imported["face"])
 
 
 def _safe_id(source: str | None, prefix: str) -> str:
