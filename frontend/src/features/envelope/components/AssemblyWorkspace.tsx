@@ -9,6 +9,7 @@ import type {
   AssemblyLayer,
   AssemblySegment,
   AssemblyThermalResponse,
+  ExteriorCondition,
   ProjectMaterial,
 } from "../types";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
@@ -37,6 +38,7 @@ export function AssemblyWorkspace({
   onTypeChange,
   onDuplicate,
   onDelete,
+  onExteriorConditionChange,
   onFlipOrientation,
   onFlipLayers,
   onFlipSegments,
@@ -69,6 +71,7 @@ export function AssemblyWorkspace({
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
   onDelete: (assembly: Assembly) => void;
+  onExteriorConditionChange: (exteriorCondition: ExteriorCondition) => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
@@ -135,6 +138,7 @@ export function AssemblyWorkspace({
           <AssemblyCanvas
             assembly={activeAssembly}
             materials={materials}
+            thermal={thermal}
             zoom={zoom}
             autoFitOnMount={autoFitOnMount}
             canEdit={canEdit}
@@ -143,6 +147,7 @@ export function AssemblyWorkspace({
             onZoomIn={onZoomIn}
             onZoomOut={onZoomOut}
             onFitZoom={onFitZoom}
+            onExteriorConditionChange={onExteriorConditionChange}
             onFlipOrientation={onFlipOrientation}
             onFlipLayers={onFlipLayers}
             onFlipSegments={onFlipSegments}

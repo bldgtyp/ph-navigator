@@ -72,8 +72,11 @@ def test_assembly_thermal_returns_si_values_and_unfinished_flags(
     assert payload["status"] == {"is_complete": True, "flags": []}
     assert payload["r_parallel_path_m2k_w"] == pytest.approx(2.5)
     assert payload["r_isothermal_planes_m2k_w"] == pytest.approx(2.5)
-    assert payload["r_effective_m2k_w"] == pytest.approx(2.5)
-    assert payload["u_effective_w_m2k"] == pytest.approx(0.4)
+    assert payload["r_construction_m2k_w"] == pytest.approx(2.5)
+    assert payload["u_construction_w_m2k"] == pytest.approx(0.4)
+    # Wall facing outdoor air: 0.13 + 2.5 + 0.04.
+    assert payload["r_effective_m2k_w"] == pytest.approx(2.67)
+    assert payload["u_effective_w_m2k"] == pytest.approx(1.0 / 2.67, rel=1e-4)
     assert len(payload["input_hash"]) == 64
 
 
@@ -95,7 +98,9 @@ def test_thermal_label_can_return_value_for_partial_null_material_layer(
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == {"is_complete": False, "flags": ["missing_material"]}
-    assert payload["r_effective_m2k_w"] == pytest.approx(1.315789)
+    assert payload["r_construction_m2k_w"] == pytest.approx(1.315789)
+    # Wall facing outdoor air: the construction plus 0.13 + 0.04.
+    assert payload["r_effective_m2k_w"] == pytest.approx(1.485789)
 
 
 def test_hbjson_export_rejects_incomplete_saved_version_with_paths(
@@ -317,12 +322,19 @@ def test_thermal_multi_segment_exercises_both_ashrae_methods() -> None:
     assert result.status.is_complete is True
     r_parallel = result.r_parallel_path_m2k_w
     r_isothermal = result.r_isothermal_planes_m2k_w
+    r_construction = result.r_construction_m2k_w
     r_effective = result.r_effective_m2k_w
     u_effective = result.u_effective_w_m2k
-    assert r_parallel is not None and r_isothermal is not None and r_effective is not None and u_effective is not None
+    assert r_parallel is not None and r_isothermal is not None and r_construction is not None
+    assert r_effective is not None and u_effective is not None
+    # Both bracketing methods stay construction-only.
     assert r_parallel == pytest.approx(5.4466, rel=5e-3)
     assert r_isothermal == pytest.approx(5.1168, rel=5e-3)
-    assert r_effective == pytest.approx((r_parallel + r_isothermal) / 2.0, rel=1e-6)
+    assert r_construction == pytest.approx((r_parallel + r_isothermal) / 2.0, rel=1e-6)
+    # The films add in series with the PH average, not inside each path.
+    assert result.rsi_m2k_w == 0.13
+    assert result.rse_m2k_w == 0.04
+    assert r_effective == pytest.approx(r_construction + 0.17, rel=1e-6)
     assert u_effective == pytest.approx(1.0 / r_effective, rel=1e-4)
 
 
@@ -579,6 +591,7 @@ def test_hbjson_export_emits_homogeneous_round_trip_ph_nav(
         # No membranes in this assembly; the key is always present so importers
         # can read it without probing.
         "membrane_layers": [],
+        "exterior_condition": "outdoor_air",
     }
     layer_material = construction["materials"][0]
     assert layer_material["ph_nav"]["layer_id"] == "lyr_insul"

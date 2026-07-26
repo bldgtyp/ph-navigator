@@ -128,7 +128,15 @@ A new optional `assumptions` block on the **versioned document**
 (`decisions.md` §D-3), following the `manufacturer_filters: X | None = None`
 precedent. It is **shared with `assembly-boundary-conditions`**, which
 contributes `thermal_standard` — one block for versioned calculation
-assumptions rather than two siblings:
+assumptions rather than two siblings.
+
+**The block now exists** (landed 2026-07-26): `ProjectAssumptions` in
+`backend/features/project_document/document.py`, reachable as
+`tables.assumptions` with `ProjectDocumentTables.resolved_assumptions()` as
+the None-means-defaults accessor. This feature adds `condensation_settings`
+to it as a second field — do not create a sibling block. Note the as-built
+narrowing of `thermal_standard` to `Literal["iso_6946"]` until the ASHRAE
+values land (`../assembly-boundary-conditions/PRD.md` §4.2).
 
 ```
 assumptions:
@@ -288,7 +296,7 @@ risk (A-4) is retired first.
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
 | **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. | materials can be specified; data entry can begin |
-| **1½** | ✅ **`assembly-membrane-layers` Phases 1–2** (shipped 2026-07-26) and ⛔ **`assembly-boundary-conditions` Phase 1** — external dependencies, see §2a. Independent of each other; can run in parallel. | assemblies can hold the layers that dominate the answer, and have surface films at all |
+| **1½** | ✅ **`assembly-membrane-layers` Phases 1–2** (all four phases shipped 2026-07-26) and ✅ **`assembly-boundary-conditions` Phase 1** (landed 2026-07-26) — **both external dependencies are now cleared.** | assemblies can hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |
 | **4** | Modal tiers 1–2 (verdict + Glaser/temperature diagrams). | the feature is legible |

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from features.envelope.boundary_conditions import HeatFlowDirection
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.envelope.phpp_types import ExportReason
 from features.envelope.specification_status_compat import CompatibleSpecificationStatus
@@ -17,7 +18,9 @@ from features.project_document.document import (
     AssemblyOrientation,
     AssemblyType,
     EvidenceStatus,
+    ExteriorCondition,
     ProjectMaterial,
+    ThermalStandard,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.shared.colors import normalize_optional_hex_color
@@ -110,7 +113,12 @@ class EnvelopeReadResponse(BaseModel):
 
 
 class AssemblyThermalResponse(BaseModel):
-    """Backend-computed construction-only thermal result in SI units."""
+    """Backend-computed thermal result in SI units.
+
+    Carries both conventions on purpose: ``*_construction_*`` is the bare
+    material stack, ``*_effective_*`` adds the surface films. The header
+    reports the effective value and the tooltip discloses the rest.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -122,8 +130,14 @@ class AssemblyThermalResponse(BaseModel):
     status: AssemblyThermalStatus
     r_parallel_path_m2k_w: float | None
     r_isothermal_planes_m2k_w: float | None
+    r_construction_m2k_w: float | None
+    u_construction_w_m2k: float | None
     r_effective_m2k_w: float | None
     u_effective_w_m2k: float | None
+    rsi_m2k_w: float
+    rse_m2k_w: float
+    heat_flow_direction: HeatFlowDirection
+    thermal_standard: ThermalStandard
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -215,6 +229,7 @@ class CreateAssemblyCommand(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     type: AssemblyType = "wall"
     orientation: AssemblyOrientation = "first_layer_outside"
+    exterior_condition: ExteriorCondition = "outdoor_air"
     thickness_mm: float = Field(default=100.0, gt=0, allow_inf_nan=False)
     width_mm: float = Field(default=1000.0, gt=0, allow_inf_nan=False)
 
@@ -233,6 +248,20 @@ class UpdateAssemblyTypeCommand(BaseModel):
     kind: Literal["update_assembly_type"]
     assembly_id: str
     type: AssemblyType
+
+
+class UpdateAssemblyExteriorConditionCommand(BaseModel):
+    """Set what the assembly's outboard face is adjacent to.
+
+    The interior side has no matching command on purpose: it is derived
+    from ``type``, which ``update_assembly_type`` already owns.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_assembly_exterior_condition"]
+    assembly_id: str
+    exterior_condition: ExteriorCondition
 
 
 class DuplicateAssemblyCommand(BaseModel):
@@ -560,6 +589,7 @@ EnvelopeCommand = Annotated[
     CreateAssemblyCommand
     | RenameAssemblyCommand
     | UpdateAssemblyTypeCommand
+    | UpdateAssemblyExteriorConditionCommand
     | DuplicateAssemblyCommand
     | DeleteAssemblyCommand
     | AddLayerCommand

@@ -12,7 +12,7 @@ stages stay source-agnostic.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any, TypeVar, cast, get_args
 
 from starlette import status
 
@@ -20,8 +20,10 @@ from features.catalogs.materials.models import MEMBRANE_CATEGORY_ID
 from features.envelope.honeybee_specification_status import from_external_ref_status
 from features.project_document.envelope_models import (
     SPECIFICATION_STATUSES,
+    AssemblyFace,
     AssemblyOrientation,
     AssemblyType,
+    ExteriorCondition,
     SpecificationStatus,
 )
 from features.shared.errors import api_error
@@ -40,10 +42,15 @@ DEFAULT_LAYER_WIDTH_MM = 1000.0
 DEFAULT_MEMBRANE_THICKNESS_MM = 0.15
 DEFAULT_MEMBRANE_NAME = "Membrane"
 
-_ASSEMBLY_TYPES = frozenset({"wall", "floor", "roof", "other"})
+# Derived from the Literals rather than transcribed, so a new member cannot be
+# added to the document model while the importer silently keeps defaulting it.
+_ASSEMBLY_TYPES: frozenset[str] = frozenset(get_args(AssemblyType))
 _ASSEMBLY_TYPE_PREFIXES: dict[str, AssemblyType] = {"W_": "wall", "R_": "roof", "F_": "floor"}
-_ORIENTATIONS = frozenset({"first_layer_outside", "last_layer_outside"})
-_ASSEMBLY_FACES = frozenset({"interior", "exterior"})
+_ORIENTATIONS: frozenset[str] = frozenset(get_args(AssemblyOrientation))
+_EXTERIOR_CONDITIONS: frozenset[str] = frozenset(get_args(ExteriorCondition))
+_ASSEMBLY_FACES: frozenset[str] = frozenset(get_args(AssemblyFace))
+
+_LiteralT = TypeVar("_LiteralT", bound=str)
 
 
 class ImportParseError(Exception):
@@ -111,6 +118,7 @@ class ImportedConstruction:
     name: str
     type: AssemblyType
     orientation: AssemblyOrientation
+    exterior_condition: ExteriorCondition
     layers: list[ImportedLayer]
     # `{layer_id, face}` as exported, keyed by the *source* layer id — the
     # rebuilt assembly may mint fresh ids, so the caller remaps it. None for a
@@ -258,7 +266,7 @@ def _parse_construction(
     # round trip is lossless; a foreign file has no such block and is
     # unaffected.
     layers_outside_in = _splice_membrane_layers(layers_outside_in, _as_list(ph_nav.get("membrane_layers")), materials)
-    orientation = _coerce_orientation(ph_nav.get("orientation"))
+    orientation = _coerce_literal(ph_nav.get("orientation"), _ORIENTATIONS, "first_layer_outside")
     # ``materials[]`` is canonically outside → inside. Reversing for
     # ``last_layer_outside`` restores the original document order (the inverse
     # of ``_layers_outside_to_inside``), so a round-trip yields identical rows.
@@ -271,6 +279,9 @@ def _parse_construction(
         name=str(name),
         type=_resolve_assembly_type(ph_nav.get("assembly_type"), identifier),
         orientation=orientation,
+        # Honeybee keeps boundary conditions on faces, so a foreign file has no
+        # construction-level equivalent to map from — it takes the document default.
+        exterior_condition=_coerce_literal(ph_nav.get("exterior_condition"), _EXTERIOR_CONDITIONS, "outdoor_air"),
         layers=layers,
         air_barrier=_parse_air_barrier(ph_nav.get("air_barrier")),
     )
@@ -507,10 +518,16 @@ def _resolve_assembly_type(explicit: object, identifier: str) -> AssemblyType:
     return _ASSEMBLY_TYPE_PREFIXES.get(identifier[:2].upper(), "other")
 
 
-def _coerce_orientation(value: object) -> AssemblyOrientation:
-    if isinstance(value, str) and value in _ORIENTATIONS:
-        return cast(AssemblyOrientation, value)
-    return "first_layer_outside"
+def _coerce_literal(value: object, allowed: frozenset[str], default: _LiteralT) -> _LiteralT:
+    """Accept a raw value only when it is a member of its Literal, else default.
+
+    Used for the `ph_nav` fields a foreign (non-PHN) file simply will not
+    carry: `orientation` and `exterior_condition` both have a well-defined
+    fallback, so an absent or unrecognized value is not an error.
+    """
+    if isinstance(value, str) and value in allowed:
+        return cast(_LiteralT, value)
+    return default
 
 
 def _meters_to_mm(value: object) -> float:

@@ -393,6 +393,44 @@ def test_last_layer_outside_orientation_round_trips(clean_import_tables: None) -
     assert [layer["segments"][0]["project_material_id"] for layer in restored["layers"]] == ["pmat_a", "pmat_b"]
 
 
+def test_exterior_condition_round_trips_and_defaults_for_foreign_files(
+    clean_import_tables: None,
+) -> None:
+    """Native exports restore the boundary condition; files lacking it default."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id, version_id = project["id"], project["active_version_id"]
+    materials = [project_material(id="pmat_a", name="MatA", conductivity_w_mk=0.04, datasheet_asset_ids=[])]
+    ground_floor = assembly(
+        id="asm_slab",
+        name="FLOOR-SLAB",
+        type="floor",
+        exterior_condition="ground",
+        layers=[
+            {
+                "id": "lyr_a",
+                "order": 0,
+                "thickness_mm": 200.0,
+                "segments": [_single_segment("seg_a", "pmat_a")],
+            }
+        ],
+    )
+    write_saved_body(version_id, _body(materials, [ground_floor]))
+
+    payload = _export(client, project_id, version_id)
+    preview = _preview(client, project_id, version_id, payload).json()
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assert applied["assemblies"][0]["exterior_condition"] == "ground"
+
+    # Honeybee keeps boundary conditions on faces, so a foreign file has nothing
+    # to map from — it takes the same default as a pre-field document.
+    for construction in payload["constructions"].values():
+        construction["ph_nav"].pop("exterior_condition")
+    foreign_preview = _preview(client, project_id, version_id, payload).json()
+    foreign_applied = _apply_from_preview(client, project_id, version_id, payload, foreign_preview).json()
+    assert foreign_applied["assemblies"][0]["exterior_condition"] == "outdoor_air"
+
+
 def _single_segment(segment_id: str, material_id: str) -> dict[str, Any]:
     return {
         "id": segment_id,

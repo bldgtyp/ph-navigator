@@ -1,4 +1,18 @@
-"""Construction-only thermal calculations for Assembly Builder."""
+"""Thermal calculations for Assembly Builder.
+
+Two R-values live side by side here, and conflating them is the failure
+mode this module is shaped to prevent:
+
+* **construction-only** (``r_construction_m2k_w``) — the bare material
+  layers. This is what PHPP's U-Values worksheet wants, because that
+  worksheet adds its own surface films from its own assembly-type setting.
+* **effective** (``r_effective_m2k_w`` / ``u_effective_w_m2k``) — the
+  construction plus the ISO 6946 surface films. This is the real U-factor
+  and what the Assembly Builder header reports.
+
+Sending the effective number to PHPP would double-count the films; that
+is guarded by an explicit regression test in ``test_phpp_export.py``.
+"""
 
 from __future__ import annotations
 
@@ -7,9 +21,33 @@ import json
 from dataclasses import dataclass
 from itertools import product
 
+from features.envelope.boundary_conditions import HeatFlowDirection, resolve_surface_resistances
 from features.envelope.membranes import assigned_materials, is_membrane_layer, is_membrane_material
 from features.envelope.models import AssemblyThermalStatus, ThermalStatusFlag
-from features.project_document.document import Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial
+from features.project_document.document import (
+    Assembly,
+    AssemblyLayer,
+    AssemblySegment,
+    ProjectMaterial,
+    ThermalStandard,
+)
+
+
+@dataclass(frozen=True)
+class ConstructionThermalResult:
+    """The bare material stack. Has no film or effective field, by design.
+
+    Handing this type to a film-free consumer is what keeps the PHPP
+    double-count impossible rather than merely tested: there is no
+    ``u_effective_w_m2k`` on it to reach for.
+    """
+
+    status: AssemblyThermalStatus
+    r_parallel_path_m2k_w: float | None
+    r_isothermal_planes_m2k_w: float | None
+    r_construction_m2k_w: float | None
+    u_construction_w_m2k: float | None
+    warnings: list[str]
 
 
 @dataclass(frozen=True)
@@ -18,8 +56,17 @@ class ThermalResult:
     input_hash: str
     r_parallel_path_m2k_w: float | None
     r_isothermal_planes_m2k_w: float | None
+    r_construction_m2k_w: float | None
+    u_construction_w_m2k: float | None
     r_effective_m2k_w: float | None
     u_effective_w_m2k: float | None
+    # Always populated — the films depend only on the assembly's type and
+    # exterior condition, so they are known even when missing materials
+    # leave every R/U field null.
+    rsi_m2k_w: float
+    rse_m2k_w: float
+    heat_flow_direction: HeatFlowDirection
+    thermal_standard: ThermalStandard
     warnings: list[str]
 
 
@@ -34,18 +81,22 @@ class ThermalIssue:
     segment_order: int | None = None
 
 
-def calculate_assembly_thermal(
+def calculate_construction_thermal(
     assembly: Assembly,
     materials_by_id: dict[str, ProjectMaterial],
-) -> ThermalResult:
-    """Return SI-canonical preview values or explicit incomplete-state flags.
+) -> ConstructionThermalResult:
+    """Resolve the bare material stack, with no surface films anywhere.
 
-    This is a construction-only Passive House preview, not certification
-    output. It reports the PH average of ASHRAE Fundamentals Ch. 25
-    Parallel-Path and Isothermal-Planes methods after guarding missing
-    materials, missing conductivity, broken references, and bad geometry.
+    The PH average of the ASHRAE Fundamentals Ch. 25 Parallel-Path and
+    Isothermal-Planes methods, guarded against missing materials, missing
+    conductivity, broken references, and bad geometry.
 
-    Membrane layers take no part in it at all — see ``is_membrane_layer``.
+    Consumers that must not see films — the PHPP U-Values export, whose
+    worksheet supplies its own — call this rather than
+    :func:`calculate_assembly_thermal`, so picking the wrong convention
+    is not something a caller can do by reaching for the wrong field.
+
+    Membrane layers take no part in it at all — see ``membranes.py``.
     """
     issues = thermal_issues(assembly, materials_by_id)
     flags = thermal_issue_flags(issues)
@@ -55,49 +106,89 @@ def calculate_assembly_thermal(
         "broken_material_reference",
         "no_thermal_layers",
     }
-    input_hash = thermal_input_hash(assembly, materials_by_id)
     warnings = thermal_warning_messages(flags)
     if flags.intersection(blocking_flags) or all(
         segment.project_material_id is None for layer in assembly.layers for segment in layer.segments
     ):
-        return ThermalResult(
-            status=thermal_status_from_issues(issues),
-            input_hash=input_hash,
-            r_parallel_path_m2k_w=None,
-            r_isothermal_planes_m2k_w=None,
-            r_effective_m2k_w=None,
-            u_effective_w_m2k=None,
-            warnings=warnings,
-        )
+        return _incomplete_construction(thermal_status_from_issues(issues), warnings)
 
     r_parallel = _calculate_parallel_path_r_value(assembly, materials_by_id)
     r_isothermal = _calculate_isothermal_planes_r_value(assembly, materials_by_id)
     if r_parallel <= 0 or r_isothermal <= 0:
         flags.add("invalid_geometry")
-        return ThermalResult(
-            status=AssemblyThermalStatus(is_complete=False, flags=sorted(flags)),
-            input_hash=input_hash,
-            r_parallel_path_m2k_w=None,
-            r_isothermal_planes_m2k_w=None,
-            r_effective_m2k_w=None,
-            u_effective_w_m2k=None,
-            warnings=[*warnings, "Thermal resistance could not be calculated from the assigned segments."],
+        return _incomplete_construction(
+            AssemblyThermalStatus(is_complete=False, flags=sorted(flags)),
+            [*warnings, "Thermal resistance could not be calculated from the assigned segments."],
         )
 
-    r_effective = (r_parallel + r_isothermal) / 2.0
-    return ThermalResult(
+    r_construction = (r_parallel + r_isothermal) / 2.0
+    return ConstructionThermalResult(
         status=thermal_status_from_issues(issues),
-        input_hash=input_hash,
         r_parallel_path_m2k_w=round(r_parallel, 6),
         r_isothermal_planes_m2k_w=round(r_isothermal, 6),
-        r_effective_m2k_w=round(r_effective, 6),
-        u_effective_w_m2k=round(1.0 / r_effective, 6),
+        r_construction_m2k_w=round(r_construction, 6),
+        u_construction_w_m2k=round(1.0 / r_construction, 6),
         warnings=warnings,
     )
 
 
-def thermal_input_hash(assembly: Assembly, materials_by_id: dict[str, ProjectMaterial]) -> str:
-    """Hash only the assembly subtree and referenced physical material fields."""
+def calculate_assembly_thermal(
+    assembly: Assembly,
+    materials_by_id: dict[str, ProjectMaterial],
+    standard: ThermalStandard = "iso_6946",
+) -> ThermalResult:
+    """Return SI-canonical preview values or explicit incomplete-state flags.
+
+    This is a Passive House preview, not certification output. The surface
+    films are added **in series with the construction average** — per
+    ISO 13788's `R_total = Rsi + ΣR + Rse` — rather than inside each
+    parallel path, so the two bracketing method values stay comparable and
+    construction-only.
+    """
+    construction = calculate_construction_thermal(assembly, materials_by_id)
+    films = resolve_surface_resistances(assembly.type, assembly.exterior_condition, standard)
+    r_construction = construction.r_construction_m2k_w
+    r_effective = None if r_construction is None else films.rsi_m2k_w + r_construction + films.rse_m2k_w
+    return ThermalResult(
+        status=construction.status,
+        input_hash=thermal_input_hash(assembly, materials_by_id, standard),
+        r_parallel_path_m2k_w=construction.r_parallel_path_m2k_w,
+        r_isothermal_planes_m2k_w=construction.r_isothermal_planes_m2k_w,
+        r_construction_m2k_w=r_construction,
+        u_construction_w_m2k=construction.u_construction_w_m2k,
+        r_effective_m2k_w=None if r_effective is None else round(r_effective, 6),
+        u_effective_w_m2k=None if r_effective is None else round(1.0 / r_effective, 6),
+        rsi_m2k_w=films.rsi_m2k_w,
+        rse_m2k_w=films.rse_m2k_w,
+        heat_flow_direction=films.heat_flow_direction,
+        thermal_standard=films.standard,
+        warnings=construction.warnings,
+    )
+
+
+def _incomplete_construction(status: AssemblyThermalStatus, warnings: list[str]) -> ConstructionThermalResult:
+    """Null every R/U field; the caller still reports the always-known films."""
+    return ConstructionThermalResult(
+        status=status,
+        r_parallel_path_m2k_w=None,
+        r_isothermal_planes_m2k_w=None,
+        r_construction_m2k_w=None,
+        u_construction_w_m2k=None,
+        warnings=warnings,
+    )
+
+
+def thermal_input_hash(
+    assembly: Assembly,
+    materials_by_id: dict[str, ProjectMaterial],
+    standard: ThermalStandard = "iso_6946",
+) -> str:
+    """Hash the assembly subtree, referenced material physics, and the standard.
+
+    The standard is an input to the surface films, so a project that
+    switches it must invalidate every cached preview — the assembly
+    subtree alone would not change.
+    """
     material_refs: dict[str, dict[str, object]] = {}
     for layer in assembly.layers:
         for segment in layer.segments:
@@ -107,8 +198,8 @@ def thermal_input_hash(assembly: Assembly, materials_by_id: dict[str, ProjectMat
             material_refs[segment.project_material_id] = (
                 {
                     "id": material.id,
-                    # `category` is a thermal input now: it is what makes a
-                    # layer a membrane and therefore excluded from the R sum.
+                    # `category` is a thermal input: it is what makes a layer
+                    # a membrane and therefore excluded from the R sum.
                     "category": material.category,
                     "conductivity_w_mk": material.conductivity_w_mk,
                     "density_kg_m3": material.density_kg_m3,
@@ -121,6 +212,7 @@ def thermal_input_hash(assembly: Assembly, materials_by_id: dict[str, ProjectMat
     payload = {
         "assembly": assembly.model_dump(mode="json"),
         "materials": material_refs,
+        "thermal_standard": standard,
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()

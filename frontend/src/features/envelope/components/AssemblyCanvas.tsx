@@ -11,6 +11,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { useUnitPreference } from "../../../lib/units";
+import { AssemblyBoundaryLabels } from "./AssemblyBoundaryLabels";
 import { AssemblyCanvasOverlay, type AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
 import { AssemblySvgCanvas } from "./AssemblySvgCanvas";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
@@ -23,11 +24,19 @@ import {
 } from "../canvas-constants";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 import { materialById } from "../lib";
-import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
+import type {
+  Assembly,
+  AssemblyLayer,
+  AssemblySegment,
+  AssemblyThermalResponse,
+  ExteriorCondition,
+  ProjectMaterial,
+} from "../types";
 
 export function AssemblyCanvas({
   assembly,
   materials,
+  thermal,
   zoom,
   autoFitOnMount,
   canEdit,
@@ -36,6 +45,7 @@ export function AssemblyCanvas({
   onZoomIn,
   onZoomOut,
   onFitZoom,
+  onExteriorConditionChange,
   onFlipOrientation,
   onFlipLayers,
   onFlipSegments,
@@ -47,6 +57,7 @@ export function AssemblyCanvas({
 }: {
   assembly: Assembly;
   materials: ProjectMaterial[];
+  thermal: AssemblyThermalResponse | null;
   zoom: number;
   autoFitOnMount: boolean;
   canEdit: boolean;
@@ -55,6 +66,7 @@ export function AssemblyCanvas({
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitZoom: (zoom: number) => void;
+  onExteriorConditionChange: (exteriorCondition: ExteriorCondition) => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
@@ -89,10 +101,6 @@ export function AssemblyCanvas({
     onSegmentActivate,
     onAddSegment,
   };
-  const [outsideLabel, insideLabel] =
-    assembly.orientation === "first_layer_outside"
-      ? ["Exterior", "Interior"]
-      : ["Interior", "Exterior"];
   useLayoutEffect(() => {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
@@ -143,20 +151,17 @@ export function AssemblyCanvas({
           data-testid="assembly-canvas-stage"
           style={{ width: `${stageWidth}px`, height: `${canvasHeight}px` }}
         >
-          <div
-            id="assembly-orientation-labels"
-            className="assembly-orientation-labels"
-            aria-hidden="true"
-            style={{
-              left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX}px`,
-              top: `${geometryTopPx}px`,
-              width: `${svgWidth}px`,
-              height: `${svgHeight}px`,
-            }}
-          >
-            <span className="assembly-orientation-label is-top">{outsideLabel}</span>
-            <span className="assembly-orientation-label is-bottom">{insideLabel}</span>
-          </div>
+          <AssemblyBoundaryLabels
+            assembly={assembly}
+            thermal={thermal}
+            canEdit={canEdit}
+            busy={commandBusy}
+            leftPx={ASSEMBLY_CANVAS_ORIGIN_X_PX}
+            topPx={geometryTopPx}
+            widthPx={svgWidth}
+            heightPx={svgHeight}
+            onExteriorConditionChange={onExteriorConditionChange}
+          />
           <AssemblySvgCanvas
             assembly={assembly}
             materialsById={materialsById}

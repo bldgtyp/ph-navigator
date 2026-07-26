@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Draft — not started
+STATUS: Phases 1–3 complete; Phase 4 blocked on Ed (licensed-data routing)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -9,7 +9,58 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 
 # Status
 
-## State
+## Phase ledger
+
+| Phase | State | Notes |
+| --- | --- | --- |
+| **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
+| **2** — fold films into the calculation | ✅ **complete** | Films folded in, tooltip rewritten, PHPP kept construction-only with a regression test, hash extended, citation reconciled. **Every displayed number moved.** |
+| **3** — rendering | ✅ **complete** | Exterior label is a select, interior label shows derived Rsi + direction, face bands with distinct ground/ventilated treatments. No new tokens. Browser-verified. |
+| **4** — ASHRAE set + selector | ⛔ **blocked on Ed** | Needs the licensed-data routing decision (`../assembly-condensation-risk/decisions.md` §D-7), which is still open. Not startable by an agent. |
+
+### Phase 1 as-built
+
+Delivered:
+- `Assembly.exterior_condition: ExteriorCondition = "outdoor_air"` — an
+  additive amendment, **no `schema_version` bump** (`context/technical-requirements/data-model.md`
+  §6.2 permits this); the default is a faithful no-op for every existing document.
+- `ProjectAssumptions` on `tables.assumptions`, holding `thermal_standard`.
+  `None` means "all defaults". `ProjectDocumentTables.resolved_assumptions()`
+  is the read accessor. This is the block `assembly-condensation-risk` should
+  add `condensation_settings` to.
+- `backend/features/envelope/boundary_conditions.py` — the ISO 6946 table,
+  `heat_flow_direction()`, `resolve_surface_resistances()`, and
+  `ISO_13788_SURFACE_CHECK_RSI = 0.25` for the condensation screen.
+- `update_assembly_exterior_condition` command (+ `create_assembly` accepts
+  the field). No interior counterpart: it is derived from `type`.
+- `exterior_condition` rides in the HBJSON `ph_nav` round-trip block;
+  foreign files default it, as Honeybee has no construction-level equivalent.
+
+**One deliberate deviation from `PRD.md` §4.2.** The PRD writes
+`thermal_standard: "iso_6946" | "ashrae"`. Phase 1 ships
+`ThermalStandard = Literal["iso_6946"]` — a single-member literal — and
+Phase 4 widens it when the ASHRAE values land. Reason: with both members
+settable from Phase 1, a document (via MCP or the API) could hold
+`"ashrae"` with no value table behind it, and the resolver would have to
+either raise a 500 or silently return ISO numbers. Widening a Literal
+later is the same class of additive amendment as adding the field, so
+nothing is foreclosed. The field shape, the default, and the
+"independent project setting" decision are unchanged.
+
+Verification (2026-07-26): `uv run ty check` clean; `uv run pytest` 1513
+passed / 7 skipped; `pnpm exec tsc --noEmit` clean. The schema-fingerprint
+guard (`backend/tests/project_document_schema/schema_fingerprint.json`) and
+the five golden upgrade snapshots were regenerated; a structural diff
+confirmed the **only** change is `tables.assumptions: null` — the corpus
+fixtures carry no assemblies, so no `exterior_condition` appears there.
+
+Known gap, pre-existing and not introduced here: the golden upgrade corpus
+has zero assemblies in every fixture, so the "old document gains the new
+assembly field" path is covered by a model-level test
+(`test_existing_assemblies_default_to_outdoor_air`) rather than by the
+corpus.
+
+## Original state (2026-07-26, pre-implementation)
 
 **PRD drafted. No code written.** Raised by Ed on 2026-07-26 while resolving
 `assembly-condensation-risk` Q-5 (floors on grade), on the observation that the
@@ -60,17 +111,89 @@ Reviewed with Ed 2026-07-26, after reading the honeybee-energy source:
   `assembly-condensation-risk`.
 - UI: the existing `exterior`/`interior` labels become the control.
 
+### Phase 2 as-built
+
+**This is the phase that changed reported numbers.** `r_effective_m2k_w` /
+`u_effective_w_m2k` now mean `Rsi + R_construction + Rse`.
+
+- `ThermalResult` / `AssemblyThermalResponse` carry **both** conventions:
+  the new `r_construction_m2k_w` / `u_construction_w_m2k` are the old
+  numbers under a new name, and `rsi_m2k_w` / `rse_m2k_w` /
+  `heat_flow_direction` / `thermal_standard` disclose what was applied.
+  The four film fields are never null — they hold even when missing
+  materials null every R/U field, which is what Phase 3's interior label
+  needs.
+- Films add **in series with the PH average**, not inside each parallel
+  path, per ISO 13788's `R_total = Rsi + ΣR + Rse`. So
+  `r_parallel_path_m2k_w` / `r_isothermal_planes_m2k_w` stay
+  construction-only and comparable to each other.
+- **PHPP export kept construction-only, structurally.** This was a live
+  double-count risk: `phpp_export.py` fed `calculate_assembly_thermal`
+  straight into the worksheet's U-value cell while the same sheet declares
+  `Rsi: 0.00` / `Rse: 0.00`. Rather than rely on the call site picking the
+  right field, `thermal.py` now has two entry points —
+  `calculate_construction_thermal()` returns a `ConstructionThermalResult`
+  with **no film or effective field on it**, and
+  `calculate_assembly_thermal()` wraps that and adds the films. PHPP takes
+  the former, so the wrong value is unreachable, not merely untested.
+  (Prompted by the altitude review, which correctly noted a naming
+  convention plus one test was the only backstop.) Three tests pin it,
+  including one asserting the exported value does **not** move with
+  `exterior_condition`.
+- `thermal_input_hash` gained the standard (it is not in the assembly
+  subtree, so a project switching standards would otherwise serve stale
+  cached previews).
+- Tooltip rewritten (`AssemblyHeader.tsx`): title now tracks the unit
+  system ("Effective R-Value" IP / "Effective U-Value" SI), states films
+  **are** included, names the standard + Rsi/Rse + heat-flow direction,
+  and shows the construction-only value. A frontend test asserts the old
+  "are NOT included" sentence is gone.
+- Citation reconciled on **Ch. 25** (the tooltip's Ch. 27 was the
+  outlier; `thermal.py` and the contract doc both already said 25).
+
+Measured impact on the test fixtures: IP `7.5 → 8.4 h-ft²-F/Btu` on the
+1.316 m²K/W wall — the direction and rough magnitude the PRD predicted.
+
+Verification (2026-07-26): `make ci` equivalent green — see below.
+
+### Phase 3 as-built
+
+`AssemblyBoundaryLabels.tsx` replaces the two static caption spans. The
+container lost its `aria-hidden` (it now holds an interactive control).
+
+- Exterior label → an editable `<select>` whose chrome only appears on
+  hover/focus, so it still reads as a caption rather than a form field.
+  Viewers/locked versions get static text (mirroring the `StatusSelect`
+  editable/read-only precedent without borrowing its pill styling, which
+  is the wrong visual language here).
+- Interior label → static, showing the derived Rsi and heat-flow
+  direction.
+- Face bands from `color-mix` over the existing palette — **no new
+  tokens** (criterion 8). Outdoor air solid, ground hatched, ventilated /
+  unconditioned dashed.
+
+**Verified in a real browser**, not just RTL — three screenshots across
+outdoor-air / ground / unconditioned-space confirmed the bands are
+distinguishable at a glance (criterion 6) and that the labels fit the
+canvas. Two defects were found and fixed only because of that check:
+`--space-2` is 2px, so `INTERIORRsi` rendered with no gap; and the
+original caveat sentence ran the label off the canvas. The caveat is now
+short, truncates with `text-overflow`, and carries the full sentence in a
+`title`.
+
+Ports 5173/8000 were already in use, so this ran on an isolated stack
+(`:5199` / `:8099`, throwaway `phn_bc_smoke` DB) per
+`planning/features/.instructions.md`. Both services were stopped
+afterwards; nothing of Ed's was touched.
+
 ## Next step
 
-**Phase 1** — add `exterior_condition` (default `outdoor_air`, a faithful no-op
-for every existing assembly) and `assumptions.thermal_standard` (default
-`iso_6946`), plus the ISO 6946 resistance table and heat-flow direction derived
-from `Assembly.type`. Backend only, no UI change, **no displayed number moves**.
-This alone unblocks the condensation engine.
+**Phase 4** — the ASHRAE resistance set + the standard selector.
+**This one needs Ed** (see Blockers).
 
-Phase 2 must not be bundled into it — that one changes numbers users have
-reported and deserves its own diff, its own tests (including the PHPP
-double-count regression), and its own release note.
+`assembly-condensation-risk` Phase 2 is **unblocked from this side** as of
+Phase 1: `resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI`
+are available. It still waits on `assembly-membrane-layers`.
 
 ## Dependencies
 
@@ -81,8 +204,39 @@ double-count regression), and its own release note.
 
 ## Blockers
 
-**None.** All design questions resolved 2026-07-26; only a deploy-time
-communication detail is open.
+**Phase 4 is blocked on a decision only Ed can make.** Phases 1–3 are done
+and unblocked.
+
+`PRD.md` §4.2 routes the ASHRAE surface-resistance values through the same
+private-DB path as the condensation feature's µ values —
+`../assembly-condensation-risk/decisions.md` **§D-7, which is still open
+and marked "Ed's call."** The source PDFs are on disk
+(`~/Dropbox/bldgkraft/Codes & Standards/2017 ASHRAE Handbook/SI/`), so the
+extraction itself is easy; the obstacle is that **this repo is public and
+`CLAUDE.md` forbids committing licensed data**, with no agreed routing
+mechanism yet.
+
+An agent should not resolve this by judging the extraction *de minimis*
+(it is only a handful of surface-conductance numbers) — the hard rule is
+absolute and the routing decision is explicitly reserved. D-7's own
+options apply here:
+
+1. Route the values through the private object store / production DB; the
+   repo carries the **loader**, not the values.
+2. Enter them as ordinary data through an existing UI, citing the source.
+3. Use only genuinely public-domain or manufacturer-published values.
+
+Until one is chosen, Phase 1's deliberate narrowing holds:
+`ThermalStandard = Literal["iso_6946"]`, so no document can reference a
+standard whose values do not exist. Phase 4 widens that literal, adds the
+value table behind whichever route is chosen, adds an
+`update_thermal_standard` command, extends
+`test_input_hash_changes_with_both_surface_film_inputs` with an
+ISO-vs-ASHRAE pair, and adds the project-setting UI.
+
+Low urgency regardless — Ed reports ~99 % ISO.
+
+### Resolved design questions (2026-07-26)
 
 | # | Question | Resolution |
 | --- | --- | --- |
@@ -94,7 +248,20 @@ communication detail is open.
 
 ## Verification
 
-Phase 1 gate: `(type, exterior_condition, standard)` resolves a deterministic
-`(Rsi, Rse, heat_flow_direction)` triple for every combination, unit-tested
-against the ISO 6946 table, **and no existing assembly's displayed thermal result
-changes** (`PRD.md` §8, criteria 1–2).
+Against `PRD.md` §8:
+
+| # | Criterion | Status |
+| --- | --- | --- |
+| 1 | Every existing assembly resolves to `outdoor_air`; no number moved in Phase 1 | ✅ `test_existing_assemblies_default_to_outdoor_air`; Phase 1 touched no calculation |
+| 2 | `(type, exterior_condition, standard)` → deterministic triple, unit-tested for all combinations | ✅ `test_iso_6946_resolves_every_type_and_exterior_condition`, parametrized over the full cross-product against an independently transcribed table |
+| 3 | Phase 2 metric reflects `Rsi + R + Rse` on both unit branches; construction-only reachable; hash changes | ✅ `test_films_are_added_in_series_with_the_construction`, `test_effective_r_tracks_both_boundary_axes`, `test_input_hash_changes_with_both_surface_film_inputs`; both branches share `formatThermalValue` |
+| 3a | Tooltip no longer claims films are excluded; names standard, Rsi/Rse, direction | ✅ frontend test asserts the disclosure **and** that "are NOT included" is gone |
+| 4 | PHPP export still construction-only — explicit regression test | ✅ **enforced by type**: PHPP consumes `ConstructionThermalResult`, which has no with-films field. Three tests, incl. one that the export does not move with `exterior_condition` |
+| 5 | ISO 13788 `Rsi = 0.25` available to the condensation feature, never in the U-value | ✅ `ISO_13788_SURFACE_CHECK_RSI`; `test_iso_13788_surface_check_rsi_is_separate_from_the_u_value_films` |
+| 6 | Ground / ventilated visually distinguishable at a glance, without reading text | ✅ browser-verified across three conditions — hatch vs dashed vs solid bands |
+| 7 | Changing `exterior_condition` updates resistances and U-value immediately | ✅ frontend test drives the select → command; API round-trip confirmed live |
+| 8 | No new design tokens | ✅ `color-mix` over the existing palette; `check:css-vars` + `check:typography` guards pass |
+
+Gate run for each phase: `ruff format/check`, backend boundaries, `ty`,
+full `pytest` (1525 passing), `prettier`, `eslint`, `check:all`, full
+`vitest` (2263 passing), `vite build`.

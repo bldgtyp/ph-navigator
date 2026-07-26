@@ -69,6 +69,9 @@ def _construction_payload(
             # PHN → HBJSON → PHN round trip puts them back exactly where they
             # were. Honeybee and PHX ignore `ph_nav` entirely.
             "membrane_layers": _membrane_layer_payloads(assembly, materials_by_id),
+            # Honeybee keeps boundary conditions on faces, not constructions,
+            # so this stays PHN metadata rather than mapping to a Honeybee field.
+            "exterior_condition": assembly.exterior_condition,
         },
         "materials": [
             _layer_material_payload(layer, materials_by_id)

@@ -52,6 +52,7 @@ function assembly(layers: AssemblyLayer[]): Assembly {
     name: "TEST",
     type: "wall",
     orientation: "first_layer_outside",
+    exterior_condition: "outdoor_air",
     air_barrier: null,
     air_barrier_status: null,
     status: { is_complete: true, flags: [] },

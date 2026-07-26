@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 
 from features.envelope.membranes import is_membrane_layer
 from features.envelope.phpp_types import ExportReason, UnitSystem
-from features.envelope.thermal import calculate_assembly_thermal
+from features.envelope.thermal import calculate_construction_thermal
 from features.project_document.document import (
     Assembly,
     AssemblyLayer,
@@ -121,7 +121,11 @@ def build_assembly_export_plan(
     dropped_membranes = [layer.id for layer in all_layers if is_membrane_layer(layer, materials_by_id)]
     # One thermal pass yields both the completeness flags and the reference
     # U-value; ``status.flags`` carries the same codes ``thermal_issues`` would.
-    thermal = calculate_assembly_thermal(assembly, materials_by_id)
+    # Deliberately the *construction-only* calculation: the worksheet block
+    # below declares ``Rsi: 0.00`` / ``Rse: 0.00`` and PHPP adds its own
+    # surface films from its own assembly-type setting. This type has no
+    # effective/with-films field to reach for by mistake.
+    thermal = calculate_construction_thermal(assembly, materials_by_id)
 
     # 1. Completeness — a missing material/conductivity makes a row unrenderable.
     if set(thermal.status.flags) & _INCOMPLETE_MATERIAL_CODES:
@@ -153,7 +157,9 @@ def build_assembly_export_plan(
         # they are really there, and a section that under-measures is worse
         # than one carrying a sub-millimetre term.
         total_thickness_cm=sum(layer.thickness_mm for layer in all_layers) / 10.0,
-        u_value_w_m2k=thermal.u_effective_w_m2k,
+        # Construction-only, never effective: the PHPP worksheet supplies its
+        # own surface films from its own assembly-type setting.
+        u_value_w_m2k=thermal.u_construction_w_m2k,
         dropped_membrane_layer_ids=dropped_membranes,
     )
 

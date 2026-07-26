@@ -103,15 +103,21 @@ the Apertures list — see the design-system component inventory). Styled to the
 
 **Right side — active assembly content (US-ENV-3, 4):**
 
+> The metric is labelled **Thermal** and changes kind with the unit system:
+> IP renders an R-value (1 dp), SI a U-value (3 dp). It **includes** the
+> ISO 6946 surface films; its `ⓘ` tooltip names the standard, the Rsi/Rse in
+> force, the derived heat-flow direction, and the construction-only value.
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │  Assembly Details   [WALL-C3 ▾]    Total Thickness: 304.8 mm  ⓘ      │
-│                                    Effective U-Value: 0.243 W/m²K  ⓘ  │
+│                                    Thermal: 0.243 W/m²K  ⓘ            │
 │                                    [⇅ Flip Orient] [↔ Flip Layers]    │
 │                                    [⨀ Pick] [⬇ Paste] [↶ Undo]   ⋯   │
 ├───────────────────────────────────────────────────────────────────────┤
 │                                                                       │
-│                              exterior                                 │
+│         EXTERIOR · OUTDOOR AIR ▾  · Rse 0.04                          │
+│  ═════════════════════════════════════════════════════════════════   │  ← exterior face band
 │  ┌──────────┬─────────────────────────────────────────────────────┐  │
 │  │  10.000  │ ░░░░░░░░░░░░░░░░ Concrete (Heavily Reinforced) ░░░░│  │  ← layer 1
 │  │   in     │                                                     │  │
@@ -119,7 +125,8 @@ the Apertures list — see the design-system component inventory). Styled to the
 │  │  3.000   │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ XPS ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│  │  ← layer 2
 │  │   in     │                                                     │  │
 │  └──────────┴─────────────────────────────────────────────────────┘  │
-│                              interior                                 │
+│  ═════════════════════════════════════════════════════════════════   │  ← interior face band
+│         INTERIOR · Rsi 0.13 · horizontal heat flow                    │
 │                                                                       │
 ├───────────────────────────────────────────────────────────────────────┤
 │  Color │ Material                       │ Resistivity [R/in]          │
@@ -144,7 +151,11 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   as a Honeybee construction library.
 - **Download in PHPP format** — exports one CSV per assembly, laid out to mirror
   the PHPP **U-Values** worksheet, bundled into a ZIP
-  (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. An
+  (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. The
+  exported U-value is **construction-only** and deliberately differs from the
+  header metric: the worksheet declares `Rsi: 0.00` / `Rse: 0.00` and adds its
+  own surface films, so sending the header's with-films value would count them
+  twice (`context/technical-requirements/envelope-thermal-preview.md`). An
   assembly that can't be represented in PHPP (>8 layers, >3 / inconsistent
   heat-flow pathways, incomplete materials, or nothing but membrane layers) is
   written as a one-line error CSV rather than dropped. **Membrane layers are
@@ -267,10 +278,40 @@ another.
   segment in the layer remains.
 - All inputs read-only on locked versions / Viewer reads.
 
+**Boundary labels (`AssemblyBoundaryLabels`):**
+
+The section's exterior/interior captions *are* the boundary-condition
+affordance — the thing the user already looks at is the thing they click,
+so no new chrome was added. The two sides are deliberately asymmetric:
+
+- **Exterior** — an editable `<select>` (`#assembly-exterior-condition`)
+  over the four `exterior_condition` values, reading
+  `EXTERIOR · <condition> · Rse <value>`. Its chrome only appears on
+  hover/focus so it still reads as a caption. Viewers and locked versions
+  get the same words as static text, no control.
+  `unconditioned_space` carries a visible muted caveat — it is
+  film-identical to `ventilated` today and the far-side temperature is not
+  modelled, so selecting it records intent, not extra fidelity. The caveat
+  truncates with the full text on hover rather than overflowing a narrow
+  canvas.
+- **Interior** — static, and static on purpose: it is fully derived from
+  `Assembly.type`. It reads `INTERIOR · Rsi <value> · <direction> heat
+  flow`. Showing the derived value is what makes the derivation checkable;
+  changing it means changing the assembly type, which has its own control.
+
+Both sides also get a **face band** — a thin tinted strip along the face,
+built from the existing palette with `color-mix` (no new tokens). Outdoor
+air is a solid cool band, **ground contact is a hatch**, and
+**ventilated / unconditioned space is a dashed vented band**, so the two
+conditions most likely to be silently wrong are distinguishable at a
+glance without reading the text.
+
 **Assembly Toolbar (US-ENV-8 / US-ENV-9):**
 
-- **⇅ Flip Orientation** — swaps the "exterior" / "interior"
-  labels; layers untouched.
+- **⇅ Flip Orientation** — swaps which end of the layer stack the
+  exterior/interior boundary labels sit on; layers untouched. It does
+  **not** change `exterior_condition` — what the outboard face is
+  adjacent to is unchanged by redrawing the section.
 - **↔ Flip Layers** — reverses the physical layer order;
   orientation enum untouched.
 - **⨀ Pick** — enter eyedropper mode; click any segment to

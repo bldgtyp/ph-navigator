@@ -25,6 +25,12 @@ CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
 AssemblyType = Literal["wall", "floor", "roof", "other"]
 AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
 AssemblyFace = Literal["interior", "exterior"]
+#: What the assembly's outboard face is adjacent to. Drives the exterior
+#: surface film (Rse); the interior film is derived from ``AssemblyType``.
+#: ``unconditioned_space`` is film-identical to ``ventilated`` under
+#: ISO 6946 but is kept distinct on purpose — the two mean different
+#: things and the distinction cannot be recovered by a later migration.
+ExteriorCondition = Literal["outdoor_air", "ventilated", "ground", "unconditioned_space"]
 SpecificationStatus = Literal["complete", "needed", "question", "na"]
 SPECIFICATION_STATUSES: frozenset[str] = frozenset(get_args(SpecificationStatus))
 EvidenceStatus = Literal["needed", "complete", "na"]
@@ -223,6 +229,10 @@ class Assembly(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     type: AssemblyType
     orientation: AssemblyOrientation
+    # Additive amendment (no ``schema_version`` bump): documents written
+    # before this field existed are implicitly outdoor-air facing, which is
+    # exactly what the default restores.
+    exterior_condition: ExteriorCondition = "outdoor_air"
     layers: list[AssemblyLayer] = Field(min_length=1)
     # Nullable and defaulted, so assemblies written before the designation
     # existed validate unchanged — no schema version bump.

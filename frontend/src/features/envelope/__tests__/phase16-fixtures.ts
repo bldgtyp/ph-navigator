@@ -83,6 +83,7 @@ function edgeAssembly(): Assembly {
     orientation: "first_layer_outside",
     air_barrier: null,
     air_barrier_status: null,
+    exterior_condition: "outdoor_air",
     status: { is_complete: false, flags: ["missing_material", "missing_conductivity"] },
     layers: [
       {
@@ -314,6 +315,7 @@ function bulkAssemblies(): Assembly[] {
     orientation: assemblyIndex % 2 === 0 ? "first_layer_outside" : "last_layer_outside",
     air_barrier: null,
     air_barrier_status: null,
+    exterior_condition: "outdoor_air",
     status: { is_complete: true, flags: [] },
     layers: Array.from({ length: PHASE16_BULK_LAYER_COUNT }, (_, layerIndex) => ({
       id: `lyr_phase16_bulk_${assemblyIndex + 1}_${layerIndex + 1}`,

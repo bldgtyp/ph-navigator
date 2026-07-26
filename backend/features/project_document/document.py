@@ -55,6 +55,7 @@ from features.project_document.envelope_models import (
     CatalogOrigin,
     CatalogTableName,
     EvidenceStatus,
+    ExteriorCondition,
     FrameRef,
     GlazingRef,
     ProjectFrame,
@@ -356,6 +357,29 @@ class ManufacturerFilters(BaseModel):
     glazing_manufacturers_enabled: list[str] | None = None
 
 
+#: Which published standard supplies surface film resistances. Only
+#: ISO 6946 is implemented today: PHPP's own U-Values worksheet is
+#: ISO 6946-based and PHI reviewers work in ISO, so it is both the
+#: default and — for now — the only value a document can hold. The
+#: ASHRAE set widens this literal when its values land.
+ThermalStandard = Literal["iso_6946"]
+
+
+class ProjectAssumptions(BaseModel):
+    """Versioned calculation assumptions that travel with a saved version.
+
+    Deliberately one block rather than a growing row of siblings on
+    ``ProjectDocumentTables``: these are all *conventions the numbers were
+    computed under*, and a reader comparing two versions wants them in one
+    place. ``None`` (absence) means "every assumption is at its default",
+    which is what every document written before this block existed means.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    thermal_standard: ThermalStandard = "iso_6946"
+
+
 class ProjectDocumentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -369,6 +393,12 @@ class ProjectDocumentTables(BaseModel):
     thermal_bridges: ThermalBridgesTableEnvelope = Field(default_factory=ThermalBridgesTableEnvelope)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
     manufacturer_filters: ManufacturerFilters | None = None
+    assumptions: ProjectAssumptions | None = None
+
+    def resolved_assumptions(self) -> ProjectAssumptions:
+        """Return the assumptions in force, substituting defaults for absence."""
+
+        return self.assumptions or ProjectAssumptions()
 
 
 class ProjectDocumentV1(BaseModel):
@@ -440,6 +470,7 @@ __all__ = [
     "ElectricHeaterRow",
     "ElectricHeatersTableEnvelope",
     "EmptyEquipmentTables",
+    "ExteriorCondition",
     "FAN_OPTION_KEYS",
     "FAN_STATUS_OPTION_KEY",
     "FAN_TYPE_OPTION_KEY",
@@ -479,6 +510,7 @@ __all__ = [
     "PUMP_OPTION_KEYS",
     "PUMP_STATUS_OPTION_KEY",
     "PUMPS_TYPED_COLUMN_FIELD_KEYS",
+    "ProjectAssumptions",
     "ProjectDocumentProject",
     "ProjectDocumentTables",
     "ProjectDocumentV1",
@@ -509,6 +541,7 @@ __all__ = [
     "ThermalBridgeOptionKey",
     "ThermalBridgeRow",
     "ThermalBridgesTableEnvelope",
+    "ThermalStandard",
     "VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY",
     "VENTILATOR_FROST_PROTECTION_OPTION_KEY",
     "VENTILATOR_STATUS_OPTION_KEY",

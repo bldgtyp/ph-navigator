@@ -10,7 +10,7 @@ import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
-import type { EnvelopeReadResponse } from "../types";
+import type { AssemblyThermalResponse, EnvelopeReadResponse } from "../types";
 import {
   PHASE16_BULK_ASSEMBLY_COUNT,
   PHASE16_BULK_LAYER_COUNT,
@@ -69,6 +69,7 @@ const envelopePayload: EnvelopeReadResponse = {
       orientation: "last_layer_outside",
       air_barrier: null,
       air_barrier_status: null,
+      exterior_condition: "outdoor_air",
       status: { is_complete: false, flags: ["missing_material"] },
       layers: [
         {
@@ -188,7 +189,9 @@ const envelopePayload: EnvelopeReadResponse = {
   ],
 };
 
-const thermalPayload = {
+// Typed on purpose: an untyped literal here silently went stale when the
+// response gained the surface-film fields.
+const thermalPayload: AssemblyThermalResponse = {
   project_id: PROJECT_ID,
   version_id: VERSION_ID,
   source: "draft",
@@ -197,8 +200,15 @@ const thermalPayload = {
   status: { is_complete: false, flags: ["missing_material"] },
   r_parallel_path_m2k_w: 1.316,
   r_isothermal_planes_m2k_w: 1.316,
-  r_effective_m2k_w: 1.316,
-  u_effective_w_m2k: 0.76,
+  r_construction_m2k_w: 1.316,
+  u_construction_w_m2k: 0.76,
+  // 0.13 + 1.316 + 0.04 — a wall facing outdoor air.
+  r_effective_m2k_w: 1.486,
+  u_effective_w_m2k: 0.673,
+  rsi_m2k_w: 0.13,
+  rse_m2k_w: 0.04,
+  heat_flow_direction: "horizontal",
+  thermal_standard: "iso_6946",
   warnings: ["One or more segments do not have a material assignment."],
 };
 
@@ -313,6 +323,84 @@ describe("EnvelopePage", () => {
     expect(document.querySelector(".app-tooltip")).toBeNull();
   });
 
+  test("boundary labels show both films and let an editor change the exterior condition", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    // The invisible assumption is now legible on the drawing itself.
+    expect(await screen.findByTestId("assembly-exterior-resistance")).toHaveTextContent("Rse 0.04");
+    expect(screen.getByTestId("assembly-interior-resistance")).toHaveTextContent("Rsi 0.13");
+    expect(screen.getByTestId("assembly-heat-flow-direction")).toHaveTextContent(
+      "horizontal heat flow",
+    );
+
+    const select = screen.getByRole("combobox", { name: "Exterior condition" });
+    expect(select).toHaveValue("outdoor_air");
+
+    await userEvent.selectOptions(select, "ground");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/draft/envelope/commands"),
+        expect.objectContaining({
+          body: expect.stringContaining('"kind":"update_assembly_exterior_condition"') as string,
+        }),
+      );
+    });
+  });
+
+  test("unconditioned space discloses that it is film-identical to ventilated", async () => {
+    // Selecting it is a record of intent, not a claim of extra fidelity.
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [
+              { ...envelopePayload.assemblies[0], exterior_condition: "unconditioned_space" },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    expect(await screen.findByTestId("assembly-exterior-caveat")).toHaveTextContent(
+      "far-side temp not modelled",
+    );
+  });
+
+  test("viewers see the exterior condition as static text, not a control", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+
+    expect(await screen.findByTestId("assembly-exterior-condition-static")).toHaveTextContent(
+      "Exterior · Outdoor air",
+    );
+    expect(screen.queryByRole("combobox", { name: "Exterior condition" })).not.toBeInTheDocument();
+  });
+
+  test("thermal tooltip discloses the films, the standard, and the construction-only value", async () => {
+    // The tooltip is the announcement mechanism for the convention change
+    // (PRD Q-B5): it previously asserted films were EXCLUDED, so it must not
+    // silently drift back to that claim.
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByTestId("assembly-thermal-label");
+    await userEvent.click(screen.getByRole("button", { name: "Thermal performance details" }));
+
+    expect(await screen.findByTestId("assembly-thermal-films")).toHaveTextContent(
+      "ISO 6946 films, horizontal heat flow",
+    );
+    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Rsi 0.13");
+    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Rse 0.04");
+    expect(screen.getByTestId("assembly-thermal-construction-only")).toHaveTextContent(
+      "Construction only, without films",
+    );
+    expect(document.body).not.toHaveTextContent("are NOT included");
+  });
+
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -324,8 +412,10 @@ describe("EnvelopePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
 
     expect(screen.getByTestId("total-thickness")).toHaveTextContent("3.46 in");
+    // The IP branch reports the *effective* R — construction plus surface films
+    // (1.486 m²K/W ≈ 8.4 h-ft²-F/Btu), not the construction-only 1.316.
     expect(await screen.findByTestId("assembly-thermal-label")).toHaveTextContent(
-      "7.5 h-ft2-F/Btu",
+      "8.4 h-ft2-F/Btu",
     );
     expect(screen.getByTestId("assembly-canvas-stage").getAttribute("style")).toBe(initialWidth);
   });

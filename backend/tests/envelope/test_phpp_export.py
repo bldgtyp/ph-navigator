@@ -18,6 +18,7 @@ from features.envelope.phpp_export import (
     render_assembly_csv,
     sanitize_csv_filename,
 )
+from features.envelope.thermal import calculate_assembly_thermal, calculate_construction_thermal
 from features.project_document.document import (
     Assembly,
     AssemblyLayer,
@@ -304,6 +305,52 @@ def test_layers_ordered_exterior_to_interior_when_last_layer_outside() -> None:
 
     # last_layer_outside ⇒ the highest-order layer is the outermost (top) row.
     assert [row.sections[0].material_name for row in plan.rows] == ["Outer", "Inner"]
+
+
+def test_phpp_export_stays_construction_only() -> None:
+    """PRD §8.4 — the worksheet adds its own films, so we must not send ours.
+
+    The exported block declares ``Interior Rsi: 0.00`` / ``Exterior Rse: 0.00``
+    and PHPP supplies surface resistances from its own assembly-type setting.
+    Exporting ``u_effective_w_m2k`` would count the films twice.
+    """
+    assembly, materials = _wcs_assembly()
+    thermal = calculate_assembly_thermal(assembly, materials)
+    plan = build_assembly_export_plan(assembly, materials)
+
+    # The films are real and non-zero for this wall, so the two U-values differ —
+    # without that, this test would pass vacuously.
+    assert thermal.rsi_m2k_w == 0.13
+    assert thermal.rse_m2k_w == 0.04
+    assert thermal.u_construction_w_m2k != thermal.u_effective_w_m2k
+
+    assert plan.u_value_w_m2k == thermal.u_construction_w_m2k
+
+    # Structural, not just numeric: the export consumes a type that has no
+    # with-films field at all, so the wrong value is unreachable rather than
+    # merely unused.
+    assert not hasattr(calculate_construction_thermal(assembly, materials), "u_effective_w_m2k")
+
+    csv_text = render_assembly_csv(plan, units="SI")
+    assert "Interior Rsi:,0.00" in csv_text
+    assert "Exterior Rse:,0.00" in csv_text
+    assert f"U-value [W/(m²K)]:,{thermal.u_construction_w_m2k:.3f}" in csv_text
+
+
+def test_phpp_export_u_value_is_unchanged_by_the_exterior_condition() -> None:
+    """Boundary condition moves the effective U-value but never the exported one."""
+    assembly, materials = _wcs_assembly()
+    ground_facing = assembly.model_copy(update={"exterior_condition": "ground"})
+
+    outdoor_plan = build_assembly_export_plan(assembly, materials)
+    ground_plan = build_assembly_export_plan(ground_facing, materials)
+
+    assert outdoor_plan.u_value_w_m2k == ground_plan.u_value_w_m2k
+    # ...while the effective values genuinely diverge.
+    assert (
+        calculate_assembly_thermal(assembly, materials).u_effective_w_m2k
+        != calculate_assembly_thermal(ground_facing, materials).u_effective_w_m2k
+    )
 
 
 def test_sanitize_csv_filename_edge_cases() -> None:

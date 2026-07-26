@@ -63,6 +63,7 @@ Per assembly:
     "orientation": "first_layer_outside | last_layer_outside",
     "air_barrier": { "layer_id": "<lyr_id>", "face": "interior | exterior" } | null,
     "membrane_layers": [ ... see below ... ]
+    "exterior_condition": "outdoor_air | ventilated | ground | unconditioned_space"
   },
   "materials": [ ... layer materials, outside → inside, membranes excluded ... ]
 }
@@ -71,6 +72,11 @@ Per assembly:
 The construction-level `ph_nav` block carries the assembly fields the
 Honeybee shape cannot express (`type`, `orientation`, `air_barrier`) plus the
 native `assembly_id`. These are **additive round-trip fields** — Honeybee
+Honeybee shape cannot express (`type`, `orientation`,
+`exterior_condition`) plus the native `assembly_id`. Honeybee keeps
+boundary conditions on *faces*, not constructions, so
+`exterior_condition` has no Honeybee equivalent to map onto and stays PHN
+metadata. These are **additive round-trip fields** — Honeybee
 consumers ignore the `ph_nav` key, while the inverse import
 (`envelope-hbjson-import`) reads them to re-create the assembly
 losslessly. Same for the per-layer/segment `ph_nav` fields below.
