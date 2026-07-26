@@ -494,6 +494,7 @@ def test_hbjson_export_emits_homogeneous_round_trip_ph_nav(
         "assembly_id": "asm_wall_c3",
         "assembly_type": "wall",
         "orientation": "first_layer_outside",
+        "exterior_condition": "outdoor_air",
     }
     layer_material = construction["materials"][0]
     assert layer_material["ph_nav"]["layer_id"] == "lyr_insul"

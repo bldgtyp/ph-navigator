@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Draft — PRD written, not started
+STATUS: Phase 1 complete (fields + ISO 6946 resolver) — Phases 2–4 open
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for assembly boundary conditions and surface films.
 RELATED: ./PRD.md, ./STATUS.md, ../assembly-condensation-risk/,

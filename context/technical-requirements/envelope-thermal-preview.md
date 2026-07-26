@@ -81,6 +81,52 @@ still returns R/U values plus the flag(s). Blocking flags
 (`missing_conductivity`, `invalid_geometry`,
 `broken_material_reference`) suppress the numeric fields.
 
+## Surface films and boundary conditions
+
+`backend/features/envelope/boundary_conditions.py` resolves a
+deterministic `(Rsi, Rse, heat_flow_direction)` triple from three inputs:
+`Assembly.type`, `Assembly.exterior_condition`, and the project's
+`tables.assumptions.thermal_standard`.
+
+The two boundary axes are not symmetric. The **interior** side is fully
+determined by `type` — a roof loses heat upward, a floor downward, a wall
+horizontally — so it is derived, never stored and never separately
+editable. The **exterior** side is the one user-selectable axis.
+
+ISO 6946 (the only implemented standard; PHPP's U-Values worksheet is
+ISO 6946-based and PHI reviewers work in ISO):
+
+| `type` | heat flow | Rsi |
+|--------|-----------|-----|
+| `roof` | upward | 0.10 |
+| `wall` | horizontal | 0.13 |
+| `floor` | downward | 0.17 |
+| `other` | horizontal | 0.13 |
+
+| `exterior_condition` | Rse |
+|----------------------|-----|
+| `outdoor_air` | 0.04 |
+| `ventilated` | = Rsi (ISO 6946 §6 treats a well-ventilated exterior face as internal) |
+| `ground` | 0 |
+| `unconditioned_space` | = Rsi |
+
+`ventilated` and `unconditioned_space` are film-identical today and are
+still separate values: they mean different things, and the distinction
+cannot be recovered by a later migration once assemblies are labelled.
+
+These films are **not** the `air_*` catalog materials — those are air
+*cavities* inside the construction with an equivalent conductivity.
+
+`ISO_13788_SURFACE_CHECK_RSI = 0.25` is held in the same module for the
+condensation screen's surface-condensation / mould / fRsi criteria. It is
+never used in a U-value.
+
+> **The preview above is still construction-only.** The films resolved
+> here do not yet enter `r_effective_m2k_w` / `u_effective_w_m2k`; folding
+> them in is a separate, deliberate change of convention that moves every
+> displayed number. See
+> `planning/features/assembly-boundary-conditions/PRD.md` §6.
+
 ## `warnings`
 
 User-facing prose for each flag, sorted deterministically. The
@@ -99,6 +145,8 @@ identity:
   different hash.
 - Layer thickness, segment width, orientation, layer order changes →
   different hash.
+- `exterior_condition` changes → different hash (it is an input to the
+  surface films, even while the preview is still construction-only).
 - Material **name**, color, source URL, comments, `specification_status`
   changes → **same hash** (display fields, not physics).
 - Catalog-origin metadata changes → same hash (provenance, not
@@ -110,6 +158,10 @@ structure.
 ## See also
 
 - `backend/features/envelope/thermal.py` — implementation.
+- `backend/features/envelope/boundary_conditions.py` — surface films and
+  heat-flow direction.
+- `backend/tests/envelope/test_envelope_boundary_conditions.py` — the
+  ISO 6946 table, pair-by-pair.
 - `backend/tests/envelope/test_envelope_thermal_and_export.py` —
   contract tests (`test_thermal_*`, `test_assembly_thermal_*`).
 - `context/technical-requirements/envelope-hbjson-export.md` — the

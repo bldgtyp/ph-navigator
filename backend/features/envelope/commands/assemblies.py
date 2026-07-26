@@ -12,6 +12,7 @@ from features.envelope.models import (
     FlipOrientationCommand,
     FlipSegmentsCommand,
     RenameAssemblyCommand,
+    UpdateAssemblyExteriorConditionCommand,
     UpdateAssemblyTypeCommand,
 )
 from features.project_document.document import Assembly, AssemblyLayer, AssemblySegment, ProjectDocumentV1
@@ -24,6 +25,7 @@ def create_assembly(body: ProjectDocumentV1, command: CreateAssemblyCommand) -> 
         name=command.name,
         type=command.type,
         orientation=command.orientation,
+        exterior_condition=command.exterior_condition,
         layers=[
             AssemblyLayer(
                 id=new_id(ID_PREFIX_LAYER),
@@ -57,6 +59,17 @@ def update_assembly_type(body: ProjectDocumentV1, command: UpdateAssemblyTypeCom
         body,
         command.assembly_id,
         lambda assembly: assembly.model_copy(update={"type": command.type}),
+    )
+
+
+def update_assembly_exterior_condition(
+    body: ProjectDocumentV1,
+    command: UpdateAssemblyExteriorConditionCommand,
+) -> ProjectDocumentV1:
+    return ops.update_assembly(
+        body,
+        command.assembly_id,
+        lambda assembly: assembly.model_copy(update={"exterior_condition": command.exterior_condition}),
     )
 
 

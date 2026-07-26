@@ -49,6 +49,8 @@
 | **Assembly**          | A named opaque envelope construction (`wall`, `floor`, `roof`, `other`) composed of ordered Layers       | Construction, build-up, wall section              |
 | **Layer**             | One thickness band within an Assembly, made of one or more Segments side-by-side                          | Lamina, course, ply                                |
 | **Segment**           | A horizontal slice of a Layer occupying a width (e.g. stud bay vs. stud); references a Project Material  | Strip, region, bay                                 |
+| **Exterior Condition** | What an Assembly's outboard face is adjacent to (`outdoor_air`, `ventilated`, `ground`, `unconditioned_space`); the one user-selectable boundary axis | Boundary condition (that's the pair), adjacency |
+| **Surface Film**      | The boundary-layer resistance at a face (Rsi interior, Rse exterior), derived from assembly type + exterior condition | Air film is fine; **not** an air *cavity*, which is a Material |
 | **Material**          | A physical product with thermal properties (conductivity, density, etc.); lives in the Catalog           | Product, substance (when ambiguous, qualify it)    |
 | **Datasheet**         | A per-project QA submittal PDF attached to a Project Material; **never lives in the Catalog**             | Spec sheet (only if it's literally the PDF)        |
 | **Aperture Type**     | A named aperture family (doors, windows, skylights) defined by a row × column grid of Aperture Elements   | Window type, fenestration type                     |

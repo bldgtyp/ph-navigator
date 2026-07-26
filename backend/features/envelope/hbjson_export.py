@@ -60,6 +60,9 @@ def _construction_payload(
             "assembly_id": assembly.id,
             "assembly_type": assembly.type,
             "orientation": assembly.orientation,
+            # Honeybee keeps boundary conditions on faces, not constructions,
+            # so this stays PHN metadata rather than mapping to a Honeybee field.
+            "exterior_condition": assembly.exterior_condition,
         },
         "materials": [_layer_material_payload(layer, materials_by_id) for layer in assembly.layers_outside_to_inside()],
     }

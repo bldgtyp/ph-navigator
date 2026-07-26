@@ -374,6 +374,7 @@ JSON document. Illustrative sketch (the canonical model is the
         "name": "WALL-C3",
         "type": "wall",                           // 'wall' | 'floor' | 'roof' | 'other' (Q-ENV-15.1)
         "orientation": "first_layer_outside",     // 'first_layer_outside' | 'last_layer_outside' (Q-ENV-1)
+        "exterior_condition": "outdoor_air",      // 'outdoor_air' | 'ventilated' | 'ground' | 'unconditioned_space'
         "layers": [
           {
             "id": "lyr_...",
@@ -559,7 +560,10 @@ JSON document. Illustrative sketch (the canonical model is the
         "indoor_units":   [ /* hpiu_* rows: tag, indoor_equip_id, outdoor_unit_id, linked_erv_unit_id, served_room_ids, floor_level, area_served, datasheet_asset_ids, notes */ ]
       }
     },
-    "manufacturer_filters": [ ]
+    "manufacturer_filters": [ ],
+    // Versioned calculation assumptions — the conventions the numbers in
+    // this version were computed under. Absent means "all defaults".
+    "assumptions": { "thermal_standard": "iso_6946" }
   },
   "single_select_options": {                 // V2 NEW — user-defined options for single-select columns (US-Builder-Tables criteria 16–17)
     // Most V2 v1 single-select option lists are empty by default
@@ -666,7 +670,7 @@ Properties of the document shape:
   Asset endpoints are designed to be LLM-callable from day 1 (§10).
 - **Tables, not entity tree.** The top level is `tables.{
   assemblies, project_materials, apertures, rooms,
-  thermal_bridges, equipment, manufacturer_filters, ... }`.
+  thermal_bridges, equipment, manufacturer_filters, assumptions, ... }`.
   New table types plug in by adding to `tables`. Per-table JSON
   download is a keyed slice of this shape, e.g. `{ "rooms": [...] }`.
 - **Registered table contracts.** Generic saved/draft table routes are

@@ -44,7 +44,8 @@ class name. The dispatch registry is
 |------|-------|---------|-------------------|
 | `create_assembly` | `CreateAssemblyCommand` | Create an assembly with one default layer + one null segment. | `duplicate_assembly_name` |
 | `rename_assembly` | `RenameAssemblyCommand` | Rename, with trim + case-fold uniqueness check (own name → no-op). | `duplicate_assembly_name`, `assembly_not_found` |
-| `update_assembly_type` | `UpdateAssemblyTypeCommand` | Change `type` (wall / roof / floor / etc.). | `assembly_not_found` |
+| `update_assembly_type` | `UpdateAssemblyTypeCommand` | Change `type` (wall / roof / floor / etc.). Also changes the derived interior surface film and heat-flow direction. | `assembly_not_found` |
+| `update_assembly_exterior_condition` | `UpdateAssemblyExteriorConditionCommand` | Change `exterior_condition` (outdoor air / ventilated / ground / unconditioned space), which drives the exterior surface film. There is no interior counterpart: the interior side is derived from `type`. | `assembly_not_found` |
 | `duplicate_assembly` | `DuplicateAssemblyCommand` | Deep-copy an assembly, new IDs, "Copy" suffix. | `duplicate_assembly_name`, `assembly_not_found` |
 | `delete_assembly` | `DeleteAssemblyCommand` | Remove an assembly. | `assembly_not_found` |
 | `flip_orientation` | `FlipOrientationCommand` | Toggle `first_layer_outside` ↔ `last_layer_outside`. | `assembly_not_found` |

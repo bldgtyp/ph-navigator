@@ -387,6 +387,7 @@ def _build_assembly(
         name=name,
         type=construction.type,
         orientation=construction.orientation,
+        exterior_condition=construction.exterior_condition,
         layers=layers,
     )
 

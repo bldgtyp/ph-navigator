@@ -67,6 +67,7 @@ const envelopePayload: EnvelopeReadResponse = {
       name: "WALL-C3",
       type: "wall",
       orientation: "last_layer_outside",
+      exterior_condition: "outdoor_air",
       status: { is_complete: false, flags: ["missing_material"] },
       layers: [
         {

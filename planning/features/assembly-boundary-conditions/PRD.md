@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Draft
+STATUS: Accepted — Phase 1 implemented; Phases 2–4 open (see ./STATUS.md)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: A real boundary-condition model for assemblies — exterior condition
   (outdoor air / ground / ventilated / unconditioned), standard-based surface
@@ -223,6 +223,14 @@ assumptions:
   thermal_standard: "iso_6946" | "ashrae"     # default "iso_6946"
 ```
 
+> **As built (Phase 1).** Shipped as `ThermalStandard = Literal["iso_6946"]`
+> — a single-member literal — with Phase 4 widening it when the ASHRAE
+> values land. A settable `"ashrae"` with no value table behind it would
+> leave the resolver choosing between a 500 and silently returning ISO
+> numbers; widening a Literal later is the same additive amendment as
+> adding the field, so nothing is foreclosed. The field shape, the
+> default, and the "independent project setting" decision are unchanged.
+
 **Consolidation:** this belongs in the same versioned document block as the
 condensation settings rather than as a second sibling. Recommend one
 `assumptions` block on `ProjectDocumentTables` holding `thermal_standard` and
@@ -329,7 +337,7 @@ this must not become a legend-heavy diagram.
 
 | Phase | Content |
 | --- | --- |
-| **1** | `exterior_condition` + `assumptions.thermal_standard` fields, ISO 6946 resistance table, heat-flow direction from `type`. **No change to any displayed number.** |
+| **1** ✅ | `exterior_condition` + `assumptions.thermal_standard` fields, ISO 6946 resistance table, heat-flow direction from `type`. **No change to any displayed number.** Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
 | **2** | Fold films into the thermal calculation (§6): both unit branches move, **`#assembly-thermal-metric` tooltip rewritten** (it currently asserts the opposite), construction-only R kept in the tooltip, `thermal_input_hash` extended, PHPP double-count regression test added, Ch. 25/27 citation reconciled. |
 | **3** | Rendering — exterior label becomes a select, interior label shows derived Rsi, face bands, ground/ventilated treatments. |
 | **4** | ASHRAE resistance set (private-DB routed) + the standard selector in the UI. Low priority — Ed reports ~99 % ISO. |

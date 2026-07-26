@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Draft — not started
+STATUS: Phase 1 complete — Phases 2–4 open
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -9,7 +9,58 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 
 # Status
 
-## State
+## Phase ledger
+
+| Phase | State | Notes |
+| --- | --- | --- |
+| **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
+| **2** — fold films into the calculation | ⬜ open | |
+| **3** — rendering | ⬜ open | |
+| **4** — ASHRAE set + selector | ⬜ open | |
+
+### Phase 1 as-built
+
+Delivered:
+- `Assembly.exterior_condition: ExteriorCondition = "outdoor_air"` — an
+  additive amendment, **no `schema_version` bump** (`context/technical-requirements/data-model.md`
+  §6.2 permits this); the default is a faithful no-op for every existing document.
+- `ProjectAssumptions` on `tables.assumptions`, holding `thermal_standard`.
+  `None` means "all defaults". `ProjectDocumentTables.resolved_assumptions()`
+  is the read accessor. This is the block `assembly-condensation-risk` should
+  add `condensation_settings` to.
+- `backend/features/envelope/boundary_conditions.py` — the ISO 6946 table,
+  `heat_flow_direction()`, `resolve_surface_resistances()`, and
+  `ISO_13788_SURFACE_CHECK_RSI = 0.25` for the condensation screen.
+- `update_assembly_exterior_condition` command (+ `create_assembly` accepts
+  the field). No interior counterpart: it is derived from `type`.
+- `exterior_condition` rides in the HBJSON `ph_nav` round-trip block;
+  foreign files default it, as Honeybee has no construction-level equivalent.
+
+**One deliberate deviation from `PRD.md` §4.2.** The PRD writes
+`thermal_standard: "iso_6946" | "ashrae"`. Phase 1 ships
+`ThermalStandard = Literal["iso_6946"]` — a single-member literal — and
+Phase 4 widens it when the ASHRAE values land. Reason: with both members
+settable from Phase 1, a document (via MCP or the API) could hold
+`"ashrae"` with no value table behind it, and the resolver would have to
+either raise a 500 or silently return ISO numbers. Widening a Literal
+later is the same class of additive amendment as adding the field, so
+nothing is foreclosed. The field shape, the default, and the
+"independent project setting" decision are unchanged.
+
+Verification (2026-07-26): `uv run ty check` clean; `uv run pytest` 1513
+passed / 7 skipped; `pnpm exec tsc --noEmit` clean. The schema-fingerprint
+guard (`backend/tests/project_document_schema/schema_fingerprint.json`) and
+the five golden upgrade snapshots were regenerated; a structural diff
+confirmed the **only** change is `tables.assumptions: null` — the corpus
+fixtures carry no assemblies, so no `exterior_condition` appears there.
+
+Known gap, pre-existing and not introduced here: the golden upgrade corpus
+has zero assemblies in every fixture, so the "old document gains the new
+assembly field" path is covered by a model-level test
+(`test_existing_assemblies_default_to_outdoor_air`) rather than by the
+corpus.
+
+## Original state (2026-07-26, pre-implementation)
 
 **PRD drafted. No code written.** Raised by Ed on 2026-07-26 while resolving
 `assembly-condensation-risk` Q-5 (floors on grade), on the observation that the
@@ -62,15 +113,16 @@ Reviewed with Ed 2026-07-26, after reading the honeybee-energy source:
 
 ## Next step
 
-**Phase 1** — add `exterior_condition` (default `outdoor_air`, a faithful no-op
-for every existing assembly) and `assumptions.thermal_standard` (default
-`iso_6946`), plus the ISO 6946 resistance table and heat-flow direction derived
-from `Assembly.type`. Backend only, no UI change, **no displayed number moves**.
-This alone unblocks the condensation engine.
+**Phase 2** — fold the films into the thermal calculation (`PRD.md` §6):
+both unit branches move, the `#assembly-thermal-metric` tooltip is rewritten
+(it currently asserts the opposite), the construction-only R stays reachable
+in the tooltip, `thermal_input_hash` gains the standard, a PHPP
+double-count regression test lands, and the Ch. 25 / Ch. 27 citation is
+reconciled.
 
-Phase 2 must not be bundled into it — that one changes numbers users have
-reported and deserves its own diff, its own tests (including the PHPP
-double-count regression), and its own release note.
+`assembly-condensation-risk` Phase 2 is **unblocked from this side** as of
+Phase 1: `resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI`
+are available. It still waits on `assembly-membrane-layers`.
 
 ## Dependencies
 

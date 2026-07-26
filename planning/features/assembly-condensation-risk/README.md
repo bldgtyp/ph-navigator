@@ -53,9 +53,12 @@ Modelled on the **PHI Condensation Tool v1.7.5**
 coatings dominate a wall's vapour resistance and PHN cannot represent them yet.
 (`decisions.md` §D-10)
 
-⛔ **`planning/features/assembly-boundary-conditions/` Phase 1.** `thermal.py`
-adds no surface films at all, and three of ISO 13788's four criteria are
-evaluated *at the surface*. (`decisions.md` §D-11)
+✅ **`planning/features/assembly-boundary-conditions/` Phase 1 — landed
+2026-07-26.** Was blocking because `thermal.py` added no surface films at all
+and three of ISO 13788's four criteria are evaluated *at the surface*.
+`backend/features/envelope/boundary_conditions.py` now supplies both
+`resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`.
+(`decisions.md` §D-11)
 
 Independent of each other; can run in parallel. See `PRD.md` §2a.
 

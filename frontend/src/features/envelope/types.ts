@@ -9,6 +9,8 @@ export type { SpecificationStatus } from "../project_document/specification-stat
 
 export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
+/** What the assembly's outboard face is adjacent to; drives the exterior film. */
+export type ExteriorCondition = "outdoor_air" | "ventilated" | "ground" | "unconditioned_space";
 
 export type ThermalStatusFlag =
   | "missing_material"
@@ -72,6 +74,7 @@ export type Assembly = {
   name: string;
   type: AssemblyType;
   orientation: AssemblyOrientation;
+  exterior_condition: ExteriorCondition;
   layers: AssemblyLayer[];
   status: {
     is_complete: boolean;
@@ -158,11 +161,17 @@ export type EnvelopeCommand =
       name: string;
       type: AssemblyType;
       orientation?: AssemblyOrientation;
+      exterior_condition?: ExteriorCondition;
       thickness_mm?: number;
       width_mm?: number;
     }
   | { kind: "rename_assembly"; assembly_id: string; name: string }
   | { kind: "update_assembly_type"; assembly_id: string; type: AssemblyType }
+  | {
+      kind: "update_assembly_exterior_condition";
+      assembly_id: string;
+      exterior_condition: ExteriorCondition;
+    }
   | { kind: "duplicate_assembly"; assembly_id: string; name?: string | null }
   | { kind: "delete_assembly"; assembly_id: string }
   | {

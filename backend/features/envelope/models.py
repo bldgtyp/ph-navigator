@@ -15,6 +15,7 @@ from features.project_document.document import (
     AssemblyOrientation,
     AssemblyType,
     EvidenceStatus,
+    ExteriorCondition,
     ProjectMaterial,
 )
 from features.project_document.models import ProjectDocumentSource
@@ -188,6 +189,7 @@ class CreateAssemblyCommand(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     type: AssemblyType = "wall"
     orientation: AssemblyOrientation = "first_layer_outside"
+    exterior_condition: ExteriorCondition = "outdoor_air"
     thickness_mm: float = Field(default=100.0, gt=0, allow_inf_nan=False)
     width_mm: float = Field(default=1000.0, gt=0, allow_inf_nan=False)
 
@@ -206,6 +208,20 @@ class UpdateAssemblyTypeCommand(BaseModel):
     kind: Literal["update_assembly_type"]
     assembly_id: str
     type: AssemblyType
+
+
+class UpdateAssemblyExteriorConditionCommand(BaseModel):
+    """Set what the assembly's outboard face is adjacent to.
+
+    The interior side has no matching command on purpose: it is derived
+    from ``type``, which ``update_assembly_type`` already owns.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_assembly_exterior_condition"]
+    assembly_id: str
+    exterior_condition: ExteriorCondition
 
 
 class DuplicateAssemblyCommand(BaseModel):
@@ -517,6 +533,7 @@ EnvelopeCommand = Annotated[
     CreateAssemblyCommand
     | RenameAssemblyCommand
     | UpdateAssemblyTypeCommand
+    | UpdateAssemblyExteriorConditionCommand
     | DuplicateAssemblyCommand
     | DeleteAssemblyCommand
     | AddLayerCommand
