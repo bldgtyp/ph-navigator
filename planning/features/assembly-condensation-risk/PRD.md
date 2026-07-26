@@ -46,8 +46,9 @@ vapour resistance is dominated by its membranes and coatings — 6-mil poly is
 ≈ 95 % of a typical 2×6 wall's total sd, and the interior latex paint is
 comparable to the plywood sheathing — and PHN cannot represent either today.
 Running the engine on membrane-less assemblies yields a confident number for a
-wall that does not exist. (`decisions.md` §D-10.) The `vapor_sd_equivalent_m`
-field in §4 is shared; whichever feature ships first lands it.
+wall that does not exist. (`decisions.md` §D-10.) **Cleared 2026-07-26** —
+all four membrane phases shipped. The vapour fields in §4 are *not* shared:
+membranes deliberately left them, so they are this feature's Phase 1.
 
 **2. `planning/features/assembly-boundary-conditions/` (Phase 1).** `thermal.py`
 adds no Rsi/Rse at all. ISO 13788's entire temperature profile depends on

@@ -71,11 +71,31 @@ remains is sequencing, not decisions:
 | Blocker | Nature |
 | --- | --- |
 | ✅ `assembly-boundary-conditions` **Phase 1** | **cleared 2026-07-26.** `backend/features/envelope/boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25` for the surface-condensation / mould / fRsi criteria |
-| ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. Note the `vapor_sd_equivalent_m` field is still unclaimed — this feature must land it. |
+| ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-Both prerequisites are independent of each other and can run in parallel.
+**Both external prerequisites are now cleared**, so nothing outside this packet
+gates it. What remains is Phase 0 (the coverage probe) and the composite-stud
+call above.
+
+### The vapour fields are this feature's own work, not a dependency
+
+`vapor_diffusion_resistance_mu` (µ) and `vapor_sd_equivalent_m` (sd) are
+specified in `PRD.md` §4 — units, constraints, the four-step per-layer
+resolution ladder, and the `sd ≥ 1500 m` convention for a vapour-tight layer —
+and scheduled as **Phase 1** in §8. They need no separate feature packet: they
+have exactly one consumer, the Glaser engine in Phase 2, and a field pair whose
+only user is the feature that defines it is not a feature.
+
+The earlier "whichever feature ships first should land that field" note was
+about sequencing two features that were then running in parallel. That
+ambiguity is gone. `air_permeance_l_s_m2_at_75pa` (shipped 2026-07-26) is a
+complete worked example of threading one nullable material field end-to-end —
+migration, catalog columns, document model, drift keys, refresh choices,
+import/export, both editors, SI/IP display — and confirms the additive-field
+path needs no document schema-version bump, only a regenerated fingerprint and
+corpus snapshot.
 
 ## Verification
 
