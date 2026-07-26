@@ -1,22 +1,16 @@
-import { type KeyboardEvent, type MouseEvent, useRef, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
-import {
-  ASSEMBLY_CANVAS_ORIGIN_X_PX,
-  DIMENSION_COLUMN_WIDTH_PX,
-  pxFromMm,
-} from "../canvas-constants";
+import type { MouseEvent } from "react";
+import { formatLengthFromMm, type UnitSystem } from "../../../lib/units";
+import { ASSEMBLY_CANVAS_ORIGIN_X_PX, pxFromMm } from "../canvas-constants";
+import { canvasHitBox } from "../canvas-hit-box";
 import {
   segmentCanvasKey,
   type AssemblyCanvasPaintController,
   type AssemblyCanvasPaintMode,
 } from "../canvas-paint";
-import type {
-  AssemblyCanvasGeometry,
-  AssemblyCanvasLayerGeometry,
-  AssemblyCanvasSegmentGeometry,
-} from "../canvas-geometry";
+import type { AssemblyCanvasGeometry, AssemblyCanvasSegmentGeometry } from "../canvas-geometry";
 import type { AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
+import { AssemblyLayerDimensions } from "./AssemblyLayerDimensions";
+import { CanvasAddButton } from "./CanvasAddButton";
 
 export type AssemblyCanvasOverlayActions = {
   onDeleteLayer: (layer: AssemblyLayer) => void;
@@ -66,7 +60,7 @@ export function AssemblyCanvasOverlay({
     >
       {canEdit
         ? geometry.layers.map((layerGeometry) => (
-            <LayerDimensionControls
+            <AssemblyLayerDimensions
               key={layerGeometry.layer.id}
               layerGeometry={layerGeometry}
               unitSystem={unitSystem}
@@ -88,176 +82,6 @@ export function AssemblyCanvasOverlay({
         />
       ))}
     </div>
-  );
-}
-
-function LayerDimensionControls({
-  layerGeometry,
-  unitSystem,
-  zoom,
-  actions,
-}: {
-  layerGeometry: AssemblyCanvasLayerGeometry;
-  unitSystem: UnitSystem;
-  zoom: number;
-  actions: AssemblyCanvasOverlayActions;
-}) {
-  const { layer } = layerGeometry;
-  const layerNumber = layer.order + 1;
-  const heightPx = pxFromMm(layerGeometry.heightMm, zoom);
-  return (
-    <div
-      id={`assembly-layer-dimension-${layer.id}`}
-      className="assembly-layer-dimension dimension-chrome-cell dimension-chrome-cell--vertical"
-      style={{
-        top: `${pxFromMm(layerGeometry.yMm, zoom)}px`,
-        width: `${DIMENSION_COLUMN_WIDTH_PX}px`,
-        height: `${heightPx}px`,
-      }}
-      aria-label={`Layer ${layerNumber} thickness controls`}
-    >
-      <span
-        className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-top"
-        aria-hidden="true"
-      />
-      <span
-        className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-bottom"
-        aria-hidden="true"
-      />
-      <LayerThicknessEditor
-        layer={layer}
-        layerNumber={layerNumber}
-        unitSystem={unitSystem}
-        onDelete={() => actions.onDeleteLayer(layer)}
-        onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
-      />
-      <CanvasAddButton
-        id={`assembly-layer-add-above-${layer.id}`}
-        label={`Add layer above layer ${layerNumber}`}
-        className="layer-add-button add-above"
-        onClick={() => actions.onAddLayer(layer, "above")}
-      />
-      <CanvasAddButton
-        id={`assembly-layer-add-below-${layer.id}`}
-        label={`Add layer below layer ${layerNumber}`}
-        className="layer-add-button add-below"
-        onClick={() => actions.onAddLayer(layer, "below")}
-      />
-    </div>
-  );
-}
-
-function LayerThicknessEditor({
-  layer,
-  layerNumber,
-  unitSystem,
-  onDelete,
-  onSubmit,
-}: {
-  layer: AssemblyLayer;
-  layerNumber: number;
-  unitSystem: UnitSystem;
-  onDelete: () => void;
-  onSubmit: (thicknessMm: number) => void;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editorUnitSystem, setEditorUnitSystem] = useState<UnitSystem>(unitSystem);
-  const [draft, setDraft] = useState(() => formatLayerThickness(layer.thickness_mm, unitSystem));
-  const [error, setError] = useState<string | null>(null);
-  const committedRef = useRef(false);
-
-  function startEditing(): void {
-    setEditorUnitSystem(unitSystem);
-    setDraft(formatLayerThickness(layer.thickness_mm, unitSystem));
-    setError(null);
-    committedRef.current = false;
-    setIsEditing(true);
-  }
-
-  function cancelEditing(): void {
-    setDraft(formatLayerThickness(layer.thickness_mm, editorUnitSystem));
-    setError(null);
-    setIsEditing(false);
-  }
-
-  function commit(): void {
-    const parsed = parseLengthToMm(draft, { unitSystem: editorUnitSystem });
-    if (committedRef.current) return;
-    if (!parsed.ok || parsed.valueSi <= 0) {
-      setError(parsed.ok ? "Thickness must be greater than zero." : parsed.message);
-      return;
-    }
-    if (Math.abs(parsed.valueSi - layer.thickness_mm) < 0.001) {
-      setError(null);
-      committedRef.current = true;
-      setIsEditing(false);
-      return;
-    }
-    setError(null);
-    committedRef.current = true;
-    setIsEditing(false);
-    onSubmit(parsed.valueSi);
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      cancelEditing();
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      commit();
-    }
-  }
-
-  if (isEditing) {
-    return (
-      <label className="dimension-input-wrap">
-        <span className="sr-only">Layer {layerNumber} thickness</span>
-        <input
-          autoFocus
-          aria-invalid={error ? "true" : "false"}
-          aria-label={`Layer ${layerNumber} thickness`}
-          className="dimension-input"
-          value={draft}
-          onBlur={commit}
-          onChange={(event) => {
-            setDraft(event.currentTarget.value);
-            setError(null);
-          }}
-          onFocus={(event) => event.currentTarget.select()}
-          onKeyDown={onKeyDown}
-        />
-        <button
-          id={`assembly-layer-${layer.id}-delete`}
-          type="button"
-          className="dimension-chrome-delete-button"
-          aria-label={`Delete layer ${layerNumber}`}
-          title="Delete layer"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onDelete}
-        >
-          <Trash2 size={14} aria-hidden="true" />
-        </button>
-        {error ? (
-          <span className="dimension-error" role="alert">
-            {error}
-          </span>
-        ) : null}
-      </label>
-    );
-  }
-
-  return (
-    <button
-      id={`assembly-layer-${layer.id}-thickness-editor`}
-      type="button"
-      className="dimension-label-button dimension-chrome-label-button"
-      aria-label={`Edit layer ${layerNumber} thickness`}
-      onClick={startEditing}
-    >
-      {formatLayerThickness(layer.thickness_mm, unitSystem)}
-    </button>
   );
 }
 
@@ -291,26 +115,36 @@ function SegmentOverlay({
   const currentSegmentKey = segmentCanvasKey(layer.id, segment.id);
   const isPickedSource = paint.pickedSourceKey === currentSegmentKey;
   const isPulseTarget = paint.pastePulseKey === currentSegmentKey;
-  const showAddControls = canEdit && paint.mode !== "picking" && paint.mode !== "pasting";
+  // Membranes are continuous, so they take exactly one segment — the backend
+  // rejects `add_segment` on them. Do not offer an affordance that would 409.
+  const showAddControls =
+    canEdit && !segmentGeometry.isMembrane && paint.mode !== "picking" && paint.mode !== "pasting";
   // The hit target is always clickable: editors get the edit/paint action,
   // everyone else (viewers, locked-version editors) gets a read-only inspect
   // (CP-5), so the label reflects which.
   const ariaLabel = canEdit
     ? segmentActionLabel(segmentLabel, paint.mode)
     : `View details for ${segmentLabel}`;
+  const { topPx, heightPx } = canvasHitBox(segmentGeometry, zoom);
 
   return (
     <div
       id={`assembly-segment-overlay-${layer.id}-${segment.id}`}
-      className={material ? "assembly-segment-overlay" : "assembly-segment-overlay null-material"}
+      className={[
+        "assembly-segment-overlay",
+        material ? null : "null-material",
+        segmentGeometry.isMembrane ? "is-membrane" : null,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-mode={paint.mode}
       data-picked-source={isPickedSource ? "true" : undefined}
       data-paste-pulse={isPulseTarget ? "true" : undefined}
       style={{
         left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX + pxFromMm(segmentGeometry.xMm, zoom)}px`,
-        top: `${pxFromMm(segmentGeometry.yMm, zoom)}px`,
+        top: `${topPx}px`,
         width: `${pxFromMm(segmentGeometry.widthMm, zoom)}px`,
-        height: `${pxFromMm(segmentGeometry.heightMm, zoom)}px`,
+        height: `${heightPx}px`,
       }}
       title={`${materialName} - ${segmentWidthLabel}`}
     >
@@ -419,43 +253,4 @@ function SegmentAddControls({
       />
     </div>
   );
-}
-
-function CanvasAddButton({
-  id,
-  label,
-  tooltip,
-  tooltipPlacement,
-  className,
-  onClick,
-}: {
-  id?: string;
-  label: string;
-  tooltip?: string;
-  tooltipPlacement?: "start" | "end";
-  className?: string;
-  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
-}) {
-  const buttonClassName = className ? `canvas-add-button ${className}` : "canvas-add-button";
-  return (
-    <button
-      id={id}
-      type="button"
-      className={buttonClassName}
-      aria-label={label}
-      data-toolbar-tooltip={tooltip || undefined}
-      data-toolbar-tooltip-placement={tooltipPlacement}
-      onClick={onClick}
-    >
-      <Plus size={15} aria-hidden="true" />
-    </button>
-  );
-}
-
-function formatLayerThickness(valueMm: number, unitSystem: UnitSystem): string {
-  return formatLengthFromMm(valueMm, {
-    unitSystem,
-    showUnit: false,
-    fractionDigits: unitSystem === "IP" ? 3 : 1,
-  });
 }

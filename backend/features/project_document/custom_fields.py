@@ -116,6 +116,8 @@ NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
     "heat_loss_rate": {"si": frozenset({"w_k"}), "ip": frozenset({"btu_h_f"})},
     "energy": {"si": frozenset({"kwh"}), "ip": frozenset({"kbtu"})},
     "power": {"si": frozenset({"kw"}), "ip": frozenset({"kbtu_h"})},
+    # ASTM E2178 air permeance, always reported at the 75 Pa test pressure.
+    "air_permeance": {"si": frozenset({"l_s_m2_75pa"}), "ip": frozenset({"cfm_ft2_75pa"})},
 }
 # This registry is the validation allowlist only — SI↔IP conversion is
 # display-only and lives on the frontend. It MUST stay a superset of the

@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from features.catalogs._shared import strip_optional, strip_required
 from features.shared.colors import normalize_optional_hex_color
 
-# Fixed twelve-option set. Edits here flow to the Alembic CHECK constraint and
+# Fixed thirteen-option set. Edits here flow to the Alembic CHECK constraint and
 # the frontend overlay; keep all three in sync.
 MATERIAL_CATEGORY_IDS: Final[tuple[str, ...]] = (
     "insulation",
@@ -26,6 +26,7 @@ MATERIAL_CATEGORY_IDS: Final[tuple[str, ...]] = (
     "air_downward_heat_flow",
     "rainscreen_insulation",
     "doors",
+    "membrane",
 )
 
 MaterialCategoryId = Literal[
@@ -41,7 +42,24 @@ MaterialCategoryId = Literal[
     "air_downward_heat_flow",
     "rainscreen_insulation",
     "doors",
+    "membrane",
 ]
+
+# Sheet goods and coatings — WRBs, vapour-control layers, self-adhered
+# flashings, paints. The canonical statement of what this category means,
+# and the only place the rationale lives:
+#
+# Layers built from these materials are excluded from the R calculation
+# outright (`features/envelope/thermal.py:is_membrane_layer`) rather than
+# contributing a near-zero R. A 6-mil poly sheet is ~0.0005 m2K/W, four
+# orders of magnitude below a typical assembly; omitting it is simpler,
+# marginally conservative (slightly higher U), and matches PHPP, which
+# does not enter membranes on the U-Values worksheet either.
+#
+# Envelope imports this rather than defining its own copy so the DB CHECK
+# constraint, the picker overlay, and the thermal exclusion cannot drift
+# apart. See `planning/archive/dated/2026-07-26/assembly-membrane-layers/PRD.md` §3.
+MEMBRANE_CATEGORY_ID: Final[str] = "membrane"
 
 
 class CatalogMaterialListItem(BaseModel):
@@ -66,6 +84,7 @@ class CatalogMaterialListItem(BaseModel):
     specific_heat_j_kgk: float | None
     conductivity_w_mk: float | None
     emissivity: float | None
+    air_permeance_l_s_m2_at_75pa: float | None
     color: str | None
     source: str | None
     url: str | None
@@ -106,6 +125,9 @@ class _CatalogMaterialFields(BaseModel):
     specific_heat_j_kgk: float | None = None
     conductivity_w_mk: float | None = None
     emissivity: float | None = Field(default=None, ge=0.0, le=1.0)
+    # ASTM E2178 air permeance, in the unit datasheets report it in:
+    # L/(s*m2) at 75 Pa. The air-barrier material criterion is <= 0.02.
+    air_permeance_l_s_m2_at_75pa: float | None = None
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
@@ -121,7 +143,12 @@ class _CatalogMaterialFields(BaseModel):
     def _normalize_color(cls, value: object) -> object:
         return normalize_optional_hex_color(value)
 
-    @field_validator("density_kg_m3", "specific_heat_j_kgk", "conductivity_w_mk")
+    @field_validator(
+        "density_kg_m3",
+        "specific_heat_j_kgk",
+        "conductivity_w_mk",
+        "air_permeance_l_s_m2_at_75pa",
+    )
     @classmethod
     def _non_negative(cls, value: float | None) -> float | None:
         if value is not None and value < 0:

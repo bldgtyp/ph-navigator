@@ -40,7 +40,7 @@ Added 2026-07-26 (Ed's review of the above):
   with **no new fields**; the per-material `moisture_behavior` enum is v1.1.
   (`decisions.md` §D-9)
 - **Membrane layers spun out as a prerequisite feature** —
-  `planning/features/assembly-membrane-layers/`. Membranes and coatings dominate
+  `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (complete). Membranes and coatings dominate
   a wall's sd, and PHN cannot represent them; the engine must not ship before
   they land. (`decisions.md` §D-10, `PRD.md` §2a)
 
@@ -71,7 +71,7 @@ remains is sequencing, not decisions:
 | Blocker | Nature |
 | --- | --- |
 | ✅ `assembly-boundary-conditions` **Phase 1** | **cleared 2026-07-26.** `backend/features/envelope/boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25` for the surface-condensation / mould / fRsi criteria |
-| ⛔ `assembly-membrane-layers` **Phases 1–2** | prerequisite — without membranes the engine computes a confident answer for a wall that doesn't exist |
+| ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. Note the `vapor_sd_equivalent_m` field is still unclaimed — this feature must land it. |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 

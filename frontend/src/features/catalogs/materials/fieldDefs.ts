@@ -34,13 +34,14 @@ export const MATERIALS_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("specific_heat_j_kgk", "Specific Heat", "number"),
   builtInFieldDef("conductivity_w_mk", "Conductivity", "number"),
   builtInFieldDef("emissivity", "Emissivity", "number"),
+  builtInFieldDef("air_permeance_l_s_m2_at_75pa", "Air Permeance", "number"),
   builtInFieldDef("color", "Color", "color"),
   builtInFieldDef("source", "Source", "short_text"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("comments", "Comments", "long_text"),
 ];
 
-// Twelve fixed options. The labels match what BLDGTYP uses on drawings
+// Thirteen fixed options. The labels match what BLDGTYP uses on drawings
 // and material schedules — the registry id is the persisted value.
 const CATEGORY_LABELS: Record<MaterialCategoryId, string> = {
   insulation: "Insulation",
@@ -55,6 +56,8 @@ const CATEGORY_LABELS: Record<MaterialCategoryId, string> = {
   air_downward_heat_flow: "Air: Downward Heat Flow",
   rainscreen_insulation: "Rainscreen Insulation",
   doors: "Doors",
+  // Sheet goods and coatings: WRBs, vapour-control layers, flashings, paints.
+  membrane: "Membrane",
 };
 
 // Quiet neutral palette — categories are organizational, not status. The
@@ -119,6 +122,19 @@ export const MATERIALS_FIELD_OVERLAY: TableFieldRenderOverlays = {
     },
   },
   emissivity: { locked: DEFAULT_BUILT_IN_LOCKS, numberPrecision: 2 },
+  air_permeance_l_s_m2_at_75pa: {
+    locked: DEFAULT_BUILT_IN_LOCKS,
+    numberUnits: {
+      mode: "fixed",
+      unit_type: "air_permeance",
+      si_unit: "l_s_m2_75pa",
+      ip_unit: "cfm_ft2_75pa",
+      // Air-barrier products are reported to four decimals — the material
+      // criterion itself is 0.02 SI / 0.0039 IP.
+      precision_si: 4,
+      precision_ip: 4,
+    },
+  },
   color: { locked: DEFAULT_BUILT_IN_LOCKS },
   source: { locked: DEFAULT_BUILT_IN_LOCKS },
   url: { locked: DEFAULT_BUILT_IN_LOCKS },

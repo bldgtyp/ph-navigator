@@ -12,6 +12,7 @@ from features.catalogs.materials import repository as catalog_materials_reposito
 from features.envelope import ops
 from features.envelope.identifiers import ID_PREFIX_PROJECT_MATERIAL, new_id
 from features.envelope.material_fields import PROJECT_MATERIAL_CATALOG_FIELDS, PROJECT_MATERIAL_OVERRIDE_FIELDS
+from features.envelope.membranes import is_membrane_material, require_single_segment_for_membrane
 from features.envelope.models import (
     DetachSegmentMaterialCommand,
     HandEnterMaterialCommand,
@@ -37,6 +38,7 @@ DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "#e6e6e6"
 
 def paste_assignment(body: ProjectDocumentV1, command: PasteAssignmentCommand) -> ProjectDocumentV1:
     ops.ensure_project_material_exists(body, command.project_material_id)
+    require_single_segment_if_membrane(body, command.assembly_id, command.layer_id, command.project_material_id)
     return ops.update_segment(
         body,
         command.assembly_id,
@@ -121,6 +123,7 @@ def new_hand_entered_material(
     density_kg_m3: float | None,
     specific_heat_j_kgk: float | None,
     emissivity: float | None,
+    air_permeance_l_s_m2_at_75pa: float | None,
     color: str | None,
     specification_status: SpecificationStatus = "needed",
 ) -> ProjectMaterial:
@@ -138,6 +141,7 @@ def new_hand_entered_material(
         density_kg_m3=density_kg_m3,
         specific_heat_j_kgk=specific_heat_j_kgk,
         emissivity=emissivity,
+        air_permeance_l_s_m2_at_75pa=air_permeance_l_s_m2_at_75pa,
         color=color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
         specification_status=specification_status,
         datasheet_asset_ids=[],
@@ -153,6 +157,7 @@ def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialComma
         density_kg_m3=command.density_kg_m3,
         specific_heat_j_kgk=command.specific_heat_j_kgk,
         emissivity=command.emissivity,
+        air_permeance_l_s_m2_at_75pa=command.air_permeance_l_s_m2_at_75pa,
         color=command.color,
     )
     body_with_material = ops.replace_project_materials(body, [*body.tables.project_materials, material])
@@ -291,6 +296,13 @@ def assign_segment_material(
     segment_id: str,
     project_material_id: str | None,
 ) -> ProjectDocumentV1:
+    """Point a segment at a project material.
+
+    The single chokepoint for every way a material reaches a segment — the
+    pickers, hand-entry, detach, and import — so the membrane single-segment
+    rule is enforced here rather than at each caller.
+    """
+    require_single_segment_if_membrane(body, assembly_id, layer_id, project_material_id)
     return ops.update_segment(
         body,
         assembly_id,
@@ -298,6 +310,29 @@ def assign_segment_material(
         segment_id,
         lambda segment: segment.model_copy(update={"project_material_id": project_material_id}),
     )
+
+
+def require_single_segment_if_membrane(
+    body: ProjectDocumentV1,
+    assembly_id: str,
+    layer_id: str,
+    project_material_id: str | None,
+) -> None:
+    """Refuse to put a membrane into a layer that is split into segments.
+
+    Clearing a material (``None``) and assigning an ordinary one are always
+    fine; only a membrane carries the constraint, because only a membrane
+    makes the layer continuous.
+    """
+    if project_material_id is None:
+        return
+    material = next(
+        (candidate for candidate in body.tables.project_materials if candidate.id == project_material_id),
+        None,
+    )
+    if material is None or not is_membrane_material(material):
+        return
+    require_single_segment_for_membrane(ops.find_layer(body, assembly_id, layer_id))
 
 
 def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
@@ -309,6 +344,7 @@ def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
         specific_heat_j_kgk=row["specific_heat_j_kgk"],
         conductivity_w_mk=row["conductivity_w_mk"],
         emissivity=row["emissivity"],
+        air_permeance_l_s_m2_at_75pa=row["air_permeance_l_s_m2_at_75pa"],
         color=row["color"],
         source=row["source"],
         url=row["url"],

@@ -82,7 +82,10 @@ export function AssemblyCanvas({
 }) {
   const { unitSystem } = useUnitPreference();
   const materialsById = useMemo(() => materialById(materials), [materials]);
-  const geometry = useMemo(() => buildAssemblyCanvasGeometry(assembly), [assembly]);
+  const geometry = useMemo(
+    () => buildAssemblyCanvasGeometry(assembly, materialsById),
+    [assembly, materialsById],
+  );
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const didInitialFitRef = useRef(!autoFitOnMount);
   const svgWidth = pxFromMm(geometry.widthMm, zoom);

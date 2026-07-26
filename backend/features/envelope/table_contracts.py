@@ -176,6 +176,7 @@ project_materials_contract = TableContract(
         "conductivity_w_mk": "conductivity",
         "density_kg_m3": "density",
         "specific_heat_j_kgk": "specific_heat",
+        "air_permeance_l_s_m2_at_75pa": "air_permeance",
     },
 )
 

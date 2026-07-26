@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from itertools import product
 
 from features.envelope.boundary_conditions import HeatFlowDirection, resolve_surface_resistances
+from features.envelope.membranes import assigned_materials, is_membrane_layer, is_membrane_material
 from features.envelope.models import AssemblyThermalStatus, ThermalStatusFlag
 from features.project_document.document import (
     Assembly,
@@ -94,10 +95,17 @@ def calculate_construction_thermal(
     worksheet supplies its own — call this rather than
     :func:`calculate_assembly_thermal`, so picking the wrong convention
     is not something a caller can do by reaching for the wrong field.
+
+    Membrane layers take no part in it at all — see ``membranes.py``.
     """
     issues = thermal_issues(assembly, materials_by_id)
     flags = thermal_issue_flags(issues)
-    blocking_flags = {"missing_conductivity", "invalid_geometry", "broken_material_reference"}
+    blocking_flags = {
+        "missing_conductivity",
+        "invalid_geometry",
+        "broken_material_reference",
+        "no_thermal_layers",
+    }
     warnings = thermal_warning_messages(flags)
     if flags.intersection(blocking_flags) or all(
         segment.project_material_id is None for layer in assembly.layers for segment in layer.segments
@@ -190,6 +198,9 @@ def thermal_input_hash(
             material_refs[segment.project_material_id] = (
                 {
                     "id": material.id,
+                    # `category` is a thermal input: it is what makes a layer
+                    # a membrane and therefore excluded from the R sum.
+                    "category": material.category,
                     "conductivity_w_mk": material.conductivity_w_mk,
                     "density_kg_m3": material.density_kg_m3,
                     "specific_heat_j_kgk": material.specific_heat_j_kgk,
@@ -275,13 +286,20 @@ def _valid_segments(
     layer: AssemblyLayer,
     materials_by_id: dict[str, ProjectMaterial],
 ) -> list[AssemblySegment]:
+    """Segments that contribute an R-value: assigned, conductive, non-membrane.
+
+    Membrane layers contribute nothing at all — not a near-zero R, but no
+    entry in the series/parallel sums. See ``membranes.is_membrane_layer``.
+    One pass over the layer serves both questions, so a layer's materials
+    are resolved once rather than once per predicate.
+    """
+    assigned = assigned_materials(layer, materials_by_id)
+    if assigned and all(is_membrane_material(material) for _, material in assigned):
+        return []
     return [
         segment
-        for segment in layer.segments
-        if segment.project_material_id is not None
-        and (material := materials_by_id.get(segment.project_material_id)) is not None
-        and material.conductivity_w_mk is not None
-        and material.conductivity_w_mk > 0
+        for segment, material in assigned
+        if material.conductivity_w_mk is not None and material.conductivity_w_mk > 0
     ]
 
 
@@ -313,8 +331,18 @@ def thermal_issues(
     materials_by_id: dict[str, ProjectMaterial],
 ) -> list[ThermalIssue]:
     issues: list[ThermalIssue] = []
+    thermal_layers = 0
     for layer_index, layer in enumerate(assembly.layers):
+        is_membrane = is_membrane_layer(layer, materials_by_id)
+        if not is_membrane:
+            thermal_layers += 1
         if layer.thickness_mm <= 0:
+            issues.append(_thermal_issue("invalid_geometry", assembly, layer_index, layer))
+        if is_membrane and len(layer.segments) > 1:
+            # Membranes are continuous, and the commands enforce that on the
+            # way in. A split one can only come from a document written before
+            # the rule or edited by hand — flag it rather than let the exports
+            # quietly keep segment 0 and drop the rest.
             issues.append(_thermal_issue("invalid_geometry", assembly, layer_index, layer))
         for segment_index, segment in enumerate(layer.segments):
             if segment.width_mm <= 0 or (
@@ -329,10 +357,17 @@ def thermal_issues(
                 issues.append(
                     _thermal_issue("broken_material_reference", assembly, layer_index, layer, segment_index, segment)
                 )
+            elif is_membrane:
+                # Membranes need no conductivity: they never enter the R sum.
+                continue
             elif material.conductivity_w_mk is None or material.conductivity_w_mk <= 0:
                 issues.append(
                     _thermal_issue("missing_conductivity", assembly, layer_index, layer, segment_index, segment)
                 )
+    if assembly.layers and thermal_layers == 0:
+        # Every layer is a membrane, so there is nothing to build an R-value
+        # from. Say so explicitly rather than reporting bad geometry.
+        issues.append(_thermal_issue("no_thermal_layers", assembly, 0, assembly.layers[0]))
     return issues
 
 
@@ -370,5 +405,8 @@ def thermal_warning_messages(flags: set[ThermalStatusFlag]) -> list[str]:
         "missing_conductivity": "One or more assigned materials need conductivity before export.",
         "invalid_geometry": "Layer thickness, segment width, or steel-stud spacing is invalid.",
         "broken_material_reference": "One or more segments reference a missing project material.",
+        "no_thermal_layers": (
+            "Every layer is a membrane, which carries no thermal resistance, so there is no U-value to report."
+        ),
     }
     return [messages[flag] for flag in sorted(flags)]

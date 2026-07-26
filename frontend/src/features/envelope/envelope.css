@@ -289,6 +289,7 @@
   --assembly-paint-pulse: color-mix(in oklab, gold 78%, transparent);
   --assembly-paint-tint: color-mix(in oklab, gold 18%, transparent);
   --assembly-pick-ring: color-mix(in oklab, seagreen 82%, transparent);
+  --assembly-air-barrier: color-mix(in oklab, var(--text-primary) 88%, var(--accent));
 
   display: grid;
   gap: var(--space-10);
@@ -471,10 +472,29 @@
   fill: color-mix(in oklab, var(--border-subtle) 18%, white);
 }
 
+/* Membranes read as a drawn rule, not a block of material: a heavier outline
+   at the fixed nominal height the geometry gives them. An unassigned membrane
+   never gets the null-material hatch — at hairline height the hatch is noise. */
+.assembly-svg-segment.is-membrane {
+  stroke: var(--svg-line-heavy);
+  stroke-width: 1;
+}
+
 .assembly-svg-canvas[data-mode="picking"] .assembly-svg-segment,
 .assembly-svg-segment.is-picked-source {
   stroke: var(--assembly-pick-ring);
   stroke-width: 2;
+}
+
+/* The air-barrier designation: a bold continuous rule on the designated face.
+   The convention architects already read on a wall section. Drawn last so it
+   sits over the segment fills, and non-interactive so it never intercepts a
+   click meant for the layer underneath. */
+.assembly-svg-air-barrier {
+  pointer-events: none;
+  stroke: var(--assembly-air-barrier, var(--text-primary));
+  stroke-linecap: square;
+  stroke-width: 3;
 }
 
 .assembly-null-material-hatch {
@@ -579,6 +599,15 @@
   outline: 2px dashed transparent;
   outline-offset: -2px;
   overflow: visible;
+}
+
+/* The membrane overlay is taller than its drawn band so it can be clicked at
+   all (see `membraneHitBox`). It must therefore sit above its neighbours, or
+   their overlays win the hit test across the overhang. Two adjacent membranes
+   would tie here, so the box math keeps their overhangs from overlapping
+   rather than relying on paint order. */
+.assembly-segment-overlay.is-membrane {
+  z-index: var(--z-base-elevated);
 }
 
 .assembly-segment-hit-target {
@@ -1395,6 +1424,24 @@
   gap: var(--space-14);
   margin: 0;
   padding: var(--space-14);
+}
+
+/* Explanatory prose in place of a control section — why the width and
+   steel-stud sections are absent for a membrane layer. */
+.segment-dialog-note {
+  color: var(--text-muted, var(--text-secondary));
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  margin: 0;
+}
+
+.segment-air-barrier-options {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.segment-dialog-note.is-fail {
+  color: var(--danger-text, var(--text-primary));
 }
 
 .segment-dialog-disclosure {

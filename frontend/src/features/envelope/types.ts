@@ -9,6 +9,22 @@ export type { SpecificationStatus } from "../project_document/specification-stat
 
 export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
+export type AssemblyFace = "interior" | "exterior";
+
+// Which face of which layer is the assembly's air barrier. A face, not a
+// layer and not a material: sometimes it is a dedicated membrane, just as
+// often the interior face of spray foam or the taped face of sheathing.
+export type AssemblyAirBarrier = { layer_id: string; face: AssemblyFace };
+
+// Backend-derived ASTM E2178 verdict on that face. `unknown` is distinct from
+// `pass` — a face with no recorded permeance has not been shown to qualify.
+export type AirBarrierStatus = {
+  state: "pass" | "fail" | "unknown";
+  layer_id: string;
+  face: AssemblyFace;
+  air_permeance_l_s_m2_at_75pa: number | null;
+  criterion_l_s_m2_at_75pa: number | null;
+};
 /** What the assembly's outboard face is adjacent to; drives the exterior film. */
 export type ExteriorCondition = "outdoor_air" | "ventilated" | "ground" | "unconditioned_space";
 /** Derived from `AssemblyType`; drives the interior film. */
@@ -20,7 +36,8 @@ export type ThermalStatusFlag =
   | "missing_material"
   | "missing_conductivity"
   | "invalid_geometry"
-  | "broken_material_reference";
+  | "broken_material_reference"
+  | "no_thermal_layers";
 export type EnvelopeReadSource = "draft" | "version";
 
 export type ProjectMaterialUseSite = {
@@ -43,6 +60,7 @@ export type ProjectMaterial = {
   specific_heat_j_kgk: number | null;
   conductivity_w_mk: number | null;
   emissivity: number | null;
+  air_permeance_l_s_m2_at_75pa: number | null;
   color: string | null;
   source: string | null;
   url: string | null;
@@ -80,6 +98,8 @@ export type Assembly = {
   orientation: AssemblyOrientation;
   exterior_condition: ExteriorCondition;
   layers: AssemblyLayer[];
+  air_barrier: AssemblyAirBarrier | null;
+  air_barrier_status: AirBarrierStatus | null;
   status: {
     is_complete: boolean;
     flags: ThermalStatusFlag[];
@@ -136,6 +156,7 @@ export type ProjectMaterialDriftFieldKey =
   | "specific_heat_j_kgk"
   | "conductivity_w_mk"
   | "emissivity"
+  | "air_permeance_l_s_m2_at_75pa"
   | "color"
   | "source"
   | "url"
@@ -240,6 +261,12 @@ export type EnvelopeCommand =
       catalog_material_id: string;
     }
   | {
+      kind: "set_assembly_air_barrier";
+      assembly_id: string;
+      // Null clears the designation — the section's toggle is one command.
+      air_barrier: AssemblyAirBarrier | null;
+    }
+  | {
       kind: "hand_enter_material";
       assembly_id: string;
       layer_id: string;
@@ -250,6 +277,7 @@ export type EnvelopeCommand =
       density_kg_m3?: number | null;
       specific_heat_j_kgk?: number | null;
       emissivity?: number | null;
+      air_permeance_l_s_m2_at_75pa?: number | null;
       color?: string | null;
     }
   | {
@@ -261,6 +289,7 @@ export type EnvelopeCommand =
       specific_heat_j_kgk?: number | null;
       conductivity_w_mk?: number | null;
       emissivity?: number | null;
+      air_permeance_l_s_m2_at_75pa?: number | null;
       color?: string | null;
       source?: string | null;
       url?: string | null;
@@ -371,7 +400,11 @@ export type EnvelopeAttachmentChange =
   | EnvelopeAttachmentChangeArgs[];
 
 // Mirrors `backend/features/envelope/phpp_types.ExportReason`.
-export type PhppExportReason = "too_many_layers" | "too_many_pathways" | "incomplete_materials";
+export type PhppExportReason =
+  | "too_many_layers"
+  | "too_many_pathways"
+  | "incomplete_materials"
+  | "no_thermal_layers";
 
 export type PhppPreflightItem = {
   id: string;

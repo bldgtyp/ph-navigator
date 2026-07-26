@@ -41,6 +41,7 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "add_layer": _body_only(layers.add_layer),
     "update_layer_thickness": _body_only(layers.update_layer_thickness),
     "delete_layer": _body_only(layers.delete_layer),
+    "set_assembly_air_barrier": _body_only(layers.set_assembly_air_barrier),
     "add_segment": _body_only(layers.add_segment),
     "update_segment": _body_only(layers.update_segment),
     "delete_segment": _body_only(layers.delete_segment),

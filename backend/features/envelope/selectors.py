@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from features.envelope.air_barrier import air_barrier_status
 from features.envelope.models import (
     AssemblyRead,
     AssemblySegmentTableRow,
@@ -24,6 +25,7 @@ def build_envelope_read_parts(body: ProjectDocumentV1) -> tuple[list[AssemblyRea
             AssemblyRead(
                 **assembly.model_dump(mode="python"),
                 status=assembly_status(assembly, materials_by_id),
+                air_barrier_status=air_barrier_status(assembly, materials_by_id),
             )
         )
         for layer in assembly.layers:

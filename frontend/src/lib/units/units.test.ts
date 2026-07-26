@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   btuHft2FToWm2K,
+  cfmFt2ToLSM2,
   cToF,
+  formatAirPermeanceFromLSM2,
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatLengthFromMm,
@@ -15,6 +17,8 @@ import {
   m3ToFt3,
   m2kWToHft2FBtu,
   mmToIn,
+  lSM2ToCfmFt2,
+  parseAirPermeanceToLSM2,
   NUMBER_UNIT_TYPES,
   convertNumberUnitsToDisplay,
   convertNumberUnitsToSi,
@@ -113,6 +117,32 @@ describe("unit display helpers", () => {
     expect(formatDensityFromKgM3(100, { unitSystem: "SI" })).toBe("100 kg/m3");
     expect(formatDensityFromKgM3(100, { unitSystem: "IP" })).toBe("6.2 lb/ft3");
   });
+
+  // The ASTM E2178 air-barrier material criterion is published in both
+  // systems, so the pair doubles as a check on the conversion factor.
+  test("converts the air-barrier material criterion between systems", () => {
+    expect(lSM2ToCfmFt2(0.02)).toBeCloseTo(0.0039, 4);
+    expect(cfmFt2ToLSM2(0.0039)).toBeCloseTo(0.02, 3);
+  });
+
+  test("formats air permeance by active unit system", () => {
+    expect(formatAirPermeanceFromLSM2(0.02, { unitSystem: "SI" })).toBe("0.02 L/(s-m2) @ 75Pa");
+    expect(formatAirPermeanceFromLSM2(0.02, { unitSystem: "IP" })).toBe("0.0039 cfm/ft2 @ 1.57psf");
+  });
+
+  test("parses air permeance back to SI", () => {
+    expect(parseAirPermeanceToLSM2("0.02", { unitSystem: "SI" })).toEqual({
+      ok: true,
+      valueSi: 0.02,
+    });
+    const ip = parseAirPermeanceToLSM2("0.0039", { unitSystem: "IP" });
+    expect(ip.ok).toBe(true);
+    if (ip.ok) expect(ip.valueSi).toBeCloseTo(0.02, 3);
+    expect(parseAirPermeanceToLSM2("-1", { unitSystem: "SI" })).toMatchObject({
+      ok: false,
+      code: "negative",
+    });
+  });
 });
 
 describe("number unit registry", () => {
@@ -134,6 +164,7 @@ describe("number unit registry", () => {
       "heat_loss_rate",
       "energy",
       "power",
+      "air_permeance",
     ]);
     expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
     expect(isCompatibleNumberUnitPair("area", "m3", "ft3")).toBe(false);
@@ -154,6 +185,7 @@ describe("number unit registry", () => {
       heat_loss_rate: { si: ["w_k"], ip: ["btu_h_f"] },
       energy: { si: ["kwh"], ip: ["kbtu"] },
       power: { si: ["kw"], ip: ["kbtu_h"] },
+      air_permeance: { si: ["l_s_m2_75pa"], ip: ["cfm_ft2_75pa"] },
     });
   });
 

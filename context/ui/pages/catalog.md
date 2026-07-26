@@ -56,8 +56,11 @@ page's controller); the DataTable's optimistic-write model (§1.7) applies.
 ## Materials
 
 Columns: name, category (single-select), density, specific heat,
-conductivity, emissivity, color, source, URL, comments (plus the
-active/inactive flag). `MaterialEditorModal` is the create/edit form.
+conductivity, emissivity, air permeance, color, source, URL, comments
+(plus the active/inactive flag). `MaterialEditorModal` is the create/edit
+form. The `membrane` category covers sheet goods and coatings (WRBs,
+vapour-control layers, flashings, paints); assembly layers built from it
+are excluded from the R calculation — see `envelope-thermal-preview.md`.
 
 ## Frame-types (Window-Frame Elements) and glazing-types (Window-Glazing)
 

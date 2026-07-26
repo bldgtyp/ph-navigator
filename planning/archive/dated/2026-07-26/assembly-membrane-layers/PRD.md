@@ -1,12 +1,12 @@
 ---
 DATE: 2026-07-26
-TIME: 10:42 EDT
-STATUS: Draft
+TIME: 12:15 EDT
+STATUS: Delivered — all four phases implemented 2026-07-26 (see ./STATUS.md)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Membrane / sheet-good layers in the Assembly Builder (WRBs, vapour-control
   layers, coatings), plus an air-barrier designation on the assembly section.
 RELATED: ./README.md, ./STATUS.md,
-  ../assembly-condensation-risk/PRD.md (depends on this),
+  ../../../../features/assembly-condensation-risk/PRD.md (depends on this),
   context/ui/pages/envelope-tab.md, backend/features/project_document/envelope_models.py
 ---
 
@@ -233,10 +233,10 @@ extend to them cleanly, but one designation at a time.
 
 | Phase | Content |
 | --- | --- |
-| **1** | `membrane` catalog category (migration), `air_permeance_l_s_m2_at_75pa` column + drift keys + IP/SI display, material-picker support, **exclusion of membrane layers from the R calculation** |
-| **2** | Membrane layer rendering (hairline + distinct treatment), single-segment validation, layer-height modal copy |
-| **3** | Air-barrier designation: field, set/clear control, bold-line rendering, **plus the ASTM E2178 permeance check on the designated face** |
-| **4** | Export/import: omit membranes from the HBJSON construction, carry them in `ph_nav` for lossless round-trip; deliberate PHPP drop |
+| **1** ✅ | `membrane` catalog category (migration), `air_permeance_l_s_m2_at_75pa` column + drift keys + IP/SI display, material-picker support, **exclusion of membrane layers from the R calculation** — shipped 2026-07-26, see `STATUS.md` |
+| **2** ✅ | Membrane layer rendering (hairline + distinct treatment), single-segment validation, layer-height modal copy — shipped 2026-07-26, see `STATUS.md` |
+| **3** ✅ | Air-barrier designation: field, set/clear control, bold-line rendering, **plus the ASTM E2178 permeance check on the designated face** — shipped 2026-07-26, see `STATUS.md` |
+| **4** ✅ | Export/import: omit membranes from the HBJSON construction, carry them in `ph_nav` for lossless round-trip; deliberate PHPP drop — shipped 2026-07-26, see `STATUS.md` |
 
 Phases 1–2 unblock `assembly-condensation-risk` Phase 2. Phase 3 is independent
 and can ship in any order. Phase 4 can lag.

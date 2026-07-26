@@ -404,7 +404,8 @@ the DataTable consumes them.
   group, widths, hidden columns, filters on other fields) is preserved.
 - **Fixed-mode anchors.** The Materials catalog DataTable seeds
   fixed-mode `numberUnits` for `density_kg_m3` (`kg_m3 ↔ lb_ft3`),
-  `specific_heat_j_kgk` (`j_kg_k ↔ btu_lb_f`), and `conductivity_w_mk`
-  (`w_m_k ↔ btu_h_ft_f`) — see
+  `specific_heat_j_kgk` (`j_kg_k ↔ btu_lb_f`), `conductivity_w_mk`
+  (`w_m_k ↔ btu_h_ft_f`), and `air_permeance_l_s_m2_at_75pa`
+  (`l_s_m2_75pa ↔ cfm_ft2_75pa`, the ASTM E2178 pair) — see
   `frontend/src/features/catalogs/materials/fieldDefs.ts`. Other catalog
   / domain built-ins that need SI/IP display follow the same pattern.

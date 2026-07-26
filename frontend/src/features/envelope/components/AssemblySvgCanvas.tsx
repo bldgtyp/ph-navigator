@@ -70,8 +70,10 @@ export function AssemblySvgCanvas({
           <SvgSegmentRect
             key={`${segmentGeometry.layer.id}-${segmentGeometry.segment.id}`}
             segmentGeometry={segmentGeometry}
+            // A membrane keeps its own colour but is never hatched: it reads as
+            // a drawn rule on the section, not as a block of material.
             fill={
-              isNullMaterial
+              isNullMaterial && !segmentGeometry.isMembrane
                 ? `url(#null-material-pattern-${assembly.id})`
                 : materialColor(material)
             }
@@ -80,6 +82,19 @@ export function AssemblySvgCanvas({
           />
         );
       })}
+      {geometry.airBarrier ? (
+        <line
+          className="assembly-svg-air-barrier"
+          data-testid="assembly-svg-air-barrier"
+          data-face={geometry.airBarrier.face}
+          x1={0}
+          x2={geometry.airBarrier.widthMm}
+          y1={geometry.airBarrier.yMm}
+          y2={geometry.airBarrier.yMm}
+        >
+          <title>{`Air barrier: ${geometry.airBarrier.face} face`}</title>
+        </line>
+      ) : null}
     </svg>
   );
 }
@@ -97,13 +112,15 @@ function SvgSegmentRect({
 }) {
   const key = segmentCanvasKey(segmentGeometry.layer.id, segmentGeometry.segment.id);
   const classNames = ["assembly-svg-segment"];
-  if (isNullMaterial) classNames.push("is-null-material");
+  if (segmentGeometry.isMembrane) classNames.push("is-membrane");
+  else if (isNullMaterial) classNames.push("is-null-material");
   if (pickedSourceKey === key) classNames.push("is-picked-source");
 
   return (
     <rect
       className={classNames.join(" ")}
       data-testid="assembly-svg-segment"
+      data-membrane={segmentGeometry.isMembrane ? "true" : undefined}
       data-layer-id={segmentGeometry.layer.id}
       data-segment-id={segmentGeometry.segment.id}
       x={segmentGeometry.xMm}

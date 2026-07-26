@@ -11,6 +11,7 @@ from tests.envelope.test_envelope_document_contracts import (
     ORIGIN,
     create_project,
     envelope_body,
+    project_material,
     signed_in_client,
     write_saved_body,
 )
@@ -421,6 +422,125 @@ def test_add_layer_above_and_below_target(clean_document_tables: None) -> None:
     layers_below = next(asm for asm in below.json()["assemblies"] if asm["id"] == "asm_wall_c3")["layers"]
     sheathing_index = next(i for i, layer in enumerate(layers_below) if layer["id"] == "lyr_sheathing")
     assert layers_below[sheathing_index + 1]["thickness_mm"] == 30.0
+
+
+def membrane_envelope_body() -> ProjectDocumentV1:
+    """`lyr_sheathing`'s only segment carries a membrane material."""
+    body = envelope_body()
+    raw = body.model_dump(mode="json")
+    raw["tables"]["project_materials"].append(
+        project_material(
+            id="pmat_wrb",
+            name="WRB",
+            category="membrane",
+            conductivity_w_mk=None,
+            air_permeance_l_s_m2_at_75pa=0.0015,
+            datasheet_asset_ids=[],
+        )
+    )
+    raw["tables"]["assemblies"][0]["layers"][0]["segments"][0]["project_material_id"] = "pmat_wrb"
+    return ProjectDocumentV1.model_validate(raw)
+
+
+def test_add_segment_rejected_on_a_membrane_layer(clean_document_tables: None) -> None:
+    """Membranes are continuous sheets — PRD §9 criterion 3."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = membrane_envelope_body()
+    write_saved_body(version_id, saved_body)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "add_segment",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_sheathing",
+                "target_segment_id": "seg_insul",
+                "position": "right",
+                "width_mm": 200.0,
+            }
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "membrane_layer_single_segment"
+
+
+def test_membrane_cannot_be_assigned_into_a_multi_segment_layer(clean_document_tables: None) -> None:
+    """The back door around `add_segment`: make an existing split layer a membrane.
+
+    A layer becomes a membrane by material *assignment*, so guarding only
+    `add_segment` left the picker able to produce a two-segment membrane layer.
+    """
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = two_segment_envelope_body()
+    raw = saved_body.model_dump(mode="json")
+    raw["tables"]["project_materials"].append(
+        project_material(id="pmat_wrb", name="WRB", category="membrane", conductivity_w_mk=None)
+    )
+    saved_body = ProjectDocumentV1.model_validate(raw)
+    write_saved_body(version_id, saved_body)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "pick_project_material",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_sheathing",
+                "segment_id": "seg_insul",
+                "project_material_id": "pmat_wrb",
+            }
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "membrane_layer_single_segment"
+
+
+def test_membrane_assignment_is_allowed_into_a_single_segment_layer(clean_document_tables: None) -> None:
+    """The guard must not block the ordinary case it exists to protect."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    raw = saved_body.model_dump(mode="json")
+    raw["tables"]["project_materials"].append(
+        project_material(id="pmat_wrb", name="WRB", category="membrane", conductivity_w_mk=None)
+    )
+    saved_body = ProjectDocumentV1.model_validate(raw)
+    write_saved_body(version_id, saved_body)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "pick_project_material",
+                "assembly_id": "asm_wall_c3",
+                "layer_id": "lyr_sheathing",
+                "segment_id": "seg_insul",
+                "project_material_id": "pmat_wrb",
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    sheathing = next(
+        layer
+        for layer in next(asm for asm in response.json()["assemblies"] if asm["id"] == "asm_wall_c3")["layers"]
+        if layer["id"] == "lyr_sheathing"
+    )
+    assert sheathing["segments"][0]["project_material_id"] == "pmat_wrb"
 
 
 def test_add_segment_left_and_right_of_target(clean_document_tables: None) -> None:

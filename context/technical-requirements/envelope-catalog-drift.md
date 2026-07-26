@@ -51,8 +51,8 @@ drift possible). The frontend skips the query in that case.
 
 `fields` covers every catalog-bound field in
 `PROJECT_MATERIAL_CATALOG_FIELDS`: `name`, `category`, `density_kg_m3`,
-`specific_heat_j_kgk`, `conductivity_w_mk`, `emissivity`, `color`,
-`source`, `url`, `comments`.
+`specific_heat_j_kgk`, `conductivity_w_mk`, `emissivity`,
+`air_permeance_l_s_m2_at_75pa`, `color`, `source`, `url`, `comments`.
 
 ## Drift states
 

@@ -24,6 +24,7 @@ CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
 CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
 AssemblyType = Literal["wall", "floor", "roof", "other"]
 AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
+AssemblyFace = Literal["interior", "exterior"]
 #: What the assembly's outboard face is adjacent to. Drives the exterior
 #: surface film (Rse); the interior film is derived from ``AssemblyType``.
 #: ``unconditioned_space`` is film-identical to ``ventilated`` under
@@ -199,6 +200,26 @@ class AssemblyLayer(BaseModel):
         return self
 
 
+class AssemblyAirBarrier(BaseModel):
+    """Which face of which layer is the assembly's air barrier.
+
+    A face, not a layer and not a material: the air barrier is sometimes a
+    dedicated membrane, but just as often it is the interior face of
+    closed-cell spray foam, the taped exterior face of sheathing, or parged
+    block. The same XPS is the air barrier in one assembly and not in another,
+    so this cannot live on the material — and *which face* matters, so it
+    cannot live on the layer either.
+
+    Drawing and communication only. ISO 13788 ignores air leakage entirely, so
+    this must never reach the condensation calculation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    layer_id: str = Field(pattern=r"^lyr_[A-Za-z0-9_-]+$", max_length=80)
+    face: AssemblyFace
+
+
 class Assembly(BaseModel):
     """A project-owned opaque construction assembly."""
 
@@ -213,6 +234,9 @@ class Assembly(BaseModel):
     # exactly what the default restores.
     exterior_condition: ExteriorCondition = "outdoor_air"
     layers: list[AssemblyLayer] = Field(min_length=1)
+    # Nullable and defaulted, so assemblies written before the designation
+    # existed validate unchanged — no schema version bump.
+    air_barrier: AssemblyAirBarrier | None = None
 
     @field_validator("name", mode="before")
     @classmethod
@@ -225,6 +249,10 @@ class Assembly(BaseModel):
     def _validate_layers(self) -> Assembly:
         validate_unique_ids("layer", [layer.id for layer in self.layers])
         validate_contiguous_orders("layer", [(layer.id, layer.order) for layer in self.layers])
+        if self.air_barrier is not None and all(layer.id != self.air_barrier.layer_id for layer in self.layers):
+            # A designation pointing at a deleted layer would render nothing and
+            # silently mislead; reject it at the door instead.
+            raise ValueError(f"air_barrier.layer_id {self.air_barrier.layer_id!r} is not a layer of this assembly")
         return self
 
     def layers_outside_to_inside(self) -> list[AssemblyLayer]:
@@ -256,6 +284,10 @@ class ProjectMaterial(BaseModel):
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    # ASTM E2178 air permeance in L/(s*m2) at 75 Pa. Nullable and defaulted,
+    # so documents written before it existed validate unchanged — no schema
+    # version bump needed.
+    air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)

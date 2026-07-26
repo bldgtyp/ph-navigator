@@ -86,6 +86,7 @@ Each flag describes a user-actionable problem.
 | `missing_conductivity` | An assigned material has a null or non-positive `conductivity_w_mk`. |
 | `invalid_geometry` | A layer's `thickness_mm <= 0`, a segment's `width_mm <= 0`, or `steel_stud_spacing_mm <= 0`. |
 | `broken_material_reference` | A segment points at a `project_material_id` not present in `tables.project_materials`. Defensive — the document validator rejects this at save time, so it is unreachable via the route in normal flow; the flag exists for direct-call defense in depth. |
+| `no_thermal_layers` | Every layer in the assembly is a membrane layer, so nothing contributes an R-value. Reported instead of letting the zero total fall through to `invalid_geometry`. |
 
 `status.is_complete` is `true` iff `flags` is empty.
 
@@ -93,7 +94,30 @@ If a non-blocking flag (e.g. `missing_material` on one segment while
 others are complete) leaves the calculation tractable, the preview
 still returns R/U values plus the flag(s). Blocking flags
 (`missing_conductivity`, `invalid_geometry`,
-`broken_material_reference`) suppress the numeric fields.
+`broken_material_reference`, `no_thermal_layers`) suppress the numeric
+fields.
+
+## Membrane layers are excluded, not merely small
+
+A layer whose every assigned segment carries a material in the
+`membrane` category (WRBs, vapour-control layers, self-adhered
+flashings, paints) takes no part in this calculation at all:
+`thermal.is_membrane_layer` drops it from `_valid_segments` and exempts
+it from the `missing_conductivity` check.
+
+This is exclusion, not a near-zero contribution. Adding a WRB to an
+existing assembly leaves its R and U **bit-identical** and cannot raise
+a new flag. The justification is numerical negligibility plus
+conservatism — 6-mil polyethylene is ~0.0005 m²K/W, four orders of
+magnitude below a typical assembly — and it matches PHPP, which does
+not enter membranes on the U-Values worksheet. Membranes still carry a
+real `thickness_mm` and still count toward Total Thickness.
+
+"Every assigned segment", not "any": a layer mixing a membrane with a
+real material computes normally rather than silently dropping the
+material's R. The category match is case- and whitespace-insensitive
+because `ProjectMaterial.category` is a free string at the document
+layer (a hand-entered material can carry any spelling).
 
 ## Surface films and boundary conditions
 
@@ -187,6 +211,9 @@ cache the preview by identity:
 - Identical inputs → identical hash.
 - Conductivity, density, specific heat, emissivity changes →
   different hash.
+- Material **category** changes → different hash. Category is a physics
+  input here, not a display field: it is what makes a layer a membrane
+  and therefore excluded from the R sum.
 - Layer thickness, segment width, orientation, layer order changes →
   different hash.
 - `exterior_condition` and `type` changes → different hash (both are

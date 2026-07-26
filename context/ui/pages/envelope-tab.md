@@ -157,8 +157,12 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   own surface films, so sending the header's with-films value would count them
   twice (`context/technical-requirements/envelope-thermal-preview.md`). An
   assembly that can't be represented in PHPP (>8 layers, >3 / inconsistent
-  heat-flow pathways, or incomplete materials) is written as a one-line error
-  CSV rather than dropped. When any assembly is blocked, a confirm/cancel modal
+  heat-flow pathways, incomplete materials, or nothing but membrane layers) is
+  written as a one-line error CSV rather than dropped. **Membrane layers are
+  dropped from the worksheet rows deliberately** — PHPP does not enter them,
+  they carry no R, and the 8-row budget is counted after the drop so a WRB
+  cannot push a real 8-layer assembly over the limit. Total Thickness still
+  reports the physical assembly, membranes included. When any assembly is blocked, a confirm/cancel modal
   (`PhppExportWarningDialog`) lists them with friendly reasons before the
   download proceeds ("Download anyway" / "Cancel").
 - **Upload constructions HBJSON** (editors only).
@@ -185,6 +189,47 @@ viewers can still export. See `planning/features/phpp-uvalue-export/`.
 - Segment hover reveals compact `+` buttons at left and right edges
   ("Add Segment Left / Right").
 - Click a segment → opens **Segment Properties modal** (US-ENV-6).
+
+**Membrane layers are the one exception to 1:1 scale.** A layer whose every
+assigned segment carries a `membrane` material (WRB, vapour retarder, paint)
+is drawn at a fixed nominal height instead — a real 0.15 mm sheet would be
+sub-pixel at any usable zoom. Consequences, all driven from
+`canvas-geometry.ts` so the SVG, the y-stacking, and the hit targets agree:
+
+- The thickness label still shows the layer's **real** thickness and is
+  tooltipped "not drawn to scale". Total Thickness counts it too.
+- The clickable overlay grows to a minimum height centred on the drawn band
+  (`segmentOverlayBox`), because a ~4 px strip is legible but unclickable —
+  the neighbouring layer's overlay would otherwise win every hit test.
+- No "Add Segment Left / Right" buttons: membranes are continuous and take
+  exactly one segment. The backend rejects `add_segment` on them with
+  `membrane_layer_single_segment`.
+- The Segment Properties modal drops the Width and Steel-stud sections and
+  explains why in their place.
+
+The membrane category also removes the layer from the U-value calculation
+entirely — see `../../technical-requirements/envelope-thermal-preview.md`.
+
+**Air-barrier designation.** An assembly may mark one *face* of one layer as
+its air barrier (`Assembly.air_barrier = {layer_id, face}`), drawn as a bold
+continuous rule on that face — the convention architects already read. A face,
+not a layer and not a material: the air barrier is sometimes a dedicated
+membrane and just as often the interior face of spray foam or the taped face of
+sheathing, so the same material is the air barrier in one assembly and not in
+another.
+
+- Set and cleared from the Segment Properties modal's **Air barrier** section
+  (one `set_assembly_air_barrier` command; `air_barrier: null` clears).
+- "Interior" and "exterior" are relative to `orientation`, not to top/bottom of
+  the drawing. Deleting the designated layer clears the designation.
+- The backend returns a read-only `air_barrier_status` carrying the **ASTM
+  E2178** verdict for the designated face: `pass`, `fail`, or `unknown`.
+  `unknown` is not `pass` — a face with no recorded `air_permeance_l_s_m2_at_75pa`
+  has not been shown to meet the 0.02 L/(s·m²) @ 75 Pa material criterion, and
+  the copy says exactly that.
+- **It feeds no calculation.** ISO 13788 ignores air leakage entirely, so the
+  designation must never reach the condensation engine, and the UI must not
+  imply that it does.
 
 **Segment Properties modal (US-ENV-6):**
 

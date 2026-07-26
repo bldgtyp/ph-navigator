@@ -176,6 +176,7 @@ def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
         "heat_loss_rate": {"si": ["w_k"], "ip": ["btu_h_f"]},
         "energy": {"si": ["kwh"], "ip": ["kbtu"]},
         "power": {"si": ["kw"], "ip": ["kbtu_h"]},
+        "air_permeance": {"si": ["l_s_m2_75pa"], "ip": ["cfm_ft2_75pa"]},
     }
 
 

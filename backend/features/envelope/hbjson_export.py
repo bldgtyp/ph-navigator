@@ -9,6 +9,7 @@ from typing import Any
 from starlette import status
 
 from features.envelope.honeybee_specification_status import to_native_ref_status
+from features.envelope.membranes import is_membrane_layer
 from features.envelope.thermal import ThermalIssue, thermal_issues
 from features.project_document.document import Assembly, AssemblyLayer, ProjectDocumentV1, ProjectMaterial
 from features.shared.errors import api_error
@@ -60,11 +61,71 @@ def _construction_payload(
             "assembly_id": assembly.id,
             "assembly_type": assembly.type,
             "orientation": assembly.orientation,
+            "air_barrier": assembly.air_barrier.model_dump(mode="json") if assembly.air_barrier else None,
+            # Membranes are omitted from `materials` above — an `EnergyMaterial`
+            # requires a positive conductivity and membranes deliberately have
+            # none (PRD §7). They ride here instead, positioned by the index
+            # they occupy in the outside→inside layer list, so a
+            # PHN → HBJSON → PHN round trip puts them back exactly where they
+            # were. Honeybee and PHX ignore `ph_nav` entirely.
+            "membrane_layers": _membrane_layer_payloads(assembly, materials_by_id),
             # Honeybee keeps boundary conditions on faces, not constructions,
             # so this stays PHN metadata rather than mapping to a Honeybee field.
             "exterior_condition": assembly.exterior_condition,
         },
-        "materials": [_layer_material_payload(layer, materials_by_id) for layer in assembly.layers_outside_to_inside()],
+        "materials": [
+            _layer_material_payload(layer, materials_by_id)
+            for layer in assembly.layers_outside_to_inside()
+            if not is_membrane_layer(layer, materials_by_id)
+        ],
+    }
+
+
+def _membrane_layer_payloads(
+    assembly: Assembly,
+    materials_by_id: dict[str, ProjectMaterial],
+) -> list[dict[str, object]]:
+    """Carry the membrane layers the honeybee construction cannot hold.
+
+    ``outside_index`` is the position the layer occupies in the full
+    outside→inside layer list — *including* membranes — so import can splice
+    them back in order without depending on how many were dropped before it.
+    """
+    payloads: list[dict[str, object]] = []
+    for index, layer in enumerate(assembly.layers_outside_to_inside()):
+        if not is_membrane_layer(layer, materials_by_id):
+            continue
+        segment = layer.segments[0]
+        material = materials_by_id[segment.project_material_id or ""]
+        payloads.append(
+            {
+                "outside_index": index,
+                "layer_id": layer.id,
+                "segment_id": segment.id,
+                "thickness_mm": layer.thickness_mm,
+                "width_mm": segment.width_mm,
+                "material": _membrane_material_payload(material),
+            }
+        )
+    return payloads
+
+
+def _membrane_material_payload(material: ProjectMaterial) -> dict[str, object]:
+    """The membrane's own fields — no honeybee shape, so no invalid values."""
+    return {
+        "project_material_id": material.id,
+        "name": material.name,
+        "category": material.category,
+        "color": material.color,
+        "density_kg_m3": material.density_kg_m3,
+        "specific_heat_j_kgk": material.specific_heat_j_kgk,
+        "emissivity": material.emissivity,
+        "air_permeance_l_s_m2_at_75pa": material.air_permeance_l_s_m2_at_75pa,
+        "source": material.source,
+        "url": material.url,
+        "comments": material.comments,
+        "specification_status": material.specification_status,
+        "catalog_origin": material.catalog_origin.model_dump(mode="json") if material.catalog_origin else None,
     }
 
 

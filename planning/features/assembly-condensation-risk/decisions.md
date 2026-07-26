@@ -263,7 +263,7 @@ as a stack of callouts at the top of modal tier 1.
 
 ### D-10. Membranes are a prerequisite ✅ decided 2026-07-26
 
-Split out to `planning/features/assembly-membrane-layers/`. A wall's sd is
+Split out to `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (all four phases shipped 2026-07-26). A wall's sd is
 dominated by its membranes and coatings — in a typical 2×6 wall, 6-mil poly is
 ~95 % of the total, and the interior paint is comparable to the plywood — and
 PHN cannot represent either today. Running the engine on membrane-less

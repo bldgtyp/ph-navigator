@@ -58,13 +58,14 @@ class name. The dispatch registry is
 |------|-------|---------|-------------------|
 | `add_layer` | `AddLayerCommand` | Insert a new layer above/below a target layer; null `target_layer_id` appends. New layer inherits the target's width. | `assembly_not_found`, `layer_not_found` |
 | `update_layer_thickness` | `UpdateLayerThicknessCommand` | Set layer `thickness_mm` (> 0). | `assembly_not_found`, `layer_not_found` |
+| `set_assembly_air_barrier` | `SetAssemblyAirBarrierCommand` | Designate `{layer_id, face}` as the assembly's air barrier, or clear it with `air_barrier: null`. | `assembly_not_found`, `layer_not_found` |
 | `delete_layer` | `DeleteLayerCommand` | Remove a layer. | `last_layer` (assemblies keep ≥1 layer), `layer_not_found`. |
 
 ### Segment commands
 
 | Kind | Model | Purpose | Notable conflicts |
 |------|-------|---------|-------------------|
-| `add_segment` | `AddSegmentCommand` | Insert a new segment left/right of a target; null `target_segment_id` appends. | `layer_not_found`, `segment_not_found` |
+| `add_segment` | `AddSegmentCommand` | Insert a new segment left/right of a target; null `target_segment_id` appends. | `layer_not_found`, `segment_not_found`, `membrane_layer_single_segment` |
 | `update_segment` | `UpdateSegmentCommand` | Set `width_mm`, `is_continuous_insulation`, `steel_stud_spacing_mm`. Does not touch material assignment. | `segment_not_found` |
 | `delete_segment` | `DeleteSegmentCommand` | Remove a segment. | `last_segment` (layers keep ≥1 segment), `segment_not_found`. |
 | `update_segment_use_site_notes` | `UpdateSegmentUseSiteNotesCommand` | Set per-segment author notes. | `segment_not_found` |
@@ -126,6 +127,13 @@ Catalog of conflict codes raised by envelope commands:
 - `assembly_not_found`, `layer_not_found`, `segment_not_found`,
   `project_material_not_found`
 - `last_layer`, `last_segment`
+- `membrane_layer_single_segment` — membranes are continuous and take exactly
+  one segment. Enforced on both directions of travel: `add_segment` refuses to
+  split a layer that is already a membrane, and `assign_segment_material` (the
+  chokepoint behind every picker, hand-entry, detach, and paste) refuses to put
+  a membrane into a layer that is already split. Guarding only the first left a
+  reachable back door — assign a membrane to each segment of an ordinary
+  two-segment layer. See `envelope-thermal-preview.md`.
 - `segment_has_no_material`
 - `project_material_in_use`
 - `project_material_has_no_catalog_origin`

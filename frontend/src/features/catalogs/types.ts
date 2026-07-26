@@ -11,6 +11,7 @@ export const MATERIAL_CATEGORY_IDS = [
   "air_downward_heat_flow",
   "rainscreen_insulation",
   "doors",
+  "membrane",
 ] as const;
 
 export type MaterialCategoryId = (typeof MATERIAL_CATEGORY_IDS)[number];
@@ -27,6 +28,7 @@ export type CatalogMaterial = {
   specific_heat_j_kgk: number | null;
   conductivity_w_mk: number | null;
   emissivity: number | null;
+  air_permeance_l_s_m2_at_75pa: number | null;
   color: string | null;
   source: string | null;
   url: string | null;
@@ -50,6 +52,7 @@ export type CatalogMaterialCreatePayload = {
   specific_heat_j_kgk?: number | null;
   conductivity_w_mk?: number | null;
   emissivity?: number | null;
+  air_permeance_l_s_m2_at_75pa?: number | null;
   color?: string | null;
   source?: string | null;
   url?: string | null;
