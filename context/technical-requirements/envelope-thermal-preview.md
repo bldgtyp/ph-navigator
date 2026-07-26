@@ -4,8 +4,9 @@ The Assembly Builder shows a thermal preview (R-value and U-value)
 alongside each assembly. The preview is **not** a certification output;
 the construction resistance is the live PH-average of the ASHRAE
 Fundamentals Ch. 25 Parallel-Path and Isothermal-Planes methods, plus the
-ISO 6946 surface films, computed entirely on the backend so the same
-numbers feed the canvas header, MCP queries, and downstream pipelines.
+surface films of the project's thermal standard (ISO 6946 by default),
+computed entirely on the backend so the same numbers feed the canvas
+header, MCP queries, and downstream pipelines.
 
 The response carries **both** conventions — with films and without — because
 they have different consumers; see "Two conventions, both reported" below.
@@ -44,7 +45,7 @@ body. Authentication is project-scoped view access.
   "rsi_m2k_w": <float>,
   "rse_m2k_w": <float>,
   "heat_flow_direction": "upward" | "horizontal" | "downward",
-  "thermal_standard": "iso_6946",
+  "thermal_standard": "iso_6946" | "ashrae",
   "warnings": ["<message>", ...]
 }
 ```
