@@ -318,6 +318,64 @@ describe("EnvelopePage", () => {
     expect(document.querySelector(".app-tooltip")).toBeNull();
   });
 
+  test("boundary labels show both films and let an editor change the exterior condition", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    // The invisible assumption is now legible on the drawing itself.
+    expect(await screen.findByTestId("assembly-exterior-resistance")).toHaveTextContent("Rse 0.04");
+    expect(screen.getByTestId("assembly-interior-resistance")).toHaveTextContent("Rsi 0.13");
+    expect(screen.getByTestId("assembly-heat-flow-direction")).toHaveTextContent(
+      "horizontal heat flow",
+    );
+
+    const select = screen.getByRole("combobox", { name: "Exterior condition" });
+    expect(select).toHaveValue("outdoor_air");
+
+    await userEvent.selectOptions(select, "ground");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/draft/envelope/commands"),
+        expect.objectContaining({
+          body: expect.stringContaining('"kind":"update_assembly_exterior_condition"') as string,
+        }),
+      );
+    });
+  });
+
+  test("unconditioned space discloses that it is film-identical to ventilated", async () => {
+    // Selecting it is a record of intent, not a claim of extra fidelity.
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [
+              { ...envelopePayload.assemblies[0], exterior_condition: "unconditioned_space" },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    expect(await screen.findByTestId("assembly-exterior-caveat")).toHaveTextContent(
+      "far-side temp not modelled",
+    );
+  });
+
+  test("viewers see the exterior condition as static text, not a control", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+
+    expect(await screen.findByTestId("assembly-exterior-condition-static")).toHaveTextContent(
+      "Exterior · Outdoor air",
+    );
+    expect(screen.queryByRole("combobox", { name: "Exterior condition" })).not.toBeInTheDocument();
+  });
+
   test("thermal tooltip discloses the films, the standard, and the construction-only value", async () => {
     // The tooltip is the announcement mechanism for the convention change
     // (PRD Q-B5): it previously asserted films were EXCLUDED, so it must not

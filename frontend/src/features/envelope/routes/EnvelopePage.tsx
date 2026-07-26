@@ -424,6 +424,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
             onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}
             onDelete={(assembly) => setDialog({ kind: "delete-assembly", assembly })}
+            onExteriorConditionChange={(exteriorCondition) =>
+              void applyCommand({
+                kind: "update_assembly_exterior_condition",
+                assembly_id: activeAssembly.id,
+                exterior_condition: exteriorCondition,
+              })
+            }
             onFlipOrientation={() =>
               void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
             }

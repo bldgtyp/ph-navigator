@@ -15,7 +15,7 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | --- | --- | --- |
 | **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
 | **2** — fold films into the calculation | ✅ **complete** | Films folded in, tooltip rewritten, PHPP kept construction-only with a regression test, hash extended, citation reconciled. **Every displayed number moved.** |
-| **3** — rendering | ⬜ open | |
+| **3** — rendering | ✅ **complete** | Exterior label is a select, interior label shows derived Rsi + direction, face bands with distinct ground/ventilated treatments. No new tokens. Browser-verified. |
 | **4** — ASHRAE set + selector | ⬜ open | |
 
 ### Phase 1 as-built
@@ -156,12 +156,40 @@ Measured impact on the test fixtures: IP `7.5 → 8.4 h-ft²-F/Btu` on the
 
 Verification (2026-07-26): `make ci` equivalent green — see below.
 
+### Phase 3 as-built
+
+`AssemblyBoundaryLabels.tsx` replaces the two static caption spans. The
+container lost its `aria-hidden` (it now holds an interactive control).
+
+- Exterior label → an editable `<select>` whose chrome only appears on
+  hover/focus, so it still reads as a caption rather than a form field.
+  Viewers/locked versions get static text (mirroring the `StatusSelect`
+  editable/read-only precedent without borrowing its pill styling, which
+  is the wrong visual language here).
+- Interior label → static, showing the derived Rsi and heat-flow
+  direction.
+- Face bands from `color-mix` over the existing palette — **no new
+  tokens** (criterion 8). Outdoor air solid, ground hatched, ventilated /
+  unconditioned dashed.
+
+**Verified in a real browser**, not just RTL — three screenshots across
+outdoor-air / ground / unconditioned-space confirmed the bands are
+distinguishable at a glance (criterion 6) and that the labels fit the
+canvas. Two defects were found and fixed only because of that check:
+`--space-2` is 2px, so `INTERIORRsi` rendered with no gap; and the
+original caveat sentence ran the label off the canvas. The caveat is now
+short, truncates with `text-overflow`, and carries the full sentence in a
+`title`.
+
+Ports 5173/8000 were already in use, so this ran on an isolated stack
+(`:5199` / `:8099`, throwaway `phn_bc_smoke` DB) per
+`planning/features/.instructions.md`. Both services were stopped
+afterwards; nothing of Ed's was touched.
+
 ## Next step
 
-**Phase 3** — rendering (`PRD.md` §5): exterior label becomes a select,
-interior label shows the derived Rsi + heat-flow direction, tinted face
-bands with distinct ground/ventilated treatments, no new design tokens.
-The backend already returns everything this needs.
+**Phase 4** — the ASHRAE resistance set + the standard selector.
+**This one needs Ed** (see Blockers).
 
 `assembly-condensation-risk` Phase 2 is **unblocked from this side** as of
 Phase 1: `resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI`
