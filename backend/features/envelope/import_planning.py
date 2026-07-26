@@ -274,6 +274,9 @@ def _create_project_material(material: ImportedMaterial) -> ProjectMaterial:
         density_kg_m3=_non_negative_or_none(material.density_kg_m3),
         specific_heat_j_kgk=_non_negative_or_none(material.specific_heat_j_kgk),
         emissivity=_unit_interval_or_none(material.emissivity),
+        # HBJSON has no air-permeance equivalent, so an imported material
+        # starts with it unrecorded rather than guessed.
+        air_permeance_l_s_m2_at_75pa=None,
         color=material.color,
         specification_status=material.specification_status or "needed",
     )

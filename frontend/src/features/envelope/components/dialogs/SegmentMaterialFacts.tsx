@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import {
+  formatAirPermeanceFromLSM2,
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatRPerInFromConductivityWmK,
@@ -69,6 +70,16 @@ export function SegmentMaterialFacts({
           ? "Not set"
           : material.emissivity.toLocaleString(undefined, { maximumFractionDigits: 3 }),
       missing: material?.emissivity === null || material === null,
+    },
+    {
+      label: "Air permeance",
+      value: material
+        ? formatAirPermeanceFromLSM2(material.air_permeance_l_s_m2_at_75pa, {
+            unitSystem,
+            empty: "Not set",
+          })
+        : "No material",
+      missing: material?.air_permeance_l_s_m2_at_75pa === null || material === null,
     },
   ];
 

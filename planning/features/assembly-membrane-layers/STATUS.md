@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
-TIME: 10:42 EDT
-STATUS: Draft — not started
+TIME: 12:15 EDT
+STATUS: Phase 1 complete — Phases 2-4 pending
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -9,9 +9,60 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 
 # Status
 
+## Phase log
+
+| Phase | State | Notes |
+| --- | --- | --- |
+| **1** — category, air permeance, R exclusion | ✅ **DONE** 2026-07-26 | see below |
+| **2** — membrane rendering + single-segment validation | ⏳ pending | |
+| **3** — air-barrier designation + E2178 check | ⏳ pending | |
+| **4** — export/import (`ph_nav` round-trip, PHPP drop) | ⏳ pending | |
+
+### Phase 1 — what shipped
+
+- **`membrane` catalog category.** Alembic `20260726_0009` widens the
+  `ck_catalog_materials_category` CHECK (drop + re-add); the downgrade parks
+  any `membrane` row under `finishes` rather than failing on live data.
+  Threaded through `MATERIAL_CATEGORY_IDS`, the import label map, and the
+  frontend category overlay (now thirteen options).
+- **`air_permeance_l_s_m2_at_75pa`** on both `catalog_materials` (nullable
+  column + non-negative CHECK) and the document's `ProjectMaterial`, plus the
+  drift field keys, refresh choices, hand-enter / update commands, catalog
+  import-export file format, and both editors.
+- **New `air_permeance` unit quantity** (SI `L/(s·m²) @ 75 Pa`, IP
+  `cfm/ft² @ 1.57 psf`, factor 0.196840) in the frontend picker, the backend
+  validation allowlist, and `UnitQuantity`. The unit test asserts the
+  0.02 SI ↔ 0.0039 IP criterion pair, which doubles as a check on the factor.
+- **Membrane layers excluded from R.** `thermal.is_membrane_layer` gates
+  `_valid_segments` and the `missing_conductivity` check. An assembly whose
+  layers are *all* membranes reports the new `no_thermal_layers` flag instead
+  of falling through to `invalid_geometry`.
+- **`category` added to `thermal_input_hash`** — it now decides membrane-ness,
+  so re-categorising a material must invalidate the cached preview.
+
+**No document schema-version bump.** The new field is nullable with a `None`
+default, so pre-existing bodies validate unchanged and no upgrade step is
+needed; the fingerprint guard (`tests/project_document_schema/`) and the v7
+corpus snapshot were regenerated, and the snapshot diff is purely the added
+`"air_permeance_l_s_m2_at_75pa":null` key.
+
+**Deliberately not in Phase 1:** HBJSON and PHPP export still treat a membrane
+layer like any other, so a membrane exports with a null conductivity. That is
+Phase 4's job (`PRD.md` §7), not an oversight.
+
+### Phase 1 verification
+
+`make format` clean; backend `ruff format --check`, `ruff check`,
+`check_backend_boundaries`, `ty check`, `alembic upgrade head`, and
+`pytest -n auto` (1490 passed, 7 skipped); frontend `format:check`, `lint`,
+`check:all`, `pnpm test` (2262 passed), `pnpm build`. `make ci` itself cannot
+run from a worktree — its `db-up` prerequisite collides with the shared
+`phn-v2-postgres` container — so the recipe's steps were run individually
+against the same test database.
+
 ## State
 
-**PRD drafted. No code written.** Spun out of the `assembly-condensation-risk`
+**PRD drafted. Phase 1 implemented.** Spun out of the `assembly-condensation-risk`
 research on 2026-07-26 once it became clear that membranes dominate a wall's
 vapour resistance and that PHN cannot represent them at all.
 
@@ -49,10 +100,9 @@ Resolved 2026-07-26 (Ed, second review) — **all four open questions closed**:
 
 ## Next step
 
-**Phase 1** — add the `membrane` category to the `catalog_materials` CHECK
-constraint, wire it through the material picker, and exempt membrane layers from
-`missing_conductivity`. This is small, self-contained, and unblocks everything
-else. It does not depend on any open question.
+**Phase 2** — membrane layer rendering (fixed hairline instead of 1:1 scale,
+distinct solid/dashed treatment), single-segment validation, and the
+layer-height modal's "not drawn to scale" copy.
 
 ## Dependencies
 
@@ -60,11 +110,16 @@ else. It does not depend on any open question.
   are the gate.
 - **Shares:** the `vapor_sd_equivalent_m` material field defined in
   `../assembly-condensation-risk/PRD.md` §4. Whichever feature ships first
-  should land that field; the other consumes it.
+  should land that field; the other consumes it. **Phase 1 did not land it** —
+  the phase table scopes Phase 1 to `air_permeance_l_s_m2_at_75pa` only, so the
+  sd field is still unclaimed by either feature. Adding it is now a
+  well-trodden path: `air_permeance_l_s_m2_at_75pa` in commit history is a
+  complete worked example of threading one nullable material field end-to-end.
 
 ## Blockers
 
-**None. All four open questions resolved 2026-07-26 (Ed); ready to implement.**
+**None.** All four open questions were resolved 2026-07-26 (Ed) before Phase 1;
+nothing surfaced during implementation that reopens one.
 
 | # | Question | Resolution |
 | --- | --- | --- |
@@ -75,6 +130,9 @@ else. It does not depend on any open question.
 
 ## Verification
 
-Phase 1 gate: adding a membrane layer to an existing assembly changes its
-Effective U-Value only by the membrane's own near-zero R, and raises no
-`missing_conductivity` flag (`PRD.md` §9, criterion 1).
+Phase 1 gate met, and tightened past what this section originally asked for:
+adding a membrane layer leaves the Effective U-Value **byte-identical** (not
+"changed only by a near-zero R") and raises no `missing_conductivity` flag —
+`PRD.md` §9 criterion 1, covered by
+`test_membrane_layer_leaves_thermal_result_exactly_unchanged`. Criterion 1a is
+covered by `test_membrane_only_assembly_reports_no_thermal_layers_not_a_zero_divide`.

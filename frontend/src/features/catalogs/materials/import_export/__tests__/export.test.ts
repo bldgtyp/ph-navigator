@@ -12,6 +12,7 @@ function row(overrides: Partial<CatalogMaterial> = {}): CatalogMaterial {
     specific_heat_j_kgk: 1500,
     conductivity_w_mk: 0.034,
     emissivity: 0.9,
+    air_permeance_l_s_m2_at_75pa: 0.0015,
     color: "#dce6f0",
     source: "Manufacturer datasheet",
     url: "https://example.com/xps.pdf",
@@ -38,7 +39,7 @@ describe("serializeCatalog", () => {
     expect(file.rows).toHaveLength(1);
   });
 
-  test("projected row carries exactly the canonical ten keys (id + nine fields)", () => {
+  test("projected row carries exactly the canonical keys (id + catalog fields)", () => {
     const file = serializeCatalog([row()], { exportedBy: null, appVersion: null });
     const [first] = file.rows;
     if (!first) throw new Error("expected one row");
@@ -50,6 +51,7 @@ describe("serializeCatalog", () => {
       "specific_heat_j_kgk",
       "conductivity_w_mk",
       "emissivity",
+      "air_permeance_l_s_m2_at_75pa",
       "color",
       "source",
       "url",

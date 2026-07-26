@@ -25,6 +25,7 @@ ThermalStatusFlag = Literal[
     "missing_conductivity",
     "invalid_geometry",
     "broken_material_reference",
+    "no_thermal_layers",
 ]
 
 
@@ -33,7 +34,8 @@ class AssemblyThermalStatus(BaseModel):
 
     ``is_complete`` is true when no issues are reported; ``flags`` enumerates
     user-actionable problems (missing materials, missing conductivity,
-    invalid geometry, broken material references).
+    invalid geometry, broken material references, and assemblies made only
+    of membrane layers, which carry no thermal resistance).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -115,6 +117,7 @@ ProjectMaterialDriftFieldKey = Literal[
     "specific_heat_j_kgk",
     "conductivity_w_mk",
     "emissivity",
+    "air_permeance_l_s_m2_at_75pa",
     "color",
     "source",
     "url",
@@ -350,6 +353,7 @@ class HandEnterMaterialCommand(BaseModel):
     density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
 
     @field_validator("color", mode="before")
@@ -369,6 +373,7 @@ class UpdateProjectMaterialCommand(BaseModel):
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)

@@ -26,9 +26,11 @@ FILE_KIND: Final[str] = "ph-navigator.catalog.materials"
 class CatalogFileRow(BaseModel):
     """One row inside a catalog import file.
 
-    Field set mirrors the nine canonical catalog fields plus optional
-    `id`. Unknown keys are accepted (`extra="allow"`) so the coerce
-    step can surface them as `unknown_field:<key>` warnings.
+    Field set mirrors the canonical catalog fields plus optional `id`.
+    Unknown keys are accepted (`extra="allow"`) so the coerce step can
+    surface them as `unknown_field:<key>` warnings — which also means a
+    purely additive field (e.g. `air_permeance_l_s_m2_at_75pa`) needs no
+    `schema_version` bump: older files simply omit it.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -40,6 +42,7 @@ class CatalogFileRow(BaseModel):
     specific_heat_j_kgk: float | str | None = None
     conductivity_w_mk: float | str | None = None
     emissivity: float | str | None = None
+    air_permeance_l_s_m2_at_75pa: float | str | None = None
     color: str | None = None
     source: str | None = None
     url: str | None = None

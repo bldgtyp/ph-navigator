@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  formatAirPermeanceFromLSM2,
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
@@ -24,7 +26,12 @@ import {
   stringOrEmpty,
   trimToNull,
 } from "./form-helpers";
-import { conductivityUnitLabel, densityUnitLabel, specificHeatUnitLabel } from "./unit-labels";
+import {
+  airPermeanceUnitLabel,
+  conductivityUnitLabel,
+  densityUnitLabel,
+  specificHeatUnitLabel,
+} from "./unit-labels";
 
 type FormState = {
   name: string;
@@ -33,6 +40,7 @@ type FormState = {
   specific_heat_j_kgk: string;
   conductivity_w_mk: string;
   emissivity: string;
+  air_permeance_l_s_m2_at_75pa: string;
   color: string;
   source: string;
   url: string;
@@ -41,7 +49,11 @@ type FormState = {
 
 type ParsedMaterialNumbers = Pick<
   CatalogMaterialCreatePayload,
-  "density_kg_m3" | "specific_heat_j_kgk" | "conductivity_w_mk" | "emissivity"
+  | "density_kg_m3"
+  | "specific_heat_j_kgk"
+  | "conductivity_w_mk"
+  | "emissivity"
+  | "air_permeance_l_s_m2_at_75pa"
 >;
 
 function emptyForm(): FormState {
@@ -52,6 +64,7 @@ function emptyForm(): FormState {
     specific_heat_j_kgk: "",
     conductivity_w_mk: "",
     emissivity: "",
+    air_permeance_l_s_m2_at_75pa: "",
     color: "",
     source: "",
     url: "",
@@ -67,6 +80,10 @@ function formFromRecord(record: CatalogMaterial, unitOptions: UnitFormatOptions)
     specific_heat_j_kgk: formatSpecificHeatFromJKgK(record.specific_heat_j_kgk, unitOptions),
     conductivity_w_mk: formatConductivityFromWmK(record.conductivity_w_mk, unitOptions),
     emissivity: record.emissivity === null ? "" : String(record.emissivity),
+    air_permeance_l_s_m2_at_75pa: formatAirPermeanceFromLSM2(
+      record.air_permeance_l_s_m2_at_75pa,
+      unitOptions,
+    ),
     color: stringOrEmpty(record.color),
     source: stringOrEmpty(record.source),
     url: stringOrEmpty(record.url),
@@ -91,6 +108,11 @@ function parseMaterialNumbers(
       unitOptions,
     ),
     emissivity: parseOptionalNumber(form.emissivity),
+    air_permeance_l_s_m2_at_75pa: parseOptionalUnitNumber(
+      form.air_permeance_l_s_m2_at_75pa,
+      parseAirPermeanceToLSM2,
+      unitOptions,
+    ),
   };
   return Object.values(values).some((field) => Number.isNaN(field)) ? null : values;
 }
@@ -241,6 +263,14 @@ export function MaterialEditorModal({
             inputMode="decimal"
             value={form.emissivity}
             onChange={(event) => updateForm("emissivity", event.target.value)}
+          />
+        </label>
+        <label>
+          <span>Air permeance ({airPermeanceUnitLabel(formUnitSystem)})</span>
+          <input
+            inputMode="decimal"
+            value={form.air_permeance_l_s_m2_at_75pa}
+            onChange={(event) => updateForm("air_permeance_l_s_m2_at_75pa", event.target.value)}
           />
         </label>
         <label>

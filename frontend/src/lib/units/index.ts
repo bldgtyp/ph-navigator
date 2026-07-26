@@ -41,11 +41,15 @@ export {
 } from "./length";
 export {
   btuLbFToJKgK,
+  cfmFt2ToLSM2,
+  formatAirPermeanceFromLSM2,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
   jKgKToBtuLbF,
   kgM3ToLbFt3,
   lbFt3ToKgM3,
+  lSM2ToCfmFt2,
+  parseAirPermeanceToLSM2,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
 } from "./material";

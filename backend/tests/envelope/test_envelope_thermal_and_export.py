@@ -356,6 +356,87 @@ def test_thermal_input_hash_covers_physics_only() -> None:
     assert thermal_input_hash(asm, renamed) == baseline
 
 
+def _membrane_layer(*, layer_id: str = "lyr_wrb", order: int = 2) -> AssemblyLayer:
+    """A 0.15 mm WRB — real thickness, single full-width segment."""
+    return AssemblyLayer(
+        id=layer_id,
+        order=order,
+        thickness_mm=0.15,
+        segments=[AssemblySegment(id=f"seg_{layer_id}", order=0, width_mm=1000.0, project_material_id="pmat_wrb")],
+    )
+
+
+def _with_membrane_layer(
+    asm: Assembly,
+    materials: dict[str, ProjectMaterial],
+) -> tuple[Assembly, dict[str, ProjectMaterial]]:
+    """Append a membrane layer whose material carries no conductivity at all."""
+    membrane = ProjectMaterial.model_validate(
+        project_material(id="pmat_wrb", name="WRB", category="membrane", conductivity_w_mk=None)
+    )
+    return (
+        asm.model_copy(update={"layers": [*asm.layers, _membrane_layer()]}),
+        {**materials, "pmat_wrb": membrane},
+    )
+
+
+def test_membrane_layer_leaves_thermal_result_exactly_unchanged() -> None:
+    """PRD §9 criterion 1: membranes are excluded from R, not merely small."""
+    asm, materials = _multi_segment_assembly()
+    baseline = calculate_assembly_thermal(asm, materials)
+    with_membrane_asm, with_membrane_materials = _with_membrane_layer(asm, materials)
+
+    result = calculate_assembly_thermal(with_membrane_asm, with_membrane_materials)
+
+    assert result.status.is_complete is True
+    assert "missing_conductivity" not in result.status.flags
+    assert result.r_parallel_path_m2k_w == baseline.r_parallel_path_m2k_w
+    assert result.r_isothermal_planes_m2k_w == baseline.r_isothermal_planes_m2k_w
+    assert result.u_effective_w_m2k == baseline.u_effective_w_m2k
+
+
+def test_membrane_only_assembly_reports_no_thermal_layers_not_a_zero_divide() -> None:
+    """PRD §9 criterion 1a: an explicit incomplete state, not a divide-by-zero."""
+    asm, materials = _multi_segment_assembly()
+    _, membrane_materials = _with_membrane_layer(asm, materials)
+    membrane_only = asm.model_copy(update={"layers": [_membrane_layer(order=0)]})
+
+    result = calculate_assembly_thermal(membrane_only, membrane_materials)
+
+    assert result.status.is_complete is False
+    assert "no_thermal_layers" in result.status.flags
+    assert result.r_effective_m2k_w is None
+    assert result.u_effective_w_m2k is None
+
+
+@pytest.mark.parametrize("category", ["membrane", "Membrane", " MEMBRANE "])
+def test_membrane_detection_tolerates_hand_typed_category_spellings(category: str) -> None:
+    """`ProjectMaterial.category` is a free string, so casing must not decide physics."""
+    asm, materials = _multi_segment_assembly()
+    with_membrane_asm, with_membrane_materials = _with_membrane_layer(asm, materials)
+    respelled = {
+        **with_membrane_materials,
+        "pmat_wrb": with_membrane_materials["pmat_wrb"].model_copy(update={"category": category}),
+    }
+
+    result = calculate_assembly_thermal(with_membrane_asm, respelled)
+
+    assert result.status.is_complete is True
+    assert result.u_effective_w_m2k == calculate_assembly_thermal(asm, materials).u_effective_w_m2k
+
+
+def test_material_category_change_invalidates_the_thermal_input_hash() -> None:
+    """Category decides membrane-ness, so it is a thermal input like conductivity."""
+    asm, materials = _multi_segment_assembly()
+    baseline = thermal_input_hash(asm, materials)
+
+    recategorized = {
+        **materials,
+        "pmat_wood": materials["pmat_wood"].model_copy(update={"category": "membrane"}),
+    }
+    assert thermal_input_hash(asm, recategorized) != baseline
+
+
 def test_thermal_issues_flag_invalid_geometry_for_zero_width_segment() -> None:
     asm, materials = _multi_segment_assembly()
     bad_segment = asm.layers[1].segments[1].model_copy(update={"width_mm": 0.0})

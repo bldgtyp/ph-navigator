@@ -57,6 +57,7 @@ function buildEmptyMaterialRow({ rowId }: { rowId: string }): MaterialRow {
     specific_heat_j_kgk: null,
     conductivity_w_mk: null,
     emissivity: null,
+    air_permeance_l_s_m2_at_75pa: null,
     color: null,
     source: null,
     url: null,
@@ -104,6 +105,14 @@ const COLUMN_DEFS: DataTableColumnDef<MaterialRow>[] = [
     accessor: (row) => row.emissivity,
     className: "numeric-cell",
     defaultWidth: 110,
+  },
+  {
+    id: "air_permeance_l_s_m2_at_75pa",
+    fieldKey: "air_permeance_l_s_m2_at_75pa",
+    header: "Air Permeance",
+    accessor: (row) => row.air_permeance_l_s_m2_at_75pa,
+    className: "numeric-cell",
+    defaultWidth: 150,
   },
   {
     id: "color",

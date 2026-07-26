@@ -23,3 +23,8 @@ export function densityUnitLabel(unitSystem: UnitSystem): string {
 export function specificHeatUnitLabel(unitSystem: UnitSystem): string {
   return unitSystem === "IP" ? "Btu/(lb-F)" : "J/(kg-K)";
 }
+
+// ASTM E2178 test pressure is part of the quantity, so it stays in the label.
+export function airPermeanceUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "cfm/ft2 @ 1.57psf" : "L/(s-m2) @ 75Pa";
+}

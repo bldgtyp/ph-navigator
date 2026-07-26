@@ -398,11 +398,12 @@ JSON document. Illustrative sketch (the canonical model is the
       {
         "id": "pmat_...",
         "name": "XPS",
-        "category": "insulation",                 // one of twelve fixed option ids (§7.2)
+        "category": "insulation",                 // one of thirteen fixed option ids (§7.2)
         "density_kg_m3": 35.0,
         "specific_heat_j_kgk": 1500.0,
         "conductivity_w_mk": 0.034,
         "emissivity": 0.9,
+        "air_permeance_l_s_m2_at_75pa": 0.0015,   // ASTM E2178, the figure on WRB datasheets
         "color": "#dce6f0",
         "source": "Manufacturer datasheet 2024-Q2",
         "url": "https://example.com/xps.pdf",
@@ -988,6 +989,24 @@ Rules (post-Phase 1b):
   chronological/monotonic — some describe pre-squash version numbers
   retained as historical notes — so treat the constant's current value
   as authoritative over the comment numbering.)
+- **A purely additive nullable field does NOT bump `schema_version`, but
+  it does trip two guards.** Adding an optional field with a `None`
+  default to a document model (e.g. `ProjectMaterial`'s
+  `air_permeance_l_s_m2_at_75pa`, 2026-07-26) needs no upgrade step:
+  bodies written before it existed validate unchanged and pick up the
+  default, so there is nothing for a dict-to-dict upgrader to do. Two
+  things still fail and must be regenerated deliberately, not reflexively:
+    1. `tests/project_document_schema/schema_fingerprint.json` — the
+       fingerprint hashes `ProjectDocumentV1.model_json_schema()`, so any
+       field changes it. It is a tripwire meaning "decide whether this
+       needs a version bump", not an assertion that one is required.
+    2. The committed corpus snapshots under
+       `tests/project_document_schema/fixtures/v*/expected/` — the new key
+       serializes into every affected row.
+
+  Before accepting the regenerated snapshot, diff it and confirm the
+  change is *only* the added key. If anything else moved, the change was
+  not additive and does need a version bump.
 - **Record links** store values in
   `custom_links: dict[str, list[str]]` on every FieldDef-capable row. The
   storage model admits `CustomFieldType.linked_record` and does not use typed

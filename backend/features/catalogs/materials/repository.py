@@ -24,6 +24,7 @@ SELECT
     specific_heat_j_kgk,
     conductivity_w_mk,
     emissivity,
+    air_permeance_l_s_m2_at_75pa,
     color,
     source,
     url,
@@ -44,6 +45,7 @@ _UPDATABLE_FIELDS = frozenset(
         "specific_heat_j_kgk",
         "conductivity_w_mk",
         "emissivity",
+        "air_permeance_l_s_m2_at_75pa",
         "color",
         "source",
         "url",
@@ -98,6 +100,7 @@ def insert_material(
     specific_heat_j_kgk: float | None,
     conductivity_w_mk: float | None,
     emissivity: float | None,
+    air_permeance_l_s_m2_at_75pa: float | None,
     color: str | None,
     source: str | None,
     url: str | None,
@@ -109,12 +112,14 @@ def insert_material(
         INSERT INTO catalog_materials (
             id, name, category,
             density_kg_m3, specific_heat_j_kgk, conductivity_w_mk, emissivity,
+            air_permeance_l_s_m2_at_75pa,
             color, source, url, comments,
             created_by, updated_by
         )
         VALUES (
             %(id)s, %(name)s, %(category)s,
             %(density_kg_m3)s, %(specific_heat_j_kgk)s, %(conductivity_w_mk)s, %(emissivity)s,
+            %(air_permeance_l_s_m2_at_75pa)s,
             %(color)s, %(source)s, %(url)s, %(comments)s,
             %(user_id)s, %(user_id)s
         )
@@ -127,6 +132,7 @@ def insert_material(
             "specific_heat_j_kgk": specific_heat_j_kgk,
             "conductivity_w_mk": conductivity_w_mk,
             "emissivity": emissivity,
+            "air_permeance_l_s_m2_at_75pa": air_permeance_l_s_m2_at_75pa,
             "color": color,
             "source": source,
             "url": url,

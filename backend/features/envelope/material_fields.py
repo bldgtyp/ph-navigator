@@ -11,6 +11,7 @@ PROJECT_MATERIAL_CATALOG_FIELDS: tuple[ProjectMaterialDriftFieldKey, ...] = (
     "specific_heat_j_kgk",
     "conductivity_w_mk",
     "emissivity",
+    "air_permeance_l_s_m2_at_75pa",
     "color",
     "source",
     "url",

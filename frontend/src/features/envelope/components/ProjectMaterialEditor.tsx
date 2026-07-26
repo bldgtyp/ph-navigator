@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  formatAirPermeanceFromLSM2,
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
@@ -17,6 +19,7 @@ import {
   trimToNull,
 } from "../../catalogs/components/form-helpers";
 import {
+  airPermeanceUnitLabel,
   conductivityUnitLabel,
   densityUnitLabel,
   specificHeatUnitLabel,
@@ -34,6 +37,7 @@ type MaterialFormState = {
   density_kg_m3: string;
   specific_heat_j_kgk: string;
   emissivity: string;
+  air_permeance_l_s_m2_at_75pa: string;
   comments: string;
 };
 
@@ -48,6 +52,10 @@ function formFromMaterial(
     density_kg_m3: formatDensityFromKgM3(material.density_kg_m3, unitOptions),
     specific_heat_j_kgk: formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, unitOptions),
     emissivity: material.emissivity?.toString() ?? "",
+    air_permeance_l_s_m2_at_75pa: formatAirPermeanceFromLSM2(
+      material.air_permeance_l_s_m2_at_75pa,
+      unitOptions,
+    ),
     comments: material.comments ?? "",
   };
 }
@@ -58,6 +66,11 @@ function hasInvalidNumber(form: MaterialFormState, unitOptions: UnitFormatOption
     parseOptionalUnitNumber(form.density_kg_m3, parseDensityToKgM3, unitOptions),
     parseOptionalUnitNumber(form.specific_heat_j_kgk, parseSpecificHeatToJKgK, unitOptions),
     parseOptionalNumber(form.emissivity),
+    parseOptionalUnitNumber(
+      form.air_permeance_l_s_m2_at_75pa,
+      parseAirPermeanceToLSM2,
+      unitOptions,
+    ),
   ].some((field) => Number.isNaN(field));
 }
 
@@ -119,6 +132,15 @@ function convertFormUnitSystem(
       material.specific_heat_j_kgk,
       parseSpecificHeatToJKgK,
       formatSpecificHeatFromJKgK,
+      fromOptions,
+      toOptions,
+    ),
+    air_permeance_l_s_m2_at_75pa: convertUnitInput(
+      form.air_permeance_l_s_m2_at_75pa,
+      initialForm.air_permeance_l_s_m2_at_75pa,
+      material.air_permeance_l_s_m2_at_75pa,
+      parseAirPermeanceToLSM2,
+      formatAirPermeanceFromLSM2,
       fromOptions,
       toOptions,
     ),
@@ -240,6 +262,13 @@ export function ProjectMaterialEditor({
       initialForm.emissivity,
       material.emissivity,
     );
+    const airPermeanceLSM2 = parseChangedUnitInput(
+      form.air_permeance_l_s_m2_at_75pa,
+      initialForm.air_permeance_l_s_m2_at_75pa,
+      material.air_permeance_l_s_m2_at_75pa,
+      parseAirPermeanceToLSM2,
+      unitOptions,
+    );
     onCommand({
       kind: "update_project_material",
       project_material_id: material.id,
@@ -249,6 +278,7 @@ export function ProjectMaterialEditor({
       density_kg_m3: densityKgM3,
       specific_heat_j_kgk: specificHeatJKgK,
       emissivity,
+      air_permeance_l_s_m2_at_75pa: airPermeanceLSM2,
       ...(showNotes ? { comments: trimToNull(form.comments) } : {}),
     });
   }
@@ -322,6 +352,18 @@ export function ProjectMaterialEditor({
             <input
               value={form.emissivity}
               onChange={(event) => updateForm("emissivity", event.currentTarget.value)}
+            />
+          </label>
+          <label className="project-material-editor__field">
+            <span>
+              Air permeance
+              <small>{airPermeanceUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.air_permeance_l_s_m2_at_75pa}
+              onChange={(event) =>
+                updateForm("air_permeance_l_s_m2_at_75pa", event.currentTarget.value)
+              }
             />
           </label>
         </div>

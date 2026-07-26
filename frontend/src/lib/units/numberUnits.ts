@@ -1,5 +1,12 @@
 import { ft2ToM2, ft3ToM3, ftToMm, inToMm, m2ToFt2, m3ToFt3, mmToFt, mmToIn } from "./length";
-import { btuLbFToJKgK, jKgKToBtuLbF, kgM3ToLbFt3, lbFt3ToKgM3 } from "./material";
+import {
+  btuLbFToJKgK,
+  cfmFt2ToLSM2,
+  jKgKToBtuLbF,
+  kgM3ToLbFt3,
+  lbFt3ToKgM3,
+  lSM2ToCfmFt2,
+} from "./material";
 import { cToF, fToC } from "./temperature";
 import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
 import { cfmToM3h, m3hToCfm } from "./airflow";
@@ -125,6 +132,14 @@ export const NUMBER_UNIT_TYPES = [
     label: "Power",
     siUnits: [{ id: "kw", label: "kW", system: "SI" }],
     ipUnits: [{ id: "kbtu_h", label: "kBtu/h", system: "IP" }],
+  },
+  {
+    // ASTM E2178 air permeance. The test pressure (75 Pa / 1.57 psf) is part
+    // of the quantity, not a separate field, so it is baked into both labels.
+    id: "air_permeance",
+    label: "Air Permeance",
+    siUnits: [{ id: "l_s_m2_75pa", label: "L/(s-m2) @ 75Pa", system: "SI" }],
+    ipUnits: [{ id: "cfm_ft2_75pa", label: "cfm/ft2 @ 1.57psf", system: "IP" }],
   },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
@@ -256,6 +271,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi * KWH_TO_KBTU;
     case "power":
       return valueSi * KW_TO_KBTU_PER_H;
+    case "air_permeance":
+      return lSM2ToCfmFt2(valueSi);
   }
 }
 
@@ -293,6 +310,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp / KWH_TO_KBTU;
     case "power":
       return valueIp / KW_TO_KBTU_PER_H;
+    case "air_permeance":
+      return cfmFt2ToLSM2(valueIp);
   }
 }
 

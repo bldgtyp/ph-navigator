@@ -71,7 +71,7 @@ remains is sequencing, not decisions:
 | Blocker | Nature |
 | --- | --- |
 | ⛔ `assembly-boundary-conditions` **Phase 1** | prerequisite — without surface films, 3 of the 4 ISO 13788 criteria cannot be computed at all |
-| ⛔ `assembly-membrane-layers` **Phases 1–2** | prerequisite — without membranes the engine computes a confident answer for a wall that doesn't exist |
+| ⛔ `assembly-membrane-layers` **Phases 1–2** | prerequisite — without membranes the engine computes a confident answer for a wall that doesn't exist. **Phase 1 landed 2026-07-26** (category + air permeance + R exclusion); Phase 2 (rendering + single-segment validation) still open, so the gate is not yet clear |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 

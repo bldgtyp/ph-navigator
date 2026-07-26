@@ -56,6 +56,7 @@ export function statusLabel(flags: string[]): string {
   if (flags.includes("missing_material")) return "Missing material";
   if (flags.includes("missing_conductivity")) return "Missing lambda";
   if (flags.includes("invalid_geometry")) return "Invalid geometry";
+  if (flags.includes("no_thermal_layers")) return "Membranes only";
   return "Needs review";
 }
 

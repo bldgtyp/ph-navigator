@@ -14,7 +14,8 @@ export type ThermalStatusFlag =
   | "missing_material"
   | "missing_conductivity"
   | "invalid_geometry"
-  | "broken_material_reference";
+  | "broken_material_reference"
+  | "no_thermal_layers";
 export type EnvelopeReadSource = "draft" | "version";
 
 export type ProjectMaterialUseSite = {
@@ -37,6 +38,7 @@ export type ProjectMaterial = {
   specific_heat_j_kgk: number | null;
   conductivity_w_mk: number | null;
   emissivity: number | null;
+  air_permeance_l_s_m2_at_75pa: number | null;
   color: string | null;
   source: string | null;
   url: string | null;
@@ -121,6 +123,7 @@ export type ProjectMaterialDriftFieldKey =
   | "specific_heat_j_kgk"
   | "conductivity_w_mk"
   | "emissivity"
+  | "air_permeance_l_s_m2_at_75pa"
   | "color"
   | "source"
   | "url"
@@ -229,6 +232,7 @@ export type EnvelopeCommand =
       density_kg_m3?: number | null;
       specific_heat_j_kgk?: number | null;
       emissivity?: number | null;
+      air_permeance_l_s_m2_at_75pa?: number | null;
       color?: string | null;
     }
   | {
@@ -240,6 +244,7 @@ export type EnvelopeCommand =
       specific_heat_j_kgk?: number | null;
       conductivity_w_mk?: number | null;
       emissivity?: number | null;
+      air_permeance_l_s_m2_at_75pa?: number | null;
       color?: string | null;
       source?: string | null;
       url?: string | null;

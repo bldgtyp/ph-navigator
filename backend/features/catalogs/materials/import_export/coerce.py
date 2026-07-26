@@ -39,6 +39,7 @@ _CATEGORY_LABEL_TO_ID: Final[dict[str, str]] = {
     "air: downward heat flow": "air_downward_heat_flow",
     "rainscreen insulation": "rainscreen_insulation",
     "doors": "doors",
+    "membrane": "membrane",
 }
 
 _CATEGORY_IDS_LOWER: Final[set[str]] = {cid.lower() for cid in MATERIAL_CATEGORY_IDS}
@@ -94,6 +95,7 @@ _CANONICAL_FIELDS: Final[set[str]] = {
     "specific_heat_j_kgk",
     "conductivity_w_mk",
     "emissivity",
+    "air_permeance_l_s_m2_at_75pa",
     "color",
     "source",
     "url",
@@ -172,6 +174,7 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
     specific_heat = _coerce_number(raw.get("specific_heat_j_kgk"), warnings, allow_negative=False)
     conductivity = _coerce_number(raw.get("conductivity_w_mk"), warnings, allow_negative=False)
     emissivity = _coerce_emissivity(raw.get("emissivity"), warnings)
+    air_permeance = _coerce_number(raw.get("air_permeance_l_s_m2_at_75pa"), warnings, allow_negative=False)
 
     color = _coerce_color(raw.get("color"), warnings)
 
@@ -182,6 +185,7 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
         "specific_heat_j_kgk": specific_heat,
         "conductivity_w_mk": conductivity,
         "emissivity": emissivity,
+        "air_permeance_l_s_m2_at_75pa": air_permeance,
         "color": color,
         "source": _coerce_text(raw.get("source"), warnings, field="source"),
         "url": _coerce_text(raw.get("url"), warnings, field="url"),

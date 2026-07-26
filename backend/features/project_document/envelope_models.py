@@ -246,6 +246,10 @@ class ProjectMaterial(BaseModel):
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    # ASTM E2178 air permeance in L/(s*m2) at 75 Pa. Nullable and defaulted,
+    # so documents written before it existed validate unchanged — no schema
+    # version bump needed.
+    air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)

@@ -219,6 +219,7 @@ def test_envelope_table_contracts_are_registered_with_unit_metadata() -> None:
         "conductivity_w_mk": "conductivity",
         "density_kg_m3": "density",
         "specific_heat_j_kgk": "specific_heat",
+        "air_permeance_l_s_m2_at_75pa": "air_permeance",
     }
     assert materials.field_registry is None
     assert segments.schema_slug == "assembly-segment"

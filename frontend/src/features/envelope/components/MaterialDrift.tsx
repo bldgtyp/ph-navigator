@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  formatAirPermeanceFromLSM2,
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
@@ -33,6 +35,7 @@ const DRIFT_FIELD_LABELS: Record<ProjectMaterialDriftFieldKey, string> = {
   specific_heat_j_kgk: "Specific heat",
   conductivity_w_mk: "Lambda",
   emissivity: "Emissivity",
+  air_permeance_l_s_m2_at_75pa: "Air permeance",
   color: "Color",
   source: "Source",
   url: "URL",
@@ -235,6 +238,7 @@ function formatDriftValue(
   if (key === "conductivity_w_mk") return formatConductivityFromWmK(numeric, options);
   if (key === "density_kg_m3") return formatDensityFromKgM3(numeric, options);
   if (key === "specific_heat_j_kgk") return formatSpecificHeatFromJKgK(numeric, options);
+  if (key === "air_permeance_l_s_m2_at_75pa") return formatAirPermeanceFromLSM2(numeric, options);
   if (value === null || value === undefined || value === "") return "Empty";
   return String(value);
 }
@@ -252,6 +256,9 @@ function parseEditedValue(
   }
   if (key === "specific_heat_j_kgk") {
     return parseOptionalUnitNumber(raw, parseSpecificHeatToJKgK, options);
+  }
+  if (key === "air_permeance_l_s_m2_at_75pa") {
+    return parseOptionalUnitNumber(raw, parseAirPermeanceToLSM2, options);
   }
   if (key === "emissivity") return parseOptionalNumber(raw);
   return trimToNull(raw);

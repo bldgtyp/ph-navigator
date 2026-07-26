@@ -181,6 +181,7 @@ def commit_import(token: str, user: UserPublic, request: Request) -> CommitRespo
                     specific_heat_j_kgk=_optional_float(payload, "specific_heat_j_kgk"),
                     conductivity_w_mk=_optional_float(payload, "conductivity_w_mk"),
                     emissivity=_optional_float(payload, "emissivity"),
+                    air_permeance_l_s_m2_at_75pa=_optional_float(payload, "air_permeance_l_s_m2_at_75pa"),
                     color=_optional_str(payload, "color"),
                     source=_optional_str(payload, "source"),
                     url=_optional_str(payload, "url"),

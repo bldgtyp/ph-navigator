@@ -14,8 +14,8 @@ export type SerializeOptions = {
 };
 
 // Stable canonical key order — `id` first so the file's identity
-// column lines up at every row in a diff, then the nine catalog
-// fields in the same order they live on the wire.
+// column lines up at every row in a diff, then the catalog fields in
+// the same order they live on the wire.
 const ROW_KEY_ORDER: (keyof CatalogFileRow)[] = [
   "id",
   "name",
@@ -24,6 +24,7 @@ const ROW_KEY_ORDER: (keyof CatalogFileRow)[] = [
   "specific_heat_j_kgk",
   "conductivity_w_mk",
   "emissivity",
+  "air_permeance_l_s_m2_at_75pa",
   "color",
   "source",
   "url",
