@@ -5,7 +5,7 @@ STATUS: Draft — PRD written, not started
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for assembly boundary conditions and surface films.
 RELATED: ./PRD.md, ./STATUS.md, ../assembly-condensation-risk/,
-  ../assembly-membrane-layers/
+  ../../archive/dated/2026-07-26/assembly-membrane-layers/ (complete),
 ---
 
 # Assembly boundary conditions and surface films

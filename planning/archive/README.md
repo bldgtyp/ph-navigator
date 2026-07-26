@@ -3,6 +3,40 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-26
+
+- `assembly-membrane-layers` - Assemblies can now hold membrane / sheet-good
+  layers (WRBs, vapour-control layers, self-adhered flashings, paints) and
+  designate which face is the air barrier. Four phases: **1** `membrane`
+  catalog category (Alembic `20260726_0009`) + `air_permeance_l_s_m2_at_75pa`
+  threaded end-to-end + a new `air_permeance` unit pair + membrane layers
+  **excluded from the R calculation outright** (not "R ~ 0") with a new
+  `no_thermal_layers` flag for the all-membrane case; **2** fixed-hairline
+  rendering so a 0.15 mm WRB is visible at any zoom, the single-segment rule
+  enforced on both `add_segment` and material assignment, and width/steel-stud
+  controls dropped from the segment dialog; **3** `Assembly.air_barrier =
+  {layer_id, face}` drawn as a bold rule on the designated face, plus the ASTM
+  E2178 check against that face's permeance where **`unknown` is deliberately
+  distinct from `pass`**; **4** membranes omitted from the HBJSON construction
+  (an `EnergyMaterial` needs a positive conductivity) and carried in `ph_nav`
+  for a lossless round trip, with a deliberate, recorded PHPP drop.
+  No document schema-version bump - both new fields are nullable with `None`
+  defaults, so existing bodies validate unchanged; the fingerprint guard and
+  corpus snapshots were regenerated and verified additive-only.
+  Browser-verified per phase against a purpose-built six-layer wall.
+  Unblocks `assembly-condensation-risk` (its other prerequisite,
+  `assembly-boundary-conditions` Phase 1, is still open).
+  Contracts folded into `context/technical-requirements/envelope-thermal-preview.md`,
+  `envelope-commands.md`, `envelope-hbjson-export.md`, `envelope-hbjson-import.md`,
+  `envelope-catalog-drift.md`, `data-model.md`, `frontend-viewer-units.md`, and
+  `context/ui/pages/envelope-tab.md` + `catalog.md`.
+  **Lesson worth keeping:** every place that assumed "layers" and "layers with
+  an R-value" were the same set needed revisiting, and the passing tests said
+  nothing about any of it - the browser found the unclickable hairline, and
+  review found the adjacent-membrane click theft, the assignment back door
+  around the single-segment rule, the un-imported air barrier, and the
+  foreign-import regression introduced by fixing it.
+
 ## 2026-07-20
 
 - `modal-consistency` - Cross-cutting refactor giving every modal/dialog one

@@ -40,7 +40,7 @@ Added 2026-07-26 (Ed's review of the above):
   with **no new fields**; the per-material `moisture_behavior` enum is v1.1.
   (`decisions.md` §D-9)
 - **Membrane layers spun out as a prerequisite feature** —
-  `planning/features/assembly-membrane-layers/`. Membranes and coatings dominate
+  `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (complete). Membranes and coatings dominate
   a wall's sd, and PHN cannot represent them; the engine must not ship before
   they land. (`decisions.md` §D-10, `PRD.md` §2a)
 

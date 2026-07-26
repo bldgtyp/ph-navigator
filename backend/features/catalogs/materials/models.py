@@ -58,7 +58,7 @@ MaterialCategoryId = Literal[
 #
 # Envelope imports this rather than defining its own copy so the DB CHECK
 # constraint, the picker overlay, and the thermal exclusion cannot drift
-# apart. See `planning/features/assembly-membrane-layers/PRD.md` §3.
+# apart. See `planning/archive/dated/2026-07-26/assembly-membrane-layers/PRD.md` §3.
 MEMBRANE_CATEGORY_ID: Final[str] = "membrane"
 
 

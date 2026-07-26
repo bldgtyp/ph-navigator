@@ -9,7 +9,7 @@ SCOPE: A real boundary-condition model for assemblies — exterior condition
   on the section.
 RELATED: ./README.md, ./STATUS.md,
   ../assembly-condensation-risk/PRD.md (depends on this),
-  ../assembly-membrane-layers/PRD.md,
+  ../../archive/dated/2026-07-26/assembly-membrane-layers/PRD.md (complete),
   backend/features/envelope/thermal.py, context/ui/pages/envelope-tab.md
 ---
 

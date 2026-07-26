@@ -41,7 +41,7 @@ materials.
 Both gate this feature's **Phase 2** (the engine). They are independent of each
 other and can proceed in parallel.
 
-**1. `planning/features/assembly-membrane-layers/` (Phases 1–2).** A wall's
+**1. ✅ `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (Phases 1–2, shipped 2026-07-26).** A wall's
 vapour resistance is dominated by its membranes and coatings — 6-mil poly is
 ≈ 95 % of a typical 2×6 wall's total sd, and the interior latex paint is
 comparable to the plywood sheathing — and PHN cannot represent either today.

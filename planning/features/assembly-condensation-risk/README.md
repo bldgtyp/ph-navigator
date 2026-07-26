@@ -49,7 +49,7 @@ Modelled on the **PHI Condensation Tool v1.7.5**
 
 ## Dependencies — two prerequisite features gate Phase 2
 
-✅ **`planning/features/assembly-membrane-layers/` Phases 1–2 — shipped 2026-07-26.** Membranes and
+✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/` Phases 1–2 — shipped 2026-07-26.** Membranes and
 coatings dominate a wall's vapour resistance and PHN cannot represent them yet.
 (`decisions.md` §D-10)
 

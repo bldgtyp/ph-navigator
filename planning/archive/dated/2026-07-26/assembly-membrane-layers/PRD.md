@@ -6,7 +6,7 @@ AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Membrane / sheet-good layers in the Assembly Builder (WRBs, vapour-control
   layers, coatings), plus an air-barrier designation on the assembly section.
 RELATED: ./README.md, ./STATUS.md,
-  ../assembly-condensation-risk/PRD.md (depends on this),
+  ../../../../features/assembly-condensation-risk/PRD.md (depends on this),
   context/ui/pages/envelope-tab.md, backend/features/project_document/envelope_models.py
 ---
 
