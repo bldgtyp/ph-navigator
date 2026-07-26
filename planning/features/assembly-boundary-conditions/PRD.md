@@ -223,13 +223,13 @@ assumptions:
   thermal_standard: "iso_6946" | "ashrae"     # default "iso_6946"
 ```
 
-> **As built (Phase 1).** Shipped as `ThermalStandard = Literal["iso_6946"]`
-> — a single-member literal — with Phase 4 widening it when the ASHRAE
-> values land. A settable `"ashrae"` with no value table behind it would
-> leave the resolver choosing between a 500 and silently returning ISO
-> numbers; widening a Literal later is the same additive amendment as
-> adding the field, so nothing is foreclosed. The field shape, the
-> default, and the "independent project setting" decision are unchanged.
+> **As built.** Phase 1 shipped `ThermalStandard = Literal["iso_6946"]` — a
+> single-member literal — so no document could name a standard whose values
+> did not exist. Phase 4 widened it to `"iso_6946" | "ashrae"` alongside the
+> loader. ISO's values stay in code; ASHRAE's live only in the private
+> object store (`../../../context/DATA_STORAGE.md` class ④), and asking for
+> an unpublished standard returns a typed 409 rather than falling back to
+> ISO numbers under an ASHRAE label.
 
 **Consolidation:** this belongs in the same versioned document block as the
 condensation settings rather than as a second sibling. Recommend one
@@ -340,7 +340,7 @@ this must not become a legend-heavy diagram.
 | **1** ✅ | `exterior_condition` + `assumptions.thermal_standard` fields, ISO 6946 resistance table, heat-flow direction from `type`. **No change to any displayed number.** Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
 | **2** ✅ | Fold films into the thermal calculation (§6): both unit branches move, **`#assembly-thermal-metric` tooltip rewritten** (it currently asserts the opposite), construction-only R kept in the tooltip, `thermal_input_hash` extended, PHPP double-count regression test added, Ch. 25/27 citation reconciled. Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
 | **3** ✅ | Rendering — exterior label becomes a select, interior label shows derived Rsi, face bands, ground/ventilated treatments. Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
-| **4** ⛔ | ASHRAE resistance set (private-DB routed) + the standard selector in the UI. Low priority — Ed reports ~99 % ISO. **Blocked**: the licensed-data routing decision (`../assembly-condensation-risk/decisions.md` §D-7) is still open and is Ed's call. See `./STATUS.md` → Blockers. |
+| **4** 🟡 | ASHRAE resistance set (private-DB routed) + the standard selector in the UI. Low priority — Ed reports ~99 % ISO. **Routing decided 2026-07-26 (Ed): private object store, loader only** (D-7 option 1). The mechanism landed; the values and the selector are outstanding — see `./STATUS.md` → "Still open on Phase 4". |
 
 Phase 1 alone unblocks `assembly-condensation-risk` Phase 2, and does so without
 moving a single number a user can see. Phase 2 is the one that changes reported

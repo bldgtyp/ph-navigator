@@ -29,8 +29,12 @@ export type AirBarrierStatus = {
 export type ExteriorCondition = "outdoor_air" | "ventilated" | "ground" | "unconditioned_space";
 /** Derived from `AssemblyType`; drives the interior film. */
 export type HeatFlowDirection = "upward" | "horizontal" | "downward";
-/** Widens when the ASHRAE surface-resistance set lands. */
-export type ThermalStandard = "iso_6946";
+/**
+ * `ashrae` is only usable where its licensed table has been published to the
+ * private object store; the backend raises rather than serving ISO numbers
+ * under an ASHRAE label.
+ */
+export type ThermalStandard = "iso_6946" | "ashrae";
 
 export type ThermalStatusFlag =
   | "missing_material"

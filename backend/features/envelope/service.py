@@ -35,6 +35,7 @@ from features.envelope.models import (
 )
 from features.envelope.phpp_export import phpp_preflight
 from features.envelope.selectors import build_envelope_read_parts
+from features.envelope.surface_film_store import SurfaceFilmTableUnavailableError, surface_film_table
 from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document.audit import log_document_action
 from features.project_document.document import ProjectDocumentV1
@@ -109,10 +110,24 @@ def get_assembly_thermal_model(
         response_source = view.source
 
     assembly = ops.find_assembly(body.tables.assemblies, assembly_id)
+    # The film table is resolved here, at the I/O edge: a licensed set lives
+    # in the private object store, and `thermal` stays pure.
+    standard = body.tables.resolved_assumptions().thermal_standard
+    try:
+        film_table = surface_film_table(standard)
+    except SurfaceFilmTableUnavailableError as error:
+        # A typed 409 rather than a 500: the deployment is missing a licensed
+        # table it was asked for, which an operator can fix by seeding it.
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "surface_film_table_unavailable",
+            "This project's thermal standard has no published surface-film table on this deployment.",
+            {"thermal_standard": standard},
+        ) from error
     result = calculate_assembly_thermal(
         assembly,
         {material.id: material for material in body.tables.project_materials},
-        body.tables.resolved_assumptions().thermal_standard,
+        film_table,
     )
     return AssemblyThermalResponse(
         project_id=access.project_id,

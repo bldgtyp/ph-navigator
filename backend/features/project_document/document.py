@@ -357,12 +357,16 @@ class ManufacturerFilters(BaseModel):
     glazing_manufacturers_enabled: list[str] | None = None
 
 
-#: Which published standard supplies surface film resistances. Only
-#: ISO 6946 is implemented today: PHPP's own U-Values worksheet is
-#: ISO 6946-based and PHI reviewers work in ISO, so it is both the
-#: default and — for now — the only value a document can hold. The
-#: ASHRAE set widens this literal when its values land.
-ThermalStandard = Literal["iso_6946"]
+#: Which published standard supplies surface film resistances. ISO 6946 is
+#: the default: PHPP's own U-Values worksheet is ISO 6946-based and PHI
+#: reviewers work in ISO, so it keeps PHN and PHPP consistent.
+#:
+#: ``ashrae`` is only usable where its table has been published to the
+#: private object store — the values are licensed and cannot ship in this
+#: public repo (see ``features.envelope.surface_film_store``). Selecting it
+#: without that table raises rather than silently serving ISO numbers under
+#: an ASHRAE label.
+ThermalStandard = Literal["iso_6946", "ashrae"]
 
 
 class ProjectAssumptions(BaseModel):

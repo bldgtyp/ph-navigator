@@ -107,6 +107,7 @@ export function AssemblyHeader({
 // "horizontal" / "downward") are already the display words.
 const STANDARD_LABEL: Record<ThermalStandard, string> = {
   iso_6946: "ISO 6946",
+  ashrae: "ASHRAE",
 };
 
 /** IP reports an R-value, SI a U-value — the metric changes kind by unit system. */

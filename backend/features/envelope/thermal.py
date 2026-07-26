@@ -7,8 +7,9 @@ mode this module is shaped to prevent:
   layers. This is what PHPP's U-Values worksheet wants, because that
   worksheet adds its own surface films from its own assembly-type setting.
 * **effective** (``r_effective_m2k_w`` / ``u_effective_w_m2k``) — the
-  construction plus the ISO 6946 surface films. This is the real U-factor
-  and what the Assembly Builder header reports.
+  construction plus the surface films of whichever standard the project
+  selected. This is the real U-factor and what the Assembly Builder header
+  reports.
 
 Sending the effective number to PHPP would double-count the films; that
 is guarded by an explicit regression test in ``test_phpp_export.py``.
@@ -21,7 +22,12 @@ import json
 from dataclasses import dataclass
 from itertools import product
 
-from features.envelope.boundary_conditions import HeatFlowDirection, resolve_surface_resistances
+from features.envelope.boundary_conditions import (
+    ISO_6946_TABLE,
+    HeatFlowDirection,
+    SurfaceFilmTable,
+    resolve_surface_resistances,
+)
 from features.envelope.membranes import assigned_materials, is_membrane_layer, is_membrane_material
 from features.envelope.models import AssemblyThermalStatus, ThermalStatusFlag
 from features.project_document.document import (
@@ -135,7 +141,7 @@ def calculate_construction_thermal(
 def calculate_assembly_thermal(
     assembly: Assembly,
     materials_by_id: dict[str, ProjectMaterial],
-    standard: ThermalStandard = "iso_6946",
+    film_table: SurfaceFilmTable = ISO_6946_TABLE,
 ) -> ThermalResult:
     """Return SI-canonical preview values or explicit incomplete-state flags.
 
@@ -144,14 +150,19 @@ def calculate_assembly_thermal(
     ISO 13788's `R_total = Rsi + ΣR + Rse` — rather than inside each
     parallel path, so the two bracketing method values stay comparable and
     construction-only.
+
+    The film table is passed in rather than looked up here. A licensed set
+    lives in the private object store, and resolving it is I/O; keeping
+    that at the edge (``service``) is what keeps this module pure — and
+    avoids an import cycle through the storage layer.
     """
     construction = calculate_construction_thermal(assembly, materials_by_id)
-    films = resolve_surface_resistances(assembly.type, assembly.exterior_condition, standard)
+    films = resolve_surface_resistances(assembly.type, assembly.exterior_condition, film_table)
     r_construction = construction.r_construction_m2k_w
     r_effective = None if r_construction is None else films.rsi_m2k_w + r_construction + films.rse_m2k_w
     return ThermalResult(
         status=construction.status,
-        input_hash=thermal_input_hash(assembly, materials_by_id, standard),
+        input_hash=thermal_input_hash(assembly, materials_by_id, film_table.standard),
         r_parallel_path_m2k_w=construction.r_parallel_path_m2k_w,
         r_isothermal_planes_m2k_w=construction.r_isothermal_planes_m2k_w,
         r_construction_m2k_w=r_construction,

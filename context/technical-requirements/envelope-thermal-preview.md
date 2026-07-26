@@ -131,8 +131,27 @@ determined by `type` — a roof loses heat upward, a floor downward, a wall
 horizontally — so it is derived, never stored and never separately
 editable. The **exterior** side is the one user-selectable axis.
 
-ISO 6946 (the only implemented standard; PHPP's U-Values worksheet is
-ISO 6946-based and PHI reviewers work in ISO):
+### Where the values come from
+
+`tables.assumptions.thermal_standard` selects the set:
+
+| Standard | Values live | Why |
+|----------|-------------|-----|
+| `iso_6946` (default) | **in code** (`boundary_conditions.ISO_6946_TABLE`) | the default, already published in this feature's PRD, and it means a deployment with no private object store still computes U-values |
+| `ashrae` | **private object store only** (`standards/ashrae/surface_films.json`) | ASHRAE Fundamentals is licensed and this repo is public — the repo carries the loader (`features/envelope/surface_film_store.py`, `scripts/seed_surface_films.py`), never the numbers. Same route as the licensed climate bundles (`DATA_STORAGE.md` class ④) |
+
+Asking for a standard with no published table raises rather than falling
+back to ISO values — reporting one convention under another's name would
+be a wrong answer confidently presented. The thermal route surfaces that
+as a typed **409 `surface_film_table_unavailable`**, which an operator
+fixes by seeding the table.
+
+The table is resolved at the **service edge**, not inside `thermal.py`, and
+passed in as a `SurfaceFilmTable`. That keeps the calculation pure and
+avoids an import cycle through the storage layer.
+
+ISO 6946 values (PHPP's U-Values worksheet is ISO 6946-based and PHI
+reviewers work in ISO, so this is the sensible default):
 
 | `type` | heat flow | Rsi |
 |--------|-----------|-----|

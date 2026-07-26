@@ -76,7 +76,12 @@ It complements, and does not replace:
 3. **Dynamic per-project object files** — user uploads (datasheets, photos,
    HBJSON, EPW, export bundles). Bytes in the object store under
    `projects/…`; one `project_assets` row per file is the registry/pointer.
-4. **Static app-wide climate bundles** — licensed reference climate data, one
+4. **Static app-wide licensed reference data** — climate bundles (below) and
+   the ASHRAE surface-film table
+   (`standards/ashrae/surface_films.json`, loaded by
+   `features/envelope/surface_film_store.py`). Same rule in both cases: the
+   repo carries the loader, the private store carries the values. Climate
+   bundles are one
    `dataset.json` per `(provider, version)` under `climate/…`, seeded into the
    `climate_dataset*` tables.
 

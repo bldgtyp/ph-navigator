@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Phases 1–3 complete; Phase 4 blocked on Ed (licensed-data routing)
+STATUS: Phases 1–3 complete; Phase 4 mechanism in, awaiting Ed's ASHRAE data + the selector
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -16,7 +16,7 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
 | **2** — fold films into the calculation | ✅ **complete** | Films folded in, tooltip rewritten, PHPP kept construction-only with a regression test, hash extended, citation reconciled. **Every displayed number moved.** |
 | **3** — rendering | ✅ **complete** | Exterior label is a select, interior label shows derived Rsi + direction, face bands with distinct ground/ventilated treatments. No new tokens. Browser-verified. |
-| **4** — ASHRAE set + selector | ⛔ **blocked on Ed** | Needs the licensed-data routing decision (`../assembly-condensation-risk/decisions.md` §D-7), which is still open. Not startable by an agent. |
+| **4** — ASHRAE set + selector | 🟡 **mechanism done; awaiting Ed's data + the selector** | Routing decided (private object store, loader-only). Store, loader, widened literal, typed 409 and tests all landed. Ed must publish the values; the UI selector waits on that. |
 
 ### Phase 1 as-built
 
@@ -202,37 +202,54 @@ are available. It still waits on `assembly-membrane-layers`.
 - **Independent of** `assembly-membrane-layers` — the two can proceed in
   parallel; they touch different parts of the assembly model.
 
+### Phase 4 as-built (mechanism)
+
+**Routing decided 2026-07-26 (Ed): the private object store, loader only.**
+D-7 option 1 — the repo carries the loader, never the values.
+
+- `features/envelope/surface_film_store.py` — object-store home at
+  `standards/<standard>/surface_films.json`, mirroring
+  `features/climate/object_store.py`. Publishing requires a `source`
+  citation so the next reader knows the edition and table.
+- `scripts/seed_surface_films.py` — `--from <json>` publishes the
+  operator's own values; `--show ashrae` prints what is live.
+- `ThermalStandard` widened to `"iso_6946" | "ashrae"`.
+- **ISO stays in code, ASHRAE does not.** ISO's four values are the
+  default, are already published in this feature's PRD, and keeping them
+  in-repo means a deployment with no object store still computes
+  U-values. Recorded as a deliberate asymmetry, not an oversight — if you
+  want ISO routed privately too, that is a separate call.
+- **Unavailable ≠ fall back.** Asking for a standard with no published
+  table raises; the route returns a typed **409
+  `surface_film_table_unavailable`**. Serving ISO numbers under an ASHRAE
+  label would be a wrong answer confidently presented.
+- The table resolves at the **service edge** and is passed into
+  `calculate_assembly_thermal` as a `SurfaceFilmTable`. The first draft
+  looked it up inside `thermal.py` and produced a genuine import cycle
+  through the storage layer — the cycle was the design saying the pure
+  calculation should not reach for I/O, and the fix put it at the edge.
+- Tests use **invented fixture values**, never real ASHRAE numbers, with
+  a guard test asserting the fixtures differ from ISO so the assertions
+  cannot pass vacuously.
+
+## Still open on Phase 4
+
+1. **Ed publishes the values.** Extract from
+   `~/Dropbox/bldgkraft/Codes & Standards/2017 ASHRAE Handbook/SI/`
+   (Ch. 26 surface conductances; `R = 1/h`), write the small JSON, run
+   `uv run python -m scripts.seed_surface_films --from <file>`. Nothing in
+   the repo needs to change.
+2. **The project-setting selector.** Deliberately not shipped yet: a
+   picker that offers ASHRAE before any table is published would hand the
+   user a 409. It should land with — or after — step 1, and should offer
+   ASHRAE only when a table is actually available (which needs a small
+   availability endpoint). Same reasoning that kept Phase 1's literal
+   single-member.
+
 ## Blockers
 
-**Phase 4 is blocked on a decision only Ed can make.** Phases 1–3 are done
-and unblocked.
-
-`PRD.md` §4.2 routes the ASHRAE surface-resistance values through the same
-private-DB path as the condensation feature's µ values —
-`../assembly-condensation-risk/decisions.md` **§D-7, which is still open
-and marked "Ed's call."** The source PDFs are on disk
-(`~/Dropbox/bldgkraft/Codes & Standards/2017 ASHRAE Handbook/SI/`), so the
-extraction itself is easy; the obstacle is that **this repo is public and
-`CLAUDE.md` forbids committing licensed data**, with no agreed routing
-mechanism yet.
-
-An agent should not resolve this by judging the extraction *de minimis*
-(it is only a handful of surface-conductance numbers) — the hard rule is
-absolute and the routing decision is explicitly reserved. D-7's own
-options apply here:
-
-1. Route the values through the private object store / production DB; the
-   repo carries the **loader**, not the values.
-2. Enter them as ordinary data through an existing UI, citing the source.
-3. Use only genuinely public-domain or manufacturer-published values.
-
-Until one is chosen, Phase 1's deliberate narrowing holds:
-`ThermalStandard = Literal["iso_6946"]`, so no document can reference a
-standard whose values do not exist. Phase 4 widens that literal, adds the
-value table behind whichever route is chosen, adds an
-`update_thermal_standard` command, extends
-`test_input_hash_changes_with_both_surface_film_inputs` with an
-ISO-vs-ASHRAE pair, and adds the project-setting UI.
+**Phases 1–3 are done, merged, and unblocked.** Phase 4's mechanism is in;
+only the data and the selector remain (above).
 
 Low urgency regardless — Ed reports ~99 % ISO.
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Phases 1–3 complete and merged; Phase 4 blocked on Ed (licensed-data routing)
+STATUS: Phases 1–3 complete and merged; Phase 4 mechanism in, awaiting Ed's ASHRAE data + the selector
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for assembly boundary conditions and surface films.
 RELATED: ./PRD.md, ./STATUS.md, ../assembly-condensation-risk/,

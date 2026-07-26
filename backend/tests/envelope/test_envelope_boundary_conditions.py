@@ -11,6 +11,7 @@ from features.envelope.boundary_conditions import (
     heat_flow_direction,
     resolve_surface_resistances,
 )
+from features.envelope.surface_film_store import reset_surface_film_cache
 from features.envelope.thermal import calculate_assembly_thermal, thermal_input_hash
 from features.project_document.document import (
     Assembly,
@@ -191,18 +192,16 @@ def test_films_are_reported_even_when_the_calculation_is_blocked() -> None:
     assert result.thermal_standard == "iso_6946"
 
 
-def test_input_hash_changes_with_both_surface_film_inputs() -> None:
-    """Both film inputs must invalidate a cached preview.
-
-    The standard is the third input and is hashed explicitly (it is not part
-    of the assembly subtree), but it cannot be exercised until a second
-    standard exists — Phase 4 widens ``ThermalStandard`` and should extend
-    this test with an ISO-vs-ASHRAE pair.
-    """
+def test_input_hash_changes_with_every_surface_film_input() -> None:
+    """All three film inputs must invalidate a cached preview."""
     assembly, materials = _one_layer_assembly()
     baseline = thermal_input_hash(assembly, materials, "iso_6946")
 
     assert thermal_input_hash(assembly, materials, "iso_6946") == baseline
+    # The standard is not part of the assembly subtree, so it is hashed
+    # explicitly — without that, switching standards would serve stale
+    # cached previews.
+    assert thermal_input_hash(assembly, materials, "ashrae") != baseline
     ventilated = assembly.model_copy(update={"exterior_condition": "ventilated"})
     assert thermal_input_hash(ventilated, materials, "iso_6946") != baseline
     roof = assembly.model_copy(update={"type": "roof"})
@@ -230,6 +229,37 @@ def test_thermal_route_exposes_films_and_both_conventions(clean_document_tables:
     assert payload["heat_flow_direction"] == "horizontal"
     assert payload["thermal_standard"] == "iso_6946"
     assert payload["r_effective_m2k_w"] == pytest.approx(payload["r_construction_m2k_w"] + 0.17)
+
+
+def test_thermal_route_409s_when_the_licensed_table_is_unpublished(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An operator-fixable gap, not a crash.
+
+    A document can name ASHRAE on a deployment whose private store has no
+    ASHRAE table. That must be a typed, actionable 409 — never a 500, and
+    never ISO numbers reported under an ASHRAE label.
+    """
+    monkeypatch.setattr("features.envelope.surface_film_store.settings.r2_endpoint_url", "")
+    reset_surface_film_cache()
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    raw = envelope_body().model_dump(mode="json")
+    raw["tables"]["assumptions"] = {"thermal_standard": "ashrae"}
+    saved_body = ProjectDocumentV1.model_validate(raw)
+    write_saved_body(version_id, saved_body)
+    assembly_id = saved_body.tables.assemblies[0].id
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/envelope/assemblies/{assembly_id}/thermal?source=version",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "surface_film_table_unavailable"
 
 
 def test_update_assembly_exterior_condition_command(clean_document_tables: None) -> None:

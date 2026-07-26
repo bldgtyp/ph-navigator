@@ -24,6 +24,7 @@ one assembly and neither substitutes for the other.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
@@ -42,22 +43,38 @@ _HEAT_FLOW_BY_ASSEMBLY_TYPE: dict[AssemblyType, HeatFlowDirection] = {
     "other": "horizontal",
 }
 
-#: ISO 6946 Table 1 (internal surface resistance, m²·K/W).
-_ISO_6946_RSI: dict[HeatFlowDirection, float] = {
-    "upward": 0.10,
-    "horizontal": 0.13,
-    "downward": 0.17,
-}
-
-#: ISO 6946 Table 1 (external surface resistance) for a face exposed to
-#: moving outdoor air. Direction-independent, unlike Rsi.
-_ISO_6946_OUTDOOR_AIR_RSE = 0.04
-
 #: ISO 13788's surface-condensation and mould criteria are evaluated at a
 #: second, higher internal resistance — the furniture-and-corner
 #: allowance — and fRsi is defined against it. Owned by the condensation
 #: screen; it must never reach a U-value.
 ISO_13788_SURFACE_CHECK_RSI = 0.25
+
+
+@dataclass(frozen=True)
+class SurfaceFilmTable:
+    """One standard's surface-resistance values, as data rather than code.
+
+    Making the table a value the caller supplies is what lets a licensed
+    set (ASHRAE) be loaded from the private object store at the edge while
+    this module — and the whole thermal calculation — stays pure and
+    testable. See :mod:`features.envelope.surface_film_store`.
+    """
+
+    standard: ThermalStandard
+    rsi_by_direction: Mapping[HeatFlowDirection, float]
+    rse_outdoor_air_m2k_w: float
+
+
+#: ISO 6946 Table 1. These four values stay in code deliberately: they are
+#: the default and only in-repo set, they are already published in this
+#: feature's own PRD, and shipping them lets PHN work with no private-store
+#: dependency at all. The ASHRAE set does **not** get the same treatment —
+#: see ``surface_film_store``.
+ISO_6946_TABLE = SurfaceFilmTable(
+    standard="iso_6946",
+    rsi_by_direction={"upward": 0.10, "horizontal": 0.13, "downward": 0.17},
+    rse_outdoor_air_m2k_w=0.04,
+)
 
 
 @dataclass(frozen=True)
@@ -75,7 +92,11 @@ class SurfaceResistances:
 
 
 def heat_flow_direction(assembly_type: AssemblyType) -> HeatFlowDirection:
-    """Return the ISO 6946 heat-flow direction implied by an assembly type."""
+    """Return the heat-flow direction implied by an assembly type.
+
+    Standard-independent: ISO 6946 and ASHRAE agree that a roof loses heat
+    upward and a floor downward. Only the resistance *values* differ.
+    """
 
     return _HEAT_FLOW_BY_ASSEMBLY_TYPE[assembly_type]
 
@@ -83,7 +104,7 @@ def heat_flow_direction(assembly_type: AssemblyType) -> HeatFlowDirection:
 def resolve_surface_resistances(
     assembly_type: AssemblyType,
     exterior_condition: ExteriorCondition,
-    standard: ThermalStandard = "iso_6946",
+    table: SurfaceFilmTable = ISO_6946_TABLE,
 ) -> SurfaceResistances:
     """Resolve ``(Rsi, Rse, direction)`` from the assembly's two boundary axes.
 
@@ -94,18 +115,21 @@ def resolve_surface_resistances(
     separate values because they mean different things and because the
     temperature treatment that will distinguish them (Ft) is deferred to
     the condensation screen. Ground contact gets no film at all.
+
+    The ventilated/ground rules are structural, not ISO-specific, so they
+    apply to whichever ``table`` is in force.
     """
     direction = heat_flow_direction(assembly_type)
-    rsi = _ISO_6946_RSI[direction]
+    rsi = table.rsi_by_direction[direction]
     if exterior_condition == "ground":
         rse = 0.0
     elif exterior_condition == "outdoor_air":
-        rse = _ISO_6946_OUTDOOR_AIR_RSE
+        rse = table.rse_outdoor_air_m2k_w
     else:
         rse = rsi
     return SurfaceResistances(
         rsi_m2k_w=rsi,
         rse_m2k_w=rse,
         heat_flow_direction=direction,
-        standard=standard,
+        standard=table.standard,
     )
