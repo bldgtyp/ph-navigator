@@ -175,6 +175,26 @@ viewers can still export. See `planning/features/phpp-uvalue-export/`.
   ("Add Segment Left / Right").
 - Click a segment → opens **Segment Properties modal** (US-ENV-6).
 
+**Membrane layers are the one exception to 1:1 scale.** A layer whose every
+assigned segment carries a `membrane` material (WRB, vapour retarder, paint)
+is drawn at a fixed nominal height instead — a real 0.15 mm sheet would be
+sub-pixel at any usable zoom. Consequences, all driven from
+`canvas-geometry.ts` so the SVG, the y-stacking, and the hit targets agree:
+
+- The thickness label still shows the layer's **real** thickness and is
+  tooltipped "not drawn to scale". Total Thickness counts it too.
+- The clickable overlay grows to a minimum height centred on the drawn band
+  (`segmentOverlayBox`), because a ~4 px strip is legible but unclickable —
+  the neighbouring layer's overlay would otherwise win every hit test.
+- No "Add Segment Left / Right" buttons: membranes are continuous and take
+  exactly one segment. The backend rejects `add_segment` on them with
+  `membrane_layer_single_segment`.
+- The Segment Properties modal drops the Width and Steel-stud sections and
+  explains why in their place.
+
+The membrane category also removes the layer from the U-value calculation
+entirely — see `../../technical-requirements/envelope-thermal-preview.md`.
+
 **Segment Properties modal (US-ENV-6):**
 
 ```

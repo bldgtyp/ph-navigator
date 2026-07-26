@@ -2,6 +2,7 @@
 // Builder editor. It owns transient dialog routing only; server mutation state
 // remains in EnvelopePage/hooks, and each dialog component owns its own form
 // draft so unit conversion and validation stay local to the active modal.
+import { useMemo } from "react";
 import type { CatalogMaterial } from "../../catalogs/types";
 import type {
   Assembly,
@@ -10,6 +11,8 @@ import type {
   EnvelopeCommand,
   ProjectMaterial,
 } from "../types";
+import { materialById } from "../lib";
+import { isMembraneLayer } from "../membranes";
 import { AssemblyNameDialog } from "./dialogs/AssemblyNameDialog";
 import { ConfirmDialog } from "./dialogs/ConfirmDialog";
 import { LengthDialog } from "./dialogs/LengthDialog";
@@ -61,6 +64,7 @@ export function EnvelopeEditorDialogs({
   onReplaceDialog: (dialog: DialogState) => void;
   onCommand: (command: EnvelopeCommand) => void;
 }) {
+  const materialsById = useMemo(() => materialById(materials), [materials]);
   if (!dialog) return null;
   if (dialog.kind === "create-assembly") {
     return (
@@ -174,6 +178,9 @@ export function EnvelopeEditorDialogs({
       <SegmentDialog
         title="Segment properties"
         segment={dialog.segment}
+        // Membranes are continuous full-width sheets, so width and steel-stud
+        // geometry are meaningless for them — the dialog hides both.
+        isMembraneLayer={isMembraneLayer(dialog.layer, materialsById)}
         materials={materials}
         catalogMaterials={catalogMaterials}
         catalogMaterialsLoading={catalogMaterialsLoading}

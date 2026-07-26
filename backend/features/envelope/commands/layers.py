@@ -6,6 +6,7 @@ from starlette import status
 
 from features.envelope import ops
 from features.envelope.identifiers import ID_PREFIX_LAYER, ID_PREFIX_SEGMENT, new_id
+from features.envelope.membranes import is_membrane_layer
 from features.envelope.models import (
     AddLayerCommand,
     AddSegmentCommand,
@@ -58,7 +59,20 @@ def delete_layer(body: ProjectDocumentV1, command: DeleteLayerCommand) -> Projec
 
 
 def add_segment(body: ProjectDocumentV1, command: AddSegmentCommand) -> ProjectDocumentV1:
+    materials_by_id = {material.id: material for material in body.tables.project_materials}
+
     def layer_updater(layer: AssemblyLayer) -> AssemblyLayer:
+        # Membranes are continuous sheet goods — they have no width divisions
+        # to model, and the thermal engine treats the whole layer as one unit
+        # (`envelope/membranes.py`). Splitting one would produce a shape the
+        # rest of the system has no meaning for.
+        if is_membrane_layer(layer, materials_by_id):
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "membrane_layer_single_segment",
+                "Membrane layers are continuous and take exactly one segment.",
+                {"layer_id": layer.id},
+            )
         target_index = ops.target_segment_index(layer.segments, command.target_segment_id, command.position)
         segment = AssemblySegment(id=new_id(ID_PREFIX_SEGMENT), order=target_index, width_mm=command.width_mm)
         segments = [*layer.segments[:target_index], segment, *layer.segments[target_index:]]

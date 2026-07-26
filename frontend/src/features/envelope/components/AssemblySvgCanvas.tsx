@@ -70,8 +70,10 @@ export function AssemblySvgCanvas({
           <SvgSegmentRect
             key={`${segmentGeometry.layer.id}-${segmentGeometry.segment.id}`}
             segmentGeometry={segmentGeometry}
+            // A membrane keeps its own colour but is never hatched: it reads as
+            // a drawn rule on the section, not as a block of material.
             fill={
-              isNullMaterial
+              isNullMaterial && !segmentGeometry.isMembrane
                 ? `url(#null-material-pattern-${assembly.id})`
                 : materialColor(material)
             }
@@ -97,13 +99,15 @@ function SvgSegmentRect({
 }) {
   const key = segmentCanvasKey(segmentGeometry.layer.id, segmentGeometry.segment.id);
   const classNames = ["assembly-svg-segment"];
-  if (isNullMaterial) classNames.push("is-null-material");
+  if (segmentGeometry.isMembrane) classNames.push("is-membrane");
+  else if (isNullMaterial) classNames.push("is-null-material");
   if (pickedSourceKey === key) classNames.push("is-picked-source");
 
   return (
     <rect
       className={classNames.join(" ")}
       data-testid="assembly-svg-segment"
+      data-membrane={segmentGeometry.isMembrane ? "true" : undefined}
       data-layer-id={segmentGeometry.layer.id}
       data-segment-id={segmentGeometry.segment.id}
       x={segmentGeometry.xMm}

@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass
 from itertools import product
 
-from features.catalogs.materials.models import MEMBRANE_CATEGORY_ID
+from features.envelope.membranes import assigned_materials, is_membrane_layer, is_membrane_material
 from features.envelope.models import AssemblyThermalStatus, ThermalStatusFlag
 from features.project_document.document import Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial
 
@@ -190,56 +190,19 @@ def _segment_r_value(
     return (layer.thickness_mm / 1000.0) / (material.conductivity_w_mk or 0.0)
 
 
-def _assigned_materials(
-    layer: AssemblyLayer,
-    materials_by_id: dict[str, ProjectMaterial],
-) -> list[tuple[AssemblySegment, ProjectMaterial]]:
-    """Segments of this layer that resolve to a real material, paired with it."""
-    return [
-        (segment, material)
-        for segment in layer.segments
-        if segment.project_material_id is not None
-        and (material := materials_by_id.get(segment.project_material_id)) is not None
-    ]
-
-
-def _is_membrane(material: ProjectMaterial) -> bool:
-    # `ProjectMaterial.category` is a free string at the document layer — it can
-    # arrive from the catalog, an HBJSON import, or a hand-typed field — so match
-    # case- and whitespace-insensitively rather than on an exact literal.
-    return material.category.strip().casefold() == MEMBRANE_CATEGORY_ID
-
-
-def is_membrane_layer(
-    layer: AssemblyLayer,
-    materials_by_id: dict[str, ProjectMaterial],
-) -> bool:
-    """Is every assigned segment in this layer a membrane / sheet good?
-
-    Such layers are excluded from the R calculation outright, so adding a
-    WRB to an assembly can neither move its U-value nor raise
-    ``missing_conductivity``. See ``MEMBRANE_CATEGORY_ID`` for why.
-
-    "Every assigned segment", not "any": a layer that mixes a membrane
-    with a real material still computes normally rather than silently
-    dropping the material's R. Membrane layers are single-segment by
-    construction, so the distinction only guards hand-built documents.
-    """
-    assigned = _assigned_materials(layer, materials_by_id)
-    return bool(assigned) and all(_is_membrane(material) for _, material in assigned)
-
-
 def _valid_segments(
     layer: AssemblyLayer,
     materials_by_id: dict[str, ProjectMaterial],
 ) -> list[AssemblySegment]:
     """Segments that contribute an R-value: assigned, conductive, non-membrane.
 
+    Membrane layers contribute nothing at all — not a near-zero R, but no
+    entry in the series/parallel sums. See ``membranes.is_membrane_layer``.
     One pass over the layer serves both questions, so a layer's materials
     are resolved once rather than once per predicate.
     """
-    assigned = _assigned_materials(layer, materials_by_id)
-    if assigned and all(_is_membrane(material) for _, material in assigned):
+    assigned = assigned_materials(layer, materials_by_id)
+    if assigned and all(is_membrane_material(material) for _, material in assigned):
         return []
     return [
         segment

@@ -126,6 +126,14 @@ def find_project_material(materials: list[ProjectMaterial], project_material_id:
     not_found("project_material", project_material_id)
 
 
+def find_layer(body: ProjectDocumentV1, assembly_id: str, layer_id: str) -> AssemblyLayer:
+    assembly = find_assembly(body.tables.assemblies, assembly_id)
+    for layer in assembly.layers:
+        if layer.id == layer_id:
+            return layer
+    not_found("layer", layer_id)
+
+
 def find_segment(
     body: ProjectDocumentV1,
     assembly_id: str,

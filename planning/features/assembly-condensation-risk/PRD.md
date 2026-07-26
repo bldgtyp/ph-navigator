@@ -288,7 +288,7 @@ risk (A-4) is retired first.
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
 | **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. | materials can be specified; data entry can begin |
-| **1½** | ⛔ **`assembly-membrane-layers` Phases 1–2** and **`assembly-boundary-conditions` Phase 1** — external dependencies, see §2a. Independent of each other; can run in parallel. | assemblies can hold the layers that dominate the answer, and have surface films at all |
+| **1½** | ✅ **`assembly-membrane-layers` Phases 1–2** (shipped 2026-07-26) and ⛔ **`assembly-boundary-conditions` Phase 1** — external dependencies, see §2a. Independent of each other; can run in parallel. | assemblies can hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |
 | **4** | Modal tiers 1–2 (verdict + Glaser/temperature diagrams). | the feature is legible |
