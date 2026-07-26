@@ -14,7 +14,7 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | Phase | State | Notes |
 | --- | --- | --- |
 | **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
-| **2** — fold films into the calculation | ⬜ open | |
+| **2** — fold films into the calculation | ✅ **complete** | Films folded in, tooltip rewritten, PHPP kept construction-only with a regression test, hash extended, citation reconciled. **Every displayed number moved.** |
 | **3** — rendering | ⬜ open | |
 | **4** — ASHRAE set + selector | ⬜ open | |
 
@@ -111,14 +111,57 @@ Reviewed with Ed 2026-07-26, after reading the honeybee-energy source:
   `assembly-condensation-risk`.
 - UI: the existing `exterior`/`interior` labels become the control.
 
+### Phase 2 as-built
+
+**This is the phase that changed reported numbers.** `r_effective_m2k_w` /
+`u_effective_w_m2k` now mean `Rsi + R_construction + Rse`.
+
+- `ThermalResult` / `AssemblyThermalResponse` carry **both** conventions:
+  the new `r_construction_m2k_w` / `u_construction_w_m2k` are the old
+  numbers under a new name, and `rsi_m2k_w` / `rse_m2k_w` /
+  `heat_flow_direction` / `thermal_standard` disclose what was applied.
+  The four film fields are never null — they hold even when missing
+  materials null every R/U field, which is what Phase 3's interior label
+  needs.
+- Films add **in series with the PH average**, not inside each parallel
+  path, per ISO 13788's `R_total = Rsi + ΣR + Rse`. So
+  `r_parallel_path_m2k_w` / `r_isothermal_planes_m2k_w` stay
+  construction-only and comparable to each other.
+- **PHPP export kept construction-only, structurally.** This was a live
+  double-count risk: `phpp_export.py` fed `calculate_assembly_thermal`
+  straight into the worksheet's U-value cell while the same sheet declares
+  `Rsi: 0.00` / `Rse: 0.00`. Rather than rely on the call site picking the
+  right field, `thermal.py` now has two entry points —
+  `calculate_construction_thermal()` returns a `ConstructionThermalResult`
+  with **no film or effective field on it**, and
+  `calculate_assembly_thermal()` wraps that and adds the films. PHPP takes
+  the former, so the wrong value is unreachable, not merely untested.
+  (Prompted by the altitude review, which correctly noted a naming
+  convention plus one test was the only backstop.) Three tests pin it,
+  including one asserting the exported value does **not** move with
+  `exterior_condition`.
+- `thermal_input_hash` gained the standard (it is not in the assembly
+  subtree, so a project switching standards would otherwise serve stale
+  cached previews).
+- Tooltip rewritten (`AssemblyHeader.tsx`): title now tracks the unit
+  system ("Effective R-Value" IP / "Effective U-Value" SI), states films
+  **are** included, names the standard + Rsi/Rse + heat-flow direction,
+  and shows the construction-only value. A frontend test asserts the old
+  "are NOT included" sentence is gone.
+- Citation reconciled on **Ch. 25** (the tooltip's Ch. 27 was the
+  outlier; `thermal.py` and the contract doc both already said 25).
+
+Measured impact on the test fixtures: IP `7.5 → 8.4 h-ft²-F/Btu` on the
+1.316 m²K/W wall — the direction and rough magnitude the PRD predicted.
+
+Verification (2026-07-26): `make ci` equivalent green — see below.
+
 ## Next step
 
-**Phase 2** — fold the films into the thermal calculation (`PRD.md` §6):
-both unit branches move, the `#assembly-thermal-metric` tooltip is rewritten
-(it currently asserts the opposite), the construction-only R stays reachable
-in the tooltip, `thermal_input_hash` gains the standard, a PHPP
-double-count regression test lands, and the Ch. 25 / Ch. 27 citation is
-reconciled.
+**Phase 3** — rendering (`PRD.md` §5): exterior label becomes a select,
+interior label shows the derived Rsi + heat-flow direction, tinted face
+bands with distinct ground/ventilated treatments, no new design tokens.
+The backend already returns everything this needs.
 
 `assembly-condensation-risk` Phase 2 is **unblocked from this side** as of
 Phase 1: `resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI`

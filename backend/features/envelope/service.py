@@ -112,6 +112,7 @@ def get_assembly_thermal_model(
     result = calculate_assembly_thermal(
         assembly,
         {material.id: material for material in body.tables.project_materials},
+        body.tables.resolved_assumptions().thermal_standard,
     )
     return AssemblyThermalResponse(
         project_id=access.project_id,
@@ -122,8 +123,14 @@ def get_assembly_thermal_model(
         status=result.status,
         r_parallel_path_m2k_w=result.r_parallel_path_m2k_w,
         r_isothermal_planes_m2k_w=result.r_isothermal_planes_m2k_w,
+        r_construction_m2k_w=result.r_construction_m2k_w,
+        u_construction_w_m2k=result.u_construction_w_m2k,
         r_effective_m2k_w=result.r_effective_m2k_w,
         u_effective_w_m2k=result.u_effective_w_m2k,
+        rsi_m2k_w=result.rsi_m2k_w,
+        rse_m2k_w=result.rse_m2k_w,
+        heat_flow_direction=result.heat_flow_direction,
+        thermal_standard=result.thermal_standard,
         warnings=result.warnings,
     )
 

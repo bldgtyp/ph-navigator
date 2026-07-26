@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from features.envelope.boundary_conditions import HeatFlowDirection
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.envelope.phpp_types import ExportReason
 from features.envelope.specification_status_compat import CompatibleSpecificationStatus
@@ -17,6 +18,7 @@ from features.project_document.document import (
     EvidenceStatus,
     ExteriorCondition,
     ProjectMaterial,
+    ThermalStandard,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.shared.colors import normalize_optional_hex_color
@@ -85,7 +87,12 @@ class EnvelopeReadResponse(BaseModel):
 
 
 class AssemblyThermalResponse(BaseModel):
-    """Backend-computed construction-only thermal result in SI units."""
+    """Backend-computed thermal result in SI units.
+
+    Carries both conventions on purpose: ``*_construction_*`` is the bare
+    material stack, ``*_effective_*`` adds the surface films. The header
+    reports the effective value and the tooltip discloses the rest.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -97,8 +104,14 @@ class AssemblyThermalResponse(BaseModel):
     status: AssemblyThermalStatus
     r_parallel_path_m2k_w: float | None
     r_isothermal_planes_m2k_w: float | None
+    r_construction_m2k_w: float | None
+    u_construction_w_m2k: float | None
     r_effective_m2k_w: float | None
     u_effective_w_m2k: float | None
+    rsi_m2k_w: float
+    rse_m2k_w: float
+    heat_flow_direction: HeatFlowDirection
+    thermal_standard: ThermalStandard
     warnings: list[str] = Field(default_factory=list)
 
 

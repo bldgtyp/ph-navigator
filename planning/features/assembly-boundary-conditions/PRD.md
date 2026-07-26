@@ -338,7 +338,7 @@ this must not become a legend-heavy diagram.
 | Phase | Content |
 | --- | --- |
 | **1** ✅ | `exterior_condition` + `assumptions.thermal_standard` fields, ISO 6946 resistance table, heat-flow direction from `type`. **No change to any displayed number.** Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
-| **2** | Fold films into the thermal calculation (§6): both unit branches move, **`#assembly-thermal-metric` tooltip rewritten** (it currently asserts the opposite), construction-only R kept in the tooltip, `thermal_input_hash` extended, PHPP double-count regression test added, Ch. 25/27 citation reconciled. |
+| **2** ✅ | Fold films into the thermal calculation (§6): both unit branches move, **`#assembly-thermal-metric` tooltip rewritten** (it currently asserts the opposite), construction-only R kept in the tooltip, `thermal_input_hash` extended, PHPP double-count regression test added, Ch. 25/27 citation reconciled. Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
 | **3** | Rendering — exterior label becomes a select, interior label shows derived Rsi, face bands, ground/ventilated treatments. |
 | **4** | ASHRAE resistance set (private-DB routed) + the standard selector in the UI. Low priority — Ed reports ~99 % ISO. |
 

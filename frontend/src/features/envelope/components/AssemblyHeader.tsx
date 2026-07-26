@@ -8,7 +8,7 @@ import {
 import { InfoTooltip } from "../../../shared/ui/info-tooltip";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import { statusLabel, totalThicknessMm } from "../lib";
-import type { Assembly, AssemblyThermalResponse } from "../types";
+import type { Assembly, AssemblyThermalResponse, ThermalStandard } from "../types";
 
 export function AssemblyHeader({
   activeAssembly,
@@ -29,6 +29,7 @@ export function AssemblyHeader({
 }) {
   const { unitSystem } = useUnitPreference();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
+  const constructionOnlyLabel = formatConstructionOnlyLabel(thermal, unitSystem);
   const assemblyWarning = activeAssembly.status.is_complete
     ? null
     : statusLabel(activeAssembly.status.flags);
@@ -64,20 +65,34 @@ export function AssemblyHeader({
           <div id="assembly-thermal-metric">
             <dt className="assembly-header-metric-label">
               <span>Thermal</span>
-              <InfoTooltip
-                id="assembly-thermal-info-button"
-                label="Effective Thermal Resistance details"
-              >
-                <strong>Effective Thermal Resistance</strong>
+              <InfoTooltip id="assembly-thermal-info-button" label="Thermal performance details">
+                <strong>{unitSystem === "IP" ? "Effective R-Value" : "Effective U-Value"}</strong>
                 <span>
-                  Calculated using the Passive House method: the average of the Parallel-Path and
-                  Isothermal-Planes methods.
+                  The construction is the Passive House average of the Parallel-Path and
+                  Isothermal-Planes methods. Surface film resistances <strong>are included</strong>{" "}
+                  in the value shown.
                 </span>
-                <span>
-                  Note: Surface film resistances (air films) are NOT included in the value shown
-                  here.
-                </span>
-                <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
+                {thermal ? (
+                  <>
+                    <span data-testid="assembly-thermal-films">
+                      {`${STANDARD_LABEL[thermal.thermal_standard]} films, ${
+                        thermal.heat_flow_direction
+                      } heat flow: Rsi ${formatRValueFromM2KPerW(thermal.rsi_m2k_w, {
+                        unitSystem,
+                        fractionDigits: 2,
+                      })}, Rse ${formatRValueFromM2KPerW(thermal.rse_m2k_w, {
+                        unitSystem,
+                        fractionDigits: 2,
+                      })}`}
+                    </span>
+                    {constructionOnlyLabel ? (
+                      <span data-testid="assembly-thermal-construction-only">
+                        {`Construction only, without films: ${constructionOnlyLabel}`}
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+                <em>Reference: ISO 6946; ASHRAE Handbook - Fundamentals, Chapter 25</em>
               </InfoTooltip>
             </dt>
             <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
@@ -88,6 +103,24 @@ export function AssemblyHeader({
   );
 }
 
+// `heat_flow_direction` needs no label map — its wire values ("upward" /
+// "horizontal" / "downward") are already the display words.
+const STANDARD_LABEL: Record<ThermalStandard, string> = {
+  iso_6946: "ISO 6946",
+};
+
+/** IP reports an R-value, SI a U-value — the metric changes kind by unit system. */
+function formatThermalValue(
+  rValueM2KW: number | null,
+  uValueWm2K: number | null,
+  unitSystem: "IP" | "SI",
+): string | null {
+  if (rValueM2KW === null || uValueWm2K === null) return null;
+  return unitSystem === "IP"
+    ? formatRValueFromM2KPerW(rValueM2KW, { unitSystem, fractionDigits: 1 })
+    : formatUValueFromWm2K(uValueWm2K, { unitSystem, fractionDigits: 3 });
+}
+
 function formatThermalLabel(
   thermal: AssemblyThermalResponse | null,
   loading: boolean,
@@ -95,18 +128,18 @@ function formatThermalLabel(
 ): string {
   if (loading) return "Calculating";
   if (!thermal) return "Unavailable";
-  if (thermal.r_effective_m2k_w === null || thermal.u_effective_w_m2k === null) {
-    return statusLabel(thermal.status.flags);
-  }
-  const value =
-    unitSystem === "IP"
-      ? formatRValueFromM2KPerW(thermal.r_effective_m2k_w, {
-          unitSystem,
-          fractionDigits: 1,
-        })
-      : formatUValueFromWm2K(thermal.u_effective_w_m2k, {
-          unitSystem,
-          fractionDigits: 3,
-        });
-  return value;
+  const value = formatThermalValue(
+    thermal.r_effective_m2k_w,
+    thermal.u_effective_w_m2k,
+    unitSystem,
+  );
+  return value ?? statusLabel(thermal.status.flags);
+}
+
+function formatConstructionOnlyLabel(
+  thermal: AssemblyThermalResponse | null,
+  unitSystem: "IP" | "SI",
+): string | null {
+  if (!thermal) return null;
+  return formatThermalValue(thermal.r_construction_m2k_w, thermal.u_construction_w_m2k, unitSystem);
 }

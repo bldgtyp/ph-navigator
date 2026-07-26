@@ -11,6 +11,10 @@ export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
 /** What the assembly's outboard face is adjacent to; drives the exterior film. */
 export type ExteriorCondition = "outdoor_air" | "ventilated" | "ground" | "unconditioned_space";
+/** Derived from `AssemblyType`; drives the interior film. */
+export type HeatFlowDirection = "upward" | "horizontal" | "downward";
+/** Widens when the ASHRAE surface-resistance set lands. */
+export type ThermalStandard = "iso_6946";
 
 export type ThermalStatusFlag =
   | "missing_material"
@@ -105,8 +109,16 @@ export type AssemblyThermalResponse = {
   };
   r_parallel_path_m2k_w: number | null;
   r_isothermal_planes_m2k_w: number | null;
+  /** Bare material stack, no surface films — what the PHPP export sends. */
+  r_construction_m2k_w: number | null;
+  u_construction_w_m2k: number | null;
+  /** Construction plus the surface films — the real U-factor. */
   r_effective_m2k_w: number | null;
   u_effective_w_m2k: number | null;
+  rsi_m2k_w: number;
+  rse_m2k_w: number;
+  heat_flow_direction: HeatFlowDirection;
+  thermal_standard: ThermalStandard;
   warnings: string[];
 };
 

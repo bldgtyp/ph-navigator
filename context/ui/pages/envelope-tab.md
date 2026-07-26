@@ -103,10 +103,15 @@ the Apertures list — see the design-system component inventory). Styled to the
 
 **Right side — active assembly content (US-ENV-3, 4):**
 
+> The metric is labelled **Thermal** and changes kind with the unit system:
+> IP renders an R-value (1 dp), SI a U-value (3 dp). It **includes** the
+> ISO 6946 surface films; its `ⓘ` tooltip names the standard, the Rsi/Rse in
+> force, the derived heat-flow direction, and the construction-only value.
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │  Assembly Details   [WALL-C3 ▾]    Total Thickness: 304.8 mm  ⓘ      │
-│                                    Effective U-Value: 0.243 W/m²K  ⓘ  │
+│                                    Thermal: 0.243 W/m²K  ⓘ            │
 │                                    [⇅ Flip Orient] [↔ Flip Layers]    │
 │                                    [⨀ Pick] [⬇ Paste] [↶ Undo]   ⋯   │
 ├───────────────────────────────────────────────────────────────────────┤
@@ -144,7 +149,11 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   as a Honeybee construction library.
 - **Download in PHPP format** — exports one CSV per assembly, laid out to mirror
   the PHPP **U-Values** worksheet, bundled into a ZIP
-  (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. An
+  (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. The
+  exported U-value is **construction-only** and deliberately differs from the
+  header metric: the worksheet declares `Rsi: 0.00` / `Rse: 0.00` and adds its
+  own surface films, so sending the header's with-films value would count them
+  twice (`context/technical-requirements/envelope-thermal-preview.md`). An
   assembly that can't be represented in PHPP (>8 layers, >3 / inconsistent
   heat-flow pathways, or incomplete materials) is written as a one-line error
   CSV rather than dropped. When any assembly is blocked, a confirm/cancel modal

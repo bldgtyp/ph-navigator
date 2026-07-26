@@ -1,11 +1,15 @@
 # Envelope Thermal Preview — Contract
 
-The Assembly Builder shows a construction-only thermal preview (R-value
-and U-value) alongside each assembly. The preview is **not** a
-certification output; it is the live PH-average of the ASHRAE
-Fundamentals Ch. 25 Parallel-Path and Isothermal-Planes methods,
-computed entirely on the backend so the same numbers feed the canvas
-header, MCP queries, and downstream pipelines.
+The Assembly Builder shows a thermal preview (R-value and U-value)
+alongside each assembly. The preview is **not** a certification output;
+the construction resistance is the live PH-average of the ASHRAE
+Fundamentals Ch. 25 Parallel-Path and Isothermal-Planes methods, plus the
+ISO 6946 surface films, computed entirely on the backend so the same
+numbers feed the canvas header, MCP queries, and downstream pipelines.
+
+The response carries **both** conventions — with films and without — because
+they have different consumers; see "Two conventions, both reported" below.
+Getting that distinction wrong double-counts the films in the PHPP export.
 
 This doc describes the user-facing contract. The math sits in
 `backend/features/envelope/thermal.py`.
@@ -33,11 +37,21 @@ body. Authentication is project-scoped view access.
   },
   "r_parallel_path_m2k_w": <float | null>,
   "r_isothermal_planes_m2k_w": <float | null>,
+  "r_construction_m2k_w": <float | null>,
+  "u_construction_w_m2k": <float | null>,
   "r_effective_m2k_w": <float | null>,
   "u_effective_w_m2k": <float | null>,
+  "rsi_m2k_w": <float>,
+  "rse_m2k_w": <float>,
+  "heat_flow_direction": "upward" | "horizontal" | "downward",
+  "thermal_standard": "iso_6946",
   "warnings": ["<message>", ...]
 }
 ```
+
+The four film fields are **never null** — they depend only on the
+assembly's `type` and `exterior_condition`, so they are reported even when
+missing materials leave every R/U field null.
 
 All R/U values are SI-canonical (m²·K/W and W/m²·K respectively). When
 geometry or material data is missing, R/U fields are `null` and the
@@ -121,11 +135,41 @@ These films are **not** the `air_*` catalog materials — those are air
 condensation screen's surface-condensation / mould / fRsi criteria. It is
 never used in a U-value.
 
-> **The preview above is still construction-only.** The films resolved
-> here do not yet enter `r_effective_m2k_w` / `u_effective_w_m2k`; folding
-> them in is a separate, deliberate change of convention that moves every
-> displayed number. See
-> `planning/features/assembly-boundary-conditions/PRD.md` §6.
+### Two conventions, both reported
+
+`r_effective_m2k_w` / `u_effective_w_m2k` **include the films**:
+`R_effective = Rsi + R_construction + Rse`. The films add in series with
+the PH average, not inside each parallel path, so
+`r_parallel_path_m2k_w` and `r_isothermal_planes_m2k_w` stay
+construction-only and comparable.
+
+`r_construction_m2k_w` / `u_construction_w_m2k` are the bare material
+stack — the PH average of the two methods, with no films.
+
+| Consumer | Uses | Why |
+|----------|------|-----|
+| Assembly Builder header + tooltip | effective | it is the real U-factor |
+| **PHPP U-Values export** | **construction-only** | the worksheet declares `Rsi: 0.00` / `Rse: 0.00` and adds its own films from its own assembly-type setting — sending the effective value double-counts them |
+| HBJSON export | neither | it emits material layers; honeybee/EnergyPlus compute their own |
+
+That split is enforced by **types, not discipline**. `thermal.py` exposes
+two entry points:
+
+- `calculate_construction_thermal()` → `ConstructionThermalResult`, which
+  has no film or effective field on it at all. Film-free consumers call
+  this, so reaching for the wrong number is not something a caller can do.
+- `calculate_assembly_thermal()` → `ThermalResult`, which wraps the above
+  and adds the films. This is what the route returns.
+
+A new consumer that must not double-count films should take
+`ConstructionThermalResult`.
+
+> **This changed on 2026-07-26** (`assembly-boundary-conditions` Phase 2).
+> Before it, the header reported the construction-only value and its
+> tooltip said so. Every displayed number moved: IP R up, SI U down, by
+> ~4 % on a good assembly and ~15 % on a poor one. The
+> `#assembly-thermal-metric` tooltip was rewritten in the same change and
+> is the user-facing announcement.
 
 ## `warnings`
 
@@ -137,16 +181,19 @@ frontend renders these directly under the R/U readout when
 ## `input_hash`
 
 `input_hash` is a SHA-256 of (assembly subtree + referenced material
-physics fields). It exists so the frontend can cache the preview by
-identity:
+physics fields + the thermal standard). It exists so the frontend can
+cache the preview by identity:
 
 - Identical inputs → identical hash.
 - Conductivity, density, specific heat, emissivity changes →
   different hash.
 - Layer thickness, segment width, orientation, layer order changes →
   different hash.
-- `exterior_condition` changes → different hash (it is an input to the
-  surface films, even while the preview is still construction-only).
+- `exterior_condition` and `type` changes → different hash (both are
+  inputs to the surface films).
+- `tables.assumptions.thermal_standard` changes → different hash. It is
+  not part of the assembly subtree, so it is hashed explicitly; without
+  that, switching the standard would serve stale cached previews.
 - Material **name**, color, source URL, comments, `specification_status`
   changes → **same hash** (display fields, not physics).
 - Catalog-origin metadata changes → same hash (provenance, not

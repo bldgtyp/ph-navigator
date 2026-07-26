@@ -28,7 +28,7 @@ import zipfile
 from dataclasses import dataclass, field
 
 from features.envelope.phpp_types import ExportReason, UnitSystem
-from features.envelope.thermal import calculate_assembly_thermal
+from features.envelope.thermal import calculate_construction_thermal
 from features.project_document.document import (
     Assembly,
     AssemblyLayer,
@@ -110,7 +110,11 @@ def build_assembly_export_plan(
     layers = _layers_outside_to_inside(assembly)
     # One thermal pass yields both the completeness flags and the reference
     # U-value; ``status.flags`` carries the same codes ``thermal_issues`` would.
-    thermal = calculate_assembly_thermal(assembly, materials_by_id)
+    # Deliberately the *construction-only* calculation: the worksheet block
+    # below declares ``Rsi: 0.00`` / ``Rse: 0.00`` and PHPP adds its own
+    # surface films from its own assembly-type setting. This type has no
+    # effective/with-films field to reach for by mistake.
+    thermal = calculate_construction_thermal(assembly, materials_by_id)
 
     # 1. Completeness — a missing material/conductivity makes a row unrenderable.
     if set(thermal.status.flags) & _INCOMPLETE_MATERIAL_CODES:
@@ -133,7 +137,7 @@ def build_assembly_export_plan(
         rows=rows,
         section_percentages=[fraction * 100.0 for fraction in shared_profile],
         total_thickness_cm=sum(layer.thickness_mm for layer in layers) / 10.0,
-        u_value_w_m2k=thermal.u_effective_w_m2k,
+        u_value_w_m2k=thermal.u_construction_w_m2k,
     )
 
 
