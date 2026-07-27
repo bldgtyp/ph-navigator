@@ -10,13 +10,25 @@ RELATED: ./README.md, ./PRD.md, ../../../../features/assembly-condensation-risk/
 # Status
 
 > **Superseded in part, 2026-07-27.** Phase 2's rendering was reworked the day
-> after this packet was archived: a membrane now gets a reserved 14 mm band
-> (`MEMBRANE_BAND_HEIGHT_MM`) drawn as a full-width rule, instead of a 4 mm
-> hairline rect. That deleted `canvas-hit-box.ts`, `canvasHitBox`,
+> after this packet was archived: a membrane now gets a reserved band
+> (`MEMBRANE_BAND_HEIGHT_MM`, 9 mm) drawn as a full-width rule, instead of a
+> 4 mm hairline rect. That deleted `canvas-hit-box.ts`, `canvasHitBox`,
 > `MEMBRANE_DISPLAY_THICKNESS_MM`, `MEMBRANE_MIN_HIT_HEIGHT_PX`, and the
 > `hitRoomAbove/BelowMm` geometry fields — **all named below no longer exist**.
 > Reserving real drawing space made non-overlap structural, so none of the
 > hit-box negotiation described in this file survives.
+>
+> Four more decisions recorded here were reversed the same day:
+> - **Total Thickness now excludes membranes**, and the calculation moved to
+>   the backend (`membranes.py::total_thickness_mm`). This packet's "membranes
+>   count toward Total Thickness" is no longer true anywhere, including the
+>   PHPP export, which had been reporting a depth covering rows it dropped.
+> - **A membrane designated as the air barrier carries the red rule itself**;
+>   Phase 3's separate face rule is not drawn for it.
+> - **Membrane thickness is no longer on the canvas** — it moved into Segment
+>   Properties, and is auto-corrected to 1 mm when implausible for a membrane.
+> - **Membrane layers follow the assembly width** instead of contributing to
+>   it, so narrowing a real layer no longer strands the rules at the old width.
 >
 > That rework also found the real cause of the click theft this packet fought:
 > the global `button { min-height: var(--phn-control-height) }` in

@@ -112,7 +112,9 @@ a new flag. The justification is numerical negligibility plus
 conservatism — 6-mil polyethylene is ~0.0005 m²K/W, four orders of
 magnitude below a typical assembly — and it matches PHPP, which does
 not enter membranes on the U-Values worksheet. Membranes still carry a
-real `thickness_mm` and still count toward Total Thickness.
+real `thickness_mm`, but it is **excluded from Total Thickness** — see
+`envelope/membranes.py::total_thickness_mm`, which the header chip and
+the PHPP export both answer to.
 
 "Every assigned segment", not "any": a layer mixing a membrane with a
 real material computes normally rather than silently dropping the

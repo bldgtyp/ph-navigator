@@ -161,8 +161,10 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   written as a one-line error CSV rather than dropped. **Membrane layers are
   dropped from the worksheet rows deliberately** — PHPP does not enter them,
   they carry no R, and the 8-row budget is counted after the drop so a WRB
-  cannot push a real 8-layer assembly over the limit. Total Thickness still
-  reports the physical assembly, membranes included. When any assembly is blocked, a confirm/cancel modal
+  cannot push a real 8-layer assembly over the limit. The exported Total
+  Thickness excludes them for the same reason — reporting a depth that covered
+  rows the sheet never received made the CSV disagree with itself.
+  When any assembly is blocked, a confirm/cancel modal
   (`PhppExportWarningDialog`) lists them with friendly reasons before the
   download proceeds ("Download anyway" / "Cancel").
 - **Upload constructions HBJSON** (editors only).
@@ -198,8 +200,24 @@ drawn as a full-width **rule** in the material's colour, centred, with daylight
 above and below. Consequences, all driven from `canvas-geometry.ts` so the SVG,
 the y-stacking, and the hit targets agree:
 
-- The thickness label still shows the layer's **real** thickness and is
-  tooltipped "not drawn to scale". Total Thickness counts it too.
+- **The canvas shows no thickness for a membrane.** The number contradicted the
+  band beside it, so it moved to the Segment Properties dialog; the dimension
+  cell keeps a delete button, which was otherwise reachable only *through* the
+  thickness editor. Total Thickness leaves membranes out entirely
+  (`membranes.py::total_thickness_mm`), so editing this value now changes
+  nothing else on the assembly — the dialog says so in place of the old
+  "not drawn to scale" tooltip.
+- **A membrane follows the assembly width; it does not set it.** Only layers
+  with a real width vote on `widthMm`, and membranes are stretched to the
+  result. Otherwise narrowing a real layer strands the membrane rule, the
+  air-barrier rule and the surface-film lines at the old width — and starves
+  `.assembly-canvas-stage`'s `margin-inline: auto` of the room to centre. An
+  all-membrane assembly falls back to what its membranes carry; a legacy
+  multi-segment membrane is scaled across the width rather than clipped.
+- A layer's thickness is auto-corrected to 1 mm when a membrane is assigned to
+  it and its thickness is implausible for one
+  (`MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM`, 25 mm). That catches the untouched
+  add-layer default, which the canvas cannot show is wrong.
 - The band *is* the clickable box — no layer's hit target ever extends past
   its own band, for membranes or anything else. Two separate things used to
   break this, and both are worth knowing before touching the overlay:
@@ -224,7 +242,11 @@ entirely — see `../../technical-requirements/envelope-thermal-preview.md`.
 **Air-barrier designation.** An assembly may mark one *face* of one layer as
 its air barrier (`Assembly.air_barrier = {layer_id, face}`), drawn as a bold
 continuous **red** rule on that face — red for the air barrier is the Passive
-House drawing convention, so it reads without a legend. A face,
+House drawing convention, so it reads without a legend. **When the designated
+layer is a membrane, no separate face rule is drawn: the membrane's own rule
+turns red instead.** Drawing both showed one physical sheet as two lines a few
+pixels apart, and the face is meaningless at 0.15 mm — a sheet has no interior
+side distinct from its exterior one. A face,
 not a layer and not a material: the air barrier is sometimes a dedicated
 membrane and just as often the interior face of spray foam or the taped face of
 sheathing, so the same material is the air barrier in one assembly and not in
@@ -242,6 +264,22 @@ another.
 - **It feeds no calculation.** ISO 13788 ignores air leakage entirely, so the
   designation must never reach the condensation engine, and the UI must not
   imply that it does.
+
+**Envelope dialogs are snapshots, and every command closes them.** Two facts
+about `useEnvelopeDialogs` / `applyCommand` that constrain any field added to a
+dialog on this page, and are not visible from the dialog components themselves:
+
+- The dialog state holds the assembly, layer and segment as a `useState`
+  **snapshot** taken when it opens. It never observes later document changes, so
+  a field cannot expect its value to refresh underneath it. (Consequence worth
+  knowing: assigning a membrane from the Segment Properties dialog does apply
+  the material and the thickness correction, but the dialog keeps showing the
+  width and stud fields until it is reopened.)
+- `applyCommand` calls `setDialog(null)` after every successful command, so
+  **any write from inside a dialog closes it**. Commit-on-blur is therefore
+  unusable for a dialog field — the dialog would vanish as the user tabbed out.
+  Fields that write on `Apply` are the norm here; the material picker and the
+  air-barrier radios are the deliberate exceptions, and both close the dialog.
 
 **Segment Properties modal (US-ENV-6):**
 

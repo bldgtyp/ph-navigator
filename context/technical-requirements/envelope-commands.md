@@ -80,6 +80,16 @@ class name. The dispatch registry is
 | `hand_enter_material` | `HandEnterMaterialCommand` | Create an ad-hoc project material from form fields and assign it. | `segment_not_found` |
 | `detach_segment_material` | `DetachSegmentMaterialCommand` | Fork the segment's project material into a new "(Custom)" copy with no `catalog_origin`; assign the copy. | `segment_has_no_material`, `segment_not_found` |
 
+Assigning a **membrane** material carries a side effect on the *layer*: if the
+layer's thickness is implausible for a membrane
+(`MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM`, 25 mm) it is corrected to 1 mm. A new
+layer arrives at the add-layer default, two orders of magnitude thicker than any
+membrane, and the canvas cannot show the mistake because a membrane draws in a
+fixed band. Applied at `assign_segment_material` — the chokepoint every picker,
+hand-entry, detach and import path funnels through — and again in
+`paste_assignment`, which bypasses it. Idempotent, and never fires on a value
+already in membrane range.
+
 ### Project-material commands
 
 | Kind | Model | Purpose | Notable conflicts |
