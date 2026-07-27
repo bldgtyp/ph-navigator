@@ -13,10 +13,17 @@ export const ASSEMBLY_CANVAS_BOTTOM_SAFETY_GUTTER_PX = 2;
 // Reserving real space is what makes the membrane clickable. The band *is* the
 // hit target, so it never has to borrow pixels from the layers either side —
 // which is what used to steal clicks from a thin neighbour like 10 mm gypsum.
-// 14 mm gives a 14 px target at zoom 1; at the 0.5x floor it is 7 px and the
-// user zooms in. Expressed in millimetres so it rides the same viewBox
-// transform as everything else.
-export const MEMBRANE_BAND_HEIGHT_MM = 14;
+// Expressed in millimetres so it rides the same viewBox transform as
+// everything else.
+//
+// The band minus the rule's own weight is the daylight around it, split evenly:
+// at 9 mm with a 3 mm rule that is 3 mm a side. Tuned down from 14 mm, where
+// the 5.5 mm gaps read as a hole in the section rather than a separation. The
+// floor is set by clickability, not looks — 9 mm is a 9 px target at zoom 1,
+// still comfortably larger than the rule and larger than a thin neighbour like
+// 10 mm gypsum needs to lose. Below about 6 mm the band stops being a reliable
+// target at the 0.5x zoom floor.
+export const MEMBRANE_BAND_HEIGHT_MM = 9;
 export const ZOOM_STEPS = [0.5, 0.75, 1, 1.5, 2, 3] as const;
 export const ZOOM_MIN = zoomBoundary(0);
 export const ZOOM_MAX = zoomBoundary(ZOOM_STEPS.length - 1);

@@ -495,6 +495,13 @@
   stroke-width: 3;
 }
 
+/* A membrane that IS the air barrier carries the designation on its own rule,
+   in place of the separate face rule an ordinary layer gets. Drawing both
+   would show one physical sheet as two lines a few pixels apart. */
+.assembly-svg-membrane.is-air-barrier {
+  stroke: var(--assembly-air-barrier);
+}
+
 .assembly-svg-canvas[data-mode="picking"] .assembly-svg-segment,
 .assembly-svg-segment.is-picked-source {
   stroke: var(--assembly-pick-ring);
@@ -557,6 +564,11 @@
   text-align: right;
   width: 40px;
 }
+
+/* Membrane layers show no thickness value, so their cell carries the delete
+   action alone. It reuses `.dimension-chrome-delete-button` (the canonical
+   class in shared/ui/dimensions) rather than restyling the label button — the
+   centring, danger hover and focus treatment already live there. */
 
 .dimension-input-wrap {
   align-items: center;
@@ -1433,13 +1445,16 @@
   color: var(--phn-danger);
 }
 
+/* Deliberately does NOT scroll itself. `.modal-panel` already caps at
+   `min(760px, 100vh - 40px)` with `overflow: auto`, and this form used to cap
+   at the same 760px — so a full-height form plus the panel's header and
+   padding overflowed the panel too, and the user got a scrollbar inside a
+   scrollbar. Every other modal in the app lets the panel do the scrolling;
+   this one was the lone exception. */
 .segment-properties-form {
   display: grid;
   gap: var(--space-12);
   margin-top: var(--space-14);
-  max-height: min(76vh, 760px);
-  overflow: auto;
-  padding-right: var(--space-2);
 }
 
 .segment-dialog-section {

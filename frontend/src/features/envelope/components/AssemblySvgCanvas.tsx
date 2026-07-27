@@ -1,4 +1,5 @@
 import { materialColor } from "../lib";
+import { membraneStrokeColor } from "../membranes";
 import { ASSEMBLY_CANVAS_ORIGIN_X_PX, SVG_STROKE_PADDING_MM } from "../canvas-constants";
 import { segmentCanvasKey, type AssemblyCanvasPaintMode } from "../canvas-paint";
 import type { AssemblyCanvasGeometry, AssemblyCanvasSegmentGeometry } from "../canvas-geometry";
@@ -117,19 +118,6 @@ export function AssemblySvgCanvas({
 }
 
 /**
- * The stroke a membrane rule should paint, or `undefined` to defer to CSS.
- *
- * A material's colour is optional, and `materialColor` answers a missing one
- * with `transparent`. That is harmless for a filled rect but fatal for a rule:
- * the layer would occupy its band and stay selectable while drawing nothing.
- * Returning `undefined` omits the attribute so the stylesheet's default stroke
- * applies, which is what guarantees a membrane is always visible.
- */
-export function membraneStrokeColor(material: ProjectMaterial | null): string | undefined {
-  return material?.color ? materialColor(material) : undefined;
-}
-
-/**
  * How a segment is addressed in the DOM, whatever shape draws it.
  *
  * A membrane renders as a `<line>` and everything else as a `<rect>`, but both
@@ -158,12 +146,20 @@ function SvgMembraneRule({
   isPicked,
 }: {
   segmentGeometry: AssemblyCanvasSegmentGeometry;
-  // Omitted when the material carries no colour, so CSS supplies the default.
+  // The material's own colour, or undefined when it has none — see
+  // `membraneStrokeColor`. Ignored entirely when this membrane is the air
+  // barrier; that decision lives here so the class and the stroke cannot
+  // disagree about it.
   stroke: string | undefined;
   isPicked: boolean;
 }) {
   const classNames = ["assembly-svg-membrane"];
+  // When this membrane is the air barrier its rule carries the designation, so
+  // the red must win over the material's own colour — drop the inline stroke
+  // and let the stylesheet paint it, rather than fighting an attribute.
+  if (segmentGeometry.isAirBarrier) classNames.push("is-air-barrier");
   if (isPicked) classNames.push("is-picked-source");
+  const inlineStroke = segmentGeometry.isAirBarrier ? undefined : stroke;
   const centreYMm = segmentGeometry.yMm + segmentGeometry.heightMm / 2;
 
   return (
@@ -175,7 +171,12 @@ function SvgMembraneRule({
       x2={segmentGeometry.xMm + segmentGeometry.widthMm}
       y1={centreYMm}
       y2={centreYMm}
-      stroke={stroke}
+      // Inline style, not the `stroke` attribute: an SVG presentation attribute
+      // loses to any stylesheet rule, so `.assembly-svg-membrane`'s fallback
+      // stroke would silently repaint every material colour grey. Omitting the
+      // style entirely is what lets that fallback — and the air-barrier red —
+      // apply, so the two cases stay in one mechanism.
+      style={inlineStroke === undefined ? undefined : { stroke: inlineStroke }}
     />
   );
 }

@@ -7,7 +7,7 @@ import {
 } from "../../../lib/units";
 import { InfoTooltip } from "../../../shared/ui/info-tooltip";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
-import { statusLabel, totalThicknessMm } from "../lib";
+import { statusLabel } from "../lib";
 import type { Assembly, AssemblyThermalResponse, ThermalStandard } from "../types";
 
 export function AssemblyHeader({
@@ -51,7 +51,7 @@ export function AssemblyHeader({
           <div id="assembly-total-thickness-metric">
             <dt>Total thickness</dt>
             <dd data-testid="total-thickness">
-              {formatLengthFromMm(totalThicknessMm(activeAssembly), { unitSystem })}
+              {formatLengthFromMm(activeAssembly.total_thickness_mm, { unitSystem })}
             </dd>
           </div>
         </dl>

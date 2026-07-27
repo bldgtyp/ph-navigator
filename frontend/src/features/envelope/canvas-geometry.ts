@@ -1,4 +1,5 @@
 import { MEMBRANE_BAND_HEIGHT_MM } from "./canvas-constants";
+import { layerWidthMm } from "./lib";
 import { isMembraneLayer } from "./membranes";
 import type {
   Assembly,
@@ -16,6 +17,10 @@ export type AssemblyCanvasLayerGeometry = {
   // never this — when showing the user a dimension.
   heightMm: number;
   isMembrane: boolean;
+  // This membrane *is* the assembly's air barrier, so its own rule carries the
+  // designation and no separate face rule is drawn. Only ever true for a
+  // membrane layer — see `airBarrierGeometry`.
+  isAirBarrier: boolean;
 };
 
 export type AssemblyCanvasSegmentGeometry = {
@@ -27,6 +32,7 @@ export type AssemblyCanvasSegmentGeometry = {
   widthMm: number;
   heightMm: number;
   isMembrane: boolean;
+  isAirBarrier: boolean;
 };
 
 export type AssemblyCanvasAirBarrierGeometry = {
@@ -61,32 +67,50 @@ export function buildAssemblyCanvasGeometry(
   assembly: Assembly,
   materialsById: ReadonlyMap<string, ProjectMaterial>,
 ): AssemblyCanvasGeometry {
+  // One record per layer rather than two index-aligned arrays: both facts are
+  // needed for every layer before the width is known, and keeping them together
+  // removes the chance of the two drifting out of step.
+  const layerFacts = assembly.layers.map((layer) => ({
+    isMembrane: isMembraneLayer(layer, materialsById),
+    widthMm: layerWidthMm(layer),
+  }));
+  const widthMm = assemblyWidthMm(layerFacts);
+
   const layers: AssemblyCanvasLayerGeometry[] = [];
   const segments: AssemblyCanvasSegmentGeometry[] = [];
   let yMm = 0;
-  let widthMm = 1;
 
   assembly.layers.forEach((layer, layerIndex) => {
-    const isMembrane = isMembraneLayer(layer, materialsById);
+    const facts = layerFacts[layerIndex] ?? { isMembrane: false, widthMm: 0 };
+    const isMembrane = facts.isMembrane;
     const heightMm = isMembrane ? MEMBRANE_BAND_HEIGHT_MM : layer.thickness_mm;
-    layers.push({ layer, yMm, heightMm, isMembrane });
+    const isAirBarrier = isMembrane && assembly.air_barrier?.layer_id === layer.id;
+    layers.push({ layer, yMm, heightMm, isMembrane, isAirBarrier });
+
+    // A membrane spans whatever it is applied to, so it is stretched to the
+    // assembly width rather than drawn at its stored segment width. Scaling
+    // (rather than forcing a single full-width segment) also lays out a legacy
+    // multi-segment membrane sensibly — documents predating the single-segment
+    // rule still exist, and the thermal engine flags them separately.
+    const scale = isMembrane && facts.widthMm > 0 ? widthMm / facts.widthMm : 1;
 
     let xMm = 0;
     layer.segments.forEach((segment) => {
+      const segmentWidthMm = segment.width_mm * scale;
       segments.push({
         layer,
         layerIndex,
         segment,
         xMm,
         yMm,
-        widthMm: segment.width_mm,
+        widthMm: segmentWidthMm,
         heightMm,
         isMembrane,
+        isAirBarrier,
       });
-      xMm += segment.width_mm;
+      xMm += segmentWidthMm;
     });
 
-    widthMm = Math.max(widthMm, xMm);
     yMm += heightMm;
   });
 
@@ -100,6 +124,37 @@ export function buildAssemblyCanvasGeometry(
 }
 
 /**
+ * How wide the section is, in drawing millimetres.
+ *
+ * Only layers with a real width get a vote. A membrane is a continuous sheet
+ * that takes the width of what it covers, so letting its stored segment width
+ * count would strand the whole drawing at the old size the moment a real layer
+ * is narrowed: the membrane rule, the air-barrier rule and the surface-film
+ * lines all measure off this number, and the stage centres on it too.
+ *
+ * An assembly of nothing but membranes has no width of its own, so it falls
+ * back to what those membranes carry rather than collapsing to nothing.
+ *
+ * This stays in the frontend, unlike `total_thickness_mm`, which moved to the
+ * backend under the "calculations live in the backend" rule. The difference is
+ * what the number *is*: total thickness is a fact about the building, reported
+ * in the header and written into the PHPP export, and it moved precisely
+ * because those two consumers had drifted apart. This is a viewBox dimension —
+ * it feeds px/mm scaling, zoom-to-fit and hit-target sizing, is never shown as
+ * a dimension, and is never sent back. Computing it server-side would put
+ * SVG layout choices in the API response.
+ */
+function assemblyWidthMm(layerFacts: { isMembrane: boolean; widthMm: number }[]): number {
+  const contentWidths = layerFacts
+    .filter((facts) => !facts.isMembrane)
+    .map((facts) => facts.widthMm);
+  const candidates = contentWidths.some((width) => width > 0)
+    ? contentWidths
+    : layerFacts.map((facts) => facts.widthMm);
+  return Math.max(1, ...candidates);
+}
+
+/**
  * Place the air-barrier rule on the designated face.
  *
  * "Interior" and "exterior" are orientation-relative, not top/bottom: the
@@ -108,6 +163,13 @@ export function buildAssemblyCanvasGeometry(
  * *bottom* edge in that orientation and its *top* edge in the other. Getting
  * this backwards would draw the line on the wrong side of the layer — a
  * silently wrong drawing, which is worse than no drawing.
+ *
+ * A designated *membrane* gets no rule here: it is already drawn as a rule, so
+ * a second one beside it would show one physical thing twice, a few pixels
+ * apart, as if the sheet and its air barrier were different objects. The
+ * membrane's own rule turns red instead (`isAirBarrier` on the geometry). The
+ * face is genuinely meaningless at 0.15 mm — a sheet has no interior side
+ * distinct from its exterior one — so nothing is lost by collapsing them.
  */
 function airBarrierGeometry(
   assembly: Assembly,
@@ -117,7 +179,7 @@ function airBarrierGeometry(
   const designation = assembly.air_barrier;
   if (!designation) return null;
   const target = layers.find((entry) => entry.layer.id === designation.layer_id);
-  if (!target) return null;
+  if (!target || target.isMembrane) return null;
 
   const exteriorIsBelow = assembly.orientation === "last_layer_outside";
   const atLayerBottom = designation.face === (exteriorIsBelow ? "exterior" : "interior");

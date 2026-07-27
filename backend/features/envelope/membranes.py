@@ -17,7 +17,12 @@ from collections.abc import Mapping
 from starlette import status
 
 from features.catalogs.materials.models import MEMBRANE_CATEGORY_ID
-from features.project_document.document import AssemblyLayer, AssemblySegment, ProjectMaterial
+from features.project_document.document import (
+    Assembly,
+    AssemblyLayer,
+    AssemblySegment,
+    ProjectMaterial,
+)
 from features.shared.errors import api_error
 
 
@@ -64,6 +69,68 @@ def is_membrane_layer(
     """
     assigned = assigned_materials(layer, materials_by_id)
     return bool(assigned) and all(is_membrane_material(material) for _, material in assigned)
+
+
+def total_thickness_mm(
+    assembly: Assembly,
+    materials_by_id: Mapping[str, ProjectMaterial],
+) -> float:
+    """Assembly build-up thickness, excluding membrane layers.
+
+    Membranes are left out because their thickness is the one number in the
+    assembly that answers to nothing the user can see or check. It does not
+    move the drawing (a membrane gets a fixed band, not its real height), it
+    does not move the U-value (membranes carry no R), and it does not move the
+    condensation result (``sd`` is read from the material, not ``mu * d``). So
+    a membrane thickness edit used to shift this total while every other
+    number and the section itself stayed put.
+
+    The cost is honest and small: a real 1.5 mm peel-and-stick or 3 mm EPDM no
+    longer counts toward build-up depth. That is worth less than a total the
+    user can reconcile against the layers in front of them — and it makes this
+    agree with the PHPP export, which already drops membrane rows entirely.
+    """
+    return sum(layer.thickness_mm for layer in assembly.layers if not is_membrane_layer(layer, materials_by_id))
+
+
+MEMBRANE_DEFAULT_THICKNESS_MM = 1.0
+
+
+def _default_new_layer_thickness_mm() -> float:
+    """The thickness a freshly added layer arrives at.
+
+    Read off ``AddLayerCommand`` rather than restated, because the snap below
+    tests equality against it: a second literal would let the two drift, and the
+    failure would be silent — the snap would simply stop firing.
+    """
+    from features.envelope.models import AddLayerCommand
+
+    default = AddLayerCommand.model_fields["thickness_mm"].default
+    return float(default)
+
+
+DEFAULT_NEW_LAYER_THICKNESS_MM = _default_new_layer_thickness_mm()
+
+
+def should_snap_membrane_thickness(
+    layer: AssemblyLayer,
+    materials_by_id: Mapping[str, ProjectMaterial],
+) -> bool:
+    """Has this layer just become a membrane while still at the layer default?
+
+    Membranes are two orders of magnitude thinner than a default layer, and the
+    canvas cannot show the mistake because a membrane draws in a fixed band — a
+    forgotten 100 mm WRB looks exactly like a correct one. So it is corrected on
+    assignment, when the membrane-ness first becomes known.
+
+    "Still at the default" stands in for "never edited", which is a sentinel,
+    not a fact the document records. The cost is real but narrow: a membrane the
+    user deliberately set to exactly the default thickness would be snapped to
+    1 mm anyway. Recording an explicit unset/edited state on the layer is the
+    fix if that ever bites; it needs a document schema change, so it is not one
+    to make casually.
+    """
+    return is_membrane_layer(layer, materials_by_id) and layer.thickness_mm == DEFAULT_NEW_LAYER_THICKNESS_MM
 
 
 def require_single_segment_for_membrane(layer: AssemblyLayer) -> None:

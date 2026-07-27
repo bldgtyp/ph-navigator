@@ -13,10 +13,6 @@ export function envelopeReadSource(project: ProjectDetail): EnvelopeReadSource {
     : "draft";
 }
 
-export function totalThicknessMm(assembly: Assembly): number {
-  return assembly.layers.reduce((total, layer) => total + layer.thickness_mm, 0);
-}
-
 export function materialById(materials: ProjectMaterial[]): Map<string, ProjectMaterial> {
   return new Map(materials.map((material) => [material.id, material]));
 }

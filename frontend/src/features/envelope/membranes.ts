@@ -1,4 +1,5 @@
 import type { MaterialCategoryId } from "../catalogs/types";
+import { materialColor } from "./lib";
 import type { AssemblyLayer, ProjectMaterial } from "./types";
 
 // Mirrors the backend `MEMBRANE_CATEGORY_ID`
@@ -30,4 +31,17 @@ export function isMembraneLayer(
     )
     .filter((material): material is ProjectMaterial => material !== null);
   return assigned.length > 0 && assigned.every(isMembraneMaterial);
+}
+
+/**
+ * The stroke a membrane rule should paint, or `undefined` to defer to CSS.
+ *
+ * A material's colour is optional, and `materialColor` answers a missing one
+ * with `transparent`. That is harmless for a filled rect but fatal for a rule:
+ * the layer would occupy its band and stay selectable while drawing nothing.
+ * Returning `undefined` lets the stylesheet's default stroke apply, which is
+ * what guarantees a membrane is always visible.
+ */
+export function membraneStrokeColor(material: ProjectMaterial | null): string | undefined {
+  return material?.color ? materialColor(material) : undefined;
 }

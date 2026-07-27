@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+from features.envelope.commands.materials import assign_segment_material
 from features.envelope.hbjson_export import export_hbjson_constructions
 from features.envelope.hbjson_import import parse_construction_library
 from features.envelope.import_planning import _build_assembly
+from features.envelope.membranes import total_thickness_mm
 from features.envelope.phpp_export import build_assembly_export_plan
+from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.thermal import thermal_issue_flags, thermal_issues
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from tests.envelope.test_envelope_document_contracts import (
@@ -25,7 +28,9 @@ def _construction(payload: dict[str, object]) -> dict[str, Any]:
     return cast(dict[str, Any], constructions["WALL_MEMBRANE"])
 
 
-def _segment(seg_id: str, material_id: str, width_mm: float = 1000.0) -> dict[str, object]:
+# `material_id` is optional so a test can build the unassigned layer that a
+# freshly added one starts as.
+def _segment(seg_id: str, material_id: str | None, width_mm: float = 1000.0) -> dict[str, object]:
     return {
         "id": seg_id,
         "order": 0,
@@ -249,8 +254,11 @@ def test_phpp_drops_membranes_from_the_worksheet_rows_but_records_the_drop() -> 
     assert plan.exportable is True
     assert len(plan.rows) == 2  # gypsum + insulation; the two membranes are gone
     assert plan.dropped_membrane_layer_ids == ["lyr_poly", "lyr_wrb"]
-    # Total thickness still reports the physical assembly, membranes included.
-    assert plan.total_thickness_cm == (12.7 + 0.15 + 140.0 + 0.8) / 10.0
+    # Total thickness counts only the rows this export actually writes. It used
+    # to include membranes "because they are physically there", which made the
+    # CSV disagree with itself: a thickness covering layers the sheet never
+    # received. The two membranes (0.15 + 0.8) are excluded.
+    assert plan.total_thickness_cm == (12.7 + 140.0) / 10.0
 
 
 def test_an_all_membrane_assembly_is_not_phpp_exportable() -> None:
@@ -295,3 +303,97 @@ def test_membranes_do_not_consume_the_eight_row_phpp_budget() -> None:
 
     assert plan.exportable is True
     assert len(plan.rows) == 8  # exactly the PHPP budget, membranes excluded
+
+
+def test_total_thickness_excludes_membranes_everywhere() -> None:
+    """The header chip and the PHPP export must not disagree about the same wall.
+
+    Membrane thickness answers to nothing the user can see: not the section
+    (a membrane draws in a fixed band), not the U-value (no R), not the
+    condensation result (``sd`` is read from the material). Counting it made
+    editing that one field move the total while the drawing stayed put.
+    """
+    body = _membrane_body()
+    materials_by_id = {material.id: material for material in body.tables.project_materials}
+    assembly_doc = body.tables.assemblies[0]
+
+    thickness = total_thickness_mm(assembly_doc, materials_by_id)
+
+    assert thickness == 12.7 + 140.0
+    # The whole point of one shared definition: the export agrees by construction.
+    plan = build_assembly_export_plan(assembly_doc, materials_by_id)
+    assert plan.total_thickness_cm == thickness / 10.0
+    # And the read model the header consumes reports the same number.
+    assemblies, _ = build_envelope_read_parts(body)
+    assert assemblies[0].total_thickness_mm == thickness
+
+
+def test_total_thickness_of_an_all_membrane_assembly_is_zero() -> None:
+    """Not a crash and not the layer sum — there is genuinely no build-up depth."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_poly", "order": 0, "thickness_mm": 0.15, "segments": [_segment("seg_poly", "pmat_poly")]},
+        {"id": "lyr_wrb", "order": 1, "thickness_mm": 0.8, "segments": [_segment("seg_wrb", "pmat_wrb")]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+    materials_by_id = {material.id: material for material in body.tables.project_materials}
+
+    assert total_thickness_mm(body.tables.assemblies[0], materials_by_id) == 0.0
+
+
+def test_assigning_a_membrane_snaps_an_untouched_layer_to_a_membrane_thickness() -> None:
+    """A new layer arrives at 100 mm, which the canvas cannot show is wrong.
+
+    A membrane draws in a fixed band, so a forgotten 100 mm WRB looks exactly
+    like a correct one — the mistake is invisible until it reaches an export.
+    """
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_new", "order": 0, "thickness_mm": 100.0, "segments": [_segment("seg_new", None)]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    updated = assign_segment_material(body, WALL_ID, "lyr_new", "seg_new", "pmat_wrb")
+
+    assert updated.tables.assemblies[0].layers[0].thickness_mm == 1.0
+
+
+def test_the_snap_never_overwrites_a_thickness_the_user_chose() -> None:
+    """Only the untouched default is replaced; a deliberate value is theirs."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_set", "order": 0, "thickness_mm": 3.0, "segments": [_segment("seg_set", None)]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    updated = assign_segment_material(body, WALL_ID, "lyr_set", "seg_set", "pmat_wrb")
+
+    assert updated.tables.assemblies[0].layers[0].thickness_mm == 3.0
+
+
+def test_an_ordinary_material_at_the_default_thickness_is_left_alone() -> None:
+    """100 mm of mineral wool is a perfectly normal layer."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_ord", "order": 0, "thickness_mm": 100.0, "segments": [_segment("seg_ord", None)]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    updated = assign_segment_material(body, WALL_ID, "lyr_ord", "seg_ord", "pmat_insul")
+
+    assert updated.tables.assemblies[0].layers[0].thickness_mm == 100.0
+
+
+def test_the_snap_sentinel_tracks_the_add_layer_default() -> None:
+    """The snap tests equality against the add-layer default, so it must be that default.
+
+    A second hand-written literal would let the two drift, and the failure is
+    silent: the snap would simply stop firing.
+    """
+    from features.envelope.membranes import DEFAULT_NEW_LAYER_THICKNESS_MM
+    from features.envelope.models import AddLayerCommand
+
+    assert DEFAULT_NEW_LAYER_THICKNESS_MM == AddLayerCommand.model_fields["thickness_mm"].default

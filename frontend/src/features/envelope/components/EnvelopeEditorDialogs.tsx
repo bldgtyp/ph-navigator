@@ -189,8 +189,19 @@ export function EnvelopeEditorDialogs({
           })
         }
         // Membranes are continuous full-width sheets, so width and steel-stud
-        // geometry are meaningless for them — the dialog hides both.
+        // geometry are meaningless for them — the dialog hides both. It also
+        // owns their thickness, which the canvas no longer offers because a
+        // membrane's band is not its thickness.
         isMembraneLayer={isMembraneLayer(dialog.layer, materialsById)}
+        layerThicknessMm={dialog.layer.thickness_mm}
+        onSetLayerThickness={(thickness_mm) =>
+          onCommand({
+            kind: "update_layer_thickness",
+            assembly_id: dialog.assembly.id,
+            layer_id: dialog.layer.id,
+            thickness_mm,
+          })
+        }
         materials={materials}
         catalogMaterials={catalogMaterials}
         catalogMaterialsLoading={catalogMaterialsLoading}

@@ -85,6 +85,9 @@ function edgeAssembly(): Assembly {
     air_barrier_status: null,
     exterior_condition: "outdoor_air",
     status: { is_complete: false, flags: ["missing_material", "missing_conductivity"] },
+    // Backend-computed; these fixtures carry no membrane-category material, so
+    // it is simply the layer sum.
+    total_thickness_mm: 295.1,
     layers: [
       {
         id: MEMBRANE_LAYER_ID,
@@ -317,6 +320,10 @@ function bulkAssemblies(): Assembly[] {
     air_barrier_status: null,
     exterior_condition: "outdoor_air",
     status: { is_complete: true, flags: [] },
+    total_thickness_mm: Array.from(
+      { length: PHASE16_BULK_LAYER_COUNT },
+      (_, layerIndex) => 12.7 + layerIndex * 38.1,
+    ).reduce((total, thickness) => total + thickness, 0),
     layers: Array.from({ length: PHASE16_BULK_LAYER_COUNT }, (_, layerIndex) => ({
       id: `lyr_phase16_bulk_${assemblyIndex + 1}_${layerIndex + 1}`,
       order: layerIndex,

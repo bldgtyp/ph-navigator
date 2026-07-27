@@ -2,8 +2,7 @@ import { describe, expect, test } from "vitest";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
 import { materialById } from "../lib";
 import { MEMBRANE_BAND_HEIGHT_MM } from "../canvas-constants";
-import { isMembraneLayer, isMembraneMaterial } from "../membranes";
-import { membraneStrokeColor } from "../components/AssemblySvgCanvas";
+import { isMembraneLayer, isMembraneMaterial, membraneStrokeColor } from "../membranes";
 import type { Assembly, AssemblyFace, AssemblyLayer, ProjectMaterial } from "../types";
 
 function material(overrides: Partial<ProjectMaterial> = {}): ProjectMaterial {
@@ -51,6 +50,9 @@ function assembly(layers: AssemblyLayer[]): Assembly {
     id: "asm_test",
     name: "TEST",
     type: "wall",
+    // Backend-computed and irrelevant to canvas geometry, which lays out from
+    // `layers` and the membrane band — never from this total.
+    total_thickness_mm: 0,
     orientation: "first_layer_outside",
     exterior_condition: "outdoor_air",
     air_barrier: null,
@@ -235,5 +237,57 @@ describe("band stacking", () => {
       expect(entry.isMembrane).toBe(true);
       expect(entry.heightMm).toBe(MEMBRANE_BAND_HEIGHT_MM);
     }
+  });
+});
+
+describe("assembly width", () => {
+  const byId = materialById([material(), WRB]);
+
+  // Narrowing a real layer used to leave the membrane rule, the air-barrier
+  // rule and the surface-film lines stranded at the old width, because the
+  // membrane's stored segment width kept voting for it. Everything on the
+  // canvas measures off `widthMm`, including the stage that centres it.
+  test("a membrane follows the real layers instead of setting the width", () => {
+    const narrow = layer("lyr_concrete", 200, ["pmat_insul"]);
+    narrow.segments[0]!.width_mm = 200;
+    const membrane = layer("lyr_wrb", 0.15, ["pmat_wrb"]);
+    membrane.segments[0]!.width_mm = 1000;
+
+    const geometry = buildAssemblyCanvasGeometry(assembly([narrow, membrane]), byId);
+
+    expect(geometry.widthMm).toBe(200);
+    // …and the rule is redrawn at that width, not left hanging at 1000.
+    expect(geometry.segments[1]?.widthMm).toBe(200);
+  });
+
+  test("the widest real layer still wins", () => {
+    const wide = layer("lyr_a", 100, ["pmat_insul"]);
+    wide.segments[0]!.width_mm = 900;
+    const narrow = layer("lyr_b", 100, ["pmat_insul"]);
+    narrow.segments[0]!.width_mm = 300;
+
+    expect(buildAssemblyCanvasGeometry(assembly([wide, narrow]), byId).widthMm).toBe(900);
+  });
+
+  test("an all-membrane assembly keeps the width its membranes carry", () => {
+    const membrane = layer("lyr_wrb", 0.15, ["pmat_wrb"]);
+    membrane.segments[0]!.width_mm = 800;
+
+    expect(buildAssemblyCanvasGeometry(assembly([membrane]), byId).widthMm).toBe(800);
+  });
+
+  test("a legacy multi-segment membrane is scaled across the width, not truncated", () => {
+    const real = layer("lyr_real", 100, ["pmat_insul"]);
+    real.segments[0]!.width_mm = 600;
+    const split = layer("lyr_split", 0.15, ["pmat_wrb", "pmat_wrb"]);
+    split.segments[0]!.width_mm = 300;
+    split.segments[1]!.width_mm = 100;
+
+    const geometry = buildAssemblyCanvasGeometry(assembly([real, split]), byId);
+
+    const membraneSegments = geometry.segments.filter((entry) => entry.isMembrane);
+    expect(membraneSegments.map((entry) => entry.widthMm)).toEqual([450, 150]);
+    // Contiguous and exactly filling the assembly width.
+    expect(membraneSegments[1]!.xMm + membraneSegments[1]!.widthMm).toBe(600);
   });
 });

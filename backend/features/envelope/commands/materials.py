@@ -12,7 +12,12 @@ from features.catalogs.materials import repository as catalog_materials_reposito
 from features.envelope import ops
 from features.envelope.identifiers import ID_PREFIX_PROJECT_MATERIAL, new_id
 from features.envelope.material_fields import PROJECT_MATERIAL_CATALOG_FIELDS, PROJECT_MATERIAL_OVERRIDE_FIELDS
-from features.envelope.membranes import is_membrane_material, require_single_segment_for_membrane
+from features.envelope.membranes import (
+    MEMBRANE_DEFAULT_THICKNESS_MM,
+    is_membrane_material,
+    require_single_segment_for_membrane,
+    should_snap_membrane_thickness,
+)
 from features.envelope.models import (
     DetachSegmentMaterialCommand,
     HandEnterMaterialCommand,
@@ -39,7 +44,7 @@ DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "#e6e6e6"
 def paste_assignment(body: ProjectDocumentV1, command: PasteAssignmentCommand) -> ProjectDocumentV1:
     ops.ensure_project_material_exists(body, command.project_material_id)
     require_single_segment_if_membrane(body, command.assembly_id, command.layer_id, command.project_material_id)
-    return ops.update_segment(
+    pasted = ops.update_segment(
         body,
         command.assembly_id,
         command.layer_id,
@@ -52,6 +57,7 @@ def paste_assignment(body: ProjectDocumentV1, command: PasteAssignmentCommand) -
             }
         ),
     )
+    return snap_membrane_thickness(pasted, command.assembly_id, command.layer_id)
 
 
 def pick_project_material(body: ProjectDocumentV1, command: PickProjectMaterialCommand) -> ProjectDocumentV1:
@@ -303,12 +309,35 @@ def assign_segment_material(
     rule is enforced here rather than at each caller.
     """
     require_single_segment_if_membrane(body, assembly_id, layer_id, project_material_id)
-    return ops.update_segment(
+    assigned = ops.update_segment(
         body,
         assembly_id,
         layer_id,
         segment_id,
         lambda segment: segment.model_copy(update={"project_material_id": project_material_id}),
+    )
+    return snap_membrane_thickness(assigned, assembly_id, layer_id)
+
+
+def snap_membrane_thickness(
+    body: ProjectDocumentV1,
+    assembly_id: str,
+    layer_id: str,
+) -> ProjectDocumentV1:
+    """Give a layer that just became a membrane a membrane-sized thickness.
+
+    Runs *after* the assignment lands, because whether the layer is a membrane
+    depends on the material that was just put in it. A no-op unless the
+    thickness is still the untouched new-layer default.
+    """
+    materials_by_id = {material.id: material for material in body.tables.project_materials}
+    if not should_snap_membrane_thickness(ops.find_layer(body, assembly_id, layer_id), materials_by_id):
+        return body
+    return ops.update_layer(
+        body,
+        assembly_id,
+        layer_id,
+        lambda layer: layer.model_copy(update={"thickness_mm": MEMBRANE_DEFAULT_THICKNESS_MM}),
     )
 
 

@@ -110,3 +110,68 @@ describe("useLengthDraft", () => {
     expect(hook.result.current.error).toBeTruthy();
   });
 });
+
+describe("sub-millimetre values", () => {
+  // A membrane is 0.1-3 mm. At the length default of one decimal a 0.15 mm
+  // sheet renders as "0.1", and a dialog that commits its fields on submit
+  // would write that rounded number back over the real one.
+  it("keeps a 0.15 mm value intact at the caller's precision", () => {
+    const { result } = renderHook(
+      () => useLengthDraft(0.15, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI") },
+    );
+
+    expect(result.current.draft).toBe("0.15");
+    expect(result.current.parsePositive("Thickness")).toBe(0.15);
+  });
+
+  it("rounds to 0.1 without the override, which is why isDirty guards the write", () => {
+    const { result } = renderHook(() => useLengthDraft(0.15, {}), { wrapper: wrapper("SI") });
+
+    expect(result.current.draft).toBe("0.1");
+    // Untouched: the caller must not commit, or 0.15 silently becomes 0.1.
+    expect(result.current.isDirty).toBe(false);
+  });
+
+  it("reports dirty once the user actually types", () => {
+    const { result } = renderHook(
+      () => useLengthDraft(0.15, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI") },
+    );
+
+    expect(result.current.isDirty).toBe(false);
+    act(() => result.current.setDraft("0.25"));
+    expect(result.current.isDirty).toBe(true);
+    expect(result.current.parsePositive("Thickness")).toBe(0.25);
+  });
+});
+
+describe("value changing underneath an open field", () => {
+  // Assigning a membrane snaps its layer thickness server-side, so the prop can
+  // change while the dialog is open. Inferring "edited" by comparing the draft
+  // to the value would then read as dirty and write the stale number back,
+  // undoing the snap the user just triggered.
+  it("follows the value while untouched, and stays clean", () => {
+    const { result, rerender } = renderHook(
+      ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI"), initialProps: { mm: 100 } },
+    );
+
+    expect(result.current.draft).toBe("100");
+    rerender({ mm: 1 });
+    expect(result.current.draft).toBe("1");
+    expect(result.current.isDirty).toBe(false);
+  });
+
+  it("stops following once the user types, and keeps their value", () => {
+    const { result, rerender } = renderHook(
+      ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI"), initialProps: { mm: 100 } },
+    );
+
+    act(() => result.current.setDraft("2.5"));
+    rerender({ mm: 1 });
+    expect(result.current.draft).toBe("2.5");
+    expect(result.current.isDirty).toBe(true);
+  });
+});

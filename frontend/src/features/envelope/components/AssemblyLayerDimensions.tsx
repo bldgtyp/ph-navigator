@@ -48,14 +48,25 @@ export function AssemblyLayerDimensions({
         className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-bottom"
         aria-hidden="true"
       />
-      <LayerThicknessEditor
-        layer={layer}
-        layerNumber={layerNumber}
-        unitSystem={unitSystem}
-        isMembrane={layerGeometry.isMembrane}
-        onDelete={() => actions.onDeleteLayer(layer)}
-        onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
-      />
+      {/* A membrane's real thickness is not what its band shows and drives
+          nothing the user can check, so the number is not offered here — it
+          lives in Segment Properties beside the note that explains it. The
+          delete action stays, because it is otherwise only reachable *through*
+          the thickness editor and a membrane layer must still be removable. */}
+      {layerGeometry.isMembrane ? (
+        <LayerDeleteButton
+          layerNumber={layerNumber}
+          onDelete={() => actions.onDeleteLayer(layer)}
+        />
+      ) : (
+        <LayerThicknessEditor
+          layer={layer}
+          layerNumber={layerNumber}
+          unitSystem={unitSystem}
+          onDelete={() => actions.onDeleteLayer(layer)}
+          onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
+        />
+      )}
       <CanvasAddButton
         id={`assembly-layer-add-above-${layer.id}`}
         label={`Add layer above layer ${layerNumber}`}
@@ -72,18 +83,37 @@ export function AssemblyLayerDimensions({
   );
 }
 
+/** The dimension cell for a membrane layer: delete only, no thickness value. */
+function LayerDeleteButton({
+  layerNumber,
+  onDelete,
+}: {
+  layerNumber: number;
+  onDelete: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="dimension-chrome-delete-button"
+      aria-label={`Delete layer ${layerNumber}`}
+      title="Delete layer"
+      onClick={onDelete}
+    >
+      <Trash2 size={14} aria-hidden="true" />
+    </button>
+  );
+}
+
 function LayerThicknessEditor({
   layer,
   layerNumber,
   unitSystem,
-  isMembrane,
   onDelete,
   onSubmit,
 }: {
   layer: AssemblyLayer;
   layerNumber: number;
   unitSystem: UnitSystem;
-  isMembrane: boolean;
   onDelete: () => void;
   onSubmit: (thicknessMm: number) => void;
 }) {
@@ -175,20 +205,15 @@ function LayerThicknessEditor({
     );
   }
 
-  // The label always shows the layer's real thickness. For a membrane the
-  // section draws a fixed hairline instead, so say so rather than letting the
-  // number look like it was measured off the drawing.
+  // Membranes never reach here — their band is not their thickness, so the
+  // number would contradict the drawing. This label is always 1:1 with what is
+  // rendered beside it.
   return (
     <button
       id={`assembly-layer-${layer.id}-thickness-editor`}
       type="button"
       className="dimension-label-button dimension-chrome-label-button"
-      aria-label={
-        isMembrane
-          ? `Edit layer ${layerNumber} thickness (membrane, not drawn to scale)`
-          : `Edit layer ${layerNumber} thickness`
-      }
-      title={isMembrane ? "Membrane thickness is not drawn to scale" : undefined}
+      aria-label={`Edit layer ${layerNumber} thickness`}
       onClick={startEditing}
     >
       {formatLayerThickness(layer.thickness_mm, unitSystem)}

@@ -104,6 +104,10 @@ export type Assembly = {
   layers: AssemblyLayer[];
   air_barrier: AssemblyAirBarrier | null;
   air_barrier_status: AirBarrierStatus | null;
+  // Backend-computed build-up depth, membrane layers excluded. Do not re-derive
+  // from `layers` — the membrane rule lives in the backend so the header and
+  // the PHPP export share one definition.
+  total_thickness_mm: number;
   status: {
     is_complete: boolean;
     flags: ThermalStatusFlag[];

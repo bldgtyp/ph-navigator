@@ -153,10 +153,14 @@ def build_assembly_export_plan(
         exportable=True,
         rows=rows,
         section_percentages=[fraction * 100.0 for fraction in shared_profile],
-        # Total thickness reports the *physical* assembly, membranes included:
-        # they are really there, and a section that under-measures is worse
-        # than one carrying a sub-millimetre term.
-        total_thickness_cm=sum(layer.thickness_mm for layer in all_layers) / 10.0,
+        # Membranes are excluded here for the same reason their rows are
+        # dropped above: reporting a thickness that includes layers this very
+        # export omits made the CSV disagree with itself. Summed straight off
+        # `layers`, which is already exactly the non-membrane set — calling
+        # `total_thickness_mm` would re-derive that same filter from scratch.
+        # `test_total_thickness_excludes_membranes_everywhere` pins this to the
+        # shared definition the header uses, so the two still cannot drift.
+        total_thickness_cm=sum(layer.thickness_mm for layer in layers) / 10.0,
         # Construction-only, never effective: the PHPP worksheet supplies its
         # own surface films from its own assembly-type setting.
         u_value_w_m2k=thermal.u_construction_w_m2k,

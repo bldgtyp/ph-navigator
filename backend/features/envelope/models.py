@@ -90,6 +90,10 @@ class AssemblyRead(Assembly):
     status: AssemblyThermalStatus
     # None when no face is designated; see `envelope/air_barrier.py`.
     air_barrier_status: AirBarrierStatus | None = None
+    # Build-up depth with membrane layers excluded; see
+    # `envelope/membranes.py::total_thickness_mm` for why they are left out.
+    # Backend-owned so the header and the PHPP export cannot disagree.
+    total_thickness_mm: float = 0.0
 
 
 class ProjectMaterialRead(ProjectMaterial):

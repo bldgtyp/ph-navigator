@@ -66,6 +66,9 @@ const envelopePayload: EnvelopeReadResponse = {
       id: "asm_wall_c3",
       name: "WALL-C3",
       type: "wall",
+      // Backend-computed and displayed verbatim by the header — the frontend
+      // no longer sums layers, so this is what the chip must render.
+      total_thickness_mm: 88,
       orientation: "last_layer_outside",
       air_barrier: null,
       air_barrier_status: null,

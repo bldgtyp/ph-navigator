@@ -24,6 +24,8 @@ export function SegmentDialog({
   airBarrierStatus,
   onSetAirBarrier,
   isMembraneLayer,
+  layerThicknessMm,
+  onSetLayerThickness,
   materials,
   catalogMaterials,
   catalogMaterialsLoading,
@@ -46,6 +48,10 @@ export function SegmentDialog({
   // The segment sits in a membrane layer: a continuous full-width sheet with
   // no width divisions and no stud geometry to describe.
   isMembraneLayer: boolean;
+  // Layer-level, but edited here for membranes only: the canvas dimension
+  // column drops the value because a membrane's band is not its thickness.
+  layerThicknessMm: number;
+  onSetLayerThickness: (thicknessMm: number) => void;
   materials: ProjectMaterial[];
   catalogMaterials: CatalogMaterial[];
   catalogMaterialsLoading: boolean;
@@ -67,6 +73,13 @@ export function SegmentDialog({
   const width = useLengthDraft(segment.width_mm, lengthDraftOptions);
   const [isContinuous, setIsContinuous] = useState(segment.is_continuous_insulation);
   const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm, lengthDraftOptions);
+  // Membranes are sub-millimetre, so the default length precision would show a
+  // 0.15 mm sheet as "0.1" and write that back on Apply.
+  const layerThickness = useLengthDraft(layerThicknessMm, {
+    ...lengthDraftOptions,
+    fractionDigitsSI: 2,
+    fractionDigitsIP: 4,
+  });
   const material = segment.project_material_id
     ? (materials.find((candidate) => candidate.id === segment.project_material_id) ?? null)
     : null;
@@ -75,10 +88,15 @@ export function SegmentDialog({
   );
   function submit(event: FormEvent) {
     event.preventDefault();
-    // A membrane exposes no geometry fields, so there is nothing to apply —
-    // dispatching `update_segment` would be a draft write that changes
-    // nothing. Material picks save themselves as they happen.
+    // A membrane exposes no *segment* geometry, so `update_segment` would be a
+    // draft write that changes nothing. Its layer thickness is the one field it
+    // does own here, and only worth a command when it actually moved.
     if (isMembraneLayer) {
+      if (layerThickness.isDirty) {
+        const thicknessMm = layerThickness.parsePositive("Thickness");
+        if (thicknessMm === null) return;
+        onSetLayerThickness(thicknessMm);
+      }
       onClose();
       return;
     }
@@ -132,46 +150,73 @@ export function SegmentDialog({
           airBarrierStatus={airBarrierStatus}
           onSetAirBarrier={onSetAirBarrier}
         />
+        {/* A membrane and an ordinary segment describe different geometry, so
+            each variant's fields are grouped rather than interleaved as four
+            separate conditionals: a membrane owns its layer thickness, an
+            ordinary segment owns its width and stud parameters. */}
         {isMembraneLayer ? (
-          <p id="envelope-segment-membrane-note" className="segment-dialog-note">
-            Membranes are continuous full-width sheets, so this layer takes a single segment with no
-            stud geometry. Its thickness counts toward Total Thickness but is drawn as a rule, not
-            to scale, and carries no thermal resistance.
-          </p>
-        ) : null}
-        {isMembraneLayer ? null : (
-          <section
-            id="envelope-segment-width-section"
-            className="segment-dialog-section"
-            role="group"
-            aria-labelledby="envelope-segment-width-heading"
-          >
-            <h3 id="envelope-segment-width-heading" className="segment-dialog-section-heading">
-              Width ({width.unitLabel})
-            </h3>
-            <div className="segment-geometry-grid">
-              <input
-                id="envelope-segment-width-input"
-                aria-label={`Width (${width.unitLabel})`}
-                value={width.draft}
-                onChange={(event) => width.setDraft(event.currentTarget.value)}
-              />
-            </div>
-          </section>
-        )}
-        {isMembraneLayer ? null : (
-          <SteelStudParameters
-            defaultOpen={steelStudOpen}
-            unitLabel={studSpacing.unitLabel}
-            draft={studSpacing.draft}
-            isContinuous={isContinuous}
-            onDraftChange={studSpacing.setDraft}
-            onContinuousChange={setIsContinuous}
-          />
+          <>
+            <section
+              id="envelope-segment-thickness-section"
+              className="segment-dialog-section"
+              role="group"
+              aria-labelledby="envelope-segment-thickness-heading"
+            >
+              <h3
+                id="envelope-segment-thickness-heading"
+                className="segment-dialog-section-heading"
+              >
+                Thickness ({layerThickness.unitLabel})
+              </h3>
+              <div className="segment-geometry-grid">
+                <input
+                  id="envelope-segment-thickness-input"
+                  aria-label={`Thickness (${layerThickness.unitLabel})`}
+                  value={layerThickness.draft}
+                  onChange={(event) => layerThickness.setDraft(event.currentTarget.value)}
+                />
+              </div>
+            </section>
+            <p id="envelope-segment-membrane-note" className="segment-dialog-note">
+              Membranes are continuous full-width sheets, so this layer takes a single segment with
+              no stud geometry. It is drawn as a rule rather than to scale, carries no thermal
+              resistance, and is left out of Total Thickness — so this value is recorded for
+              specification only and changes nothing else on the assembly.
+            </p>
+          </>
+        ) : (
+          <>
+            <section
+              id="envelope-segment-width-section"
+              className="segment-dialog-section"
+              role="group"
+              aria-labelledby="envelope-segment-width-heading"
+            >
+              <h3 id="envelope-segment-width-heading" className="segment-dialog-section-heading">
+                Width ({width.unitLabel})
+              </h3>
+              <div className="segment-geometry-grid">
+                <input
+                  id="envelope-segment-width-input"
+                  aria-label={`Width (${width.unitLabel})`}
+                  value={width.draft}
+                  onChange={(event) => width.setDraft(event.currentTarget.value)}
+                />
+              </div>
+            </section>
+            <SteelStudParameters
+              defaultOpen={steelStudOpen}
+              unitLabel={studSpacing.unitLabel}
+              draft={studSpacing.draft}
+              isContinuous={isContinuous}
+              onDraftChange={studSpacing.setDraft}
+              onContinuousChange={setIsContinuous}
+            />
+          </>
         )}
         <DialogActions
           busy={busy}
-          error={width.error ?? studSpacing.error ?? error}
+          error={layerThickness.error ?? width.error ?? studSpacing.error ?? error}
           submitLabel="Apply"
           onClose={onClose}
         />
