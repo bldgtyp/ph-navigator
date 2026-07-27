@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+import pytest
+
 from features.envelope.commands.materials import assign_segment_material
 from features.envelope.hbjson_export import export_hbjson_constructions
 from features.envelope.hbjson_import import parse_construction_library
 from features.envelope.import_planning import _build_assembly
-from features.envelope.membranes import total_thickness_mm
+from features.envelope.membranes import MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM, total_thickness_mm
+from features.envelope.models import AddLayerCommand
 from features.envelope.phpp_export import build_assembly_export_plan
 from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.thermal import thermal_issue_flags, thermal_issues
@@ -387,13 +390,71 @@ def test_an_ordinary_material_at_the_default_thickness_is_left_alone() -> None:
     assert updated.tables.assemblies[0].layers[0].thickness_mm == 100.0
 
 
-def test_the_snap_sentinel_tracks_the_add_layer_default() -> None:
-    """The snap tests equality against the add-layer default, so it must be that default.
+def test_the_add_layer_default_is_well_above_the_membrane_threshold() -> None:
+    """The correction must fire for a freshly added layer, without testing equality.
 
-    A second hand-written literal would let the two drift, and the failure is
-    silent: the snap would simply stop firing.
+    Pinning the *relationship* rather than the value is the point: the snap no
+    longer knows the add-layer default, so this is what keeps a future change to
+    that default from silently landing under the threshold and disabling it.
     """
-    from features.envelope.membranes import DEFAULT_NEW_LAYER_THICKNESS_MM
-    from features.envelope.models import AddLayerCommand
+    assert AddLayerCommand.model_fields["thickness_mm"].default > MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM
 
-    assert DEFAULT_NEW_LAYER_THICKNESS_MM == AddLayerCommand.model_fields["thickness_mm"].default
+
+@pytest.mark.parametrize(
+    ("thickness_mm", "product"),
+    [
+        (0.15, "Solitex Mento WRB"),
+        (0.25, "Intello vapour control"),
+        (1.5, "peel-and-stick air barrier"),
+        (2.3, "90-mil EPDM"),
+        (8.0, "Delta-MS dimpled drainage sheet"),
+        (25.0, "drainage composite, the thickest thing still a sheet good"),
+    ],
+)
+def test_a_plausible_membrane_thickness_is_never_touched(thickness_mm: float, product: str) -> None:
+    """The threshold is set against real products so it cannot clip one."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {
+            "id": "lyr_real",
+            "order": 0,
+            "thickness_mm": thickness_mm,
+            "segments": [_segment("seg_real", None)],
+        },
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    updated = assign_segment_material(body, WALL_ID, "lyr_real", "seg_real", "pmat_wrb")
+
+    assert updated.tables.assemblies[0].layers[0].thickness_mm == thickness_mm, product
+
+
+def test_the_correction_is_not_limited_to_the_add_layer_default() -> None:
+    """An equality test would have missed this: a layer thickened before the membrane landed."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_thick", "order": 0, "thickness_mm": 200.0, "segments": [_segment("seg_thick", None)]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    updated = assign_segment_material(body, WALL_ID, "lyr_thick", "seg_thick", "pmat_wrb")
+
+    assert updated.tables.assemblies[0].layers[0].thickness_mm == 1.0
+
+
+def test_the_correction_is_idempotent() -> None:
+    """Re-assigning a material must not keep re-correcting an already-corrected layer."""
+    raw = _membrane_body().model_dump(mode="json")
+    raw["tables"]["assemblies"][0]["air_barrier"] = None
+    raw["tables"]["assemblies"][0]["layers"] = [
+        {"id": "lyr_new", "order": 0, "thickness_mm": 100.0, "segments": [_segment("seg_new", None)]},
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    once = assign_segment_material(body, WALL_ID, "lyr_new", "seg_new", "pmat_wrb")
+    twice = assign_segment_material(once, WALL_ID, "lyr_new", "seg_new", "pmat_poly")
+
+    assert once.tables.assemblies[0].layers[0].thickness_mm == 1.0
+    assert twice.tables.assemblies[0].layers[0].thickness_mm == 1.0

@@ -95,42 +95,42 @@ def total_thickness_mm(
 
 MEMBRANE_DEFAULT_THICKNESS_MM = 1.0
 
-
-def _default_new_layer_thickness_mm() -> float:
-    """The thickness a freshly added layer arrives at.
-
-    Read off ``AddLayerCommand`` rather than restated, because the snap below
-    tests equality against it: a second literal would let the two drift, and the
-    failure would be silent — the snap would simply stop firing.
-    """
-    from features.envelope.models import AddLayerCommand
-
-    default = AddLayerCommand.model_fields["thickness_mm"].default
-    return float(default)
-
-
-DEFAULT_NEW_LAYER_THICKNESS_MM = _default_new_layer_thickness_mm()
+# The thickest thing still plausibly sold as a membrane or sheet good. Above
+# this, a layer in the membrane category is data rather than construction —
+# in practice the untouched new-layer default, or a category chosen by mistake.
+#
+# Set generously against real products rather than tightly against that
+# default, so the rule can never clip something legitimate: WRBs and vapour
+# control layers run 0.1–0.5 mm, peel-and-stick 1–1.5 mm, EPDM and TPO
+# 1.1–2.3 mm, dimpled drainage sheets (Delta-MS and similar) about 8 mm, and
+# drainage composites reach 10–25 mm. Nothing sold as a membrane exceeds this,
+# and everything that would trigger a correction sits far above it.
+MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM = 25.0
 
 
 def should_snap_membrane_thickness(
     layer: AssemblyLayer,
     materials_by_id: Mapping[str, ProjectMaterial],
 ) -> bool:
-    """Has this layer just become a membrane while still at the layer default?
+    """Is this membrane layer carrying a thickness no membrane could have?
 
-    Membranes are two orders of magnitude thinner than a default layer, and the
-    canvas cannot show the mistake because a membrane draws in a fixed band — a
-    forgotten 100 mm WRB looks exactly like a correct one. So it is corrected on
-    assignment, when the membrane-ness first becomes known.
+    A new layer arrives at the add-layer default, two orders of magnitude
+    thicker than any membrane, and the canvas cannot show the mistake because a
+    membrane draws in a fixed band — a forgotten 100 mm WRB looks exactly like a
+    correct one. So it is corrected on assignment, the first moment the layer's
+    membrane-ness is known.
 
-    "Still at the default" stands in for "never edited", which is a sentinel,
-    not a fact the document records. The cost is real but narrow: a membrane the
-    user deliberately set to exactly the default thickness would be snapped to
-    1 mm anyway. Recording an explicit unset/edited state on the layer is the
-    fix if that ever bites; it needs a document schema change, so it is not one
-    to make casually.
+    Deliberately a plausibility question, not an equality test against the
+    add-layer default. Matching that default exactly would couple this to a
+    constant it does not own — a silent stop the day the default changed — and
+    would still miss a layer thickened to anything else before the membrane
+    landed on it. Asking "could a membrane be this thick?" answers both, and
+    leaves every value already in membrane range untouched.
+
+    Idempotent: once corrected the layer sits far below the threshold, so
+    re-assigning a material never fires it again.
     """
-    return is_membrane_layer(layer, materials_by_id) and layer.thickness_mm == DEFAULT_NEW_LAYER_THICKNESS_MM
+    return is_membrane_layer(layer, materials_by_id) and layer.thickness_mm > MEMBRANE_MAX_PLAUSIBLE_THICKNESS_MM
 
 
 def require_single_segment_for_membrane(layer: AssemblyLayer) -> None:
