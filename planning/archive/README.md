@@ -36,6 +36,12 @@ how and when each feature packet landed. Newest first. Grep by slug.
   review found the adjacent-membrane click theft, the assignment back door
   around the single-segment rule, the un-imported air barrier, and the
   foreign-import regression introduced by fixing it.
+  **Superseded 2026-07-27:** the hairline rendering was reworked into a
+  reserved band drawn as a rule, deleting `canvas-hit-box.ts` and the whole
+  hit-box negotiation. That rework found the click theft's real cause — a
+  global 38px `button` min-height floor the membrane `z-index` bump had been
+  masking, which was stealing clicks for *every* thin layer, not just next to
+  membranes. See the packet's `STATUS.md` header.
 
 ## 2026-07-20
 

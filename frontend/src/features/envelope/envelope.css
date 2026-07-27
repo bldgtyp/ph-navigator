@@ -289,7 +289,16 @@
   --assembly-paint-pulse: color-mix(in oklab, gold 78%, transparent);
   --assembly-paint-tint: color-mix(in oklab, gold 18%, transparent);
   --assembly-pick-ring: color-mix(in oklab, seagreen 82%, transparent);
-  --assembly-air-barrier: color-mix(in oklab, var(--text-primary) 88%, var(--accent));
+  /* Air barrier = red is the Passive House drawing convention; architects read
+     it without a legend. Deliberately not routed through `--phn-danger`: an air
+     barrier is a good thing, and borrowing the danger token would collide the
+     first time this canvas has to show a real envelope error.
+
+     Mixed toward `--text-primary` rather than a fixed black so it deepens on
+     the light theme and lifts on the dark one from a single declaration — the
+     same trick the other canvas tokens here use instead of a theme override
+     block. A fixed `crimson 88%, black` goes muddy on a dark ground. */
+  --assembly-air-barrier: color-mix(in oklab, crimson 90%, var(--text-primary));
 
   display: grid;
   gap: var(--space-10);
@@ -472,18 +481,31 @@
   fill: color-mix(in oklab, var(--border-subtle) 18%, white);
 }
 
-/* Membranes read as a drawn rule, not a block of material: a heavier outline
-   at the fixed nominal height the geometry gives them. An unassigned membrane
-   never gets the null-material hatch — at hairline height the hatch is noise. */
-.assembly-svg-segment.is-membrane {
+/* A membrane is a rule centred in its reserved band, carrying the material's
+   own colour as its stroke. Heavy enough to click and to read as a deliberate
+   line rather than a squashed layer.
+
+   The `stroke` here is the fallback for a material with no colour set: the
+   element then omits its own `stroke` attribute and inherits this. Without it
+   the rule would paint `transparent` and the layer would vanish from the
+   drawing while still occupying its band — present, selectable, invisible. */
+.assembly-svg-membrane {
   stroke: var(--svg-line-heavy);
-  stroke-width: 1;
+  stroke-linecap: square;
+  stroke-width: 3;
 }
 
 .assembly-svg-canvas[data-mode="picking"] .assembly-svg-segment,
 .assembly-svg-segment.is-picked-source {
   stroke: var(--assembly-pick-ring);
   stroke-width: 2;
+}
+
+/* Recolour a membrane rule when picking, but keep its weight — dropping to the
+   2 px ring width would make the line thinner while it is being targeted. */
+.assembly-svg-canvas[data-mode="picking"] .assembly-svg-membrane,
+.assembly-svg-membrane.is-picked-source {
+  stroke: var(--assembly-pick-ring);
 }
 
 /* The air-barrier designation: a bold continuous rule on the designated face.
@@ -601,15 +623,17 @@
   overflow: visible;
 }
 
-/* The membrane overlay is taller than its drawn band so it can be clicked at
-   all (see `membraneHitBox`). It must therefore sit above its neighbours, or
-   their overlays win the hit test across the overhang. Two adjacent membranes
-   would tie here, so the box math keeps their overhangs from overlapping
-   rather than relying on paint order. */
-.assembly-segment-overlay.is-membrane {
-  z-index: var(--z-base-elevated);
-}
+/* The click surface for one segment. It must match its layer's band exactly:
+   anything taller overhangs the layers below and silently steals their clicks,
+   with paint order — not geometry — deciding the winner.
 
+   `min-height: 0` is load-bearing. The global `button` rule sets a 38 px
+   minimum tap height, which is right for real controls and wrong here: a
+   12.7 mm gypsum layer draws ~10 px, so its button would cover the next three
+   layers. The overlay is only as tall as the band, but `inset: 0` cannot shrink
+   the button past that floor without this. `padding: 0` matters for the same
+   reason — padding is a second floor a border-box cannot shrink below, and the
+   button's only content is a visually-hidden label that needs no inset. */
 .assembly-segment-hit-target {
   align-items: center;
   background: transparent;
@@ -619,7 +643,8 @@
   font: inherit;
   inset: 0;
   justify-content: center;
-  padding: var(--space-10);
+  min-height: 0;
+  padding: 0;
   position: absolute;
   text-align: left;
 }

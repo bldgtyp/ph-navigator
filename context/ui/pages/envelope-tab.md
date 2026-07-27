@@ -192,15 +192,26 @@ viewers can still export. See `planning/features/phpp-uvalue-export/`.
 
 **Membrane layers are the one exception to 1:1 scale.** A layer whose every
 assigned segment carries a `membrane` material (WRB, vapour retarder, paint)
-is drawn at a fixed nominal height instead — a real 0.15 mm sheet would be
-sub-pixel at any usable zoom. Consequences, all driven from
-`canvas-geometry.ts` so the SVG, the y-stacking, and the hit targets agree:
+is given a fixed **reserved band** instead (`MEMBRANE_BAND_HEIGHT_MM`) — a real
+0.15 mm sheet would be sub-pixel at any usable zoom. Inside that band it is
+drawn as a full-width **rule** in the material's colour, centred, with daylight
+above and below. Consequences, all driven from `canvas-geometry.ts` so the SVG,
+the y-stacking, and the hit targets agree:
 
 - The thickness label still shows the layer's **real** thickness and is
   tooltipped "not drawn to scale". Total Thickness counts it too.
-- The clickable overlay grows to a minimum height centred on the drawn band
-  (`segmentOverlayBox`), because a ~4 px strip is legible but unclickable —
-  the neighbouring layer's overlay would otherwise win every hit test.
+- The band *is* the clickable box — no layer's hit target ever extends past
+  its own band, for membranes or anything else. Two separate things used to
+  break this, and both are worth knowing before touching the overlay:
+  - An earlier design grew the membrane's box beyond its band to make a ~4 px
+    strip clickable. Reserving real drawing space removed the need, so
+    non-overlap is now structural rather than negotiated per zoom level.
+  - The global `button` rule floors every button at `--phn-control-height`
+    (38 px) plus padding, which made *every* segment hit target 38 px tall
+    regardless of its layer — a 12.7 mm gypsum layer drew ~10 px and claimed
+    the three layers beneath it. `.assembly-segment-hit-target` opts out with
+    `min-height: 0; padding: 0`. Removing either declaration silently
+    reintroduces the bug; see `../../DESIGN_SYSTEM.md` under Motion & focus.
 - No "Add Segment Left / Right" buttons: membranes are continuous and take
   exactly one segment. The backend rejects `add_segment` on them with
   `membrane_layer_single_segment`.
@@ -212,7 +223,8 @@ entirely — see `../../technical-requirements/envelope-thermal-preview.md`.
 
 **Air-barrier designation.** An assembly may mark one *face* of one layer as
 its air barrier (`Assembly.air_barrier = {layer_id, face}`), drawn as a bold
-continuous rule on that face — the convention architects already read. A face,
+continuous **red** rule on that face — red for the air barrier is the Passive
+House drawing convention, so it reads without a legend. A face,
 not a layer and not a material: the air barrier is sometimes a dedicated
 membrane and just as often the interior face of spray foam or the taped face of
 sheathing, so the same material is the air barrier in one assembly and not in

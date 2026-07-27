@@ -177,7 +177,16 @@ Ascending: `--shadow-elev-1/2/3`; `--shadow-popover` (dropdowns/popovers);
 - `--transition-fast 0.16s` for hover/focus; pair with `--ease`
   `cubic-bezier(.2,.6,.2,1)`. `--transition-base 0.3s ease` for larger moves.
 - Focus ring: `--phn-focus` = `0 0 0 3px` accent @ 24%.
-- Standard control height: `--phn-control-height 38px`.
+- Standard control height: `--phn-control-height 38px`. Applied as a **floor**
+  by the global `button` rule in `styles/base.css`, together with its padding.
+  A button whose size comes from data rather than the design system — a canvas
+  hit target stretched to `inset: 0` over a geometry-driven box — must opt out
+  with its own `min-height` *and* `padding: 0`, or it silently keeps a 38px
+  box and swallows clicks meant for whatever sits below it. Padding is a second
+  floor a border-box cannot shrink past, so overriding `min-height` alone is
+  not enough. Existing opt-outs: `.dimension-chrome-label-button`,
+  `.dimension-chrome-delete-button`, `.assembly-segment-hit-target`. Class
+  specificity already beats the element rule — do not weaken the global one.
 
 ## Component inventory (the blessed building blocks)
 

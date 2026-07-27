@@ -1,7 +1,6 @@
 import type { MouseEvent } from "react";
 import { formatLengthFromMm, type UnitSystem } from "../../../lib/units";
 import { ASSEMBLY_CANVAS_ORIGIN_X_PX, pxFromMm } from "../canvas-constants";
-import { canvasHitBox } from "../canvas-hit-box";
 import {
   segmentCanvasKey,
   type AssemblyCanvasPaintController,
@@ -125,16 +124,15 @@ function SegmentOverlay({
   const ariaLabel = canEdit
     ? segmentActionLabel(segmentLabel, paint.mode)
     : `View details for ${segmentLabel}`;
-  const { topPx, heightPx } = canvasHitBox(segmentGeometry, zoom);
+  // The hit target is exactly the drawn band. A membrane's band is reserved
+  // drawing space wide enough to click, so it never borrows from a neighbour.
+  const topPx = pxFromMm(segmentGeometry.yMm, zoom);
+  const heightPx = pxFromMm(segmentGeometry.heightMm, zoom);
 
   return (
     <div
       id={`assembly-segment-overlay-${layer.id}-${segment.id}`}
-      className={[
-        "assembly-segment-overlay",
-        material ? null : "null-material",
-        segmentGeometry.isMembrane ? "is-membrane" : null,
-      ]
+      className={["assembly-segment-overlay", material ? null : "null-material"]
         .filter(Boolean)
         .join(" ")}
       data-mode={paint.mode}

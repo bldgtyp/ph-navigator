@@ -9,6 +9,23 @@ RELATED: ./README.md, ./PRD.md, ../../../../features/assembly-condensation-risk/
 
 # Status
 
+> **Superseded in part, 2026-07-27.** Phase 2's rendering was reworked the day
+> after this packet was archived: a membrane now gets a reserved 14 mm band
+> (`MEMBRANE_BAND_HEIGHT_MM`) drawn as a full-width rule, instead of a 4 mm
+> hairline rect. That deleted `canvas-hit-box.ts`, `canvasHitBox`,
+> `MEMBRANE_DISPLAY_THICKNESS_MM`, `MEMBRANE_MIN_HIT_HEIGHT_PX`, and the
+> `hitRoomAbove/BelowMm` geometry fields — **all named below no longer exist**.
+> Reserving real drawing space made non-overlap structural, so none of the
+> hit-box negotiation described in this file survives.
+>
+> That rework also found the real cause of the click theft this packet fought:
+> the global `button { min-height: var(--phn-control-height) }` in
+> `styles/base.css` forced *every* segment hit target to 38 px regardless of
+> its layer, so thin layers stole clicks from the layers below. The membrane
+> `z-index` bump recorded here had been masking it. See
+> `context/ui/pages/envelope-tab.md` and `context/DESIGN_SYSTEM.md` for current
+> behaviour; the account below stands as the record of what shipped on 07-26.
+
 ## Phase log
 
 | Phase | State | Notes |

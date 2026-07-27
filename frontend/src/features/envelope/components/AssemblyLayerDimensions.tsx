@@ -6,8 +6,7 @@
 import { type KeyboardEvent, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
-import { DIMENSION_COLUMN_WIDTH_PX } from "../canvas-constants";
-import { canvasHitBox } from "../canvas-hit-box";
+import { DIMENSION_COLUMN_WIDTH_PX, pxFromMm } from "../canvas-constants";
 import type { AssemblyCanvasLayerGeometry } from "../canvas-geometry";
 import type { AssemblyLayer } from "../types";
 import { CanvasAddButton } from "./CanvasAddButton";
@@ -26,9 +25,10 @@ export function AssemblyLayerDimensions({
 }) {
   const { layer } = layerGeometry;
   const layerNumber = layer.order + 1;
-  // Same treatment as the segment overlay: a membrane's dimension cell would
-  // otherwise be a few pixels tall, leaving its thickness label unclickable.
-  const { topPx, heightPx } = canvasHitBox(layerGeometry, zoom);
+  // The cell tracks the drawn band. A membrane's band is the reserved drawing
+  // space from the geometry, which is what keeps its thickness label clickable.
+  const topPx = pxFromMm(layerGeometry.yMm, zoom);
+  const heightPx = pxFromMm(layerGeometry.heightMm, zoom);
   return (
     <div
       id={`assembly-layer-dimension-${layer.id}`}

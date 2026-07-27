@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
 import { materialById } from "../lib";
-import { MEMBRANE_DISPLAY_THICKNESS_MM, MEMBRANE_MIN_HIT_HEIGHT_PX } from "../canvas-constants";
-import { canvasHitBox } from "../canvas-hit-box";
+import { MEMBRANE_BAND_HEIGHT_MM } from "../canvas-constants";
 import { isMembraneLayer, isMembraneMaterial } from "../membranes";
+import { membraneStrokeColor } from "../components/AssemblySvgCanvas";
 import type { Assembly, AssemblyFace, AssemblyLayer, ProjectMaterial } from "../types";
 
 function material(overrides: Partial<ProjectMaterial> = {}): ProjectMaterial {
@@ -101,7 +101,7 @@ describe("isMembraneLayer", () => {
 describe("buildAssemblyCanvasGeometry", () => {
   const byId = materialById([material(), WRB]);
 
-  test("draws a membrane at the nominal hairline, not its real thickness", () => {
+  test("draws a membrane in its reserved band, not at its real thickness", () => {
     const geometry = buildAssemblyCanvasGeometry(
       assembly([layer("lyr_wrb", 0.15, ["pmat_wrb"])]),
       byId,
@@ -109,21 +109,21 @@ describe("buildAssemblyCanvasGeometry", () => {
 
     const [membrane] = geometry.layers;
     expect(membrane?.isMembrane).toBe(true);
-    expect(membrane?.heightMm).toBe(MEMBRANE_DISPLAY_THICKNESS_MM);
+    expect(membrane?.heightMm).toBe(MEMBRANE_BAND_HEIGHT_MM);
     // The real value is untouched on the model — it is what the dimension
     // column and Total Thickness report.
     expect(membrane?.layer.thickness_mm).toBe(0.15);
   });
 
-  test("stacks following layers below the drawn hairline, so nothing overlaps", () => {
+  test("stacks following layers below the reserved band, so nothing overlaps", () => {
     const geometry = buildAssemblyCanvasGeometry(
       assembly([layer("lyr_wrb", 0.15, ["pmat_wrb"]), layer("lyr_insul", 140, ["pmat_insul"])]),
       byId,
     );
 
-    expect(geometry.layers[1]?.yMm).toBe(MEMBRANE_DISPLAY_THICKNESS_MM);
-    expect(geometry.heightMm).toBe(MEMBRANE_DISPLAY_THICKNESS_MM + 140);
-    expect(geometry.segments[1]?.yMm).toBe(MEMBRANE_DISPLAY_THICKNESS_MM);
+    expect(geometry.layers[1]?.yMm).toBe(MEMBRANE_BAND_HEIGHT_MM);
+    expect(geometry.heightMm).toBe(MEMBRANE_BAND_HEIGHT_MM + 140);
+    expect(geometry.segments[1]?.yMm).toBe(MEMBRANE_BAND_HEIGHT_MM);
   });
 
   test("ordinary layers still draw 1:1", () => {
@@ -178,56 +178,62 @@ describe("air-barrier line placement", () => {
   });
 });
 
-describe("canvasHitBox", () => {
-  const byId = materialById([material(), WRB]);
+describe("membraneStrokeColor", () => {
+  // A membrane draws as a rule, so its colour IS the whole mark. `materialColor`
+  // answers a missing colour with `transparent`, which for a rule means the
+  // layer silently disappears while still holding its band and its click box.
+  // Found in the wild on a real assembly whose membrane had no colour set.
+  test("defers to CSS when the material has no colour", () => {
+    expect(membraneStrokeColor(material({ category: "membrane", color: null }))).toBeUndefined();
+    expect(membraneStrokeColor(null)).toBeUndefined();
+  });
+
+  test("uses the material colour when there is one", () => {
+    expect(membraneStrokeColor(material({ category: "membrane", color: "#3a7bd5" }))).toBe(
+      "#3a7bd5",
+    );
+  });
+});
+
+describe("band stacking", () => {
   const WRB2 = material({ id: "pmat_wrb2", name: "Air barrier", category: "membrane" });
-  const byIdTwo = materialById([material(), WRB, WRB2]);
+  const GYPSUM = material({ id: "pmat_gyp", name: "Gypsum", category: "finishes" });
+  const byId = materialById([material(), WRB, WRB2, GYPSUM]);
 
-  test("leaves an ordinary layer's box on its drawn band", () => {
-    const geometry = buildAssemblyCanvasGeometry(
-      assembly([layer("lyr_insul", 140, ["pmat_insul"])]),
-      byId,
-    );
-    const insul = geometry.layers[0];
-    if (!insul) throw new Error("expected a layer");
-
-    expect(canvasHitBox(insul, 1)).toEqual({ topPx: 0, heightPx: 140 });
-  });
-
-  test("grows a membrane's box to the clickable minimum, centred on the band", () => {
-    const geometry = buildAssemblyCanvasGeometry(
-      assembly([layer("lyr_insul", 140, ["pmat_insul"]), layer("lyr_wrb", 0.15, ["pmat_wrb"])]),
-      byId,
-    );
-    const membrane = geometry.layers[1];
-    if (!membrane) throw new Error("expected a membrane layer");
-
-    const box = canvasHitBox(membrane, 1);
-    expect(box.heightPx).toBe(MEMBRANE_MIN_HIT_HEIGHT_PX);
-    // Centred: the overhang above equals the overhang below.
-    const overhang = (MEMBRANE_MIN_HIT_HEIGHT_PX - MEMBRANE_DISPLAY_THICKNESS_MM) / 2;
-    expect(box.topPx).toBe(membrane.yMm - overhang);
-  });
-
-  test("two adjacent membranes meet at the shared edge instead of overlapping", () => {
-    // Realistic: a dedicated air barrier stacked straight onto a WRB. Without
-    // the cap both boxes expand into each other's band, tie on z-index, and
-    // paint order alone decides which one a click selects.
+  // The drawn band is also the clickable box, so "bands never overlap" is the
+  // whole click-routing contract. The previous design grew a membrane's box
+  // past its band to make it clickable, which let it steal clicks from a thin
+  // neighbour (10 mm gypsum) and from an adjacent membrane. Reserving real
+  // space makes the property structural — keep it that way.
+  test("every layer's band is contiguous with the next and never overlaps it", () => {
     const geometry = buildAssemblyCanvasGeometry(
       assembly([
+        layer("lyr_gyp", 10, ["pmat_gyp"]),
         layer("lyr_wrb", 0.15, ["pmat_wrb"]),
         layer("lyr_ab", 0.8, ["pmat_wrb2"]),
         layer("lyr_insul", 140, ["pmat_insul"]),
       ]),
-      byIdTwo,
+      byId,
     );
-    const [first, second] = geometry.layers;
-    if (!first || !second) throw new Error("expected two membrane layers");
 
-    for (const zoom of [0.5, 1, 3]) {
-      const upper = canvasHitBox(first, zoom);
-      const lower = canvasHitBox(second, zoom);
-      expect(upper.topPx + upper.heightPx).toBeLessThanOrEqual(lower.topPx);
+    expect(geometry.layers).toHaveLength(4);
+    geometry.layers.forEach((entry, index) => {
+      const next = geometry.layers[index + 1];
+      if (next) expect(entry.yMm + entry.heightMm).toBe(next.yMm);
+    });
+  });
+
+  test("two adjacent membranes each get a full band", () => {
+    // Realistic: a dedicated air barrier stacked straight onto a WRB. Neither
+    // has to borrow space from the other, so neither can win the other's click.
+    const geometry = buildAssemblyCanvasGeometry(
+      assembly([layer("lyr_wrb", 0.15, ["pmat_wrb"]), layer("lyr_ab", 0.8, ["pmat_wrb2"])]),
+      byId,
+    );
+
+    for (const entry of geometry.layers) {
+      expect(entry.isMembrane).toBe(true);
+      expect(entry.heightMm).toBe(MEMBRANE_BAND_HEIGHT_MM);
     }
   });
 });

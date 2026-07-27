@@ -5,19 +5,18 @@ export const ASSEMBLY_CANVAS_ORIGIN_X_PX = DIMENSION_COLUMN_WIDTH_PX + DIMENSION
 export const MIN_CANVAS_WIDTH_PX = 360;
 export const SVG_STROKE_PADDING_MM = 1;
 export const ASSEMBLY_CANVAS_BOTTOM_SAFETY_GUTTER_PX = 2;
-// Membranes are drawn at a fixed nominal thickness instead of 1:1, because a
-// real one (a 0.15 mm WRB) would be sub-pixel at every usable zoom. Expressed
-// in millimetres so it rides the same viewBox transform as everything else:
-// the hairline scales with zoom like the rest of the section, and stays
-// legible even at the 0.5x floor.
-export const MEMBRANE_DISPLAY_THICKNESS_MM = 4;
-// A drawn membrane band is only a few pixels tall, which is fine to look at
-// and impossible to click — a neighbouring 140 mm layer wins the hit test
-// every time. The overlay therefore grows to this minimum, centred on the
-// band, so the membrane stays selectable. The overhang eats a few pixels at
-// the edge of each neighbour; that is a far better trade than a layer the
-// user cannot open.
-export const MEMBRANE_MIN_HIT_HEIGHT_PX = 14;
+// A membrane is drawn as a rule inside a reserved band, not as a block of
+// material at 1:1 — a real one (a 0.15 mm WRB) is sub-pixel at every usable
+// zoom. The band is the membrane's own drawing space: the rule sits at its
+// centre and the daylight above and below separates it from its neighbours.
+//
+// Reserving real space is what makes the membrane clickable. The band *is* the
+// hit target, so it never has to borrow pixels from the layers either side —
+// which is what used to steal clicks from a thin neighbour like 10 mm gypsum.
+// 14 mm gives a 14 px target at zoom 1; at the 0.5x floor it is 7 px and the
+// user zooms in. Expressed in millimetres so it rides the same viewBox
+// transform as everything else.
+export const MEMBRANE_BAND_HEIGHT_MM = 14;
 export const ZOOM_STEPS = [0.5, 0.75, 1, 1.5, 2, 3] as const;
 export const ZOOM_MIN = zoomBoundary(0);
 export const ZOOM_MAX = zoomBoundary(ZOOM_STEPS.length - 1);

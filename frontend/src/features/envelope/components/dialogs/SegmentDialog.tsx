@@ -135,8 +135,8 @@ export function SegmentDialog({
         {isMembraneLayer ? (
           <p id="envelope-segment-membrane-note" className="segment-dialog-note">
             Membranes are continuous full-width sheets, so this layer takes a single segment with no
-            stud geometry. Its thickness counts toward Total Thickness but is drawn as a hairline,
-            not to scale, and carries no thermal resistance.
+            stud geometry. Its thickness counts toward Total Thickness but is drawn as a rule, not
+            to scale, and carries no thermal resistance.
           </p>
         ) : null}
         {isMembraneLayer ? null : (
