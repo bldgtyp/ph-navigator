@@ -13,6 +13,7 @@ import type {
   ProjectMaterial,
 } from "../../types";
 import { ModalUnitToggle } from "../ModalUnitToggle";
+import { MembraneThicknessSection } from "./MembraneThicknessSection";
 import { SegmentMaterialPicker } from "./SegmentMaterialPicker";
 import { SegmentMaterialFacts } from "./SegmentMaterialFacts";
 
@@ -73,8 +74,8 @@ export function SegmentDialog({
   const width = useLengthDraft(segment.width_mm, lengthDraftOptions);
   const [isContinuous, setIsContinuous] = useState(segment.is_continuous_insulation);
   const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm, lengthDraftOptions);
-  // Membranes are sub-millimetre, so the default length precision would show a
-  // 0.15 mm sheet as "0.1" and write that back on Apply.
+  // Membranes are sub-millimetre: the length default of one decimal would
+  // render a 0.15 mm sheet as "0.1", and the commit below would store that.
   const layerThickness = useLengthDraft(layerThicknessMm, {
     ...lengthDraftOptions,
     fractionDigitsSI: 2,
@@ -90,12 +91,15 @@ export function SegmentDialog({
     event.preventDefault();
     // A membrane exposes no *segment* geometry, so `update_segment` would be a
     // draft write that changes nothing. Its layer thickness is the one field it
-    // does own here, and only worth a command when it actually moved.
+    // does own here, and only worth a command when the user actually edited it:
+    // display precision is lossy, so committing an untouched field would round
+    // the stored value onto itself.
     if (isMembraneLayer) {
       if (layerThickness.isDirty) {
         const thicknessMm = layerThickness.parsePositive("Thickness");
         if (thicknessMm === null) return;
         onSetLayerThickness(thicknessMm);
+        return;
       }
       onClose();
       return;
@@ -156,27 +160,12 @@ export function SegmentDialog({
             ordinary segment owns its width and stud parameters. */}
         {isMembraneLayer ? (
           <>
-            <section
-              id="envelope-segment-thickness-section"
-              className="segment-dialog-section"
-              role="group"
-              aria-labelledby="envelope-segment-thickness-heading"
-            >
-              <h3
-                id="envelope-segment-thickness-heading"
-                className="segment-dialog-section-heading"
-              >
-                Thickness ({layerThickness.unitLabel})
-              </h3>
-              <div className="segment-geometry-grid">
-                <input
-                  id="envelope-segment-thickness-input"
-                  aria-label={`Thickness (${layerThickness.unitLabel})`}
-                  value={layerThickness.draft}
-                  onChange={(event) => layerThickness.setDraft(event.currentTarget.value)}
-                />
-              </div>
-            </section>
+            <MembraneThicknessSection
+              unitLabel={layerThickness.unitLabel}
+              draft={layerThickness.draft}
+              error={layerThickness.error}
+              onDraftChange={layerThickness.setDraft}
+            />
             <p id="envelope-segment-membrane-note" className="segment-dialog-note">
               Membranes are continuous full-width sheets, so this layer takes a single segment with
               no stud geometry. It is drawn as a rule rather than to scale, carries no thermal

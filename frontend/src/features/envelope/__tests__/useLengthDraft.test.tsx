@@ -147,23 +147,12 @@ describe("sub-millimetre values", () => {
 });
 
 describe("value changing underneath an open field", () => {
-  // Assigning a membrane snaps its layer thickness server-side, so the prop can
-  // change while the dialog is open. Inferring "edited" by comparing the draft
-  // to the value would then read as dirty and write the stale number back,
-  // undoing the snap the user just triggered.
-  it("follows the value while untouched, and stays clean", () => {
-    const { result, rerender } = renderHook(
-      ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
-      { wrapper: wrapper("SI"), initialProps: { mm: 100 } },
-    );
-
-    expect(result.current.draft).toBe("100");
-    rerender({ mm: 1 });
-    expect(result.current.draft).toBe("1");
-    expect(result.current.isDirty).toBe(false);
-  });
-
-  it("stops following once the user types, and keeps their value", () => {
+  // The hook deliberately does NOT chase `initialValueMm`. Callers whose value
+  // can move underneath an open editor remount the field with a React `key`
+  // (see MembraneThicknessSection), which re-runs the initialiser. Following it
+  // from inside would race the unit-conversion effect, which reads the draft and
+  // converts it from the previous system.
+  it("keeps the draft when the value changes, so an in-progress edit survives", () => {
     const { result, rerender } = renderHook(
       ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
       { wrapper: wrapper("SI"), initialProps: { mm: 100 } },
@@ -173,5 +162,22 @@ describe("value changing underneath an open field", () => {
     rerender({ mm: 1 });
     expect(result.current.draft).toBe("2.5");
     expect(result.current.isDirty).toBe(true);
+  });
+
+  it("re-initialises from the new value when the caller remounts it by key", () => {
+    const first = renderHook(
+      ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI"), initialProps: { mm: 100 } },
+    );
+    expect(first.result.current.draft).toBe("100");
+    first.unmount();
+
+    // What `key={thicknessMm}` does: a fresh instance for the corrected value.
+    const remounted = renderHook(
+      ({ mm }: { mm: number }) => useLengthDraft(mm, { fractionDigitsSI: 2, fractionDigitsIP: 4 }),
+      { wrapper: wrapper("SI"), initialProps: { mm: 1 } },
+    );
+    expect(remounted.result.current.draft).toBe("1");
+    expect(remounted.result.current.isDirty).toBe(false);
   });
 });

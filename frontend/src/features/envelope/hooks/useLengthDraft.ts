@@ -44,27 +44,18 @@ export function useLengthDraft(initialValueMm: number | null, options: LengthDra
     initialValueMm === null ? "" : format(initialValueMm, activeUnitSystem),
   );
   const [error, setError] = useState<string | null>(null);
-  // Whether the user has typed in this field, tracked explicitly rather than
-  // inferred by comparing the draft to the current value. The value can change
-  // underneath an open dialog — assigning a membrane snaps its layer thickness
-  // server-side — and a comparison would then read as "edited" and write the
-  // stale draft back, silently undoing the change that just happened.
-  const [isTouched, setIsTouched] = useState(false);
-
-  // Follow the value while it is still the app's to control. Without this the
-  // field would keep displaying the pre-snap number after the same edit.
+  // Whether the user has typed here, tracked explicitly rather than inferred by
+  // comparing the draft to the value. Display precision is lossy by design, so
+  // a comparison would read an untouched rounded field as edited.
   //
-  // Guarded on the value actually changing, not just on a re-render: a unit
-  // toggle re-runs this too, and reformatting from `initialValueMm` here would
-  // race the conversion effect below — that one reads the draft and converts it
-  // from the previous system, so it would re-convert this effect's already-
-  // converted output and land two conversions deep.
-  const lastSyncedValue = useRef(initialValueMm);
-  useEffect(() => {
-    if (isTouched || lastSyncedValue.current === initialValueMm) return;
-    lastSyncedValue.current = initialValueMm;
-    setDraft(initialValueMm === null ? "" : format(initialValueMm, activeUnitSystem));
-  }, [initialValueMm, isTouched, format, activeUnitSystem]);
+  // This hook does not follow `initialValueMm` when it changes. That is
+  // deliberate: a draft is a snapshot the user is working on, and chasing the
+  // value from in here would race the unit-conversion effect below, which reads
+  // the draft and converts it from the previous system — the follower's own
+  // output would be converted a second time. A caller whose value really can
+  // move underneath it should remount the field with a React `key`, which
+  // re-runs the initialiser above and needs no effect at all.
+  const [isTouched, setIsTouched] = useState(false);
 
   useEffect(() => {
     if (!options.followUnitPreference) return;
