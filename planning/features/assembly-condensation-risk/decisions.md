@@ -173,8 +173,11 @@ Rationale in `research.md` §6. One field would force the PHI workbook's own fud
 breaks the moment someone edits the layer thickness.
 
 **Backwards compatibility is free.** Both are `X | None = None` on models that
-already use `extra="forbid"`; old document bodies validate unchanged, so the
-schema-version bump is a no-op step (no data migration). Catalog side is two
+already use `extra="forbid"`; old document bodies validate unchanged, so there
+is **no schema-version bump at all** — `air_permeance_l_s_m2_at_75pa` and
+`exterior_condition` both shipped as additive amendments at v8, with only a
+regenerated fingerprint and corpus snapshot. *(Corrected 2026-07-28; this
+section previously called for a no-op bump.)* Catalog side is two
 nullable `double precision` columns in `catalog_materials`, plus two entries in
 `PROJECT_MATERIAL_CATALOG_FIELDS` so the existing drift/refresh machinery picks
 them up for free.
@@ -199,7 +202,9 @@ dead end into the on-ramp that fixes the coverage problem in A-4.
 
 Derive it (`research.md` §3.7) rather than asking. Run all 12 candidate starts,
 take the cycle that closes. Surface the chosen month in the Assumptions tier as
-read-only, with an override only if a real case demands it.
+read-only, with an override only if a real case demands it. The no-start-closes
+and several-starts-close cases are defined in E-15 (non-closure *is* the d4
+verdict; canonical display month = month after the annual Ma minimum).
 
 ### D-7. 🔴 Licensed data — hard rule collision
 
@@ -221,6 +226,17 @@ Options:
 
 **Recommendation: (1) for the bulk seed, (2) for products.** Either way, this must
 be settled *before* anyone writes a seed file. → **Ed's call.**
+
+**Corollary (added 2026-07-28): the golden-test fixtures are inside this rule
+too.** The Phase 2 gold files reproduce the PHI workbook's outputs for a
+reference assembly — but the *inputs* to that assembly are µ/sd values, and if
+those are ISO 10456 values the fixture commits licensed data. The repo already
+hit this exact trap with the surface-film fixture and resolved it by replacing
+the real ASHRAE values with synthetic ones (commit `b869a8fc`). Same rule here:
+golden fixtures use **synthetic µ/sd values**, run through the workbook locally
+to produce the expected outputs. The workbook implements the ISO 13788 *method*,
+so agreement on synthetic inputs proves the engine just as well as agreement on
+real ones.
 
 ### D-8. Two or more condensing interfaces
 
@@ -449,13 +465,17 @@ likely source of a silent wrong answer in Phase 2.
 | E-6b | *(new)* Membrane with no `sd` | Blocks. Must not fall through to `µ · d` (the thickness is app-mutable, §D-15a) and must not be treated as an air cavity. |
 | E-6c | *(new)* All-membrane assembly | `thermal.py` already reports `no_thermal_layers` rather than dividing by zero; the condensation engine needs the equivalent guard, not a crash. |
 | E-7 | No climate source attached | Chip = "needs climate"; deep-link to the Climate tab. |
-| E-8 | Climate record missing dew point | Some EPW-derived / custom records may have `dewpoint_c` unset or zeroed. Must be validated, not assumed. |
+| E-8 | Climate record missing **or inconsistent** dew point | Some EPW-derived / custom records may have `dewpoint_c` unset or zeroed — validate, don't assume. Also validate `dewpoint_c ≤ air_c` per month: a violating record implies exterior RH > 100 % (`pe > psat(θe)`), which poisons the whole profile. Clamp φe to 1.0 and surface a climate-data caveat rather than computing from impossible inputs. |
 | E-9 | Assembly is all-insulation, zero R elsewhere | Guard divide-by-zero on `Σsd = 0` (a fully vapour-open stack). |
 | E-10 | Evaporation clamped at zero | Per §3.5, `Ma` cannot go negative — must clamp, or the annual cycle reports fictitious drying credit. |
 | E-11 | Interior insulation flagged | `CreateAssemblyCommand` has no interior-insulation flag; the PHI tool does (`Assembly!J135`). Detectable from layer order + material category, or added as a hint. |
 | E-12 | Unit display | Engine is SI-canonical (µ, sd in m, Ma in g/m²). The IP/SI toggle needs an IP presentation: perms / perm·in and gr/ft². Input affordance should accept perms and convert. |
 | E-13 | Draft vs saved version | Should the chip compute against the live draft (immediate feedback while editing) or the saved version? `thermal.py` computes on the draft; follow that for consistency. |
 | E-14 | Result caching | `thermal.py` already hashes inputs (`thermal_input_hash`). Condensation adds climate + settings to the hash — a bigger key, same pattern. |
+| E-15 | *(new 2026-07-28)* Auto start-month: **no cycle closes** | If Ma fails to return to its floor from *any* of the 12 candidate starts, that is not an algorithm failure — perpetual accumulation **is** the d4 verdict from every start. Display against a canonical start (the month after the annual Ma minimum), which also serves as the deterministic tie-break when several starts close. §D-6 / `research.md` §3.7 must not assume a closing cycle exists. |
+| E-16 | *(new)* Roof −2 K vs exterior vapour pressure | The −2 K applies to the **temperature profile only**; `pe` stays derived from the unadjusted θe/dew point. That can put `pe > psat(θe − 2)` at the exterior boundary node — a spurious "condensing interface" at the outermost surface. The engine needs a stated rule (e.g. interstitial detection covers interior interfaces only; boundary nodes belong to the surface criteria) and the roof golden test must cover a cold humid month to pin the workbook's own behaviour. |
+| E-17 | *(new)* `ventilated`: where does the stack end? | ISO 6946 §6 semantics assume the assembly is modelled only **inboard of the cavity**; neither `thermal.py` nor this engine truncates layers. A vapour-tight cladding modelled outboard of a vented cavity produces a fictitious condensation trap. Emit a named diagnostic when `exterior_condition == "ventilated"` and the outermost layer is an air-cavity category or membrane. See `PRD.md` §6.5. |
+| E-18 | *(new)* Summer reverse vapour drive | With a cool interior (fixed-setpoint model + AC) and a humid exterior, the drive inverts and the condensing interface lands at the **inboard** vapour retarder (classic poly-behind-drywall failure). The monthly method captures this natively — but the diagrams, "worst month" copy, and interface labelling must be direction-agnostic, not hard-coded to winter-outward. |
 
 ---
 

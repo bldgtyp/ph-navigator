@@ -139,9 +139,13 @@ value there is the single most consequential gap the "what's missing" state
 This is designed to be a non-event for everything that exists:
 
 - **Document:** both fields are `X | None = None` on `ProjectMaterial`. Old
-  bodies validate unchanged under `extra="forbid"`; the `schema_version` bump is
-  a **no-op upgrade step** — no data migration, no rewrite. (`upgrade.py` already
-  supports pure-stamp steps; `_upgrade_v0_to_v1` is the precedent.)
+  bodies validate unchanged under `extra="forbid"`, and — per the shipped
+  precedent (`air_permeance_l_s_m2_at_75pa` and `Assembly.exterior_condition`
+  both landed as "additive amendment, no `schema_version` bump") — there is
+  **no schema-version bump at all**: the document stays at v8, and only the
+  table fingerprint and corpus snapshot are regenerated.
+  (`migrations/upgrade.py` is not involved. Corrected 2026-07-28; an earlier
+  draft called for a no-op bump, which contradicts the as-built pattern.)
 - **Catalog:** two nullable `double precision` columns on `catalog_materials`.
   Existing rows read `NULL`.
 - **Drift/refresh:** add both keys to `PROJECT_MATERIAL_CATALOG_FIELDS` /
@@ -353,6 +357,20 @@ screen has to say what it does with each. Only the first is fully modelled.
 | `ground` | `Rse = 0` | ❌ **not screened** (`decisions.md` E-5). ISO 13788 is an air-facing method; `ClimateMonthlyTemps.ground_c` exists but producing a Glaser answer for a slab would be a wrong answer confidently presented. Chip reads "not screened". |
 | `unconditioned_space` | `Rse = Rsi` | ⚠️ **needs Ft, which does not exist yet** — see below |
 
+**`ventilated` carries an unstated modelling convention that vapour makes
+load-bearing** *(added 2026-07-28)*. ISO 6946 §6's rule is that the ventilated
+cavity *and everything outboard of it* are dropped and `Rse = Rsi` stands in
+for them — which means a `ventilated` assembly is expected to be modelled
+**only up to the inboard face of the cavity**. Neither `thermal.py` nor this
+engine truncates layers; both take the stack as given. For heat this
+convention-violation costs a little extra R; for vapour it is catastrophic — a
+metal or vapour-tight cladding modelled outboard of the cavity would show as a
+condensation trap that does not exist in the real, vented wall. The engine
+should therefore emit a named diagnostic (not a silent result) when
+`exterior_condition == "ventilated"` and the outermost layer is an air-cavity
+category or a membrane — the two signatures of a stack that kept its cavity.
+The Assumptions tier states the convention.
+
 **The Ft obligation is now this feature's.** Both prerequisite packets deferred
 it here explicitly. The films treat `unconditioned_space` identically to
 `ventilated`, but the *temperature* on the far side is what actually
@@ -416,7 +434,7 @@ risk (A-4) is retired first.
 | Phase | Content | Ships |
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
-| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. | materials can be specified; data entry can begin |
+| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. **Plus the µ seed path itself** (Q-3/D-7): the ISO 10456 category-level dataset published to the private object store, the loader in-repo, and the seeding run against the production catalog — following the ASHRAE surface-film store precedent. Phase 0 measures coverage *assuming* this seed; someone has to actually build it. | materials can be specified; data entry can begin |
 | ~~**1½**~~ | ✅ **Both external dependencies cleared.** `assembly-membrane-layers` — all four phases, shipped 2026-07-26 (rendering reworked 2026-07-27). `assembly-boundary-conditions` — all four phases, 2026-07-26 → ASHRAE set + selector 2026-07-28. | assemblies hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |
@@ -438,7 +456,9 @@ Phases 1–3 are independently valuable; the feature can pause after any of them
 6. A user who has never opened the Assumptions tier still gets a computed result
    (zero-config defaults hold).
 7. No PHI/ISO/ASHRAE-sourced tabular data is committed to this repository
-   (`decisions.md` §D-7).
+   (`decisions.md` §D-7) — **including golden-test fixtures**, whose material
+   µ/sd inputs are synthetic values run through the workbook locally, following
+   the surface-film fixture precedent (commit `b869a8fc`).
 8. The word "pass" and the word "fail" appear nowhere in the user-facing copy.
 9. An assembly containing any `masonry`-category material always renders the
    high-storage caveat, and a caveated clear result never renders as
@@ -456,3 +476,9 @@ Phases 1–3 are independently valuable; the feature can pause after any of them
 14. The condensation input hash changes when any of material `category`,
     `thermal_standard`, `exterior_condition`, the climate source, or any
     `condensation_settings` field changes.
+15. A `ventilated` assembly whose outermost layer is an air-cavity category or
+    a membrane surfaces the named stack-convention diagnostic (§6.5, E-17)
+    rather than a silent result.
+16. When no start month closes the annual cycle, the result is the d4 verdict
+    reported from the canonical display month — never an error or an empty
+    chip (E-15).

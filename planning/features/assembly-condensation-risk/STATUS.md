@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28
+UPDATED: 2026-07-28 (second pass — independent review, corrections applied)
 TIME: 10:14 EDT
 STATUS: Ready — both prerequisites shipped; Phase 0 (coverage probe) is next
 AUTHOR: Claude (Opus 5) with Ed May
@@ -87,6 +87,34 @@ Also inherited, and directly reusable: `ThermalStatusFlag` gained
 `no_thermal_layers` (the named-flag-per-cause pattern), and
 `envelope/air_barrier.py` keeps `unknown` strictly distinct from `pass` — the
 same rule this feature's blocked state needs.
+
+### Independent review pass, 2026-07-28 (Fable 5)
+
+Full packet re-verified against the merged code (every inherited-API claim,
+the seed-file counts, the unit conversions, and the psat/gc formulas check
+out). Five corrections applied directly to the docs:
+
+- **Schema-version claim fixed** — `PRD.md` §4.2 and §D-4 called for a no-op
+  `schema_version` bump; the shipped precedent (`air_permeance…`,
+  `exterior_condition`, both commented "additive amendment, no bump" in
+  `envelope_models.py`) needs **no bump at all**. STATUS had it right; the
+  other two docs now agree.
+- **Golden-fixture licensing corollary added to §D-7** — AC 3's gold files
+  need µ inputs, and ISO 10456 values are licensed; fixtures use synthetic
+  values run through the workbook locally (film-store precedent, `b869a8fc`).
+  AC 7 amended to say so.
+- **The µ seed had no phase** — Q-3 decided *where* the values live, but
+  nothing scheduled building the dataset, loader, and production seeding run.
+  Folded into Phase 1 (`PRD.md` §8).
+- **`ventilated` stack convention made explicit** (`PRD.md` §6.5, E-17, AC 15)
+  — ISO 6946 §6 assumes the assembly is modelled only inboard of the cavity;
+  nothing truncates layers, and a vapour-tight cladding modelled outboard
+  would fabricate a condensation trap. Engine emits a named diagnostic.
+- **Four edge cases added, one extended** — E-15 start-month non-closure
+  (non-closure *is* d4; canonical display month; also the multi-close
+  tie-break — AC 16), E-16 roof −2 K vs exterior vapour pressure, E-18 summer
+  reverse drive (direction-agnostic UI), and E-8 extended to cover
+  `dewpoint_c > air_c` records (φe > 100 %).
 
 Not done: nothing implemented here. No branch, no migration, no models.
 

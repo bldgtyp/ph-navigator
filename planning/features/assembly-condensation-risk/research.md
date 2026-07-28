@@ -186,7 +186,10 @@ coldest period" (`Assembly!E436`), and warns that a wrong pick gives wrong
 answers. **This is automatable**: run the 12-month cycle from all 12 candidate
 starts and take the one that closes (Ma returns to its starting value), i.e. the
 month after the annual dry point. Removing this input is a genuine improvement
-over the spreadsheet.
+over the spreadsheet. Two degenerate cases must be defined (`decisions.md`
+E-15): if **no** start closes, the wall never dries — that is the d4 verdict
+itself, displayed against the month after the annual Ma minimum; the same
+canonical month is the tie-break when **several** starts close.
 
 ## 4. Required inputs → what PHN already has
 

@@ -23,7 +23,7 @@ Modelled on the **PHI Condensation Tool v1.7.5**
    logic), the ISO 13788 interior-climate models, the µ/perm unit story, and a
    line-by-line map of what PHN already has vs what is missing.
 2. **`decisions.md`** — is this worth building (7 angles), the design decisions
-   it forces, 14 edge cases, and the 7 open questions that block a build.
+   it forces, 21 edge cases, and the 8 open questions (7 resolved, Q-8 open).
 3. **`PRD.md`** — the product contract: material fields, assumption model, chip
    states, modal tiers, backend contract, phasing, acceptance criteria.
 4. **`STATUS.md`** — current state and next step.
