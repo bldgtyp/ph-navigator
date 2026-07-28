@@ -234,11 +234,20 @@ D-7 option 1 — the repo carries the loader, never the values.
 
 ## Still open on Phase 4
 
-1. **Ed publishes the values.** Extract from
-   `~/Dropbox/bldgkraft/Codes & Standards/2017 ASHRAE Handbook/SI/`
-   (Ch. 26 surface conductances; `R = 1/h`), write the small JSON, run
-   `uv run python -m scripts.seed_surface_films --from <file>`. Nothing in
-   the repo needs to change.
+1. ~~**Ed publishes the values.**~~ **DONE 2026-07-28.** Published to
+   `standards/ashrae/surface_films.json` in the `ph-navigator-prod` bucket
+   from the `ph-navigator-api` Render Shell, and verified by a real R2
+   round-trip (`--show ashrae` → `op=get`, 279 bytes, values intact). Local
+   MinIO carries the same values. Source: ASHRAE Handbook — Fundamentals
+   2017 (SI), Ch. 26, Table 10, non-reflective ε=0.90, Ro winter 6.7 m/s
+   (`R = 1/h`). The values live only in the two private object stores; the
+   repo still carries the loader alone.
+
+   Two operator notes for anyone repeating this: the seed script only exists
+   in a container built from a commit at or after `53d1f974`, so the deploy
+   must land first; and uv warns that Render's `VIRTUAL_ENV` points at the
+   repo-root `.venv` while the project lives in `backend/` — harmless, uv
+   uses the right environment.
 2. **The project-setting selector.** Deliberately not shipped yet: a
    picker that offers ASHRAE before any table is published would hand the
    user a 409. It should land with — or after — step 1, and should offer
@@ -248,8 +257,10 @@ D-7 option 1 — the repo carries the loader, never the values.
 
 ## Blockers
 
-**Phases 1–3 are done, merged, and unblocked.** Phase 4's mechanism is in;
-only the data and the selector remain (above).
+**Phases 1–3 are done, merged, and unblocked.** Phase 4's mechanism is in
+and its data is published to both object stores; only the selector remains
+(above). Nothing is user-visible until that lands — every project is
+`iso_6946` and no UI can change it, which is the intended ordering.
 
 Low urgency regardless — Ed reports ~99 % ISO.
 
