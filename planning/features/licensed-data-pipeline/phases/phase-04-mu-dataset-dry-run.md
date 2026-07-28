@@ -34,8 +34,9 @@ the Phase 3 workflow.
 
 1. **Author `datasets/iso10456-vapor-mu/` in `phn-data`**: values keyed by
    the catalog's stable row identity (§D-10 — coordinate with
-   `refactor/catalog-seed-idempotency`; the dataset's `PROVENANCE.md` states
-   the match-key choice and the ISO 10456 edition). Schema + manifest entry.
+   `archive/dated/2026-07-28/catalog-seed-idempotency`; the dataset's
+   `PROVENANCE.md` states the match-key choice and the ISO 10456 edition).
+   Schema + manifest entry.
 2. **Applier + registry entry in PHN** (`db_seed`): match → update the two
    vapour columns → per-row `ApplyReport` (matched / updated / unchanged /
    **unmatched**, E-10). Absolute-value writes, so re-apply is idempotent and

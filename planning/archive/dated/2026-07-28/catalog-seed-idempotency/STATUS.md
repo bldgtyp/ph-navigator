@@ -1,10 +1,10 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: In review — all three phases implemented
+STATUS: Complete — verified 2026-07-28
 AUTHOR: Claude with Ed May
-SCOPE: Current mitigation state and remaining work for catalog seed
-  idempotency.
+SCOPE: Final implementation, verification, and transition notes for catalog
+  seed idempotency.
 RELATED:
   - ./README.md
   - ./PRD.md
@@ -15,9 +15,9 @@ RELATED:
 
 ## Current state
 
-All three phases are implemented: all 638 canonical material, glazing, and frame rows now
-carry deterministic ids derived from catalog `kind` + row `name`, and all three
-seeders validate those ids before preview.
+All three phases are implemented: all 638 canonical material, glazing, and frame
+rows now carry deterministic ids derived from catalog `kind` + row `name`, and
+all three seeders validate those ids before preview.
 `tests/test_catalog_seed_ids.py` guards the derivation, id shape, uniqueness,
 ASCII names, first-key ordering, and exclusion of the two aperture-default
 sentinels.
@@ -32,7 +32,7 @@ The obsolete materials-only `--skip-if-not-empty` mitigation is removed.
 Partially seeded catalogs now insert genuinely missing rows instead of skipping
 the entire operation.
 
-## What was already done
+## Implementation
 
 - `backend/scripts/_catalog_seed_ids.py` owns derivation, validation, loading,
   and regeneration; `backend/scripts/_catalog_seed.py` owns the shared
@@ -41,10 +41,32 @@ the entire operation.
 - No production impact. These are local/CI dev-seed scripts and
   `assert_local_dev_database()` refuses to run against production.
 
-## Next step
+## Final verification
 
-Run the final repo closeout gate (`make format`, then `make ci`), record the
-result, and archive this packet if green.
+Completed 2026-07-28:
+
+```text
+make format
+make ci
+```
+
+- Backend: Ruff format/lint, boundary checks, Ty, and Alembic passed;
+  `1639 passed, 7 skipped`.
+- Frontend: Prettier, ESLint, structural guards, `2312 passed`, production
+  build, and version marker passed.
+- Focused seed contract: all 638 ids re-derived; first previews insert
+  `408 / 189 / 41`; second previews report those same matched counts with
+  `new=0`, `errored=0`.
+
+## Residual operational note
+
+The user's current dev database was not reset during implementation because the
+required transition is destructive. Before its next standalone catalog seed,
+choose either the full `make db-seed` reset or the catalog-only reset documented
+in `backend/seeds/README.md`. The latter preserves projects but deletes custom
+catalog rows and can leave stale `catalog_origin` references. Seed re-runs are
+insert-only: they do not synchronize value edits or reactivate soft-deleted
+rows.
 
 Independently reviewed 2026-07-28 (upstream/downstream consequence check): the
 approach was confirmed correct and the plan updated in place. Additions worth
@@ -54,9 +76,6 @@ transition ship-note now spells out both paths (`make db-seed` wipes local
 users/sessions/projects; the catalog-only alternative preserves them but can
 leave dangling `catalog_origin` references); and matched rows remain skip-only,
 so seeds insert missing rows but never update existing ones.
-
-No deadline. Nothing is blocked on this; the failure mode only bites someone who
-runs a standalone catalog seed target against an already-populated database.
 
 ## Recovery recipe, if someone duplicates a catalog
 
@@ -77,10 +96,3 @@ DELETE FROM catalog_materials WHERE created_at::date = DATE '<the-bad-date>';
 Verify afterwards that no `name` has more than one live row. This is exactly the
 procedure used to restore the local catalog from 1224 rows back to its original
 408 on 2026-07-20.
-
-## Verification for whoever picks this up
-
-- Run each catalog seed target twice against a populated database; row counts
-  must not change on the second run.
-- Run `make db-seed` and confirm exactly one copy of each catalog.
-- Confirm matched-only runs report their counts and skip commit.

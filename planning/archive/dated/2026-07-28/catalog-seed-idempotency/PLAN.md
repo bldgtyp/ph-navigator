@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: In review — all three phases implemented
+STATUS: Complete — verified 2026-07-28
 AUTHOR: Claude with Ed May
 REVIEWED: 2026-07-28 — claims re-verified against code; edge cases folded in
   (sentinel rows, id namespacing, transition cost, soft-delete re-runs).
@@ -11,11 +11,11 @@ RELATED:
   - ./README.md
   - ./PRD.md
   - ./STATUS.md
-  - ../../../backend/scripts/seed_materials_catalog.py
-  - ../../../backend/scripts/seed_glazing_catalog.py
-  - ../../../backend/scripts/seed_frame_catalog.py
-  - ../../../backend/features/catalogs/materials/import_export/pipeline.py
-  - ../../../backend/features/catalogs/materials/import_export/service.py
+  - ../../../../../backend/scripts/seed_materials_catalog.py
+  - ../../../../../backend/scripts/seed_glazing_catalog.py
+  - ../../../../../backend/scripts/seed_frame_catalog.py
+  - ../../../../../backend/features/catalogs/materials/import_export/pipeline.py
+  - ../../../../../backend/features/catalogs/materials/import_export/service.py
 ---
 
 # Plan — Catalog seed idempotency

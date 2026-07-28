@@ -124,14 +124,12 @@ problem it exists to kill.
 ### D-10. `db_seed` appliers need stable row identity — interaction with `catalog-seed-idempotency` ⚠️
 
 The µ applier (Phase 4) updates existing `catalog_materials` rows, which
-requires a reliable match key. `planning/refactor/catalog-seed-idempotency/`
-records that the catalog seed files carry **no ids** and seeding re-inserts
-rows — i.e. catalog row identity is currently name-derived and fragile
-(the same fragility as memory `feedback_catalog_sentinel_rows`). The µ
-dataset must therefore key on the same identity the catalog seed uses (and
-say so in its `PROVENANCE.md`), and that refactor landing first would make
-every future `db_seed` applier safer. Not a hard blocker; a named risk the
-Phase 4 applier design must address explicitly.
+requires a reliable match key. The completed
+`planning/archive/dated/2026-07-28/catalog-seed-idempotency/` refactor gives
+every canonical seed row a deterministic id derived from catalog kind + name.
+The µ dataset must key on that same identity (and say so in its
+`PROVENANCE.md`); the former row-identity risk is resolved, while the applier
+still needs to report unmatched rows explicitly.
 
 ## Part 3 — Edge cases
 

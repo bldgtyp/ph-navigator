@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-20
 TIME: 08:27 EDT
-STATUS: Deferred
+STATUS: Complete — resolved 2026-07-28
 AUTHOR: Claude with Ed May
 SCOPE: Defect analysis and resolution options for non-idempotent catalog seed
   scripts.
@@ -11,6 +11,9 @@ RELATED:
 ---
 
 # Catalog seed idempotency — analysis
+
+This is the pre-fix defect analysis. Statements below describe the 2026-07-20
+state; the final `Resolution` section records the implemented result.
 
 ## Symptom
 
@@ -158,3 +161,11 @@ looks like a safety net is worse than having no net at all.
 - `make db-seed` still produces exactly one copy of each catalog.
 - The chosen behavior is documented where the seed targets are discovered
   (`make help` text and/or `context/ENVIRONMENT.md`).
+
+## Resolution
+
+Completed 2026-07-28 with deterministic ids derived from catalog `kind` + row
+`name`, validated seed loading, one shared insert-only seeding workflow, and a
+three-catalog pipeline replay test. No user-facing import matching semantics
+changed. Existing dev databases require one documented transition; production
+catalog management remains out of scope.

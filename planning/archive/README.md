@@ -5,6 +5,15 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-07-28
 
+- `catalog-seed-idempotency` - All 638 canonical material, glazing, and frame
+  seed rows now carry deterministic ids derived from catalog kind + name.
+  Three thin seed commands share one validated insert-only workflow, partial
+  catalogs self-heal, and matched re-runs skip commit with explicit counts.
+  A committed pipeline replay proves first-pass inserts and second-pass
+  `new=0` for `408 / 189 / 41` rows. Make help and the local transition runbook
+  document exact counts, the two aperture-default sentinels, full-reset data
+  loss, custom-catalog loss, and stale `catalog_origin` risk. Final `make ci`
+  passed (backend 1639 passed / 7 skipped; frontend 2312 passed).
 - `aperture-void-panels` - Aperture Elements now support `kind: "void"` for
   grid cells that are host wall rather than part of the window unit. Empty
   panels preserve exact grid coverage while carrying no frame, glazing, or
