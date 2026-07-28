@@ -67,6 +67,29 @@ describe("validateMergeSelection", () => {
   it("fewer than two elements rejects", () => {
     expect(validateMergeSelection(grid, ["tl"]).ok).toBe(false);
   });
+
+  it("rejects a rectangular mixed Glazed and Empty selection", () => {
+    const mixed = aperture([
+      element("glazed", [0, 0], [0, 0]),
+      { ...element("void", [0, 0], [1, 1]), kind: "void" },
+    ]);
+    const result = validateMergeSelection(mixed, ["glazed", "void"]);
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: "mixed-kind",
+      message: "Glazed and Empty elements cannot be merged together.",
+    });
+  });
+
+  it("allows adjacent Empty elements to merge", () => {
+    const empty = aperture([
+      { ...element("left", [0, 0], [0, 0]), kind: "void" },
+      { ...element("right", [0, 0], [1, 1]), kind: "void" },
+    ]);
+
+    expect(validateMergeSelection(empty, ["left", "right"]).ok).toBe(true);
+  });
 });
 
 describe("topLeftSource", () => {

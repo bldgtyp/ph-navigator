@@ -25,6 +25,7 @@ from features.project_document.aperture_commands.models import (
     PickFrame,
     PickGlazing,
     RenameApertureType,
+    SetElementKind,
     SetElementName,
     SetElementOperation,
 )
@@ -880,6 +881,109 @@ def test_paste_assignment_target_equals_source_rejects() -> None:
             PasteAssignment(aperture_type_id=apt_id, source_element_id=el.id, target_element_ids=[el.id]),
         )
     assert "aperture_paste_target_is_source" in str(exc.value)
+
+
+def test_paste_assignment_restore_snapshot_allows_undo_on_same_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    source, target = entry.elements[:2]
+    body, _ = _apply(
+        body,
+        SetElementOperation(
+            aperture_type_id=apt_id,
+            element_id=source.id,
+            operation=ApertureOperation(type="swing", directions=["left"]),
+        ),
+    )
+    prior = ApertureAssignmentSnapshot(
+        operation=target.operation,
+        glazing_id=target.glazing_id,
+        frames=target.frames,
+    )
+    body, _ = _apply(
+        body,
+        PasteAssignment(
+            aperture_type_id=apt_id,
+            source_element_id=source.id,
+            target_element_ids=[target.id],
+        ),
+    )
+    pasted = next(element for element in body.tables.apertures[0].elements if element.id == target.id)
+    assert pasted.operation is not None
+
+    body, audit = _apply(
+        body,
+        PasteAssignment(
+            aperture_type_id=apt_id,
+            source_element_id=target.id,
+            target_element_ids=[target.id],
+            restore_assignment=prior,
+        ),
+    )
+
+    restored = next(element for element in body.tables.apertures[0].elements if element.id == target.id)
+    assert restored.operation is None
+    assert restored.glazing_id == prior.glazing_id
+    assert restored.frames == prior.frames
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["restore"] is True
+
+
+def test_paste_assignment_restore_rejects_void_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    target = body.tables.apertures[0].elements[0]
+    body, _ = _apply(
+        body,
+        SetElementKind(
+            aperture_type_id=apt_id,
+            element_ids=[target.id],
+            element_kind="void",
+        ),
+    )
+
+    with pytest.raises(Exception) as exc:
+        _apply(
+            body,
+            PasteAssignment(
+                aperture_type_id=apt_id,
+                source_element_id=target.id,
+                target_element_ids=[target.id],
+                restore_assignment=ApertureAssignmentSnapshot(),
+            ),
+        )
+    assert "aperture_element_is_void" in str(exc.value)
+
+
+def test_paste_assignment_restore_requires_self_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    source, target = body.tables.apertures[0].elements[:2]
+
+    with pytest.raises(Exception) as exc:
+        _apply(
+            body,
+            PasteAssignment(
+                aperture_type_id=apt_id,
+                source_element_id=source.id,
+                target_element_ids=[target.id],
+                restore_assignment=ApertureAssignmentSnapshot(),
+            ),
+        )
+    assert "aperture_paste_restore_requires_self_target" in str(exc.value)
 
 
 def test_flip_left_right_single_column_preserves_span_and_mirrors_operation() -> None:

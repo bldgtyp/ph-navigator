@@ -8,14 +8,17 @@
 import { useCallback, useState } from "react";
 import { useApertureBuilderStore, type PickedAssignment } from "../store/builder-store";
 import type {
+  ApertureAssignmentSnapshot,
   ApertureElement,
   ApertureElementFrames,
   ApertureOperation,
+  FrameRef,
   GlazingRef,
 } from "../types";
 
 export type PasteTargetSnapshot = {
   id: string;
+  kind: ApertureElement["kind"];
   operation: ApertureOperation | null;
   glazing: GlazingRef | null;
   frames: ApertureElementFrames;
@@ -29,10 +32,18 @@ export type UsePickPasteHandlersArgs = {
     sourceElementId: string,
     targetElementIds: string[],
     payload: PickedAssignment,
-  ) => Promise<void> | void;
+  ) => Promise<boolean> | boolean;
+  onRestoreAssignment?: (
+    targetElementId: string,
+    prior: ApertureAssignmentSnapshot,
+  ) => Promise<boolean> | boolean;
 };
 
-export function usePickPasteHandlers({ apertureId, onPasteAssignment }: UsePickPasteHandlersArgs) {
+export function usePickPasteHandlers({
+  apertureId,
+  onPasteAssignment,
+  onRestoreAssignment,
+}: UsePickPasteHandlersArgs) {
   const pickPasteMode = useApertureBuilderStore((s) => s.pickPasteMode);
   const pickedAssignment = useApertureBuilderStore((s) => s.pickedAssignment);
   const pickPasteAction = useApertureBuilderStore((s) => s.pickPasteAction);
@@ -49,18 +60,17 @@ export function usePickPasteHandlers({ apertureId, onPasteAssignment }: UsePickP
   const pasteOnto = useCallback(
     async (target: PasteTargetSnapshot) => {
       if (pickPasteMode !== "pasting" || !pickedAssignment) return;
+      if (!onPasteAssignment) return;
+      if (target.kind !== "glazed") return;
       if (target.id === pickedAssignment.source_element_id) return;
-      const prior = {
-        operation: target.operation,
-        glazing: target.glazing,
-        frames: target.frames,
-      };
       try {
-        await onPasteAssignment?.(
+        const prior = assignmentSnapshot(target);
+        const succeeded = await onPasteAssignment(
           pickedAssignment.source_element_id,
           [target.id],
           pickedAssignment,
         );
+        if (!succeeded) return;
         pushUndoEntry(apertureId, { target_element_id: target.id, prior });
         flash(target.id);
       } catch {
@@ -73,22 +83,31 @@ export function usePickPasteHandlers({ apertureId, onPasteAssignment }: UsePickP
   const undoLastPaste = useCallback(async () => {
     const entry = popUndoEntry(apertureId);
     if (!entry) return;
-    const revertPayload: PickedAssignment = {
-      source_element_id: entry.target_element_id,
-      operation: entry.prior.operation,
-      glazing: entry.prior.glazing,
-      frames: entry.prior.frames,
-    };
-    await onPasteAssignment?.(entry.target_element_id, [entry.target_element_id], revertPayload);
-    flash(entry.target_element_id);
-  }, [apertureId, flash, onPasteAssignment, popUndoEntry]);
+    try {
+      if (!onRestoreAssignment) {
+        pushUndoEntry(apertureId, entry);
+        return;
+      }
+      const succeeded = await onRestoreAssignment(entry.target_element_id, entry.prior);
+      if (!succeeded) {
+        pushUndoEntry(apertureId, entry);
+        return;
+      }
+      flash(entry.target_element_id);
+    } catch {
+      // Backend rejected; restore the entry so Undo remains available.
+      pushUndoEntry(apertureId, entry);
+    }
+  }, [apertureId, flash, onRestoreAssignment, popUndoEntry, pushUndoEntry]);
 
   const capturePickFromElement = useCallback(
     (el: ApertureElement) => {
+      if (el.kind !== "glazed") return;
       pickPasteAction(
         { type: "click-element" },
         {
           source_element_id: el.id,
+          source_element_kind: el.kind,
           operation: el.operation,
           glazing: el.glazing,
           frames: el.frames,
@@ -110,4 +129,24 @@ export function usePickPasteHandlers({ apertureId, onPasteAssignment }: UsePickP
     handlePaintBucket: () => pickPasteAction({ type: "click-paint-bucket" }),
     sendEsc: () => pickPasteAction({ type: "esc" }),
   };
+}
+
+function assignmentSnapshot(target: PasteTargetSnapshot): ApertureAssignmentSnapshot {
+  return {
+    operation: target.operation,
+    glazing_id: projectRefId(target.glazing),
+    frames: {
+      top: projectRefId(target.frames.top),
+      right: projectRefId(target.frames.right),
+      bottom: projectRefId(target.frames.bottom),
+      left: projectRefId(target.frames.left),
+    },
+  };
+}
+
+function projectRefId(ref: FrameRef | GlazingRef | null): string | null {
+  if (ref === null) return null;
+  const id = (ref as FrameRef & { id?: unknown }).id;
+  if (typeof id === "string") return id;
+  throw new Error("Aperture assignment reference is missing its project id.");
 }

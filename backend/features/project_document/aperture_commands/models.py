@@ -15,6 +15,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.document import (
+    ApertureElementFrames,
     ApertureElementKind,
     ApertureOperation,
     FrameRef,
@@ -188,12 +189,22 @@ OverrideTarget = Literal[
 ]
 
 
+class ApertureAssignmentSnapshot(BaseModel):
+    """Prior assignment fields supplied only by the builder's paste undo."""
+
+    model_config = ConfigDict(extra="forbid")
+    operation: ApertureOperation | None = None
+    glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
+    frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
+
+
 class PasteAssignment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["pasteAssignment"] = "pasteAssignment"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
     source_element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
     target_element_ids: list[str] = Field(min_length=1)
+    restore_assignment: ApertureAssignmentSnapshot | None = None
 
 
 class FlipLeftRight(BaseModel):

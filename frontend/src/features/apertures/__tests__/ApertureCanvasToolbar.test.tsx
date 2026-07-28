@@ -7,22 +7,29 @@ function toolbarElement({
   pickPasteMode,
   canFlipLeftRight = true,
   onFlipLeftRight = vi.fn(),
+  selectionCount = 0,
+  elementKindTarget = null,
+  onToggleElementKind = vi.fn(),
 }: {
   pickPasteMode: AperturePickPasteMode;
   canFlipLeftRight?: boolean;
   onFlipLeftRight?: () => void;
+  selectionCount?: number;
+  elementKindTarget?: "glazed" | "void" | null;
+  onToggleElementKind?: () => void;
 }) {
   return (
     <ApertureCanvasToolbar
       zoom={1}
       viewDirection="exterior"
-      selectionCount={0}
+      selectionCount={selectionCount}
       canEdit
       canMerge={false}
       canSplit={false}
       canFlipLeftRight={canFlipLeftRight}
+      elementKindTarget={elementKindTarget}
       pickPasteMode={pickPasteMode}
-      undoDepth={0}
+      canUndoPaste={false}
       onZoomIn={vi.fn()}
       onZoomOut={vi.fn()}
       onFit={vi.fn()}
@@ -31,6 +38,7 @@ function toolbarElement({
       onMerge={vi.fn()}
       onSplit={vi.fn()}
       onFlipLeftRight={onFlipLeftRight}
+      onToggleElementKind={onToggleElementKind}
       onEyedropper={vi.fn()}
       onPaintBucket={vi.fn()}
       onUndoPaste={vi.fn()}
@@ -78,5 +86,32 @@ describe("ApertureCanvasToolbar", () => {
       toolbarElement({ pickPasteMode: "picking", canFlipLeftRight: false, onFlipLeftRight }),
     );
     expect(screen.getByTestId("aperture-canvas-flip-left-right")).toBeDisabled();
+  });
+
+  it("runs one batch Empty toggle for the current selection", () => {
+    const onToggleElementKind = vi.fn();
+    renderToolbar({
+      pickPasteMode: "idle",
+      selectionCount: 3,
+      elementKindTarget: "void",
+      onToggleElementKind,
+    });
+
+    const toggle = screen.getByTestId("aperture-canvas-toggle-empty");
+    expect(toggle).toHaveAccessibleName("Mark selected elements Empty");
+    fireEvent.click(toggle);
+    expect(onToggleElementKind).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers Glazed when all selected elements are Empty", () => {
+    renderToolbar({
+      pickPasteMode: "idle",
+      selectionCount: 2,
+      elementKindTarget: "glazed",
+    });
+
+    expect(screen.getByTestId("aperture-canvas-toggle-empty")).toHaveAccessibleName(
+      "Mark selected elements Glazed",
+    );
   });
 });

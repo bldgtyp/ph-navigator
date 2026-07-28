@@ -110,6 +110,7 @@ function StackHarness({
         onPickFrame={vi.fn()}
         onPickGlazing={vi.fn()}
         onSetElementOperation={vi.fn()}
+        onSetElementKind={vi.fn()}
         dismissedOperationWarnings={[]}
         onDismissOperationWarning={vi.fn()}
       />

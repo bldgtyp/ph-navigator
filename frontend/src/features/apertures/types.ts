@@ -95,6 +95,12 @@ export type ApertureOperation = {
 };
 
 export type ApertureSide = "top" | "right" | "bottom" | "left";
+export const APERTURE_SIDES = [
+  "top",
+  "right",
+  "bottom",
+  "left",
+] as const satisfies readonly ApertureSide[];
 
 export type ApertureElementFrames = {
   top: FrameRef | null;
@@ -119,6 +125,12 @@ export type WireApertureElementFrames = {
   right: string | null;
   bottom: string | null;
   left: string | null;
+};
+
+export type ApertureAssignmentSnapshot = {
+  operation: ApertureOperation | null;
+  glazing_id: string | null;
+  frames: WireApertureElementFrames;
 };
 
 export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {
@@ -264,6 +276,7 @@ export type ApertureCommand =
       aperture_type_id: string;
       source_element_id: string;
       target_element_ids: string[];
+      restore_assignment?: ApertureAssignmentSnapshot;
     }
   | { kind: "flipLeftRight"; aperture_type_id: string }
   | {

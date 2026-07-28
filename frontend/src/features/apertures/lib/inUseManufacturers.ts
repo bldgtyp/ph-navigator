@@ -9,11 +9,9 @@
 // show the user-visible name. Sorted case-insensitively to match the
 // catalog-roster ordering.
 
-import type { ApertureTypeEntry, ApertureSide } from "../types";
+import { APERTURE_SIDES, type ApertureTypeEntry } from "../types";
 
 export type ManufacturerKind = "frame_types" | "glazing_types";
-
-const SIDES: ApertureSide[] = ["top", "right", "bottom", "left"];
 
 export function inUseManufacturers(
   apertures: ApertureTypeEntry[],
@@ -23,7 +21,7 @@ export function inUseManufacturers(
   for (const apt of apertures) {
     for (const el of apt.elements) {
       if (kind === "frame_types") {
-        for (const side of SIDES) {
+        for (const side of APERTURE_SIDES) {
           const manu = el.frames[side]?.manufacturer;
           if (manu && manu.trim()) {
             seen.set(manu.trim().toLowerCase(), manu.trim());

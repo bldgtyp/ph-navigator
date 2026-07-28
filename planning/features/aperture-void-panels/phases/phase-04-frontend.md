@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — builder UI: void rendering, element card, kind toggle,
   pick/paste/merge guards.
@@ -104,3 +104,22 @@ converting applies to the elements not already at the target kind.
 ## Verification
 
 `pnpm run format`, `make frontend-dev-check`, then `make ci` green.
+
+## Implementation result — 2026-07-28
+
+- Added exhaustive `kind` branching to the SVG and overlay layers. Empty
+  elements retain names, selection, hover, inserts, and grid geometry while
+  omitting glazing, frame, operation, and U-value visuals.
+- Added the shared Empty explanation/caption, per-card kind control,
+  assignment-aware confirmation dialog, and multi-select toolbar action.
+- Added client/store guards for Empty pick/paste targets and sources,
+  same-kind merge validation, and command-busy protection.
+- Made paste undo restore a complete wire-ID assignment snapshot through a
+  dedicated backend restore submode. Converting an element to Empty drops its
+  undo entry; failed restores retain the entry and surface the command error.
+- Added focused backend and frontend regressions for the rendering, dialog,
+  batch command, merge, pick/paste, undo, and restore contracts.
+- Built and visually verified the S15 grid through the local browser fixture.
+  Evidence: `../assets/phase-04-s15-empty-panels.png`.
+- Simplify reuse, quality, and efficiency reviews completed with all findings
+  resolved. The final full-CI result is recorded in `../STATUS.md`.

@@ -6,6 +6,7 @@ import {
   viewBoxFor,
 } from "../aperture-geometry";
 import { MIN_CANVAS_WIDTH_PX, pxFromMm } from "../canvas-constants";
+import { EMPTY_PANEL_EXPLANATION } from "../empty-panel";
 import type { ApertureSide, ApertureTypeEntry, FrameRef, GlazingRef } from "../types";
 import { OperationSymbols } from "./OperationSymbols";
 
@@ -40,6 +41,29 @@ export function ApertureSvgCanvas({
     >
       {rendered.elements.map((el) => {
         const rect = elementRectMm(rendered, el);
+        switch (el.kind) {
+          case "void":
+            return (
+              <g key={el.id} data-testid={`element-${el.id}`} data-element-kind="void">
+                <title>{EMPTY_PANEL_EXPLANATION}</title>
+                <rect
+                  data-testid={`region-${el.id}-void`}
+                  data-region-kind="void"
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.width}
+                  height={rect.height}
+                  fill="var(--aperture-void-fill)"
+                  stroke="var(--aperture-void-stroke)"
+                  strokeWidth={1}
+                  strokeDasharray="6,4"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </g>
+            );
+          case "glazed":
+            break;
+        }
         const regions = elementRegionsMm(el, rect);
         return (
           <g key={el.id} data-testid={`element-${el.id}`}>

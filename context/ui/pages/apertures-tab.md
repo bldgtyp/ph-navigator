@@ -45,6 +45,34 @@ the top, and inspector/details or editable breakdown table adjacent to
 the selected visual object. Catalog origins and custom overrides should
 be visible without forcing the user into a separate audit page.
 
+### Empty panels
+
+An aperture element may be **Glazed** or **Empty**. Empty panels preserve the
+rectangular grid layout but are not part of the window unit: their area is
+wall, and they are excluded from aperture U-value calculations, specification
+reports, and exports. The canvas shows them as a near-transparent cell with a
+dashed outline; selection, hover, element name, grid dimensions, merge, and
+split affordances remain available.
+
+The element card hides glazing, frame, operation, and U-value controls for an
+Empty panel and shows the standard explanation:
+
+> Empty panel: occupies the layout but is not part of the window unit. The area
+> is wall; it is excluded from U-value, spec report, and all exports.
+
+Changing an assigned Glazed panel to Empty requires confirmation because the
+command clears its glazing, operation, and four frame assignments. The dialog
+also reminds the editor to re-check adjacent glazed edges as window-to-wall
+junctions (jamb, sill, or head rather than mullion). The toolbar applies the
+same command once to all selected elements that are not already the target
+kind.
+
+Empty panels cannot be pick/paste sources or targets. Mixed Glazed/Empty
+selections cannot merge; same-kind selections can. Converting a paste target
+to Empty removes its stale paste-undo entry. Paste undo restores the complete
+prior assignment snapshot and remains disabled while another builder command
+is running; failed restores stay retryable and surface the command error.
+
 ## 2.6.2 Glazings Report
 
 Glazings is the aperture analog of Envelope → Materials/Specifications. It uses

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — Phases 1–3 complete; Phase 4 next
+STATUS: Active — Phases 1–4 complete; Phase 5 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for void ("Empty") panels in the Aperture Builder.
 RELATED: ./PRD.md, ./STATUS.md, ./decisions.md, ./phases/,
@@ -57,6 +57,6 @@ from U-value math and every export.
 | 1 | `phases/phase-01-schema.md` | `kind` field, validators, wire/TS types | Complete |
 | 2 | `phases/phase-02-command.md` | `setElementKind` command + guards on existing commands | Complete |
 | 3 | `phases/phase-03-consumers.md` | U-value, route-3 GH export, route-4 HBJSON export, cache key | Complete |
-| 4 | `phases/phase-04-frontend.md` | Canvas rendering, element card, pick/paste/merge guards | Next |
-| 5 | `phases/phase-05-verification-docs.md` | End-to-end + GH smoke, glossary, docs pass | Not started |
+| 4 | `phases/phase-04-frontend.md` | Canvas rendering, element card, pick/paste/merge guards | Complete |
+| 5 | `phases/phase-05-verification-docs.md` | End-to-end + GH smoke, glossary, docs pass | Next |
 | — | (deferred) | Solid spandrel panels | Deferred — see PRD §7 |

@@ -7,7 +7,14 @@
 
 import { create } from "zustand";
 import { nextMode, type PickPasteAction } from "../pick-paste-machine";
-import type { ApertureElementFrames, ApertureOperation, ApertureSide, GlazingRef } from "../types";
+import type {
+  ApertureElementFrames,
+  ApertureElementKind,
+  ApertureAssignmentSnapshot,
+  ApertureOperation,
+  ApertureSide,
+  GlazingRef,
+} from "../types";
 
 export type ApertureHoveredRegion = {
   elementId: string;
@@ -22,6 +29,7 @@ export type CanvasZoomUpdate = number | ((current: number) => number);
  *  copied. */
 export type PickedAssignment = {
   source_element_id: string;
+  source_element_kind: ApertureElementKind;
   operation: ApertureOperation | null;
   glazing: GlazingRef | null;
   frames: ApertureElementFrames;
@@ -31,11 +39,7 @@ export type PickedAssignment = {
  *  target element's prior 6 fields before a paste. */
 export type PasteUndoEntry = {
   target_element_id: string;
-  prior: {
-    operation: ApertureOperation | null;
-    glazing: GlazingRef | null;
-    frames: ApertureElementFrames;
-  };
+  prior: ApertureAssignmentSnapshot;
 };
 
 export const PASTE_UNDO_STACK_LIMIT = 20;
@@ -73,6 +77,7 @@ export type ApertureBuilderState = {
   pushUndoEntry: (apertureId: string, entry: PasteUndoEntry) => void;
   /** Pop and return the most recent entry, or null if empty. */
   popUndoEntry: (apertureId: string) => PasteUndoEntry | null;
+  dropUndoEntriesForElements: (apertureId: string, elementIds: readonly string[]) => void;
   clearPickPaste: () => void;
   clearUndoStack: (apertureId: string) => void;
   clearAllUndoStacks: () => void;
@@ -151,7 +156,11 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) =
 
   pickPasteAction: (action, pick) =>
     set((state) => {
-      if (state.pickPasteMode === "picking" && action.type === "click-element" && !pick) {
+      if (
+        state.pickPasteMode === "picking" &&
+        action.type === "click-element" &&
+        (!pick || pick.source_element_kind !== "glazed")
+      ) {
         return state;
       }
       const mode = nextMode(state.pickPasteMode, action);
@@ -192,6 +201,25 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) =
     }));
     return popped;
   },
+
+  dropUndoEntriesForElements: (apertureId, elementIds) =>
+    set((state) => {
+      const ids = new Set(elementIds);
+      const current = state.undoStacksByAperture[apertureId] ?? [];
+      const nextStack = current.filter((entry) => !ids.has(entry.target_element_id));
+      const pickedSourceWasConverted =
+        state.pickedAssignment !== null && ids.has(state.pickedAssignment.source_element_id);
+      if (nextStack.length === current.length && !pickedSourceWasConverted) return state;
+      return {
+        undoStacksByAperture: {
+          ...state.undoStacksByAperture,
+          [apertureId]: nextStack,
+        },
+        ...(pickedSourceWasConverted
+          ? { pickPasteMode: "idle" as const, pickedAssignment: null }
+          : {}),
+      };
+    }),
 
   clearPickPaste: () => set({ pickPasteMode: "idle", pickedAssignment: null }),
 

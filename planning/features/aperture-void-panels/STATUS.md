@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — Phases 1–3 complete; Phase 4 next
+STATUS: Active — Phases 1–4 complete; Phase 5 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -56,10 +56,21 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   simplify reuse/quality/efficiency review complete with all findings
   resolved. Full `make ci`: backend `1624 passed, 7 skipped`; frontend `245`
   files / `2294` tests passed.
+- 2026-07-28 — Phase 4 implemented: the Builder renders near-transparent
+  dashed Empty cells; card and multi-select controls dispatch the batch kind
+  command with assignment-aware confirmation; Empty pick/paste and mixed-kind
+  merges are guarded; warning surfaces remain shared. Paste undo now restores
+  a complete assignment snapshot through a self-target backend restore
+  submode, drops stale entries after conversion, retains failed entries for
+  retry, and is command-busy guarded. Simplify reuse/quality/efficiency review
+  completed with all findings resolved. The S15 browser fixture was built and
+  visually verified; screenshot:
+  `assets/phase-04-s15-empty-panels.png`.
 
 ## Next step
 
-Implement Phase 4 (`phases/phase-04-frontend.md`).
+Implement Phase 5 (`phases/phase-05-verification-docs.md`): cross-repo GH
+placement fix/smoke, final documentation, and closeout verification.
 
 ## Blockers
 
@@ -75,6 +86,8 @@ Implement Phase 4 (`phases/phase-04-frontend.md`).
 | 2 | `make ci` | Green — backend 1609 passed; frontend 2294 passed |
 | 3 | focused backend + frontend type checks | `60 passed`; TypeScript green |
 | 3 | `make ci` | Green — backend 1624 passed; frontend 2294 passed |
-| 4–5 | `make ci` per phase | — |
-| 4 | agent-browser smoke (S15 layout build) | — |
+| 4 | focused backend + frontend tests | Backend restore subset: `5 passed`; frontend: `46 passed`; TypeScript green |
+| 4 | `make ci` | Green — backend 1627 passed; frontend 2312 passed |
+| 4 | agent-browser smoke (S15 layout build) | Passed; screenshot retained |
+| 5 | `make ci` | — |
 | 5 | Route-3 → GH schema parse + Rhino visual check (Ed) | — |

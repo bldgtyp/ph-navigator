@@ -5,7 +5,15 @@
 // fans into the page-level command dispatch.
 
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
-import type { ApertureElement, ApertureSide, FrameRef, GlazingRef } from "../types";
+import { EMPTY_PANEL_CAPTION, EMPTY_PANEL_EXPLANATION } from "../empty-panel";
+import type {
+  ApertureElement,
+  ApertureElementKind,
+  ApertureSide,
+  FrameRef,
+  GlazingRef,
+} from "../types";
+import { APERTURE_SIDES } from "../types";
 import type { ViewDirection } from "../frame-label-map";
 import { FrameRow } from "./FrameRow";
 import { GlazingRow } from "./GlazingRow";
@@ -26,12 +34,12 @@ export type ApertureElementCardProps = {
   onPickFrame: (side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (glazing: GlazingRef) => void;
   onSetOperation: (operation: ApertureOperation | null) => void;
+  onSetKind: (kind: ApertureElementKind) => void;
+  commandBusy?: boolean;
   operationWarningDismissed: boolean;
   onDismissOperationWarning: () => void;
   uValueWm2k?: number | null;
 };
-
-const ALL_SIDES: ApertureSide[] = ["top", "right", "bottom", "left"];
 
 export function ApertureElementCard({
   element,
@@ -42,6 +50,8 @@ export function ApertureElementCard({
   onPickFrame,
   onPickGlazing,
   onSetOperation,
+  onSetKind,
+  commandBusy = false,
   operationWarningDismissed,
   onDismissOperationWarning,
   uValueWm2k,
@@ -50,6 +60,66 @@ export function ApertureElementCard({
   const mismatched = operationWarningDismissed ? [] : mismatchedSides(element);
   const uValueUnit = uValueUnitLabel(unitSystem);
   const widthUnit = widthUnitLabel(unitSystem);
+  const kindControl = kindControlFor(element.kind);
+  const kindContent = (() => {
+    switch (element.kind) {
+      case "void":
+        return (
+          <p className="aperture-element-card__void-caption" title={EMPTY_PANEL_EXPLANATION}>
+            {EMPTY_PANEL_CAPTION}
+          </p>
+        );
+      case "glazed":
+        return (
+          <>
+            <div
+              className="aperture-element-table"
+              role="table"
+              aria-label={`${element.name} details`}
+            >
+              <div className="aperture-element-table__head" role="row">
+                <span role="columnheader">Element</span>
+                <span role="columnheader">Name</span>
+                <MetricColumnHeader label="U-Value" unit={uValueUnit} />
+                <MetricColumnHeader label="Width" unit={widthUnit} />
+                <span role="columnheader">g-Value</span>
+              </div>
+              <GlazingRow glazing={element.glazing} canEdit={canEdit} onPick={onPickGlazing} />
+              {APERTURE_SIDES.map((side) => {
+                const isMismatch = !operationWarningDismissed && mismatched.includes(side);
+                return (
+                  <FrameRow
+                    key={side}
+                    side={side}
+                    viewDirection={viewDirection}
+                    frame={element.frames[side]}
+                    operation={element.operation}
+                    canEdit={canEdit}
+                    mismatchIndicator={
+                      isMismatch
+                        ? mismatchTooltip(element.frames[side]?.operation, element.operation)
+                        : null
+                    }
+                    onPick={(frame) => onPickFrame(side, frame)}
+                  />
+                );
+              })}
+              <OperationRow
+                operation={element.operation}
+                canEdit={canEdit}
+                onCommit={onSetOperation}
+              />
+            </div>
+            {!operationWarningDismissed && (
+              <OperationWarningBanner
+                mismatchedSides={mismatched}
+                onDismiss={onDismissOperationWarning}
+              />
+            )}
+          </>
+        );
+    }
+  })();
 
   return (
     <div
@@ -74,53 +144,58 @@ export function ApertureElementCard({
           }}
           onSubmit={onSetName}
         />
-        <span className="aperture-element-card__summary-uvalue">
-          U-w:{" "}
-          <UValueChip
-            valueWm2k={uValueWm2k ?? null}
-            unitSystem={unitSystem === "IP" ? "ip" : "si"}
-            compact
-          />
+        <span className="aperture-element-card__header-actions">
+          {kindControl.showUValue ? (
+            <span className="aperture-element-card__summary-uvalue">
+              U-w:{" "}
+              <UValueChip
+                valueWm2k={uValueWm2k ?? null}
+                unitSystem={unitSystem === "IP" ? "ip" : "si"}
+                compact
+              />
+            </span>
+          ) : null}
+          <button
+            type="button"
+            role="switch"
+            className="aperture-element-kind-toggle"
+            aria-checked={kindControl.checked}
+            aria-label={kindControl.label}
+            title={EMPTY_PANEL_EXPLANATION}
+            disabled={!canEdit || commandBusy}
+            onClick={() => onSetKind(kindControl.target)}
+          >
+            Empty
+          </button>
         </span>
       </div>
-      <div className="aperture-element-table" role="table" aria-label={`${element.name} details`}>
-        <div className="aperture-element-table__head" role="row">
-          <span role="columnheader">Element</span>
-          <span role="columnheader">Name</span>
-          <MetricColumnHeader label="U-Value" unit={uValueUnit} />
-          <MetricColumnHeader label="Width" unit={widthUnit} />
-          <span role="columnheader">g-Value</span>
-        </div>
-        <GlazingRow glazing={element.glazing} canEdit={canEdit} onPick={onPickGlazing} />
-        {ALL_SIDES.map((side) => {
-          const isMismatch = !operationWarningDismissed && mismatched.includes(side);
-          return (
-            <FrameRow
-              key={side}
-              side={side}
-              viewDirection={viewDirection}
-              frame={element.frames[side]}
-              operation={element.operation}
-              canEdit={canEdit}
-              mismatchIndicator={
-                isMismatch
-                  ? mismatchTooltip(element.frames[side]?.operation, element.operation)
-                  : null
-              }
-              onPick={(frame) => onPickFrame(side, frame)}
-            />
-          );
-        })}
-        <OperationRow operation={element.operation} canEdit={canEdit} onCommit={onSetOperation} />
-      </div>
-      {!operationWarningDismissed && (
-        <OperationWarningBanner
-          mismatchedSides={mismatched}
-          onDismiss={onDismissOperationWarning}
-        />
-      )}
+      {kindContent}
     </div>
   );
+}
+
+function kindControlFor(kind: ApertureElementKind): {
+  checked: boolean;
+  label: string;
+  showUValue: boolean;
+  target: ApertureElementKind;
+} {
+  switch (kind) {
+    case "glazed":
+      return {
+        checked: false,
+        label: "Mark element Empty",
+        showUValue: true,
+        target: "void",
+      };
+    case "void":
+      return {
+        checked: true,
+        label: "Mark element Glazed",
+        showUValue: false,
+        target: "glazed",
+      };
+  }
 }
 
 function MetricColumnHeader({ label, unit }: { label: string; unit: string }) {

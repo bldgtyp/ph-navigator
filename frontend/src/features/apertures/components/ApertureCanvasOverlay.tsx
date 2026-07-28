@@ -11,6 +11,7 @@ import {
   type RectMm,
 } from "../aperture-geometry";
 import { MIN_CANVAS_WIDTH_PX, pxFromMm } from "../canvas-constants";
+import { EMPTY_PANEL_EXPLANATION } from "../empty-panel";
 import {
   selectionForAperture,
   useApertureBuilderStore,
@@ -187,17 +188,43 @@ export function ApertureCanvasOverlay({
         const rect = elementRectMm(rendered, element);
         const regions = elementRegionsMm(element, rect);
         const isSelected = selected.includes(element.id);
+        const { regionTargets, tooltip } = (() => {
+          switch (element.kind) {
+            case "glazed":
+              return {
+                tooltip: undefined,
+                regionTargets: REGIONS.map((region) => (
+                  <ApertureHitTarget
+                    key={region}
+                    elementId={element.id}
+                    region={region}
+                    rect={regions[region]}
+                    parentRect={rect}
+                    zoom={zoom}
+                    isHovered={isRegionHovered(hoveredRegion, element.id, region)}
+                    onMouseEnter={() => setHoveredRegion({ elementId: element.id, region })}
+                    onMouseLeave={() => setHoveredRegion(null)}
+                    onClick={(event) => onRegionHitClick(element, region, event)}
+                  />
+                )),
+              };
+            case "void":
+              return { tooltip: EMPTY_PANEL_EXPLANATION, regionTargets: null };
+          }
+        })();
         return (
           <div
             key={element.id}
             className="aperture-hit aperture-hit--element"
             data-testid={`hit-element-${element.id}`}
+            data-element-kind={element.kind}
             data-selected={isSelected ? "true" : undefined}
             data-hovered={hoveredEl === element.id ? "true" : undefined}
             data-pick-source={pickedSourceElementId === element.id ? "true" : undefined}
             data-paste-flash={pasteFlashElementId === element.id ? "true" : undefined}
             data-pick-paste-mode={pickPasteMode !== "idle" ? pickPasteMode : undefined}
             aria-selected={isSelected}
+            title={tooltip}
             style={elementStyle(rect, zoom)}
             onClick={(event) => onElementClick(element, event)}
             onMouseEnter={() => setHoveredElement(element.id)}
@@ -207,20 +234,7 @@ export function ApertureCanvasOverlay({
               setInsertTarget((current) => (current?.elementId === element.id ? null : current));
             }}
           >
-            {REGIONS.map((region) => (
-              <ApertureHitTarget
-                key={region}
-                elementId={element.id}
-                region={region}
-                rect={regions[region]}
-                parentRect={rect}
-                zoom={zoom}
-                isHovered={isRegionHovered(hoveredRegion, element.id, region)}
-                onMouseEnter={() => setHoveredRegion({ elementId: element.id, region })}
-                onMouseLeave={() => setHoveredRegion(null)}
-                onClick={(event) => onRegionHitClick(element, region, event)}
-              />
-            ))}
+            {regionTargets}
             <ApertureNamePill
               element={element}
               glazingRect={regions.glazing}
