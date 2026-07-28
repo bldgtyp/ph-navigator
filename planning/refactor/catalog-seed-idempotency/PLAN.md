@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Ready to implement
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude with Ed May
 REVIEWED: 2026-07-28 — claims re-verified against code; edge cases folded in
   (sentinel rows, id namespacing, transition cost, soft-delete re-runs).
@@ -158,7 +158,7 @@ name check is the real guard).
 
 ## Phases
 
-### Phase 1 — Bake deterministic ids into the seed files
+### Phase 1 — Bake deterministic ids into the seed files — COMPLETE (2026-07-28)
 
 1. Add the shared derivation helper (`_catalog_seed_ids.py`).
 2. Add a small committed generator (or a `--write-ids` mode on the helper) that
@@ -181,6 +181,16 @@ name check is the real guard).
    added row that lacks or mismatches its id.
 
 Exit: all three seed files carry correct derived ids; the guard test is green.
+
+Completed with `scripts/_catalog_seed_ids.py`, which derives and validates the
+ids and can rewrite all three seeds. All 638 seed rows now carry the derived id
+as their first key. Verification:
+
+```text
+uv run pytest tests/test_catalog_seed_ids.py                    # 3 passed
+uv run ruff check scripts/_catalog_seed_ids.py tests/test_catalog_seed_ids.py
+uv run ty check scripts/_catalog_seed_ids.py tests/test_catalog_seed_ids.py
+```
 
 ### Phase 2 — Make the seeders honest and idempotent
 

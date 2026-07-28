@@ -6,6 +6,7 @@
   "app_version": null,
   "rows": [
     {
+      "id": "recRAj0MAh4147kry",
       "name": "1in. Imperial Polyurethane",
       "category": "doors",
       "density_kg_m3": null,
@@ -18,6 +19,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recfqXUX7u1C8ehwL",
       "name": "1in. Imperial Polyurethane and Embossed",
       "category": "doors",
       "density_kg_m3": null,
@@ -30,6 +32,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recuGJjTTUP30HlwW",
       "name": "1in. Imperial Polyurethane and Half-Glass",
       "category": "doors",
       "density_kg_m3": null,
@@ -42,6 +45,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recwV6wHmJRTJEUFC",
       "name": "1in. Legion Polystyrene",
       "category": "doors",
       "density_kg_m3": null,
@@ -54,6 +58,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recRcrP5jptRavxql",
       "name": "1in. Legion Polystyrene and Half-Glass",
       "category": "doors",
       "density_kg_m3": null,
@@ -66,6 +71,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recenGKREm5MtXPj6",
       "name": "1in. Medallion Steel Stiffened",
       "category": "doors",
       "density_kg_m3": null,
@@ -78,6 +84,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "reckLhjzUWaxqqPv3",
       "name": "1in. Trio-E Polyurethane and Steel Stiffened",
       "category": "doors",
       "density_kg_m3": null,
@@ -90,6 +97,7 @@
       "comments": "Ceco Door - Assa Abloy"
     },
     {
+      "id": "recj8lZRWam043KPB",
       "name": "AAC Block",
       "category": "insulation",
       "density_kg_m3": null,
@@ -102,6 +110,7 @@
       "comments": null
     },
     {
+      "id": "recV8WsV6skVkMkZz",
       "name": "Aerated Concrete",
       "category": "insulation",
       "density_kg_m3": null,
@@ -114,6 +123,7 @@
       "comments": null
     },
     {
+      "id": "recUlEvQspXLASBvR",
       "name": "Air layer, unventilated, downwards, thickness: 1 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -126,6 +136,7 @@
       "comments": null
     },
     {
+      "id": "rectg70s2WeQp0SOq",
       "name": "Air layer, unventilated, downwards, thickness: 2 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -138,6 +149,7 @@
       "comments": null
     },
     {
+      "id": "recwxrawhKp06hfsT",
       "name": "Air layer, unventilated, downwards, thickness: 3 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -150,6 +162,7 @@
       "comments": null
     },
     {
+      "id": "recvuPm4EVuQxhjUr",
       "name": "Air layer, unventilated, downwards, thickness: 4 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -162,6 +175,7 @@
       "comments": null
     },
     {
+      "id": "recHmfH41Rv3yN0qC",
       "name": "Air layer, unventilated, downwards, thickness: 5 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -174,6 +188,7 @@
       "comments": null
     },
     {
+      "id": "recWRBDQTFneUZz2x",
       "name": "Air layer, unventilated, downwards, thickness: 6 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -186,6 +201,7 @@
       "comments": null
     },
     {
+      "id": "recBckLpKAS9FNqxR",
       "name": "Air layer, unventilated, downwards, thickness: 7 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -198,6 +214,7 @@
       "comments": null
     },
     {
+      "id": "rec1325HwqAmQTVu9",
       "name": "Air layer, unventilated, downwards, thickness: 8 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -210,6 +227,7 @@
       "comments": null
     },
     {
+      "id": "rec3RAb9eq9RONwrv",
       "name": "Air layer, unventilated, downwards, thickness: 9 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -222,6 +240,7 @@
       "comments": null
     },
     {
+      "id": "reciYCa04qx9mFeOq",
       "name": "Air layer, unventilated, downwards, thickness: 10 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -234,6 +253,7 @@
       "comments": null
     },
     {
+      "id": "recxRTuGbJ6xr5njE",
       "name": "Air layer, unventilated, downwards, thickness: 11 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -246,6 +266,7 @@
       "comments": null
     },
     {
+      "id": "recEZJmIk2dQbJDVL",
       "name": "Air layer, unventilated, downwards, thickness: 12 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -258,6 +279,7 @@
       "comments": null
     },
     {
+      "id": "recGk2f4II9G6cURY",
       "name": "Air layer, unventilated, downwards, thickness: 13 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -270,6 +292,7 @@
       "comments": null
     },
     {
+      "id": "rec6lH3Gg8CUuCOmd",
       "name": "Air layer, unventilated, downwards, thickness: 14 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -282,6 +305,7 @@
       "comments": null
     },
     {
+      "id": "recuUKmK2sFtT09IZ",
       "name": "Air layer, unventilated, downwards, thickness: 15 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -294,6 +318,7 @@
       "comments": null
     },
     {
+      "id": "recEkVV3h9ImgBtmH",
       "name": "Air layer, unventilated, downwards, thickness: 16 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -306,6 +331,7 @@
       "comments": null
     },
     {
+      "id": "recx6H9boZed54YsI",
       "name": "Air layer, unventilated, downwards, thickness: 17 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -318,6 +344,7 @@
       "comments": null
     },
     {
+      "id": "recQ33skLxOuwi9JI",
       "name": "Air layer, unventilated, downwards, thickness: 18 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -330,6 +357,7 @@
       "comments": null
     },
     {
+      "id": "recgW8DoI38iHMGuw",
       "name": "Air layer, unventilated, downwards, thickness: 19 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -342,6 +370,7 @@
       "comments": null
     },
     {
+      "id": "recJ8Un1M9RUPP3Zv",
       "name": "Air layer, unventilated, downwards, thickness: 20 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -354,6 +383,7 @@
       "comments": null
     },
     {
+      "id": "recz1h5cCXmo1xvrx",
       "name": "Air layer, unventilated, downwards, thickness: 21 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -366,6 +396,7 @@
       "comments": null
     },
     {
+      "id": "recRnnLXJO3FFxK9q",
       "name": "Air layer, unventilated, downwards, thickness: 22 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -378,6 +409,7 @@
       "comments": null
     },
     {
+      "id": "rec3z2nqoSD4IBsp7",
       "name": "Air layer, unventilated, downwards, thickness: 23 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -390,6 +422,7 @@
       "comments": null
     },
     {
+      "id": "recs8NhJ8RCAgw3Lv",
       "name": "Air layer, unventilated, downwards, thickness: 24 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -402,6 +435,7 @@
       "comments": null
     },
     {
+      "id": "recX17B8vwnG9LSni",
       "name": "Air layer, unventilated, downwards, thickness: 25 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -414,6 +448,7 @@
       "comments": null
     },
     {
+      "id": "recbVUFszRAaa6BUU",
       "name": "Air layer, unventilated, downwards, thickness: 30 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -426,6 +461,7 @@
       "comments": null
     },
     {
+      "id": "recSeaRCoNhj88bOb",
       "name": "Air layer, unventilated, downwards, thickness: 35 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -438,6 +474,7 @@
       "comments": null
     },
     {
+      "id": "recM8ftHb6ag2AUpH",
       "name": "Air layer, unventilated, downwards, thickness: 40 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -450,6 +487,7 @@
       "comments": null
     },
     {
+      "id": "recZ4i47F4cHxXfP5",
       "name": "Air layer, unventilated, downwards, thickness: 45 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -462,6 +500,7 @@
       "comments": null
     },
     {
+      "id": "recXNt1cNfOgXRyr4",
       "name": "Air layer, unventilated, downwards, thickness: 50 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -474,6 +513,7 @@
       "comments": null
     },
     {
+      "id": "reci6ba2vyWzQeJ9z",
       "name": "Air layer, unventilated, downwards, thickness: 55 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -486,6 +526,7 @@
       "comments": null
     },
     {
+      "id": "recRENuLQ1nYiNTCD",
       "name": "Air layer, unventilated, downwards, thickness: 60 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -498,6 +539,7 @@
       "comments": null
     },
     {
+      "id": "recCh76kmqHscuDqL",
       "name": "Air layer, unventilated, downwards, thickness: 65 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -510,6 +552,7 @@
       "comments": null
     },
     {
+      "id": "recr3aZUHeZANre9D",
       "name": "Air layer, unventilated, downwards, thickness: 70 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -522,6 +565,7 @@
       "comments": null
     },
     {
+      "id": "recLKnjkauDYTo8gN",
       "name": "Air layer, unventilated, downwards, thickness: 75 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -534,6 +578,7 @@
       "comments": null
     },
     {
+      "id": "recZ0Ellwng6QPDmw",
       "name": "Air layer, unventilated, downwards, thickness: 80 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -546,6 +591,7 @@
       "comments": null
     },
     {
+      "id": "recyrHQLL7OymcoAC",
       "name": "Air layer, unventilated, downwards, thickness: 85 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -558,6 +604,7 @@
       "comments": null
     },
     {
+      "id": "recLknQN5xP6Ij0Ri",
       "name": "Air layer, unventilated, downwards, thickness: 90 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -570,6 +617,7 @@
       "comments": null
     },
     {
+      "id": "recSnQx9krf4fLeUo",
       "name": "Air layer, unventilated, downwards, thickness: 95 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -582,6 +630,7 @@
       "comments": null
     },
     {
+      "id": "recNF9aIGB7J2CxO6",
       "name": "Air layer, unventilated, downwards, thickness: 100 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -594,6 +643,7 @@
       "comments": null
     },
     {
+      "id": "rec0oeL903UFIrkxI",
       "name": "Air layer, unventilated, downwards, thickness: 110 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -606,6 +656,7 @@
       "comments": null
     },
     {
+      "id": "recBZE06LVj6a7VNp",
       "name": "Air layer, unventilated, downwards, thickness: 120 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -618,6 +669,7 @@
       "comments": null
     },
     {
+      "id": "recJnCEaNsMpNkpXo",
       "name": "Air layer, unventilated, downwards, thickness: 130 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -630,6 +682,7 @@
       "comments": null
     },
     {
+      "id": "recgKXLEd6FpTHJNz",
       "name": "Air layer, unventilated, downwards, thickness: 140 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -642,6 +695,7 @@
       "comments": null
     },
     {
+      "id": "recdd3kgAJafjjGLS",
       "name": "Air layer, unventilated, downwards, thickness: 150 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -654,6 +708,7 @@
       "comments": null
     },
     {
+      "id": "rec1QbA2mEOBcXggg",
       "name": "Air layer, unventilated, downwards, thickness: 160 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -666,6 +721,7 @@
       "comments": null
     },
     {
+      "id": "recx5HwyubnzJndvx",
       "name": "Air layer, unventilated, downwards, thickness: 170 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -678,6 +734,7 @@
       "comments": null
     },
     {
+      "id": "recB8BZd6zx7V8wDh",
       "name": "Air layer, unventilated, downwards, thickness: 180 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -690,6 +747,7 @@
       "comments": null
     },
     {
+      "id": "rec3jddPwjwc9a5UX",
       "name": "Air layer, unventilated, downwards, thickness: 190 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -702,6 +760,7 @@
       "comments": null
     },
     {
+      "id": "reckiWijshG2yIdHQ",
       "name": "Air layer, unventilated, downwards, thickness: 200 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -714,6 +773,7 @@
       "comments": null
     },
     {
+      "id": "recbxstM6ui58Y4d3",
       "name": "Air layer, unventilated, downwards, thickness: 210 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -726,6 +786,7 @@
       "comments": null
     },
     {
+      "id": "recYVdmWyymmthZVh",
       "name": "Air layer, unventilated, downwards, thickness: 220 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -738,6 +799,7 @@
       "comments": null
     },
     {
+      "id": "rec6pwDMNaeV7adN6",
       "name": "Air layer, unventilated, downwards, thickness: 230 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -750,6 +812,7 @@
       "comments": null
     },
     {
+      "id": "recpe30dimmQnXYcI",
       "name": "Air layer, unventilated, downwards, thickness: 240 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -762,6 +825,7 @@
       "comments": null
     },
     {
+      "id": "recdkr8AP10gA8iXr",
       "name": "Air layer, unventilated, downwards, thickness: 250 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -774,6 +838,7 @@
       "comments": null
     },
     {
+      "id": "recZfQPzwxvFu3u1T",
       "name": "Air layer, unventilated, downwards, thickness: 260 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -786,6 +851,7 @@
       "comments": null
     },
     {
+      "id": "rectDxjujoRWezNst",
       "name": "Air layer, unventilated, downwards, thickness: 270 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -798,6 +864,7 @@
       "comments": null
     },
     {
+      "id": "recFs4AoJUnYVCQJA",
       "name": "Air layer, unventilated, downwards, thickness: 280 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -810,6 +877,7 @@
       "comments": null
     },
     {
+      "id": "receZrTVc8iXqnmYV",
       "name": "Air layer, unventilated, downwards, thickness: 290 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -822,6 +890,7 @@
       "comments": null
     },
     {
+      "id": "rec5HmgjSl5bgqxTR",
       "name": "Air layer, unventilated, downwards, thickness: 300 mm",
       "category": "air_downward_heat_flow",
       "density_kg_m3": 1.3,
@@ -834,6 +903,7 @@
       "comments": null
     },
     {
+      "id": "recd90gfjS7PBtXYe",
       "name": "Air layer, unventilated, horizontal, thickness: 1 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -846,6 +916,7 @@
       "comments": null
     },
     {
+      "id": "recPQUOZ5mhzElfcK",
       "name": "Air layer, unventilated, horizontal, thickness: 2 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -858,6 +929,7 @@
       "comments": null
     },
     {
+      "id": "recUztSx1bRmH3FcL",
       "name": "Air layer, unventilated, horizontal, thickness: 3 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -870,6 +942,7 @@
       "comments": null
     },
     {
+      "id": "recMN9t5MBTgyvkcL",
       "name": "Air layer, unventilated, horizontal, thickness: 4 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -882,6 +955,7 @@
       "comments": null
     },
     {
+      "id": "recztK73rPRXjHRIz",
       "name": "Air layer, unventilated, horizontal, thickness: 5 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -894,6 +968,7 @@
       "comments": null
     },
     {
+      "id": "rec6gSSLZ3oTY6thw",
       "name": "Air layer, unventilated, horizontal, thickness: 6 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -906,6 +981,7 @@
       "comments": null
     },
     {
+      "id": "recdd9xFfMbjQE5bi",
       "name": "Air layer, unventilated, horizontal, thickness: 7 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -918,6 +994,7 @@
       "comments": null
     },
     {
+      "id": "rec3kc9YcjS2Sdh6m",
       "name": "Air layer, unventilated, horizontal, thickness: 8 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -930,6 +1007,7 @@
       "comments": null
     },
     {
+      "id": "recib8pkYHCJzXuqK",
       "name": "Air layer, unventilated, horizontal, thickness: 9 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -942,6 +1020,7 @@
       "comments": null
     },
     {
+      "id": "recAvukZDaVZTWzCi",
       "name": "Air layer, unventilated, horizontal, thickness: 10 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -954,6 +1033,7 @@
       "comments": null
     },
     {
+      "id": "reclgDl2nBP0uNCxz",
       "name": "Air layer, unventilated, horizontal, thickness: 11 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -966,6 +1046,7 @@
       "comments": null
     },
     {
+      "id": "recX68npkd9hdtKP2",
       "name": "Air layer, unventilated, horizontal, thickness: 12 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -978,6 +1059,7 @@
       "comments": null
     },
     {
+      "id": "recUyhou8pMjeSd47",
       "name": "Air layer, unventilated, horizontal, thickness: 13 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -990,6 +1072,7 @@
       "comments": null
     },
     {
+      "id": "recJPCuO9nWgQF7mO",
       "name": "Air layer, unventilated, horizontal, thickness: 14 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1002,6 +1085,7 @@
       "comments": null
     },
     {
+      "id": "recPbHU7nk2rJfSDL",
       "name": "Air layer, unventilated, horizontal, thickness: 15 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1014,6 +1098,7 @@
       "comments": null
     },
     {
+      "id": "rechQzj3MsI2QJXTF",
       "name": "Air layer, unventilated, horizontal, thickness: 16 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1026,6 +1111,7 @@
       "comments": null
     },
     {
+      "id": "recd2IJyQhcJzBhcZ",
       "name": "Air layer, unventilated, horizontal, thickness: 17 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1038,6 +1124,7 @@
       "comments": null
     },
     {
+      "id": "recBWlmbuWLa52iDq",
       "name": "Air layer, unventilated, horizontal, thickness: 18 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1050,6 +1137,7 @@
       "comments": null
     },
     {
+      "id": "rec0RfPVHlFImIOUf",
       "name": "Air layer, unventilated, horizontal, thickness: 19 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1062,6 +1150,7 @@
       "comments": null
     },
     {
+      "id": "reciM1EwwrHyfnKbm",
       "name": "Air layer, unventilated, horizontal, thickness: 20 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1074,6 +1163,7 @@
       "comments": null
     },
     {
+      "id": "recZobZU0bdPneHza",
       "name": "Air layer, unventilated, horizontal, thickness: 21 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1086,6 +1176,7 @@
       "comments": null
     },
     {
+      "id": "recpdVj07Wf9HYSsF",
       "name": "Air layer, unventilated, horizontal, thickness: 22 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1098,6 +1189,7 @@
       "comments": null
     },
     {
+      "id": "recMw06qWchl0TD4z",
       "name": "Air layer, unventilated, horizontal, thickness: 23 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1110,6 +1202,7 @@
       "comments": null
     },
     {
+      "id": "recwDLX6c0c4F2blJ",
       "name": "Air layer, unventilated, horizontal, thickness: 24 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1122,6 +1215,7 @@
       "comments": null
     },
     {
+      "id": "recSnxdFfTfZRWM5A",
       "name": "Air layer, unventilated, horizontal, thickness: 25 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1134,6 +1228,7 @@
       "comments": null
     },
     {
+      "id": "recLlO7RvL82nfS7L",
       "name": "Air layer, unventilated, horizontal, thickness: 30 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1146,6 +1241,7 @@
       "comments": null
     },
     {
+      "id": "reccNBVPuaJ4al97v",
       "name": "Air layer, unventilated, horizontal, thickness: 35 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1158,6 +1254,7 @@
       "comments": null
     },
     {
+      "id": "recLW22YEV60mPMqh",
       "name": "Air layer, unventilated, horizontal, thickness: 40 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1170,6 +1267,7 @@
       "comments": null
     },
     {
+      "id": "rec0P2fRYzDrR8WVJ",
       "name": "Air layer, unventilated, horizontal, thickness: 45 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1182,6 +1280,7 @@
       "comments": null
     },
     {
+      "id": "recjQLTryEeiTZnsW",
       "name": "Air layer, unventilated, horizontal, thickness: 50 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1194,6 +1293,7 @@
       "comments": null
     },
     {
+      "id": "recNKlAYvukJFZd4p",
       "name": "Air layer, unventilated, horizontal, thickness: 55 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1206,6 +1306,7 @@
       "comments": null
     },
     {
+      "id": "rec72nZdfd7PWq4Ps",
       "name": "Air layer, unventilated, horizontal, thickness: 60 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1218,6 +1319,7 @@
       "comments": null
     },
     {
+      "id": "recwtONIWxat8zDgZ",
       "name": "Air layer, unventilated, horizontal, thickness: 65 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1230,6 +1332,7 @@
       "comments": null
     },
     {
+      "id": "recnoYsFxCw5ORR3N",
       "name": "Air layer, unventilated, horizontal, thickness: 70 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1242,6 +1345,7 @@
       "comments": null
     },
     {
+      "id": "recKaUQm2G8umgD0D",
       "name": "Air layer, unventilated, horizontal, thickness: 75 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1254,6 +1358,7 @@
       "comments": null
     },
     {
+      "id": "recnszDgCYxrasxvV",
       "name": "Air layer, unventilated, horizontal, thickness: 80 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1266,6 +1371,7 @@
       "comments": null
     },
     {
+      "id": "recuyNwrMMIFPeXvz",
       "name": "Air layer, unventilated, horizontal, thickness: 85 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1278,6 +1384,7 @@
       "comments": null
     },
     {
+      "id": "recdu2eKCUlaKsGt2",
       "name": "Air layer, unventilated, horizontal, thickness: 90 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1290,6 +1397,7 @@
       "comments": null
     },
     {
+      "id": "reccaf3T04M5kmUSc",
       "name": "Air layer, unventilated, horizontal, thickness: 95 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1302,6 +1410,7 @@
       "comments": null
     },
     {
+      "id": "recoANxsNjVlXVF93",
       "name": "Air layer, unventilated, horizontal, thickness: 100 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1314,6 +1423,7 @@
       "comments": null
     },
     {
+      "id": "recc2FUC6WrQPetO1",
       "name": "Air layer, unventilated, horizontal, thickness: 110 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1326,6 +1436,7 @@
       "comments": null
     },
     {
+      "id": "recMVYHRsy94Q5oPy",
       "name": "Air layer, unventilated, horizontal, thickness: 120 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1338,6 +1449,7 @@
       "comments": null
     },
     {
+      "id": "recZLMAsDN6s7QEaR",
       "name": "Air layer, unventilated, horizontal, thickness: 130 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1350,6 +1462,7 @@
       "comments": null
     },
     {
+      "id": "recQVYDFOAfMEDrue",
       "name": "Air layer, unventilated, horizontal, thickness: 140 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1362,6 +1475,7 @@
       "comments": null
     },
     {
+      "id": "rec1u05prCIbdORnW",
       "name": "Air layer, unventilated, horizontal, thickness: 150 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1374,6 +1488,7 @@
       "comments": null
     },
     {
+      "id": "recOonnawKkoI7uB1",
       "name": "Air layer, unventilated, horizontal, thickness: 160 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1386,6 +1501,7 @@
       "comments": null
     },
     {
+      "id": "reckYpBXVwEGOEhAJ",
       "name": "Air layer, unventilated, horizontal, thickness: 170 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1398,6 +1514,7 @@
       "comments": null
     },
     {
+      "id": "rec4L36n9DpENzsgZ",
       "name": "Air layer, unventilated, horizontal, thickness: 180 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1410,6 +1527,7 @@
       "comments": null
     },
     {
+      "id": "recTd2mgzDSdg7SGe",
       "name": "Air layer, unventilated, horizontal, thickness: 190 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1422,6 +1540,7 @@
       "comments": null
     },
     {
+      "id": "recR9Xw2JOE0sc8RZ",
       "name": "Air layer, unventilated, horizontal, thickness: 200 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1434,6 +1553,7 @@
       "comments": null
     },
     {
+      "id": "recNy9lg7M2b7PlU2",
       "name": "Air layer, unventilated, horizontal, thickness: 210 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1446,6 +1566,7 @@
       "comments": null
     },
     {
+      "id": "rec8nPlNikYBNArPz",
       "name": "Air layer, unventilated, horizontal, thickness: 220 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1458,6 +1579,7 @@
       "comments": null
     },
     {
+      "id": "recLWrmhSs1TKAoA1",
       "name": "Air layer, unventilated, horizontal, thickness: 230 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1470,6 +1592,7 @@
       "comments": null
     },
     {
+      "id": "recBbLmPMO8xXsQrR",
       "name": "Air layer, unventilated, horizontal, thickness: 240 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1482,6 +1605,7 @@
       "comments": null
     },
     {
+      "id": "recyIe1kEHb0fTDyl",
       "name": "Air layer, unventilated, horizontal, thickness: 250 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1494,6 +1618,7 @@
       "comments": null
     },
     {
+      "id": "recd7Boxx7gdEJnz1",
       "name": "Air layer, unventilated, horizontal, thickness: 260 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1506,6 +1631,7 @@
       "comments": null
     },
     {
+      "id": "recfcz7FLiFpoylQw",
       "name": "Air layer, unventilated, horizontal, thickness: 270 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1518,6 +1644,7 @@
       "comments": null
     },
     {
+      "id": "rec6STq09UXV09DPy",
       "name": "Air layer, unventilated, horizontal, thickness: 280 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1530,6 +1657,7 @@
       "comments": null
     },
     {
+      "id": "recVg9CiluPiXv1fF",
       "name": "Air layer, unventilated, horizontal, thickness: 290 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1542,6 +1670,7 @@
       "comments": null
     },
     {
+      "id": "recDdA3aLPQ7E6gre",
       "name": "Air layer, unventilated, horizontal, thickness: 300 mm",
       "category": "air_horizontal_heat_flow",
       "density_kg_m3": 1.3,
@@ -1554,6 +1683,7 @@
       "comments": null
     },
     {
+      "id": "recPIgCGissApWP0E",
       "name": "Air layer, unventilated, upwards, thickness: 1 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1566,6 +1696,7 @@
       "comments": null
     },
     {
+      "id": "recfwynYqTG1rxyBk",
       "name": "Air layer, unventilated, upwards, thickness: 2 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1578,6 +1709,7 @@
       "comments": null
     },
     {
+      "id": "rectnKLelBxXBswRN",
       "name": "Air layer, unventilated, upwards, thickness: 3 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1590,6 +1722,7 @@
       "comments": null
     },
     {
+      "id": "recqa0TN3xVEiNDwV",
       "name": "Air layer, unventilated, upwards, thickness: 4 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1602,6 +1735,7 @@
       "comments": null
     },
     {
+      "id": "recH2g70W9E0Axu3b",
       "name": "Air layer, unventilated, upwards, thickness: 5 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1614,6 +1748,7 @@
       "comments": null
     },
     {
+      "id": "rec6YgelzblHSY4t5",
       "name": "Air layer, unventilated, upwards, thickness: 6 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1626,6 +1761,7 @@
       "comments": null
     },
     {
+      "id": "recfUcu87fqPimMZs",
       "name": "Air layer, unventilated, upwards, thickness: 7 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1638,6 +1774,7 @@
       "comments": null
     },
     {
+      "id": "recK4lHH4drn27qDk",
       "name": "Air layer, unventilated, upwards, thickness: 8 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1650,6 +1787,7 @@
       "comments": null
     },
     {
+      "id": "recxePd7S9uMFmTcr",
       "name": "Air layer, unventilated, upwards, thickness: 9 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1662,6 +1800,7 @@
       "comments": null
     },
     {
+      "id": "reczUL9G3esdQKSjz",
       "name": "Air layer, unventilated, upwards, thickness: 10 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1674,6 +1813,7 @@
       "comments": null
     },
     {
+      "id": "recY9cEiXfz1KgmXU",
       "name": "Air layer, unventilated, upwards, thickness: 11 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1686,6 +1826,7 @@
       "comments": null
     },
     {
+      "id": "recfqc30ZPLhIE4kJ",
       "name": "Air layer, unventilated, upwards, thickness: 12 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1698,6 +1839,7 @@
       "comments": null
     },
     {
+      "id": "recv0AilASCEeiAw7",
       "name": "Air layer, unventilated, upwards, thickness: 13 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1710,6 +1852,7 @@
       "comments": null
     },
     {
+      "id": "recg759b8nm7EZx97",
       "name": "Air layer, unventilated, upwards, thickness: 14 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1722,6 +1865,7 @@
       "comments": null
     },
     {
+      "id": "recV5BteJ54ZEqsOZ",
       "name": "Air layer, unventilated, upwards, thickness: 15 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1734,6 +1878,7 @@
       "comments": null
     },
     {
+      "id": "recS1LqGllQ5k9Tjo",
       "name": "Air layer, unventilated, upwards, thickness: 16 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1746,6 +1891,7 @@
       "comments": null
     },
     {
+      "id": "reclV0TV6z95Ru3ev",
       "name": "Air layer, unventilated, upwards, thickness: 17 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1758,6 +1904,7 @@
       "comments": null
     },
     {
+      "id": "rec3FO05BORKJwNPZ",
       "name": "Air layer, unventilated, upwards, thickness: 18 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1770,6 +1917,7 @@
       "comments": null
     },
     {
+      "id": "recn1wPSA1iIEhnCo",
       "name": "Air layer, unventilated, upwards, thickness: 19 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1782,6 +1930,7 @@
       "comments": null
     },
     {
+      "id": "recHD5n3W4CJ4ZiNt",
       "name": "Air layer, unventilated, upwards, thickness: 20 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1794,6 +1943,7 @@
       "comments": null
     },
     {
+      "id": "recKinLQzbSTQM0rB",
       "name": "Air layer, unventilated, upwards, thickness: 21 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1806,6 +1956,7 @@
       "comments": null
     },
     {
+      "id": "rec2rOJeBNPZWIuKL",
       "name": "Air layer, unventilated, upwards, thickness: 22 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1818,6 +1969,7 @@
       "comments": null
     },
     {
+      "id": "recyURVNy4evuzF44",
       "name": "Air layer, unventilated, upwards, thickness: 23 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1830,6 +1982,7 @@
       "comments": null
     },
     {
+      "id": "recRsafLhpGCFGsOQ",
       "name": "Air layer, unventilated, upwards, thickness: 24 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1842,6 +1995,7 @@
       "comments": null
     },
     {
+      "id": "recWnzAFPX1njJvRG",
       "name": "Air layer, unventilated, upwards, thickness: 25 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1854,6 +2008,7 @@
       "comments": null
     },
     {
+      "id": "receLdkitdq8bBIbg",
       "name": "Air layer, unventilated, upwards, thickness: 30 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1866,6 +2021,7 @@
       "comments": null
     },
     {
+      "id": "reclbKlk7pOnnyzVg",
       "name": "Air layer, unventilated, upwards, thickness: 35 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1878,6 +2034,7 @@
       "comments": null
     },
     {
+      "id": "recviyOABY7Sm3fTi",
       "name": "Air layer, unventilated, upwards, thickness: 40 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1890,6 +2047,7 @@
       "comments": null
     },
     {
+      "id": "receh79IRV2XLegPu",
       "name": "Air layer, unventilated, upwards, thickness: 45 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1902,6 +2060,7 @@
       "comments": null
     },
     {
+      "id": "recrc0mL8cROvCLvp",
       "name": "Air layer, unventilated, upwards, thickness: 50 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1914,6 +2073,7 @@
       "comments": null
     },
     {
+      "id": "recqFGWGUkWihovhm",
       "name": "Air layer, unventilated, upwards, thickness: 55 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1926,6 +2086,7 @@
       "comments": null
     },
     {
+      "id": "recZLyHXuZYN9TaVW",
       "name": "Air layer, unventilated, upwards, thickness: 60 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1938,6 +2099,7 @@
       "comments": null
     },
     {
+      "id": "recAyUIUbZWK5ssqn",
       "name": "Air layer, unventilated, upwards, thickness: 65 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1950,6 +2112,7 @@
       "comments": null
     },
     {
+      "id": "recwNIewIOhyFan8b",
       "name": "Air layer, unventilated, upwards, thickness: 70 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1962,6 +2125,7 @@
       "comments": null
     },
     {
+      "id": "reck4XxL2JuhMAYZU",
       "name": "Air layer, unventilated, upwards, thickness: 75 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1974,6 +2138,7 @@
       "comments": null
     },
     {
+      "id": "recU37r5JWDFl6uBZ",
       "name": "Air layer, unventilated, upwards, thickness: 80 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1986,6 +2151,7 @@
       "comments": null
     },
     {
+      "id": "recbAMmyrYfPcg4GX",
       "name": "Air layer, unventilated, upwards, thickness: 85 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -1998,6 +2164,7 @@
       "comments": null
     },
     {
+      "id": "rect7gQClVV9R52Gx",
       "name": "Air layer, unventilated, upwards, thickness: 90 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2010,6 +2177,7 @@
       "comments": null
     },
     {
+      "id": "reczPlaemFwDQlkT6",
       "name": "Air layer, unventilated, upwards, thickness: 95 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2022,6 +2190,7 @@
       "comments": null
     },
     {
+      "id": "rec1IwBwKBfYeTcG1",
       "name": "Air layer, unventilated, upwards, thickness: 100 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2034,6 +2203,7 @@
       "comments": null
     },
     {
+      "id": "recnobdQeechh9ok7",
       "name": "Air layer, unventilated, upwards, thickness: 110 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2046,6 +2216,7 @@
       "comments": null
     },
     {
+      "id": "recC02J6efJSsgWo2",
       "name": "Air layer, unventilated, upwards, thickness: 120 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2058,6 +2229,7 @@
       "comments": null
     },
     {
+      "id": "reckaGYRQf4mc2Zoy",
       "name": "Air layer, unventilated, upwards, thickness: 130 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2070,6 +2242,7 @@
       "comments": null
     },
     {
+      "id": "recIJBHU7THNfCPe0",
       "name": "Air layer, unventilated, upwards, thickness: 140 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2082,6 +2255,7 @@
       "comments": null
     },
     {
+      "id": "recsProL04igPPKEg",
       "name": "Air layer, unventilated, upwards, thickness: 150 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2094,6 +2268,7 @@
       "comments": null
     },
     {
+      "id": "recQAEqp0kmBcONlv",
       "name": "Air layer, unventilated, upwards, thickness: 160 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2106,6 +2281,7 @@
       "comments": null
     },
     {
+      "id": "recCkSBPCQzwRqSYy",
       "name": "Air layer, unventilated, upwards, thickness: 170 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2118,6 +2294,7 @@
       "comments": null
     },
     {
+      "id": "recUuDrLx0AHmqrwP",
       "name": "Air layer, unventilated, upwards, thickness: 180 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2130,6 +2307,7 @@
       "comments": null
     },
     {
+      "id": "recIspas5miga8pzW",
       "name": "Air layer, unventilated, upwards, thickness: 190 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2142,6 +2320,7 @@
       "comments": null
     },
     {
+      "id": "recnj5pYCQotcBqnw",
       "name": "Air layer, unventilated, upwards, thickness: 200 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2154,6 +2333,7 @@
       "comments": null
     },
     {
+      "id": "rech3So9KzGZII7LS",
       "name": "Air layer, unventilated, upwards, thickness: 210 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2166,6 +2346,7 @@
       "comments": null
     },
     {
+      "id": "rec4MN7WF3J5QxAH8",
       "name": "Air layer, unventilated, upwards, thickness: 220 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2178,6 +2359,7 @@
       "comments": null
     },
     {
+      "id": "rectpy32o8HUmlaOe",
       "name": "Air layer, unventilated, upwards, thickness: 230 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2190,6 +2372,7 @@
       "comments": null
     },
     {
+      "id": "recb8CqKhmrqLkzW0",
       "name": "Air layer, unventilated, upwards, thickness: 240 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2202,6 +2385,7 @@
       "comments": null
     },
     {
+      "id": "recxatSBJAXaSP0f2",
       "name": "Air layer, unventilated, upwards, thickness: 250 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2214,6 +2398,7 @@
       "comments": null
     },
     {
+      "id": "recYtMFrbiYPdGXBB",
       "name": "Air layer, unventilated, upwards, thickness: 260 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2226,6 +2411,7 @@
       "comments": null
     },
     {
+      "id": "reccRr6mbG3waYMHM",
       "name": "Air layer, unventilated, upwards, thickness: 270 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2238,6 +2424,7 @@
       "comments": null
     },
     {
+      "id": "reccxPVba1TNk0l7i",
       "name": "Air layer, unventilated, upwards, thickness: 280 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2250,6 +2437,7 @@
       "comments": null
     },
     {
+      "id": "recJ1l2GBq8i9kQYL",
       "name": "Air layer, unventilated, upwards, thickness: 290 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2262,6 +2450,7 @@
       "comments": null
     },
     {
+      "id": "recD26kbFtGrxFhJ2",
       "name": "Air layer, unventilated, upwards, thickness: 300 mm",
       "category": "air_upward_heat_flow",
       "density_kg_m3": 1.3,
@@ -2274,6 +2463,7 @@
       "comments": null
     },
     {
+      "id": "recLoCrv6OKJN5WEY",
       "name": "Alum (Anodized)",
       "category": "metals",
       "density_kg_m3": null,
@@ -2286,6 +2476,7 @@
       "comments": null
     },
     {
+      "id": "recMP78mw93R1GZnU",
       "name": "Alum (Painted)",
       "category": "metals",
       "density_kg_m3": null,
@@ -2298,6 +2489,7 @@
       "comments": null
     },
     {
+      "id": "recsotGoZISzymYdE",
       "name": "Aluminium",
       "category": "metals",
       "density_kg_m3": null,
@@ -2310,6 +2502,7 @@
       "comments": null
     },
     {
+      "id": "reccTd8w6QMlI21ZQ",
       "name": "Amer. Rockwool Prem. Plus Spray",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2322,6 +2515,7 @@
       "comments": null
     },
     {
+      "id": "recFpuRGfnoY1e2hE",
       "name": "AP Armaflex",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2334,6 +2528,7 @@
       "comments": null
     },
     {
+      "id": "reciFdOVbL6AVAfM1",
       "name": "Armartherm 500-150",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2346,6 +2541,7 @@
       "comments": null
     },
     {
+      "id": "rech64rbG4dFNqXP4",
       "name": "Armartherm 500-200",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2358,6 +2554,7 @@
       "comments": null
     },
     {
+      "id": "recLGMG72YHYWKngP",
       "name": "Armartherm 500-250",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2370,6 +2567,7 @@
       "comments": null
     },
     {
+      "id": "recheH04c8HnYUO0s",
       "name": "Armartherm FRR",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2382,6 +2580,7 @@
       "comments": null
     },
     {
+      "id": "recBh3RJrsw8Re9tx",
       "name": "Aspen Aerogels - Spaceloft Grey",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2394,6 +2593,7 @@
       "comments": null
     },
     {
+      "id": "rec3WCFyzyowJd1KG",
       "name": "Benchmark STB-1",
       "category": "insulation",
       "density_kg_m3": 1842.0,
@@ -2406,6 +2606,7 @@
       "comments": null
     },
     {
+      "id": "recmBYWowrDjfqeHn",
       "name": "Brick - Red Matte Clay",
       "category": "masonry",
       "density_kg_m3": 1935.0,
@@ -2418,6 +2619,7 @@
       "comments": null
     },
     {
+      "id": "recBThSctzWqQd6Xy",
       "name": "Brick - Solid Extruded",
       "category": "masonry",
       "density_kg_m3": 1650.0,
@@ -2430,6 +2632,7 @@
       "comments": null
     },
     {
+      "id": "recdKZcwRdW0seuPI",
       "name": "Brick (Common)",
       "category": "masonry",
       "density_kg_m3": 1670.0,
@@ -2442,6 +2645,7 @@
       "comments": null
     },
     {
+      "id": "recWR7uQ8wkeZrgzR",
       "name": "Carlisle InsulBase Polyiso",
       "category": "insulation",
       "density_kg_m3": 32.0,
@@ -2454,6 +2658,7 @@
       "comments": null
     },
     {
+      "id": "recNLV2Iorz2VnTJf",
       "name": "Carpenter EPS (Type I)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2466,6 +2671,7 @@
       "comments": null
     },
     {
+      "id": "recsWwKkYX58Qy1Ue",
       "name": "ccSPF",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2478,6 +2684,7 @@
       "comments": null
     },
     {
+      "id": "recyjzLPZzPBdYOwX",
       "name": "ccSPF w Metal Hangers",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2490,6 +2697,7 @@
       "comments": null
     },
     {
+      "id": "recQLcTMG29Ewl9nN",
       "name": "Cellulose (Denspack)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2502,6 +2710,7 @@
       "comments": null
     },
     {
+      "id": "recO3COZwICkFSGxo",
       "name": "Cellulose (Loose Fill)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2514,6 +2723,7 @@
       "comments": null
     },
     {
+      "id": "recXUSzusImiFzo40",
       "name": "Cellulose Fiber (heat cond.: 0,04 W/mK)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2526,6 +2736,7 @@
       "comments": null
     },
     {
+      "id": "recXT03r8GrdspHdQ",
       "name": "Cement Mortar",
       "category": "masonry",
       "density_kg_m3": null,
@@ -2538,6 +2749,7 @@
       "comments": null
     },
     {
+      "id": "recQEabfH2Vrbyawe",
       "name": "CLT",
       "category": "woods",
       "density_kg_m3": 450.0,
@@ -2550,6 +2762,7 @@
       "comments": null
     },
     {
+      "id": "recbyXsniclUiDduq",
       "name": "CMU (8in Empty Cores)",
       "category": "masonry",
       "density_kg_m3": null,
@@ -2562,6 +2775,7 @@
       "comments": null
     },
     {
+      "id": "recYzbLfjPvTqTwUW",
       "name": "CMU (8in Perlite Cores)",
       "category": "masonry",
       "density_kg_m3": null,
@@ -2574,6 +2788,7 @@
       "comments": null
     },
     {
+      "id": "recn4xtROhaXLvh7g",
       "name": "CMU (Wufi Concrete Brick )",
       "category": "masonry",
       "density_kg_m3": 2315.0,
@@ -2586,6 +2801,7 @@
       "comments": null
     },
     {
+      "id": "recSB4vG02udzRVZV",
       "name": "CompaCFoam 100",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2598,6 +2814,7 @@
       "comments": null
     },
     {
+      "id": "rec2rOJBtl7Q9ycex",
       "name": "CompaCFoam 200",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2610,6 +2827,7 @@
       "comments": null
     },
     {
+      "id": "recUFLtkJXIX4B8Cr",
       "name": "Concrete (Heavily Reinforced)",
       "category": "masonry",
       "density_kg_m3": 2104.0,
@@ -2622,6 +2840,7 @@
       "comments": null
     },
     {
+      "id": "recwKDjuSLByEIAsS",
       "name": "Concrete (Reinforced)",
       "category": "masonry",
       "density_kg_m3": 2104.0,
@@ -2634,6 +2853,7 @@
       "comments": null
     },
     {
+      "id": "recbDMKKVAE637uyV",
       "name": "Concrete (Wufi)",
       "category": "masonry",
       "density_kg_m3": 2104.0,
@@ -2646,6 +2866,7 @@
       "comments": null
     },
     {
+      "id": "rec3eWj8XwNWmluc9",
       "name": "Concrete Brick",
       "category": "masonry",
       "density_kg_m3": 2315.0,
@@ -2658,6 +2879,7 @@
       "comments": null
     },
     {
+      "id": "reclCqSObOZVwEJ1u",
       "name": "Concrete Plank (Elematic 8in Empty Cores)",
       "category": "masonry",
       "density_kg_m3": 2104.0,
@@ -2670,6 +2892,7 @@
       "comments": null
     },
     {
+      "id": "recGEbSjB6OzRJUHk",
       "name": "Cork (heat cond.: 0,04 W/mK)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2682,6 +2905,7 @@
       "comments": null
     },
     {
+      "id": "recyb47W3ijAsT5ua",
       "name": "DensElement Barrier System",
       "category": "finishes",
       "density_kg_m3": null,
@@ -2694,6 +2918,7 @@
       "comments": null
     },
     {
+      "id": "recLolG7PFRk53UDx",
       "name": "DOW Thermax",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2706,6 +2931,7 @@
       "comments": null
     },
     {
+      "id": "recz1IBBMguZXd3ve",
       "name": "DOW Thermax (Derated to R-5.5/in)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2718,6 +2944,7 @@
       "comments": null
     },
     {
+      "id": "recUaFEm7P9sCGPdn",
       "name": "DOW Thermax @1\"",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2730,6 +2957,7 @@
       "comments": null
     },
     {
+      "id": "recj3MQIFvVYGmfTI",
       "name": "DOW Thermax @2\"",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2742,6 +2970,7 @@
       "comments": null
     },
     {
+      "id": "recfcgoIGTzvixGuL",
       "name": "DOW Thermax @3\"",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2754,6 +2983,7 @@
       "comments": null
     },
     {
+      "id": "rectqdC4dT6P5PEPc",
       "name": "DOW Thermax @4\"",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2766,6 +2996,7 @@
       "comments": null
     },
     {
+      "id": "recy7eqETyH3Cz2MZ",
       "name": "DOW Thermax XARMOR",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2778,6 +3009,7 @@
       "comments": "Polyisocyanurate Board Foam"
     },
     {
+      "id": "rec1Skjc8B21uDIWZ",
       "name": "Durock Cement Board",
       "category": "finishes",
       "density_kg_m3": null,
@@ -2790,6 +3022,7 @@
       "comments": null
     },
     {
+      "id": "recqYyjJ7IbO4L2mQ",
       "name": "EPS (heat cond.: 0.04 W/mK - density: 15 kg/m3)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2802,6 +3035,7 @@
       "comments": null
     },
     {
+      "id": "recPXJjHVg0CcXDn5",
       "name": "EPS (Neopor Graphit)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2814,6 +3048,7 @@
       "comments": null
     },
     {
+      "id": "recE7LgsjP6fFDbyh",
       "name": "EPS (Type I)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2826,6 +3061,7 @@
       "comments": null
     },
     {
+      "id": "recNbwMqxsrBOoRJC",
       "name": "EPS (Type II)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2838,6 +3074,7 @@
       "comments": null
     },
     {
+      "id": "recwEGXOy5zQDEAvw",
       "name": "EPS (Type IX)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2850,6 +3087,7 @@
       "comments": null
     },
     {
+      "id": "recMQ6ZoIUsLOulCs",
       "name": "Fabreeka-TIM",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2862,6 +3100,7 @@
       "comments": null
     },
     {
+      "id": "recdjIJU6E9va8EPv",
       "name": "Fiber Cement Board",
       "category": "finishes",
       "density_kg_m3": null,
@@ -2874,6 +3113,7 @@
       "comments": null
     },
     {
+      "id": "recRoRDMqfkJCoe1D",
       "name": "Fiberglass",
       "category": "finishes",
       "density_kg_m3": null,
@@ -2886,6 +3126,7 @@
       "comments": null
     },
     {
+      "id": "recpTaFLcXECBwWM7",
       "name": "Fiberglass (Blown Spyder 1.8lb/cuft)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2898,6 +3139,7 @@
       "comments": null
     },
     {
+      "id": "rec74gHadjhuVQxnG",
       "name": "Fiberglass (Blown Spyder 1lb/cuft)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2910,6 +3152,7 @@
       "comments": null
     },
     {
+      "id": "recEBT5nIDkYV5FJj",
       "name": "Fiberglass Batt",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2922,6 +3165,7 @@
       "comments": null
     },
     {
+      "id": "recKycfQRulJX4rr2",
       "name": "Fiberglass Duct Insulation (compressed)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2934,6 +3178,7 @@
       "comments": null
     },
     {
+      "id": "reccjGz7n2dY3L7Oz",
       "name": "Fiberglass Solid Pultrusion",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2946,6 +3191,7 @@
       "comments": null
     },
     {
+      "id": "rec325aJ8SiAigyKa",
       "name": "Foamglas",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2958,6 +3204,7 @@
       "comments": null
     },
     {
+      "id": "rec7oIwiQ61ImRvoF",
       "name": "Gutex Multitherm",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2970,6 +3217,7 @@
       "comments": null
     },
     {
+      "id": "recmDWMvp3ryZfbMc",
       "name": "Gutex Ultratherm",
       "category": "insulation",
       "density_kg_m3": null,
@@ -2982,6 +3230,7 @@
       "comments": null
     },
     {
+      "id": "recu9GrfXo1cYtLIR",
       "name": "GWB (Densglas Fireguard)",
       "category": "finishes",
       "density_kg_m3": 750.0,
@@ -2994,6 +3243,7 @@
       "comments": null
     },
     {
+      "id": "recDdEWBZRPOqlD8u",
       "name": "GWB (Densglas Sheathing)",
       "category": "finishes",
       "density_kg_m3": 750.0,
@@ -3006,6 +3256,7 @@
       "comments": null
     },
     {
+      "id": "rec1HG6Vo9ovdqdNZ",
       "name": "GWB (Typ)",
       "category": "finishes",
       "density_kg_m3": 850.0,
@@ -3018,6 +3269,7 @@
       "comments": null
     },
     {
+      "id": "recyPs13kZWu3sfip",
       "name": "GWB (USG Securock)",
       "category": "finishes",
       "density_kg_m3": 637.0,
@@ -3030,6 +3282,7 @@
       "comments": null
     },
     {
+      "id": "recpKrKzwyW7aMmoh",
       "name": "Gypsum Board (USA)",
       "category": "finishes",
       "density_kg_m3": 850.0,
@@ -3042,6 +3295,7 @@
       "comments": null
     },
     {
+      "id": "recLigEQOBBX9mm5u",
       "name": "Hardwood",
       "category": "woods",
       "density_kg_m3": 650.0,
@@ -3054,6 +3308,7 @@
       "comments": null
     },
     {
+      "id": "recjNSV2Mvdj96e0H",
       "name": "Huntsman HeatLok HFO Pro ccspf",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3066,6 +3321,7 @@
       "comments": null
     },
     {
+      "id": "recSrOYxXAhvIynV7",
       "name": "Icynene HFO 200",
       "category": "insulation",
       "density_kg_m3": 32.04,
@@ -3078,6 +3334,7 @@
       "comments": null
     },
     {
+      "id": "recyvBoTVrRTGbhwV",
       "name": "Icynene HFO Max",
       "category": "insulation",
       "density_kg_m3": 32.04,
@@ -3090,6 +3347,7 @@
       "comments": null
     },
     {
+      "id": "rec5QO4muCMiAV9Bs",
       "name": "Isolatek CAFCO Heat-Shield Spray Mineral Fiber",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3102,6 +3360,7 @@
       "comments": null
     },
     {
+      "id": "recc96cLvKN7AjWGb",
       "name": "Kingspan OPTIM-R Vacum Panel",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3114,6 +3373,7 @@
       "comments": null
     },
     {
+      "id": "recvAYNbsmlzkSa4q",
       "name": "Low Density Glass Fibre Batt Insulation",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3126,6 +3386,7 @@
       "comments": null
     },
     {
+      "id": "recktdMkjnsAfxdqB",
       "name": "Magnesium Board",
       "category": "finishes",
       "density_kg_m3": null,
@@ -3138,6 +3399,7 @@
       "comments": null
     },
     {
+      "id": "recrWOhyfWgbPlDlI",
       "name": "Mineral Wool (heat cond.: 0,04 W/mK)",
       "category": "insulation",
       "density_kg_m3": 60.0,
@@ -3150,6 +3412,7 @@
       "comments": null
     },
     {
+      "id": "recIrqQ4Qqb7O8m2k",
       "name": "Mortar - Portland Cement-Lime",
       "category": "masonry",
       "density_kg_m3": null,
@@ -3162,6 +3425,7 @@
       "comments": null
     },
     {
+      "id": "recjdlNG4Cg5qr9mD",
       "name": "Nexseal Closed Cell Spray PU",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3174,6 +3438,7 @@
       "comments": null
     },
     {
+      "id": "recjDrqEfKAqq6iZh",
       "name": "OSB",
       "category": "woods",
       "density_kg_m3": 595.0,
@@ -3186,6 +3451,7 @@
       "comments": null
     },
     {
+      "id": "recGRQRLcYjtWyKZb",
       "name": "OSB 3 (oriented strand board)",
       "category": "woods",
       "density_kg_m3": 595.0,
@@ -3198,6 +3464,7 @@
       "comments": null
     },
     {
+      "id": "rec441iVV8pBqSsLj",
       "name": "Plywood (Typ)",
       "category": "woods",
       "density_kg_m3": 470.0,
@@ -3210,6 +3477,7 @@
       "comments": null
     },
     {
+      "id": "recJT9Du0wLnismCU",
       "name": "Plywood (USA)",
       "category": "woods",
       "density_kg_m3": 470.0,
@@ -3222,6 +3490,7 @@
       "comments": null
     },
     {
+      "id": "recQGZKxVyHa4gsdp",
       "name": "PolyIso w Metal Fasteners",
       "category": "insulation",
       "density_kg_m3": 32.0,
@@ -3234,6 +3503,7 @@
       "comments": null
     },
     {
+      "id": "recRZFDUnMaSm9f9M",
       "name": "Polyisocyanurate Board",
       "category": "insulation",
       "density_kg_m3": 32.0,
@@ -3246,6 +3516,7 @@
       "comments": null
     },
     {
+      "id": "recC5OxIgOIJldntW",
       "name": "Purinet PU Block",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3258,6 +3529,7 @@
       "comments": null
     },
     {
+      "id": "rec0dksPScE2Oqyv2",
       "name": "Rockwool CavityRock",
       "category": "insulation",
       "density_kg_m3": 69.0,
@@ -3270,6 +3542,7 @@
       "comments": null
     },
     {
+      "id": "rec2T4K6KWazll0ug",
       "name": "Rockwool CavityRock + Knightwall",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3282,6 +3555,7 @@
       "comments": null
     },
     {
+      "id": "recvwXy5nvYmHWoUr",
       "name": "Roxul CavityRock",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3294,6 +3568,7 @@
       "comments": null
     },
     {
+      "id": "rec1GytpUuT3H3d01",
       "name": "Roxul Comforboard 80",
       "category": "insulation",
       "density_kg_m3": 128.0,
@@ -3306,6 +3581,7 @@
       "comments": null
     },
     {
+      "id": "recYc9Bsj6ezPq3PU",
       "name": "Roxul Comforboard IS",
       "category": "insulation",
       "density_kg_m3": 128.0,
@@ -3318,6 +3594,7 @@
       "comments": null
     },
     {
+      "id": "recyCln6YT8fsKLj5",
       "name": "Roxul Comfortbatt 3.5in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3330,6 +3607,7 @@
       "comments": null
     },
     {
+      "id": "recgwJNBuX1t8mRkL",
       "name": "Roxul Comfortbatt 5.5in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3342,6 +3620,7 @@
       "comments": null
     },
     {
+      "id": "recTOpg9SRiSzw9mK",
       "name": "Roxul Comfortbatt 7.25in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3354,6 +3633,7 @@
       "comments": null
     },
     {
+      "id": "recuWq6FilIqUoPvg",
       "name": "Roxul Comfortboard IS with Mild-Steel Stone Anchor 16in OC",
       "category": "rainscreen_insulation",
       "density_kg_m3": null,
@@ -3366,6 +3646,7 @@
       "comments": "HB Concrete 2-Seal Stone Anchor"
     },
     {
+      "id": "recN36uT8vFBxX1PK",
       "name": "Roxul Comfortboard IS with SS Brick-Ties 16in OC",
       "category": "rainscreen_insulation",
       "density_kg_m3": null,
@@ -3378,6 +3659,7 @@
       "comments": "HB 213-2X Adjustable Veneer Anchor"
     },
     {
+      "id": "recT9GxPuvs1uFnll",
       "name": "Roxul CurtainRock",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3390,6 +3672,7 @@
       "comments": null
     },
     {
+      "id": "rec0IYVBLdiFZHgC1",
       "name": "Roxul SmartRock",
       "category": "insulation",
       "density_kg_m3": 69.0,
@@ -3402,6 +3685,7 @@
       "comments": null
     },
     {
+      "id": "rec5SDO1gsk4R71mJ",
       "name": "Roxul TopRock",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3414,6 +3698,7 @@
       "comments": null
     },
     {
+      "id": "recP8as4pnUNbHVqQ",
       "name": "Shoeck Isokorb (Typ)",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3426,6 +3711,7 @@
       "comments": null
     },
     {
+      "id": "recNorhwGWnfV3Hct",
       "name": "Siplast Paratherm CG",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3438,6 +3724,7 @@
       "comments": "Average R/inch for Emerson (46.5 total)"
     },
     {
+      "id": "recQq6VALWcpkiZDo",
       "name": "Softwood",
       "category": "woods",
       "density_kg_m3": 400.0,
@@ -3450,6 +3737,7 @@
       "comments": null
     },
     {
+      "id": "recKx4Km80cNA9slS",
       "name": "SoundSense Syncork",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3462,6 +3750,7 @@
       "comments": null
     },
     {
+      "id": "recIknHmQyRkdceN4",
       "name": "Sprayed Polyurethane Foam; closed cell",
       "category": "insulation",
       "density_kg_m3": null,
@@ -3474,6 +3763,7 @@
       "comments": null
     },
     {
+      "id": "recWOEr5vQVzdc7a9",
       "name": "Steel (Plain Carbon)",
       "category": "metals",
       "density_kg_m3": null,
@@ -3486,6 +3776,7 @@
       "comments": null
     },
     {
+      "id": "recysxAWweFoLzCgx",
       "name": "Steel (Rolled, Ground)",
       "category": "metals",
       "density_kg_m3": null,
@@ -3498,6 +3789,7 @@
       "comments": null
     },
     {
+      "id": "rec4GEA1DcyjYaM8v",
       "name": "Steel (Stainless)",
       "category": "metals",
       "density_kg_m3": null,
@@ -3510,6 +3802,7 @@
       "comments": null
     },
     {
+      "id": "recSGq4lTb8knCDFz",
       "name": "stl std w No Insul [0.75in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3522,6 +3815,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recovYs54EqDsXGO7",
       "name": "stl std w No Insul [1.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3534,6 +3828,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recRCz4LTb4Rni7zK",
       "name": "stl std w No Insul [1.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3546,6 +3841,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recKhj6vpylQ1WuFu",
       "name": "stl std w No Insul [2.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3558,6 +3854,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recSi1PjfmeOmA9FR",
       "name": "stl std w No Insul [2.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3570,6 +3867,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recoKO0Pl6PqQA2c5",
       "name": "stl std w No Insul [3.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3582,6 +3880,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recDFmenQbwpMDR0o",
       "name": "stl std w No Insul [3.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3594,6 +3893,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "rec32KffjhxkmVC97",
       "name": "stl std w No Insul [4.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3606,6 +3906,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recKrkcDqn3raCHYl",
       "name": "stl std w No Insul [4.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3618,6 +3919,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "receNsjbWlJfJFJ6a",
       "name": "stl std w No Insul [5.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3630,6 +3932,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "receBfLkJ4Q5T2tDF",
       "name": "stl std w No Insul [5.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3642,6 +3945,7 @@
       "comments": "No Insulation"
     },
     {
+      "id": "recNhQa4RBWAcw1iT",
       "name": "stl std w R-3/in [0.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -3654,6 +3958,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "rec629pZ6FBCHnzes",
       "name": "stl std w R-3/in [1.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3666,6 +3971,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recrVoLlIJ5HDBoIZ",
       "name": "stl std w R-3/in [1.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3678,6 +3984,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recG2V28uis3A3KCv",
       "name": "stl std w R-3/in [2.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3690,6 +3997,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recUHDY6TEAU7HEOW",
       "name": "stl std w R-3/in [2.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3702,6 +4010,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recU0m3mGRlvftD37",
       "name": "stl std w R-3/in [3.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3714,6 +4023,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recD2zMlqqtxas2D8",
       "name": "stl std w R-3/in [3.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3726,6 +4036,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "rec2sWpJgblODnyGd",
       "name": "stl std w R-3/in [4.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3738,6 +4049,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recFXwHd7gxcoySlO",
       "name": "stl std w R-3/in [4.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3750,6 +4062,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recUbLu4ozl2kHwJE",
       "name": "stl std w R-3/in [5.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3762,6 +4075,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recZXOQpPHF4I7LTC",
       "name": "stl std w R-3/in [5.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3774,6 +4088,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "rec3XGjjptOc0tHfA",
       "name": "stl std w R-4/in [0.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3786,6 +4101,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recU6rTxa2NPtdrln",
       "name": "stl std w R-4/in [1.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3798,6 +4114,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recGUvWLDfHAIQcxF",
       "name": "stl std w R-4/in [1.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3810,6 +4127,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "rec0Iyt7ECcV5cykN",
       "name": "stl std w R-4/in [2.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3822,6 +4140,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recrmcuBX151W2Zlv",
       "name": "stl std w R-4/in [2.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3834,6 +4153,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recGGETI7bofSDeob",
       "name": "stl std w R-4/in [3.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3846,6 +4166,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recWQwaMpDxWHPsq6",
       "name": "stl std w R-4/in [3.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3858,6 +4179,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recWA1ddyJgbrgU5e",
       "name": "stl std w R-4/in [4.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3870,6 +4192,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "rec7MoLcESze6aaAH",
       "name": "stl std w R-4/in [4.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3882,6 +4205,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recVseNXYoMBgBAdw",
       "name": "stl std w R-4/in [5.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3894,6 +4218,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recBytiouxc9blwW9",
       "name": "stl std w R-4/in [5.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3906,6 +4231,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recp0kEzzPbyLztIC",
       "name": "stl std w R-5/in [0.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3918,6 +4244,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recxEBU06uzpK2WyX",
       "name": "stl std w R-5/in [1.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3930,6 +4257,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "rec5V7cN9Bjas1xan",
       "name": "stl std w R-5/in [1.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3942,6 +4270,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recvIraC8xN9zBiXY",
       "name": "stl std w R-5/in [2.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3954,6 +4283,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recVJRwnXXSA1Ne7y",
       "name": "stl std w R-5/in [2.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3966,6 +4296,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recsL0p6bseLeJr0c",
       "name": "stl std w R-5/in [3.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3978,6 +4309,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recRorInFnKjChD70",
       "name": "stl std w R-5/in [3.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -3990,6 +4322,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "rec6DCw2eDahNSKl3",
       "name": "stl std w R-5/in [4.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4002,6 +4335,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recXUwhBZ4i3x4csR",
       "name": "stl std w R-5/in [5.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4014,6 +4348,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recWOM045H5WUgUSR",
       "name": "stl std w R-5/in [5.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4026,6 +4361,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recp8WePasq0wqMWH",
       "name": "stl std w R-5/in[4.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4038,6 +4374,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "rec1vpevkMkn8lNAo",
       "name": "stl std w R-6/in [0.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4050,6 +4387,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recOK9uy4e7LpaU4S",
       "name": "stl std w R-6/in [1.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4062,6 +4400,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recIDraA2bnpfQLdT",
       "name": "stl std w R-6/in [1.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4074,6 +4413,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "rect1BZ9nEGMTNpwp",
       "name": "stl std w R-6/in [2.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4086,6 +4426,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recYUWL9F4yt68MBc",
       "name": "stl std w R-6/in [2.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4098,6 +4439,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recQp4rT9JsTswQBA",
       "name": "stl std w R-6/in [3.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4110,6 +4452,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "rechlpFvVBrhCtpEM",
       "name": "stl std w R-6/in [3.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4122,6 +4465,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recPu4YFsBNOs8Uqd",
       "name": "stl std w R-6/in [4.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4134,6 +4478,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "reck5DeEd7HDdUrOB",
       "name": "stl std w R-6/in [4.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4146,6 +4491,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "rec4iuxj9KQ3taiFD",
       "name": "stl std w R-6/in [5.0in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4158,6 +4504,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recDRzCfiHOeW9E5N",
       "name": "stl std w R-6/in [5.5in]",
       "category": "stud_layers_steel",
       "density_kg_m3": null,
@@ -4170,6 +4517,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recqCgk09Ww1XTWB7",
       "name": "STO-GPS",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4182,6 +4530,7 @@
       "comments": null
     },
     {
+      "id": "rect2gk8xZzIo7m55",
       "name": "Stone",
       "category": "masonry",
       "density_kg_m3": null,
@@ -4194,6 +4543,7 @@
       "comments": null
     },
     {
+      "id": "rec77a7B94Hp3cGzV",
       "name": "Stora Enso CLT",
       "category": "woods",
       "density_kg_m3": 410.0,
@@ -4206,6 +4556,7 @@
       "comments": null
     },
     {
+      "id": "recfxU4v3Ob2quigC",
       "name": "Stucco",
       "category": "finishes",
       "density_kg_m3": 1795.0,
@@ -4218,6 +4569,7 @@
       "comments": null
     },
     {
+      "id": "recNuQtXOtryhneoS",
       "name": "ThermaFiber Versaboard",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4230,6 +4582,7 @@
       "comments": null
     },
     {
+      "id": "recUueb2mG4wrthum",
       "name": "TimberBatt 3.5in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4242,6 +4595,7 @@
       "comments": "R-4.0 for 3.5\" thickness"
     },
     {
+      "id": "recb2a0w1n2MjSrez",
       "name": "TimberBatt 5.5in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4254,6 +4608,7 @@
       "comments": "R-4.0 for 5.5\" thickness"
     },
     {
+      "id": "recvmWMv6oMPvqAcL",
       "name": "TimberBatt 7.25in",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4266,6 +4621,7 @@
       "comments": "R-3.7 for 7.25\" thickness"
     },
     {
+      "id": "rec4apNywqzoarvKp",
       "name": "Vinyl Siding",
       "category": "finishes",
       "density_kg_m3": 1400.0,
@@ -4278,6 +4634,7 @@
       "comments": null
     },
     {
+      "id": "recOWBsy7zfcaPC9o",
       "name": "wd std w R-3/in [0.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4290,6 +4647,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recRMiC7ZzCNR6zxx",
       "name": "wd std w R-3/in [1.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4302,6 +4660,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recSuK4qI5CqxfayH",
       "name": "wd std w R-3/in [1.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4314,6 +4673,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recwJIQwd55n0D5TB",
       "name": "wd std w R-3/in [2.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4326,6 +4686,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recCF7zi9pM12Qzl0",
       "name": "wd std w R-3/in [2.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4338,6 +4699,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recME8phToTfqnCQw",
       "name": "wd std w R-3/in [3.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4350,6 +4712,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recdrATzvuqF98HGo",
       "name": "wd std w R-3/in [3.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4362,6 +4725,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "rec0b95rajIYGbIrS",
       "name": "wd std w R-3/in [4.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4374,6 +4738,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recZJLMsa8COWuTEJ",
       "name": "wd std w R-3/in [4.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4386,6 +4751,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recNXTF0rTWO219Zb",
       "name": "wd std w R-3/in [5.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4398,6 +4764,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recK7n2ItlMEYWRFK",
       "name": "wd std w R-3/in [5.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4410,6 +4777,7 @@
       "comments": "R-3/inch Insulation (Fiberglass)"
     },
     {
+      "id": "recGrnuicRYvG4WaF",
       "name": "wd std w R-4/in [0.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4422,6 +4790,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recsAKJlYUAItOl63",
       "name": "wd std w R-4/in [1.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4434,6 +4803,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recz6SkWaBjNnll64",
       "name": "wd std w R-4/in [1.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4446,6 +4816,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recm5XOLsjIcCBHcU",
       "name": "wd std w R-4/in [2.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4458,6 +4829,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recMx9Rk6zbGB8JiR",
       "name": "wd std w R-4/in [2.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4470,6 +4842,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recAHbrEY8hk2woEs",
       "name": "wd std w R-4/in [3.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4482,6 +4855,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recfjqOhPjpO4Gr8c",
       "name": "wd std w R-4/in [3.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4494,6 +4868,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recqJhSG0X6wtqT12",
       "name": "wd std w R-4/in [4.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4506,6 +4881,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recQh4WBbSrZxG97e",
       "name": "wd std w R-4/in [5.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4518,6 +4894,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "rec4BZfwA3A2Z0JCs",
       "name": "wd std w R-4/in [5.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4530,6 +4907,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "recmT9gHyNbbtf1kR",
       "name": "wd std w R-4/in[4.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4542,6 +4920,7 @@
       "comments": "R-4/inch Insulation (Min. Wool)"
     },
     {
+      "id": "rec6VfIoPhs3TKPw1",
       "name": "wd std w R-5/in [0.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4554,6 +4933,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "rece6D8DMjF77GGVO",
       "name": "wd std w R-5/in [1.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4566,6 +4946,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recujNHFdIVlLtPyc",
       "name": "wd std w R-5/in [1.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4578,6 +4959,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "reco6uUJPivpCevTw",
       "name": "wd std w R-5/in [2.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4590,6 +4972,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "reco8JL5E8inlMxZn",
       "name": "wd std w R-5/in [2.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4602,6 +4985,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "receTXh4vTsCSjtr8",
       "name": "wd std w R-5/in [3.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4614,6 +4998,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "rec1dDnXlv9JOMWwr",
       "name": "wd std w R-5/in [3.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4626,6 +5011,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recFiv60p2mOAadrh",
       "name": "wd std w R-5/in [4.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4638,6 +5024,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recqii4Ix9pJj3OE4",
       "name": "wd std w R-5/in [4.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4650,6 +5037,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recLmLZJO47c7N6b7",
       "name": "wd std w R-5/in [5.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4662,6 +5050,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recJeGK1lOJaYxxW9",
       "name": "wd std w R-5/in [5.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4674,6 +5063,7 @@
       "comments": "R-5/inch Insulation (XPS)"
     },
     {
+      "id": "recsuYhSh80uWTwUQ",
       "name": "wd std w R-6/in [0.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4686,6 +5076,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recRmkKKK7NVyUeBX",
       "name": "wd std w R-6/in [1.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4698,6 +5089,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recqoGhJoPdL3RXGV",
       "name": "wd std w R-6/in [1.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4710,6 +5102,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recPuGPvoUbF99A33",
       "name": "wd std w R-6/in [2.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4722,6 +5115,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recwRGaHFMrqTQyqB",
       "name": "wd std w R-6/in [2.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4734,6 +5128,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recz0OpjJxA5QtTaV",
       "name": "wd std w R-6/in [3.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4746,6 +5141,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recTIPPAy8sLv40W5",
       "name": "wd std w R-6/in [3.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4758,6 +5154,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "rec3GVCB1OhJCJzOP",
       "name": "wd std w R-6/in [4.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4770,6 +5167,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recDGJil9ylsKt3t6",
       "name": "wd std w R-6/in [4.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4782,6 +5180,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "rec19CWqGe9gBacnW",
       "name": "wd std w R-6/in [5.0in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4794,6 +5193,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recmNqY6WjjRwvUCS",
       "name": "wd std w R-6/in [5.5in]",
       "category": "stud_layers_wood",
       "density_kg_m3": null,
@@ -4806,6 +5206,7 @@
       "comments": "R-6/inch Insulation (Spray)"
     },
     {
+      "id": "recHgFLTEYaF2w30p",
       "name": "Wood-Fibre Insulation Board",
       "category": "insulation",
       "density_kg_m3": null,
@@ -4818,6 +5219,7 @@
       "comments": null
     },
     {
+      "id": "rec3bcmlphFEhNNip",
       "name": "Wood, Coniferous (Softwood)",
       "category": "woods",
       "density_kg_m3": 400.0,
@@ -4830,6 +5232,7 @@
       "comments": null
     },
     {
+      "id": "recBgdj93DyEqgSNn",
       "name": "Wood, Deciduous (Hardwood)",
       "category": "woods",
       "density_kg_m3": 650.0,
@@ -4842,6 +5245,7 @@
       "comments": null
     },
     {
+      "id": "recQMC8fQrsvOuacd",
       "name": "XPS",
       "category": "insulation",
       "density_kg_m3": 40.0,
@@ -4854,6 +5258,7 @@
       "comments": null
     },
     {
+      "id": "recYjJ77atscQECxA",
       "name": "XPS Core (heat cond.: 0,03 W/mK)",
       "category": "insulation",
       "density_kg_m3": 40.0,
@@ -4866,6 +5271,7 @@
       "comments": null
     },
     {
+      "id": "recCyFX7wvPGyJCMk",
       "name": "XPS with SS Screw 16in OC",
       "category": "rainscreen_insulation",
       "density_kg_m3": null,
@@ -4878,6 +5284,7 @@
       "comments": "GRK R4 SS Screw #10 (0.124\" diam.)"
     },
     {
+      "id": "rect56aq8olxGB1oA",
       "name": "Zip R [OSB]",
       "category": "woods",
       "density_kg_m3": 595.0,
@@ -4890,6 +5297,7 @@
       "comments": null
     },
     {
+      "id": "recnhI3Jznoz7ELnY",
       "name": "Zip-R [EnergyShield CGF]",
       "category": "insulation",
       "density_kg_m3": null,

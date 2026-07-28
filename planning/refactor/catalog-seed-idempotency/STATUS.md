@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Ready to implement
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude with Ed May
 SCOPE: Current mitigation state and remaining work for catalog seed
   idempotency.
@@ -15,9 +15,11 @@ RELATED:
 
 ## Current state
 
-Diagnosed and partially mitigated. Found incidentally on 2026-07-20 while
-repairing the Typography Eval workflow (commit `e54b19db`), not through a
-dedicated investigation.
+Phase 1 is complete: all 638 canonical material, glazing, and frame rows now
+carry deterministic ids derived from catalog `kind` + row `name`.
+`tests/test_catalog_seed_ids.py` guards the derivation, id shape, uniqueness,
+ASCII names, first-key ordering, and exclusion of the two aperture-default
+sentinels.
 
 | Catalog | Rows | Guard today |
 | --- | --- | --- |
@@ -40,14 +42,9 @@ database still duplicates. Only callers that pass the flag are protected.
 
 ## Next step
 
-Implement `PLAN.md`, which now specifies the real fix (option A: deterministic
-ids baked into the three seed files) plus retiring the dead guard (option D).
-The plan supersedes the earlier "B + D" holding recommendation: with stable ids
-the import is idempotent by design, so the `--skip-if-not-empty` flag is retired
-rather than extended to the other two scripts. Verified in the plan against the
-current pipeline — no import-semantics change, and the transition is local/CI
-only (there is no production catalog to migrate; the scripts are hard-guarded to
-the dev database).
+Implement Phase 2 of `PLAN.md`: make all three seeders validate the committed
+ids, report matched/no-op runs honestly, and retire the materials-only
+`--skip-if-not-empty` mitigation and its Typography Eval caller.
 
 Independently reviewed 2026-07-28 (upstream/downstream consequence check): the
 approach was confirmed correct and the plan updated in place. Additions worth
