@@ -280,7 +280,10 @@
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 96px 0 30px;
+  /* Top padding clears the floating toolbar (see `.assembly-canvas-toolbar`);
+     bottom padding clears the interior boundary caption, which hangs ~26px
+     below the canvas, so 30px left it nearly touching the border-bottom. */
+  padding: 112px 0 46px;
 }
 
 .assembly-canvas {
@@ -462,7 +465,10 @@
 .assembly-canvas-toolbar {
   left: 50%;
   position: absolute;
-  top: -58px;
+  /* Clears the exterior boundary caption below it: that caption's top edge sits
+     ~26px above the canvas, and this toolbar is ~32px tall, so anything shallower
+     than ~-58px stacks the two flush against each other. */
+  top: -74px;
   transform: translateX(-50%);
 }
 
