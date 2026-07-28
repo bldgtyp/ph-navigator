@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Active — Phases 1–2 complete; Phase 3 next
+STATUS: In review — all three phases implemented
 AUTHOR: Claude with Ed May
 REVIEWED: 2026-07-28 — claims re-verified against code; edge cases folded in
   (sentinel rows, id namespacing, transition cost, soft-delete re-runs).
@@ -237,7 +237,7 @@ pipeline replay: materials matched=408; frames matched=189; glazings matched=41
 # all three: new=0, errored=0
 ```
 
-### Phase 3 — Transition, tests, and docs
+### Phase 3 — Transition, tests, and docs — COMPLETE (2026-07-28)
 
 1. **Transition (local/CI only — there is no production catalog to migrate).**
    The seed scripts are hard-guarded to the `ph_navigator_v2` dev database
@@ -274,6 +274,21 @@ pipeline replay: materials matched=408; frames matched=189; glazings matched=41
 
 Exit: idempotency is enforced by a test, and the behavior is documented where
 the seed targets are discovered.
+
+Completed with a parameterized pipeline replay over the three real seed
+envelopes. The test derives the simulated database ids from the first preview's
+write set, then proves the second preview inserts nothing. `make help`,
+`backend/seeds/README.md`, and `context/ENVIRONMENT.md` now document exact row
+counts, insert-only behavior, and both local transition paths. The catalog-only
+path explicitly warns that custom catalog rows are sacrificed and
+`catalog_origin` references can become stale. Verification:
+
+```text
+uv run pytest tests/test_catalog_seed_ids.py tests/test_catalog_seed_scripts.py -q
+# 10 passed
+make help
+# seed targets report 408 / 41 / 189 rows and idempotent insert-only behavior
+```
 
 ## Explicitly out of scope
 

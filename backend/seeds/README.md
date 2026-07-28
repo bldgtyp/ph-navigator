@@ -10,9 +10,9 @@ resolves its data file from here via `scripts/_seed_paths.py`.
 backend/seeds/
   user.json                       # default editor account
   catalogs/
-    materials.v1.json             # Materials catalog (10 rows)
-    glazing-types.v1.json         # Glazing Types catalog (~42 rows)
-    frame-types.v1.json           # Frame Types catalog (~190 rows)
+    materials.v1.json             # Materials catalog (408 rows)
+    glazing-types.v1.json         # Glazing Types catalog (41 rows)
+    frame-types.v1.json           # Frame Types catalog (189 rows)
   project/
     project.json                  # starter project metadata
     assemblies.json               # 2 assemblies + referenced project materials
@@ -58,7 +58,11 @@ the geometry-extraction job, so it needs the object store up
 
 Catalog files use the canonical import envelope
 (`{kind, schema_version, exported_at, rows}`) so they round-trip
-through the same preview → commit pipeline the import UI uses.
+through the same preview → commit pipeline the import UI uses. Each row's
+`rec…` id is derived from catalog `kind` + row `name`; the standalone
+`make seed-materials`, `make seed-glazing`, and `make seed-frames` targets are
+therefore idempotent and insert only missing rows. They never update an existing
+row or reactivate a soft-deleted row.
 
 Most project-document files use a simpler shape:
 
@@ -110,6 +114,41 @@ That runs, in order:
 
 The Postgres volume is left intact. Use `make db-reset-dev` for the
 heavier reset (drop the Docker volume, re-migrate, then seed).
+
+### One-time catalog-id transition
+
+Dev databases seeded before 2026-07-28 contain random ids that cannot match the
+deterministic ids above. Choose one transition before running a standalone
+catalog seed:
+
+- **Disposable local data:** run `make db-seed` once. This is the clean path,
+  but `seed-dev-data --reset` truncates every application table, including
+  local users, sessions, projects, and drafts.
+- **Local projects worth preserving:** remove the catalog rows, retain the two
+  aperture-default sentinels, then re-run the three catalog targets. This
+  sacrifices **all** local catalog edits and custom catalog rows; export anything
+  worth keeping first and re-import it after the transition.
+
+  ```sh
+  docker compose exec -T db psql -U phn -d ph_navigator_v2 <<'SQL'
+  BEGIN;
+  DELETE FROM catalog_materials;
+  DELETE FROM catalog_frame_types WHERE id <> 'recPHNDefFrame001';
+  DELETE FROM catalog_glazing_types WHERE id <> 'recPHNDefGlazng01';
+  COMMIT;
+  SQL
+  make seed-materials seed-glazing seed-frames
+  ```
+
+  This preserves project rows but can leave a project's copied
+  `catalog_origin.catalog_record_id` pointing at a deleted catalog record. That
+  stale provenance renders as a missing catalog option; use this path only when
+  preserving the rest of the dev database matters.
+
+Do not `TRUNCATE` the catalog tables independently: it removes
+`recPHNDefFrame001` and `recPHNDefGlazng01`, which the standalone catalog
+targets do not recreate. These commands are local-only; the scripts refuse to
+run against production.
 
 ## Default user
 

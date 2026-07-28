@@ -46,6 +46,17 @@ production Render/DNS/R2/auth/MCP facts live in
 - `make db-reset` wipes the Postgres volume — **both** dev and test
   databases are destroyed.
 
+### Local catalog seeds
+
+`make seed-materials`, `make seed-glazing`, and `make seed-frames` are
+idempotent, insert-only local seeds: they add rows whose deterministic ids are
+missing, but never update existing values or reactivate soft-deleted rows. A
+dev database seeded before 2026-07-28 needs a one-time reset because its catalog
+rows have older random ids. The full reset (`make db-seed`) wipes local users,
+sessions, projects, and drafts; the catalog-only alternative preserves those
+tables but can leave stale `catalog_origin` references. Use the exact transition
+commands and sentinel warnings in [`backend/seeds/README.md`](../backend/seeds/README.md#one-time-catalog-id-transition).
+
 ## Object Storage
 
 - Local attachment development uses MinIO as an S3-compatible stand-in

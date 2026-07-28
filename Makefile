@@ -288,13 +288,13 @@ seed-dev-data: migrate seed-climate-bundle ## Reset app rows; seed the default u
 	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
 	uv run python -m scripts.seed_dev_db --reset
 
-seed-materials: migrate ## Load the canonical Materials catalog seed (10 rows)
+seed-materials: migrate ## Idempotently insert missing canonical Materials rows (408 rows)
 	cd backend && uv run python -m scripts.seed_materials_catalog
 
-seed-glazing: migrate ## Load the canonical Window-Glazing catalog seed (~42 rows)
+seed-glazing: migrate ## Idempotently insert missing canonical Window-Glazing rows (41 rows)
 	cd backend && uv run python -m scripts.seed_glazing_catalog
 
-seed-frames: migrate ## Load the canonical Window-Frame Elements catalog seed (~190 rows)
+seed-frames: migrate ## Idempotently insert missing canonical Window-Frame rows (189 rows)
 	cd backend && uv run python -m scripts.seed_frame_catalog
 
 seed-hbjson: migrate object-store-init ## Seed the example HBJSON model into the starter project (needs MinIO)

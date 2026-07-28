@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Active — Phases 1–2 complete; Phase 3 next
+STATUS: In review — all three phases implemented
 AUTHOR: Claude with Ed May
 SCOPE: Current mitigation state and remaining work for catalog seed
   idempotency.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current state
 
-Phases 1–2 are complete: all 638 canonical material, glazing, and frame rows now
+All three phases are implemented: all 638 canonical material, glazing, and frame rows now
 carry deterministic ids derived from catalog `kind` + row `name`, and all three
 seeders validate those ids before preview.
 `tests/test_catalog_seed_ids.py` guards the derivation, id shape, uniqueness,
@@ -43,9 +43,8 @@ the entire operation.
 
 ## Next step
 
-Implement Phase 3 of `PLAN.md`: add the committed pipeline-level idempotency
-test and document re-seeding behavior plus the one-time stale-dev-database
-transition.
+Run the final repo closeout gate (`make format`, then `make ci`), record the
+result, and archive this packet if green.
 
 Independently reviewed 2026-07-28 (upstream/downstream consequence check): the
 approach was confirmed correct and the plan updated in place. Additions worth
