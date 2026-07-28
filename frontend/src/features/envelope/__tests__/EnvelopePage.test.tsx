@@ -326,15 +326,17 @@ describe("EnvelopePage", () => {
     expect(document.querySelector(".app-tooltip")).toBeNull();
   });
 
-  test("boundary labels show both films and let an editor change the exterior condition", async () => {
+  test("boundary labels name the condition and let an editor change the exterior condition", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
-    // The invisible assumption is now legible on the drawing itself.
-    expect(await screen.findByTestId("assembly-exterior-resistance")).toHaveTextContent("Rse 0.04");
-    expect(screen.getByTestId("assembly-interior-resistance")).toHaveTextContent("Rsi 0.13");
-    expect(screen.getByTestId("assembly-heat-flow-direction")).toHaveTextContent(
+    expect(await screen.findByTestId("assembly-heat-flow-direction")).toHaveTextContent(
       "horizontal heat flow",
     );
+    // The Rsi/Rse numbers are deliberately NOT on the drawing: these are
+    // captions, and the specifics live in the header's thermal tooltip
+    // (asserted below). Asserting their absence keeps them from creeping back.
+    expect(screen.queryByTestId("assembly-exterior-resistance")).toBeNull();
+    expect(screen.queryByTestId("assembly-interior-resistance")).toBeNull();
 
     const select = screen.getByRole("combobox", { name: "Exterior condition" });
     expect(select).toHaveValue("outdoor_air");

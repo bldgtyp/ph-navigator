@@ -6,7 +6,6 @@
 // user-selectable axis, while the interior side is fully derived from
 // `Assembly.type` and so is read-only here. Changing it means changing the
 // assembly type, which already has its own control.
-import { formatRValueFromM2KPerW, useUnitPreference } from "../../../lib/units";
 import type { Assembly, AssemblyThermalResponse, ExteriorCondition } from "../types";
 
 const EXTERIOR_CONDITION_OPTIONS: ReadonlyArray<{ value: ExteriorCondition; label: string }> = [
@@ -49,15 +48,12 @@ export function AssemblyBoundaryLabels({
   leftPx: number;
   onExteriorConditionChange: (exteriorCondition: ExteriorCondition) => void;
 }) {
-  const { unitSystem } = useUnitPreference();
   const exteriorAtTop = assembly.orientation === "first_layer_outside";
 
   const exterior = (
     <ExteriorBoundaryLabel
       position={exteriorAtTop ? "top" : "bottom"}
       exteriorCondition={assembly.exterior_condition}
-      rseM2KW={thermal?.rse_m2k_w ?? null}
-      unitSystem={unitSystem}
       canEdit={canEdit}
       busy={busy}
       onChange={onExteriorConditionChange}
@@ -66,9 +62,7 @@ export function AssemblyBoundaryLabels({
   const interior = (
     <InteriorBoundaryLabel
       position={exteriorAtTop ? "bottom" : "top"}
-      rsiM2KW={thermal?.rsi_m2k_w ?? null}
       heatFlowDirection={thermal?.heat_flow_direction ?? null}
-      unitSystem={unitSystem}
     />
   );
 
@@ -105,16 +99,12 @@ export function AssemblyBoundaryLabels({
 function ExteriorBoundaryLabel({
   position,
   exteriorCondition,
-  rseM2KW,
-  unitSystem,
   canEdit,
   busy,
   onChange,
 }: {
   position: "top" | "bottom";
   exteriorCondition: ExteriorCondition;
-  rseM2KW: number | null;
-  unitSystem: "IP" | "SI";
   canEdit: boolean;
   busy: boolean;
   onChange: (exteriorCondition: ExteriorCondition) => void;
@@ -143,12 +133,6 @@ function ExteriorBoundaryLabel({
           {EXTERIOR_CONDITION_LABEL[exteriorCondition]}
         </span>
       )}
-      <BoundaryResistance
-        testId="assembly-exterior-resistance"
-        symbol="Rse"
-        valueM2KW={rseM2KW}
-        unitSystem={unitSystem}
-      />
       {caveat ? (
         <span
           className="assembly-boundary-caveat"
@@ -164,57 +148,21 @@ function ExteriorBoundaryLabel({
 
 function InteriorBoundaryLabel({
   position,
-  rsiM2KW,
   heatFlowDirection,
-  unitSystem,
 }: {
   position: "top" | "bottom";
-  rsiM2KW: number | null;
   heatFlowDirection: string | null;
-  unitSystem: "IP" | "SI";
 }) {
   return (
     <span className={`assembly-orientation-label is-${position}`}>
-      {/* Not editable: fully determined by the assembly type. Showing the
-          derived value is what makes the derivation checkable. */}
+      {/* Not editable: fully determined by the assembly type. Changing it means
+          changing the assembly type, which has its own control. */}
       <span>Interior</span>
-      <BoundaryResistance
-        testId="assembly-interior-resistance"
-        symbol="Rsi"
-        valueM2KW={rsiM2KW}
-        unitSystem={unitSystem}
-      />
       {heatFlowDirection ? (
         <span className="assembly-boundary-caveat" data-testid="assembly-heat-flow-direction">
           {`· ${heatFlowDirection} heat flow`}
         </span>
       ) : null}
-    </span>
-  );
-}
-
-function BoundaryResistance({
-  testId,
-  symbol,
-  valueM2KW,
-  unitSystem,
-}: {
-  testId: string;
-  symbol: "Rsi" | "Rse";
-  valueM2KW: number | null;
-  unitSystem: "IP" | "SI";
-}) {
-  if (valueM2KW === null) return null;
-  // No unit suffix: these are captions on a drawing, and the unit is already
-  // stated on the header metric. The tooltip carries the full formatting.
-  const value = formatRValueFromM2KPerW(valueM2KW, {
-    unitSystem,
-    fractionDigits: 2,
-    showUnit: false,
-  });
-  return (
-    <span className="assembly-boundary-resistance" data-testid={testId}>
-      {`· ${symbol} ${value}`}
     </span>
   );
 }

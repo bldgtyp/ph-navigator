@@ -384,13 +384,6 @@
   cursor: default;
 }
 
-/* The actual win: the most consequential thermal assumption in the assembly
-   goes from invisible to legible, without adding chrome. */
-.assembly-boundary-resistance {
-  color: var(--text-muted);
-  text-transform: none;
-}
-
 .assembly-boundary-caveat {
   color: var(--text-muted);
   font-style: italic;
