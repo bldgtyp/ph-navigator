@@ -75,24 +75,36 @@ export function AssemblyHeader({
                 {thermal ? (
                   <>
                     <span data-testid="assembly-thermal-films">
-                      {`${STANDARD_LABEL[thermal.thermal_standard]} films, ${
-                        thermal.heat_flow_direction
-                      } heat flow: Rsi ${formatRValueFromM2KPerW(thermal.rsi_m2k_w, {
+                      <span>{`${STANDARD_LABEL[thermal.thermal_standard]} surface films, ${thermal.heat_flow_direction} heat flow:`}</span>
+                      <br />
+                      <span>{`- Interior (Rsi): ${formatRValueFromM2KPerW(thermal.rsi_m2k_w, {
                         unitSystem,
                         fractionDigits: 2,
-                      })}, Rse ${formatRValueFromM2KPerW(thermal.rse_m2k_w, {
+                      })}`}</span>
+                      <br />
+                      <span>{`- Exterior (Rse): ${formatRValueFromM2KPerW(thermal.rse_m2k_w, {
                         unitSystem,
                         fractionDigits: 2,
-                      })}`}
+                      })}`}</span>
+                      <br />
                     </span>
                     {constructionOnlyLabel ? (
                       <span data-testid="assembly-thermal-construction-only">
-                        {`Construction only, without films: ${constructionOnlyLabel}`}
+                        {`Construction only, without surface films:`}
+                        <br />
+                        {`- ${constructionOnlyLabel}`}
                       </span>
                     ) : null}
                   </>
                 ) : null}
-                <em>Reference: ISO 6946; ASHRAE Handbook - Fundamentals, Chapter 25</em>
+                <em>
+                  <span>Reference:</span>
+                  <br />
+                  <span>- ISO 6946</span>
+                  <br />
+                  <span>- ASHRAE Handbook - Fundamentals, Chapter 25</span>
+                  <br />
+                </em>
               </InfoTooltip>
             </dt>
             <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>

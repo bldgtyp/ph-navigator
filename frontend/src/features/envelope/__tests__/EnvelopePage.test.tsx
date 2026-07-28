@@ -390,19 +390,25 @@ describe("EnvelopePage", () => {
   test("thermal tooltip discloses the films, the standard, and the construction-only value", async () => {
     // The tooltip is the announcement mechanism for the convention change
     // (PRD Q-B5): it previously asserted films were EXCLUDED, so it must not
-    // silently drift back to that claim.
+    // silently drift back to that claim. It is also now the ONLY place the
+    // per-surface numbers appear — the drawing captions deliberately dropped
+    // them — so these assertions are the whole safety net for that data.
+    //
+    // Matched as substrings, not exact text: the tooltip renders each line in
+    // its own <span> separated by <br>, so textContent runs the lines together
+    // without spaces ("…heat flow:- Interior (Rsi): 0.13 m2-K/W- Exterior…").
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByTestId("assembly-thermal-label");
     await userEvent.click(screen.getByRole("button", { name: "Thermal performance details" }));
 
     expect(await screen.findByTestId("assembly-thermal-films")).toHaveTextContent(
-      "ISO 6946 films, horizontal heat flow",
+      "ISO 6946 surface films, horizontal heat flow",
     );
-    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Rsi 0.13");
-    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Rse 0.04");
+    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Interior (Rsi): 0.13");
+    expect(screen.getByTestId("assembly-thermal-films")).toHaveTextContent("Exterior (Rse): 0.04");
     expect(screen.getByTestId("assembly-thermal-construction-only")).toHaveTextContent(
-      "Construction only, without films",
+      "Construction only, without surface films",
     );
     expect(document.body).not.toHaveTextContent("are NOT included");
   });
