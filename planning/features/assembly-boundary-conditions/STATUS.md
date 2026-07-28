@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Phases 1–3 complete; Phase 4 mechanism in, awaiting Ed's ASHRAE data + the selector
+STATUS: Complete — all four phases implemented, merged, and deployed (2026-07-28)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
 RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
@@ -15,8 +15,8 @@ RELATED: ./README.md, ./PRD.md, ../assembly-condensation-risk/STATUS.md
 | --- | --- | --- |
 | **1** — fields + ISO 6946 resolver | ✅ **complete** | `exterior_condition`, `tables.assumptions.thermal_standard`, `boundary_conditions.py`, `update_assembly_exterior_condition`, HBJSON round-trip. No displayed number moved. |
 | **2** — fold films into the calculation | ✅ **complete** | Films folded in, tooltip rewritten, PHPP kept construction-only with a regression test, hash extended, citation reconciled. **Every displayed number moved.** |
-| **3** — rendering | ✅ **complete** | Exterior label is a select, interior label shows derived Rsi + direction, face bands with distinct ground/ventilated treatments. No new tokens. Browser-verified. |
-| **4** — ASHRAE set + selector | 🟡 **mechanism done; awaiting Ed's data + the selector** | Routing decided (private object store, loader-only). Store, loader, widened literal, typed 409 and tests all landed. Ed must publish the values; the UI selector waits on that. |
+| **3** — rendering | ✅ **complete** | Exterior caption is a select, interior caption reads simply "Interior", face bands with distinct ground/ventilated treatments. No new tokens. Browser-verified. **Amended 2026-07-28:** the Rsi/Rse values and heat-flow direction were removed from the captions — they duplicated the header tooltip, which is now their only home. |
+| **4** — ASHRAE set + selector | ✅ **complete** | Routing decided (private object store, loader-only). Store, loader, widened literal, typed 409 and tests landed 2026-07-26; values published to `ph-navigator-prod` + local MinIO and the `ThermalStandardSelect` / `set_thermal_standard` / `thermal-standards` selector shipped 2026-07-28. |
 
 ### Phase 1 as-built
 
@@ -248,21 +248,45 @@ D-7 option 1 — the repo carries the loader, never the values.
    must land first; and uv warns that Render's `VIRTUAL_ENV` points at the
    repo-root `.venv` while the project lives in `backend/` — harmless, uv
    uses the right environment.
-2. **The project-setting selector.** Deliberately not shipped yet: a
-   picker that offers ASHRAE before any table is published would hand the
-   user a 409. It should land with — or after — step 1, and should offer
-   ASHRAE only when a table is actually available (which needs a small
-   availability endpoint). Same reasoning that kept Phase 1's literal
-   single-member.
+2. ~~**The project-setting selector.**~~ **DONE 2026-07-28.** Shipped as
+   `ThermalStandardSelect` in the Envelope tab's sub-tab `actions` slot
+   (`FILMS  ISO 6946`), backed by the `set_thermal_standard` envelope command
+   and `GET .../envelope/thermal-standards`.
+
+   Three decisions worth keeping:
+
+   - **Placement is the Envelope tab, not Project Settings.** The settings
+     modal edits relational project metadata via `useUpdateProjectMutation`
+     and has no version, etag, or command context; the standard is versioned
+     document state. Putting it there would have meant threading draft-write
+     semantics into a modal that has none.
+   - **Rejected at the write, not at read.** `set_thermal_standard` resolves
+     the film table before storing, so a document can never name a convention
+     this deployment cannot calculate. The thermal endpoint keeps its own 409
+     as a backstop for documents written elsewhere.
+   - **Unavailable standards are shown disabled, not hidden** ("— not
+     published here"). Hiding reads as "PHN does not support ASHRAE"; the real
+     situation is that an operator has not seeded the licensed table.
+
+   Known seam, surfaced in the control's help text: `ventilated` and
+   `unconditioned_space` resolve `Rse = Rsi`, which is ISO 6946 §6 applied
+   under whichever table is loaded. `outdoor_air` and `ground` are clean.
 
 ## Blockers
 
-**Phases 1–3 are done, merged, and unblocked.** Phase 4's mechanism is in
-and its data is published to both object stores; only the selector remains
-(above). Nothing is user-visible until that lands — every project is
-`iso_6946` and no UI can change it, which is the intended ordering.
+**None. All four phases are done, merged, and deployed.**
 
-Low urgency regardless — Ed reports ~99 % ISO.
+The one known limitation, deliberately shipped and disclosed in the selector's
+help text: `ventilated` / `unconditioned_space` use the ISO 6946 §6 rule
+(`Rse = Rsi`) under any standard, so an ASHRAE project gets ASHRAE numbers
+under an ISO rule on those two faces. `outdoor_air` and `ground` are clean.
+Modelling the far-side temperature properly belongs to
+`assembly-condensation-risk`.
+
+Also open, and Ed's call rather than a blocker: ISO's four values stay in code
+while ASHRAE's live in the private object store. The asymmetry is deliberate —
+ISO is the default and keeping it in-repo means a deployment with no object
+store still computes U-values.
 
 ### Resolved design questions (2026-07-26)
 

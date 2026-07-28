@@ -1847,3 +1847,49 @@
 .phpp-export-warning-list strong {
   color: var(--text-primary);
 }
+
+/* Project-wide film convention, parked in the sub-tab actions slot. Styled as
+   a quiet caption with a control in it — the same restraint as the boundary
+   caption select: it is a setting people read far more often than they change. */
+.thermal-standard-select {
+  align-items: center;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  gap: var(--space-6);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.thermal-standard-select__label {
+  color: var(--text-muted);
+}
+
+.thermal-standard-select select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: 1px var(--space-4);
+  text-transform: inherit;
+}
+
+.thermal-standard-select select:hover:not(:disabled) {
+  background: var(--surface-black-5);
+  border-color: var(--border-subtle);
+}
+
+.thermal-standard-select select:focus-visible {
+  border-color: var(--accent-edge);
+  box-shadow: var(--phn-focus);
+  outline: none;
+}
+
+.thermal-standard-select select:disabled {
+  cursor: default;
+}

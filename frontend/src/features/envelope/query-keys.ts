@@ -8,6 +8,8 @@ export const envelopeQueryKeys = {
     [...envelopeQueryKeys.all(projectId), "read", versionId, source] as const,
   thermal: (projectId: string, versionId: string, assemblyId: string, source: EnvelopeReadSource) =>
     [...envelopeQueryKeys.all(projectId), "thermal", versionId, assemblyId, source] as const,
+  thermalStandards: (projectId: string, versionId: string, source: EnvelopeReadSource) =>
+    [...envelopeQueryKeys.all(projectId), "thermal-standards", versionId, source] as const,
   materialDrift: (projectId: string, versionId: string, source: EnvelopeReadSource) =>
     [...envelopeQueryKeys.all(projectId), "material-drift", versionId, source] as const,
 };

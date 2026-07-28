@@ -31,6 +31,7 @@ import {
   isEnvelopeSubroute,
 } from "../paths";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
+import { ThermalStandardSelect } from "../components/ThermalStandardSelect";
 import { EnvelopeEditorDialogs } from "../components/EnvelopeEditorDialogs";
 import { PhppExportWarningDialog } from "../components/PhppExportWarningDialog";
 import { ImportConstructionsDialog } from "../components/dialogs/ImportConstructionsDialog";
@@ -317,7 +318,22 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       className="tab-panel envelope-panel"
       aria-label="Assembly Builder"
     >
-      <AppSubTabs id="envelope-subtabs" ariaLabel="Envelope views">
+      <AppSubTabs
+        id="envelope-subtabs"
+        ariaLabel="Envelope views"
+        actions={
+          <ThermalStandardSelect
+            projectId={project.id}
+            versionId={project.active_version_id}
+            source={source}
+            canEdit={canEdit}
+            busy={commandMutation.isPending}
+            onChange={(thermalStandard) =>
+              void applyCommand({ kind: "set_thermal_standard", thermal_standard: thermalStandard })
+            }
+          />
+        }
+      >
         <AppSubTabLink
           to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
         >

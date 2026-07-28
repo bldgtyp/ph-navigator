@@ -145,6 +145,30 @@ class AssemblyThermalResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class ThermalStandardOption(BaseModel):
+    """One selectable surface-film convention, and whether it works here.
+
+    ``available`` is a property of the *deployment*, not the project: ISO 6946
+    ships in code, while a licensed set is only usable where an operator has
+    published it to the private object store. Reporting it lets the UI offer
+    only what will actually calculate, instead of letting the user pick a
+    standard and then meeting a 409 on every assembly.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    thermal_standard: ThermalStandard
+    label: str
+    available: bool
+
+
+class ThermalStandardsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    active: ThermalStandard
+    options: list[ThermalStandardOption]
+
+
 ProjectMaterialDriftState = Literal[
     "in_sync",
     "customized",
@@ -266,6 +290,19 @@ class UpdateAssemblyExteriorConditionCommand(BaseModel):
     kind: Literal["update_assembly_exterior_condition"]
     assembly_id: str
     exterior_condition: ExteriorCondition
+
+
+class SetThermalStandardCommand(BaseModel):
+    """Set which surface-film convention the whole project calculates under.
+
+    Project-wide rather than per-assembly: mixing conventions inside one
+    project would make its U-values incomparable with each other.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["set_thermal_standard"]
+    thermal_standard: ThermalStandard
 
 
 class DuplicateAssemblyCommand(BaseModel):
@@ -594,6 +631,7 @@ EnvelopeCommand = Annotated[
     | RenameAssemblyCommand
     | UpdateAssemblyTypeCommand
     | UpdateAssemblyExteriorConditionCommand
+    | SetThermalStandardCommand
     | DuplicateAssemblyCommand
     | DeleteAssemblyCommand
     | AddLayerCommand

@@ -17,6 +17,7 @@ from features.envelope.models import (
     EnvelopeReadResponse,
     PhppPreflightResponse,
     ProjectMaterialDriftReport,
+    ThermalStandardsResponse,
 )
 from features.envelope.phpp_export import build_phpp_zip
 from features.envelope.phpp_types import UnitSystem
@@ -27,6 +28,7 @@ from features.envelope.service import (
     get_envelope_read_model,
     get_phpp_export_preflight,
     get_project_material_drift_report,
+    get_thermal_standards_model,
     preview_envelope_hbjson_import,
 )
 from features.project_document.models import ProjectDocumentSource
@@ -65,6 +67,15 @@ def get_assembly_thermal(
     source: Annotated[ProjectDocumentSource, Query()] = "draft",
 ) -> AssemblyThermalResponse:
     return get_assembly_thermal_model(version_id, access, assembly_id, source)
+
+
+@router.get("/envelope/thermal-standards", response_model=ThermalStandardsResponse)
+def get_thermal_standards(
+    version_id: UUID,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query()] = "draft",
+) -> ThermalStandardsResponse:
+    return get_thermal_standards_model(version_id, access, source)
 
 
 @router.get("/envelope/material-catalog-drift", response_model=ProjectMaterialDriftReport)

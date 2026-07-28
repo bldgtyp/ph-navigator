@@ -8,6 +8,7 @@ import pytest
 
 from features.envelope.boundary_conditions import (
     ISO_13788_SURFACE_CHECK_RSI,
+    SurfaceFilmTable,
     heat_flow_direction,
     resolve_surface_resistances,
 )
@@ -309,3 +310,114 @@ def test_update_assembly_exterior_condition_rejects_an_unknown_value(clean_docum
     )
 
     assert response.status_code == 422
+
+
+def _publish_ashrae(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make the licensed table resolvable, without a real object store."""
+    reset_surface_film_cache()
+    monkeypatch.setattr("features.envelope.surface_film_store.settings.r2_endpoint_url", "http://minio.test")
+    monkeypatch.setattr(
+        "features.envelope.surface_film_store.SurfaceFilmStore.from_settings",
+        classmethod(lambda cls: _StubFilmStore()),
+    )
+
+
+class _StubFilmStore:
+    def get(self, standard: str) -> SurfaceFilmTable | None:
+        if standard != "ashrae":
+            return None
+        # Synthetic, not ASHRAE's published values — this repo is public.
+        return SurfaceFilmTable(
+            standard="ashrae",
+            rsi_by_direction={"upward": 0.25, "horizontal": 0.35, "downward": 0.45},
+            rse_outdoor_air_m2k_w=0.05,
+        )
+
+
+def test_set_thermal_standard_switches_the_project_convention(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _publish_ashrae(monkeypatch)
+    client = signed_in_client()
+    project = create_project(client)
+    saved_body = envelope_body()
+    write_saved_body(project["active_version_id"], saved_body)
+
+    response = client.post(
+        command_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={"command": {"kind": "set_thermal_standard", "thermal_standard": "ashrae"}},
+    )
+
+    assert response.status_code == 200
+    thermal = client.get(
+        f"/api/v1/projects/{project['id']}/versions/{project['active_version_id']}"
+        f"/envelope/assemblies/{saved_body.tables.assemblies[0].id}/thermal"
+    )
+    assert thermal.status_code == 200
+    # The switch has to reach the numbers, not just the stored field.
+    assert thermal.json()["thermal_standard"] == "ashrae"
+    assert thermal.json()["rse_m2k_w"] == 0.05
+
+
+def test_set_thermal_standard_rejects_a_standard_with_no_published_table(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Rejected at the write, so the document never names an uncomputable convention."""
+    reset_surface_film_cache()
+    monkeypatch.setattr("features.envelope.surface_film_store.settings.r2_endpoint_url", "")
+    client = signed_in_client()
+    project = create_project(client)
+    saved_body = envelope_body()
+    write_saved_body(project["active_version_id"], saved_body)
+
+    response = client.post(
+        command_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={"command": {"kind": "set_thermal_standard", "thermal_standard": "ashrae"}},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "surface_film_table_unavailable"
+
+
+def test_thermal_standards_endpoint_reports_what_this_deployment_can_use(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reset_surface_film_cache()
+    monkeypatch.setattr("features.envelope.surface_film_store.settings.r2_endpoint_url", "")
+    client = signed_in_client()
+    project = create_project(client)
+    write_saved_body(project["active_version_id"], envelope_body())
+
+    response = client.get(
+        f"/api/v1/projects/{project['id']}/versions/{project['active_version_id']}/envelope/thermal-standards"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["active"] == "iso_6946"
+    available = {option["thermal_standard"]: option["available"] for option in payload["options"]}
+    # ISO ships in code; the licensed set is unusable until an operator seeds it.
+    assert available == {"iso_6946": True, "ashrae": False}
+
+
+def test_thermal_standards_endpoint_marks_a_seeded_standard_available(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _publish_ashrae(monkeypatch)
+    client = signed_in_client()
+    project = create_project(client)
+    write_saved_body(project["active_version_id"], envelope_body())
+
+    response = client.get(
+        f"/api/v1/projects/{project['id']}/versions/{project['active_version_id']}/envelope/thermal-standards"
+    )
+
+    assert response.status_code == 200
+    available = {option["thermal_standard"]: option["available"] for option in response.json()["options"]}
+    assert available == {"iso_6946": True, "ashrae": True}

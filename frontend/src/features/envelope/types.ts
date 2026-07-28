@@ -36,6 +36,19 @@ export type HeatFlowDirection = "upward" | "horizontal" | "downward";
  */
 export type ThermalStandard = "iso_6946" | "ashrae";
 
+/** One selectable surface-film convention. `available` is a deployment fact:
+ *  a licensed table only exists where an operator has published it. */
+export type ThermalStandardOption = {
+  thermal_standard: ThermalStandard;
+  label: string;
+  available: boolean;
+};
+
+export type ThermalStandardsResponse = {
+  active: ThermalStandard;
+  options: ThermalStandardOption[];
+};
+
 export type ThermalStatusFlag =
   | "missing_material"
   | "missing_conductivity"
@@ -213,6 +226,7 @@ export type EnvelopeCommand =
       assembly_id: string;
       exterior_condition: ExteriorCondition;
     }
+  | { kind: "set_thermal_standard"; thermal_standard: ThermalStandard }
   | { kind: "duplicate_assembly"; assembly_id: string; name?: string | null }
   | { kind: "delete_assembly"; assembly_id: string }
   | {

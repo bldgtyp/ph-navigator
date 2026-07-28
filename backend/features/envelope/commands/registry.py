@@ -8,7 +8,14 @@ from typing import Any, cast
 from psycopg import Connection
 from starlette import status
 
-from features.envelope.commands import aperture_products, assemblies, envelope_import, layers, materials
+from features.envelope.commands import (
+    aperture_products,
+    assemblies,
+    assumptions,
+    envelope_import,
+    layers,
+    materials,
+)
 from features.envelope.models import EnvelopeCommand
 from features.project_document.document import ProjectDocumentV1
 from features.shared.errors import api_error
@@ -36,6 +43,7 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "rename_assembly": _body_only(assemblies.rename_assembly),
     "update_assembly_type": _body_only(assemblies.update_assembly_type),
     "update_assembly_exterior_condition": _body_only(assemblies.update_assembly_exterior_condition),
+    "set_thermal_standard": _body_only(assumptions.set_thermal_standard),
     "duplicate_assembly": _body_only(assemblies.duplicate_assembly),
     "delete_assembly": _body_only(assemblies.delete_assembly),
     "add_layer": _body_only(layers.add_layer),

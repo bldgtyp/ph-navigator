@@ -32,13 +32,15 @@ from features.envelope.models import (
     PhppPreflightItem,
     PhppPreflightResponse,
     ProjectMaterialDriftReport,
+    ThermalStandardOption,
+    ThermalStandardsResponse,
 )
 from features.envelope.phpp_export import phpp_preflight
 from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.surface_film_store import SurfaceFilmTableUnavailableError, surface_film_table
 from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document.audit import log_document_action
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ProjectDocumentV1, ThermalStandard
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import (
     document_etag,
@@ -314,3 +316,44 @@ def _load_json(file_bytes: bytes) -> object:
             "import_invalid_json",
             "The uploaded file is not valid JSON.",
         ) from error
+
+
+#: Display names for the selectable conventions. Held here rather than in the
+#: frontend so the literal set and its labels stay in one place — adding a
+#: standard means editing one file, not two repos' worth.
+_THERMAL_STANDARD_LABELS: dict[ThermalStandard, str] = {
+    "iso_6946": "ISO 6946",
+    "ashrae": "ASHRAE Fundamentals",
+}
+
+
+def get_thermal_standards_model(
+    version_id: UUID,
+    access: ProjectAccess,
+    source: ProjectDocumentSource = "draft",
+) -> ThermalStandardsResponse:
+    """List the surface-film conventions, flagging which this deployment can use.
+
+    A licensed table lives in the private object store, so availability is a
+    deployment fact and has to be probed rather than assumed. Probing is cheap:
+    ``surface_film_table`` caches per process, and ISO never touches the store.
+    """
+    if source == "version":
+        body = get_saved_document(version_id, access)
+    else:
+        body = get_current_document_view(version_id, access).body
+
+    options: list[ThermalStandardOption] = []
+    for standard, label in _THERMAL_STANDARD_LABELS.items():
+        try:
+            surface_film_table(standard)
+        except SurfaceFilmTableUnavailableError:
+            available = False
+        else:
+            available = True
+        options.append(ThermalStandardOption(thermal_standard=standard, label=label, available=available))
+
+    return ThermalStandardsResponse(
+        active=body.tables.resolved_assumptions().thermal_standard,
+        options=options,
+    )

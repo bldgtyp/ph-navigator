@@ -46,6 +46,7 @@ class name. The dispatch registry is
 | `rename_assembly` | `RenameAssemblyCommand` | Rename, with trim + case-fold uniqueness check (own name → no-op). | `duplicate_assembly_name`, `assembly_not_found` |
 | `update_assembly_type` | `UpdateAssemblyTypeCommand` | Change `type` (wall / roof / floor / etc.). Also changes the derived interior surface film and heat-flow direction. | `assembly_not_found` |
 | `update_assembly_exterior_condition` | `UpdateAssemblyExteriorConditionCommand` | Change `exterior_condition` (outdoor air / ventilated / ground / unconditioned space), which drives the exterior surface film. There is no interior counterpart: the interior side is derived from `type`. | `assembly_not_found` |
+| `set_thermal_standard` | `SetThermalStandardCommand` | Set the project-wide surface-film convention (`tables.assumptions.thermal_standard`). Rejected at the write when that standard has no published table on this deployment, so a saved document can never name a convention the deployment cannot calculate. Moves every assembly's U-value. | `surface_film_table_unavailable` (409) |
 | `duplicate_assembly` | `DuplicateAssemblyCommand` | Deep-copy an assembly, new IDs, "Copy" suffix. | `duplicate_assembly_name`, `assembly_not_found` |
 | `delete_assembly` | `DeleteAssemblyCommand` | Remove an assembly. | `assembly_not_found` |
 | `flip_orientation` | `FlipOrientationCommand` | Toggle `first_layer_outside` ↔ `last_layer_outside`. | `assembly_not_found` |

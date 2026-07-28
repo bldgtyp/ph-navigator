@@ -14,6 +14,7 @@ import {
   fetchPhppPreflight,
   postEnvelopeCommand,
   previewEnvelopeHbjsonImport,
+  fetchThermalStandards,
 } from "./api";
 import { envelopeQueryKeys } from "./query-keys";
 import type {
@@ -90,6 +91,20 @@ export function useAssemblyThermalQuery(
     queryFn: ({ signal }) =>
       fetchAssemblyThermal(projectId, resolvedVersionId, resolvedAssemblyId, source, signal),
     enabled: enabled && resolvedVersionId.length > 0 && resolvedAssemblyId.length > 0,
+  });
+}
+
+export function useThermalStandardsQuery(
+  projectId: string,
+  versionId: string | null,
+  source: EnvelopeReadSource,
+  enabled = true,
+) {
+  const resolvedVersionId = versionId ?? "";
+  return useQuery({
+    queryKey: envelopeQueryKeys.thermalStandards(projectId, resolvedVersionId, source),
+    queryFn: ({ signal }) => fetchThermalStandards(projectId, resolvedVersionId, source, signal),
+    enabled: enabled && resolvedVersionId.length > 0,
   });
 }
 
@@ -252,6 +267,8 @@ function invalidateMaterialDriftQueries(
 }
 
 const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+  // Not an assembly edit, but it re-resolves the films for every one of them.
+  "set_thermal_standard",
   "create_assembly",
   "duplicate_assembly",
   "delete_assembly",

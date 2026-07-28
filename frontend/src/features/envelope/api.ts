@@ -11,6 +11,7 @@ import type {
   PhppPreflightResponse,
   ProjectMaterialDriftReport,
   WireEnvelopeReadResponse,
+  ThermalStandardsResponse,
 } from "./types";
 
 export async function fetchEnvelopeReadModel(
@@ -52,6 +53,18 @@ export async function fetchAssemblyThermal(
 ): Promise<AssemblyThermalResponse> {
   return fetchJson<AssemblyThermalResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope/assemblies/${assemblyId}/thermal?source=${source}`,
+    { signal },
+  );
+}
+
+export async function fetchThermalStandards(
+  projectId: string,
+  versionId: string,
+  source: EnvelopeReadSource,
+  signal?: AbortSignal,
+): Promise<ThermalStandardsResponse> {
+  return fetchJson<ThermalStandardsResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/thermal-standards?source=${source}`,
     { signal },
   );
 }

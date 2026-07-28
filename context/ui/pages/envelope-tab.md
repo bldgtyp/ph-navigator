@@ -24,6 +24,21 @@ Assemblies · Materials
 
 (`AppSubTabs` in `EnvelopePage.tsx` renders exactly these two links.)
 
+The sub-tab bar's right-hand `actions` slot carries the **film standard
+selector** (`ThermalStandardSelect`) — `FILMS  ISO 6946`. It sets
+`tables.assumptions.thermal_standard` for the whole project via the
+`set_thermal_standard` command, and is placed here rather than beside any one
+assembly precisely because it is project-wide: mixing conventions inside a
+project would make its U-values incomparable with each other. Styled as a
+quiet caption, chrome on hover/focus only, matching the boundary caption.
+
+A standard with no published surface-film table on this deployment appears as
+a **disabled** option reading "— not published here", rather than being hidden:
+the absence is an operator task (seed the licensed table), not a missing
+product capability. Availability comes from
+`GET .../envelope/thermal-standards`. Viewers and locked versions see the
+active standard as static text.
+
 - **Assemblies** (default landing) — visual layer/segment composer
   for each assembly. URL `/envelope/assemblies` (with optional
   `/{assembly_id}` for direct deep-link).

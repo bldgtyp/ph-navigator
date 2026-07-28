@@ -10,7 +10,11 @@ import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
-import type { AssemblyThermalResponse, EnvelopeReadResponse } from "../types";
+import type {
+  AssemblyThermalResponse,
+  EnvelopeReadResponse,
+  ThermalStandardsResponse,
+} from "../types";
 import {
   PHASE16_BULK_ASSEMBLY_COUNT,
   PHASE16_BULK_LAYER_COUNT,
@@ -385,6 +389,52 @@ describe("EnvelopePage", () => {
       "Exterior · Outdoor air",
     );
     expect(screen.queryByRole("combobox", { name: "Exterior condition" })).not.toBeInTheDocument();
+  });
+
+  test("the film-standard selector offers only standards this deployment can calculate", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const select = await screen.findByRole("combobox", { name: "Surface film standard" });
+    expect(select).toHaveValue("iso_6946");
+
+    // Unpublished standards stay visible but unselectable: hiding them would
+    // read as "PHN cannot do ASHRAE" rather than "nobody has seeded it here".
+    const ashrae = within(select).getByRole("option", { name: /ASHRAE/ });
+    expect(ashrae).toBeDisabled();
+    expect(ashrae).toHaveTextContent("not published here");
+  });
+
+  test("choosing a standard sends the project-wide command", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope/thermal-standards?")) {
+        return Promise.resolve(
+          jsonResponse({
+            active: "iso_6946",
+            options: [
+              { thermal_standard: "iso_6946", label: "ISO 6946", available: true },
+              { thermal_standard: "ashrae", label: "ASHRAE Fundamentals", available: true },
+            ],
+          } satisfies ThermalStandardsResponse),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const select = await screen.findByRole("combobox", { name: "Surface film standard" });
+    await userEvent.selectOptions(select, "ashrae");
+
+    await waitFor(() => {
+      const posted = fetchMock.mock.calls.find(
+        ([, init]) => typeof init?.body === "string" && init.body.includes("set_thermal_standard"),
+      );
+      expect(posted).toBeDefined();
+      // No assembly_id: the convention is a property of the project.
+      expect(JSON.parse(posted![1].body as string).command).toEqual({
+        kind: "set_thermal_standard",
+        thermal_standard: "ashrae",
+      });
+    });
   });
 
   test("thermal tooltip discloses the films, the standard, and the construction-only value", async () => {
@@ -1907,6 +1957,16 @@ function commandRequestBodies(): unknown[] {
     .map((call) => JSON.parse(call[1]?.body as string));
 }
 
+// ASHRAE unavailable by default: that is the state of a deployment where no
+// operator has seeded the licensed table, and it is what most tests should see.
+const thermalStandardsPayload: ThermalStandardsResponse = {
+  active: "iso_6946",
+  options: [
+    { thermal_standard: "iso_6946", label: "ISO 6946", available: true },
+    { thermal_standard: "ashrae", label: "ASHRAE Fundamentals", available: false },
+  ],
+};
+
 function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/sidebar-views")) {
     return Promise.resolve(
@@ -1917,6 +1977,9 @@ function defaultFetchImplementation(url: string): Promise<Response> {
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
   if (url.includes("/envelope/material-catalog-drift?")) {
     return Promise.resolve(jsonResponse(driftPayload));
+  }
+  if (url.includes("/envelope/thermal-standards?")) {
+    return Promise.resolve(jsonResponse(thermalStandardsPayload));
   }
   if (url.includes("/assets/bulk-urls")) {
     return Promise.resolve(

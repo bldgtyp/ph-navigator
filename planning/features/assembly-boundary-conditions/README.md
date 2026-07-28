@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Phases 1–3 complete and merged; Phase 4 mechanism in and ASHRAE data published to both object stores (2026-07-28), awaiting only the standard selector
+STATUS: Complete — all four phases implemented, merged, and deployed; ASHRAE data published to both object stores and the standard selector shipped 2026-07-28
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for assembly boundary conditions and surface films.
 RELATED: ./PRD.md, ./STATUS.md, ../assembly-condensation-risk/,
