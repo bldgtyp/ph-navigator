@@ -253,7 +253,13 @@ sheathing, so the same material is the air barrier in one assembly and not in
 another.
 
 - Set and cleared from the Segment Properties modal's **Air barrier** section
-  (one `set_assembly_air_barrier` command; `air_barrier: null` clears).
+  (one `set_assembly_air_barrier` command; `None` clears it). A select, not
+  radios, and it sits below the segment's own geometry — the designation is
+  layer-level and set once per assembly, so it should not lead the dialog.
+  Collapsed to a disclosure unless *this* layer is the air barrier, on the same
+  principle as the steel-stud parameters beside it; when another layer holds it,
+  the open section says so rather than leaving `None` to read as "the assembly
+  has none".
 - "Interior" and "exterior" are relative to `orientation`, not to top/bottom of
   the drawing. Deleting the designated layer clears the designation.
 - The backend returns a read-only `air_barrier_status` carrying the **ASTM
@@ -279,7 +285,7 @@ dialog on this page, and are not visible from the dialog components themselves:
   **any write from inside a dialog closes it**. Commit-on-blur is therefore
   unusable for a dialog field — the dialog would vanish as the user tabbed out.
   Fields that write on `Apply` are the norm here; the material picker and the
-  air-barrier radios are the deliberate exceptions, and both close the dialog.
+  air-barrier select are the deliberate exceptions, and both close the dialog.
 
 **Segment Properties modal (US-ENV-6):**
 

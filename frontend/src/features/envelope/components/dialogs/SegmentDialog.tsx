@@ -148,12 +148,6 @@ export function SegmentDialog({
           onOpenCatalogPicker={onOpenCatalogPicker}
         />
         <SegmentMaterialFacts material={material} unitSystem={unitSystem} />
-        <AirBarrierSection
-          layerId={layerId}
-          airBarrier={airBarrier}
-          airBarrierStatus={airBarrierStatus}
-          onSetAirBarrier={onSetAirBarrier}
-        />
         {/* A membrane and an ordinary segment describe different geometry, so
             each variant's fields are grouped rather than interleaved as four
             separate conditionals: a membrane owns its layer thickness, an
@@ -203,6 +197,16 @@ export function SegmentDialog({
             />
           </>
         )}
+        {/* Below the geometry, not above it: the segment's own material and
+            dimensions are what the dialog is opened for, and the air barrier is
+            a layer-level designation set once per assembly. It also sits next to
+            the steel-stud disclosure, so the two collapsed sections group. */}
+        <AirBarrierSection
+          layerId={layerId}
+          airBarrier={airBarrier}
+          airBarrierStatus={airBarrierStatus}
+          onSetAirBarrier={onSetAirBarrier}
+        />
         <DialogActions
           busy={busy}
           error={layerThickness.error ?? width.error ?? studSpacing.error ?? error}
@@ -238,44 +242,63 @@ function AirBarrierSection({
   const elsewhere = airBarrier !== null && airBarrier.layer_id !== layerId;
   const status = airBarrierStatus?.layer_id === layerId ? airBarrierStatus : null;
 
-  return (
-    <section
-      id="envelope-segment-air-barrier-section"
-      className="segment-dialog-section"
-      role="group"
-      aria-labelledby="envelope-segment-air-barrier-heading"
-    >
-      <h3 id="envelope-segment-air-barrier-heading" className="segment-dialog-section-heading">
-        Air barrier
-      </h3>
-      <div className="segment-air-barrier-options">
-        {(["interior", "exterior"] as AssemblyFace[]).map((face) => (
-          <label key={face} className="checkbox-row">
-            <input
-              type="radio"
-              name="envelope-segment-air-barrier-face"
-              checked={designatedFace === face}
-              onChange={() => onSetAirBarrier({ layer_id: layerId, face })}
-            />
-            {face === "interior" ? "This layer's interior face" : "This layer's exterior face"}
-          </label>
-        ))}
-        <label className="checkbox-row">
-          <input
-            type="radio"
-            name="envelope-segment-air-barrier-face"
-            checked={designatedFace === null}
-            onChange={() => onSetAirBarrier(null)}
-          />
-          {elsewhere ? "Not this layer" : "Not designated"}
-        </label>
-      </div>
+  const controls = (
+    <div className="segment-air-barrier-controls">
+      <select
+        id="envelope-segment-air-barrier-select"
+        className="segment-dialog-select"
+        aria-label="Air barrier face"
+        value={designatedFace ?? ""}
+        onChange={(event) => {
+          const face = event.currentTarget.value;
+          onSetAirBarrier(face === "" ? null : { layer_id: layerId, face: face as AssemblyFace });
+        }}
+      >
+        <option value="">None</option>
+        <option value="interior">This layer&apos;s interior face</option>
+        <option value="exterior">This layer&apos;s exterior face</option>
+      </select>
+      {/* "None" is the honest label for this layer either way, but it would
+          otherwise read as "the assembly has no air barrier" when in fact
+          another layer holds it. */}
+      {elsewhere ? (
+        <p className="segment-dialog-note">Another layer is currently the air barrier.</p>
+      ) : null}
       {status ? <AirBarrierVerdict status={status} /> : null}
       <p className="segment-dialog-note">
         A drawing and communication convention. It does not feed the thermal or condensation
         calculations — those methods ignore air leakage entirely.
       </p>
-    </section>
+    </div>
+  );
+
+  // Open only when this layer *is* the air barrier; otherwise it is one more
+  // thing to read past on every segment. Same disclosure treatment as the steel
+  // stud parameters below, which collapse on the same principle.
+  if (designatedFace !== null) {
+    return (
+      <section
+        id="envelope-segment-air-barrier-section"
+        className="segment-dialog-section"
+        role="group"
+        aria-labelledby="envelope-segment-air-barrier-heading"
+      >
+        <h3 id="envelope-segment-air-barrier-heading" className="segment-dialog-section-heading">
+          Air barrier
+        </h3>
+        {controls}
+      </section>
+    );
+  }
+
+  return (
+    <details
+      id="envelope-segment-air-barrier-section"
+      className="segment-dialog-section segment-dialog-disclosure"
+    >
+      <summary>Air barrier</summary>
+      {controls}
+    </details>
   );
 }
 

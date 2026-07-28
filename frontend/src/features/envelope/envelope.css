@@ -1475,9 +1475,33 @@
   margin: 0;
 }
 
-.segment-air-barrier-options {
+.segment-air-barrier-controls {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-10);
+}
+
+/* `reset.css` gives every `input` and `textarea` the app's control treatment
+   but deliberately leaves `select` alone, so a select dropped into a dialog
+   inherits nothing and renders at the UA default. Match the sibling inputs
+   here — same `--fs-md`, so this adds no new typographic variant to the
+   rendered contract (`scripts/typography-rendered-contract.json`). */
+.segment-dialog-select {
+  background: var(--bg-input, var(--bg-card));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  justify-self: start;
+  line-height: var(--lh-ui);
+  min-height: 34px;
+  min-width: 240px;
+  padding: var(--space-6) var(--space-10);
+}
+
+.segment-dialog-select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: var(--phn-focus);
+  outline: none;
 }
 
 .segment-dialog-note.is-fail {
