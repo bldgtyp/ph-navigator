@@ -28,7 +28,6 @@ import type {
   Assembly,
   AssemblyLayer,
   AssemblySegment,
-  AssemblyThermalResponse,
   ExteriorCondition,
   ProjectMaterial,
 } from "../types";
@@ -36,7 +35,6 @@ import type {
 export function AssemblyCanvas({
   assembly,
   materials,
-  thermal,
   zoom,
   autoFitOnMount,
   canEdit,
@@ -57,7 +55,6 @@ export function AssemblyCanvas({
 }: {
   assembly: Assembly;
   materials: ProjectMaterial[];
-  thermal: AssemblyThermalResponse | null;
   zoom: number;
   autoFitOnMount: boolean;
   canEdit: boolean;
@@ -153,7 +150,6 @@ export function AssemblyCanvas({
         >
           <AssemblyBoundaryLabels
             assembly={assembly}
-            thermal={thermal}
             canEdit={canEdit}
             busy={commandBusy}
             leftPx={ASSEMBLY_CANVAS_ORIGIN_X_PX}

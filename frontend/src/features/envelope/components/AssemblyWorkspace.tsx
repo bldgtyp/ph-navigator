@@ -138,7 +138,6 @@ export function AssemblyWorkspace({
           <AssemblyCanvas
             assembly={activeAssembly}
             materials={materials}
-            thermal={thermal}
             zoom={zoom}
             autoFitOnMount={autoFitOnMount}
             canEdit={canEdit}

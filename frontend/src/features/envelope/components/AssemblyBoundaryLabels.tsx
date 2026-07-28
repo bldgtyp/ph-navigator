@@ -6,7 +6,7 @@
 // user-selectable axis, while the interior side is fully derived from
 // `Assembly.type` and so is read-only here. Changing it means changing the
 // assembly type, which already has its own control.
-import type { Assembly, AssemblyThermalResponse, ExteriorCondition } from "../types";
+import type { Assembly, ExteriorCondition } from "../types";
 
 const EXTERIOR_CONDITION_OPTIONS: ReadonlyArray<{ value: ExteriorCondition; label: string }> = [
   { value: "outdoor_air", label: "Exterior · Outdoor air" },
@@ -29,7 +29,6 @@ const UNCONDITIONED_SPACE_CAVEAT_FULL =
 
 export function AssemblyBoundaryLabels({
   assembly,
-  thermal,
   canEdit,
   busy,
   widthPx,
@@ -39,7 +38,6 @@ export function AssemblyBoundaryLabels({
   onExteriorConditionChange,
 }: {
   assembly: Assembly;
-  thermal: AssemblyThermalResponse | null;
   canEdit: boolean;
   busy: boolean;
   widthPx: number;
@@ -59,11 +57,13 @@ export function AssemblyBoundaryLabels({
       onChange={onExteriorConditionChange}
     />
   );
+  // Not editable, and no derived detail: the interior side is fully determined
+  // by `Assembly.type`, and the specifics (standard, heat-flow direction, both
+  // film resistances) live in the header's thermal tooltip.
   const interior = (
-    <InteriorBoundaryLabel
-      position={exteriorAtTop ? "bottom" : "top"}
-      heatFlowDirection={thermal?.heat_flow_direction ?? null}
-    />
+    <span className={`assembly-orientation-label is-${exteriorAtTop ? "bottom" : "top"}`}>
+      Interior
+    </span>
   );
 
   return (
@@ -140,27 +140,6 @@ function ExteriorBoundaryLabel({
           title={UNCONDITIONED_SPACE_CAVEAT_FULL}
         >
           {`· ${caveat}`}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-function InteriorBoundaryLabel({
-  position,
-  heatFlowDirection,
-}: {
-  position: "top" | "bottom";
-  heatFlowDirection: string | null;
-}) {
-  return (
-    <span className={`assembly-orientation-label is-${position}`}>
-      {/* Not editable: fully determined by the assembly type. Changing it means
-          changing the assembly type, which has its own control. */}
-      <span>Interior</span>
-      {heatFlowDirection ? (
-        <span className="assembly-boundary-caveat" data-testid="assembly-heat-flow-direction">
-          {`· ${heatFlowDirection} heat flow`}
         </span>
       ) : null}
     </span>

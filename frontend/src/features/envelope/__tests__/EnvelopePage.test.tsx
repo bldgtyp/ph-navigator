@@ -329,12 +329,13 @@ describe("EnvelopePage", () => {
   test("boundary labels name the condition and let an editor change the exterior condition", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
-    expect(await screen.findByTestId("assembly-heat-flow-direction")).toHaveTextContent(
-      "horizontal heat flow",
-    );
-    // The Rsi/Rse numbers are deliberately NOT on the drawing: these are
-    // captions, and the specifics live in the header's thermal tooltip
-    // (asserted below). Asserting their absence keeps them from creeping back.
+    // The captions name the boundary and nothing else. Every derived specific
+    // — heat-flow direction, Rsi, Rse — is deliberately left to the header's
+    // thermal tooltip (asserted below). Assert the absences rather than just
+    // dropping the old assertions, so none of them can creep back onto the
+    // drawing.
+    expect(await screen.findByRole("combobox", { name: "Exterior condition" })).toBeInTheDocument();
+    expect(screen.queryByTestId("assembly-heat-flow-direction")).toBeNull();
     expect(screen.queryByTestId("assembly-exterior-resistance")).toBeNull();
     expect(screen.queryByTestId("assembly-interior-resistance")).toBeNull();
 
