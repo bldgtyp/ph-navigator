@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Implemented on branch — Ed Rhino acceptance, PRs, and merge pending
+STATUS: Complete — implementation, automated verification, and Rhino/GH acceptance passed
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -75,19 +75,19 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   live saved fixture also passed route-3 schema parsing and route-4 count
   checks. Glossary, UI, data-model, API, and export/cache docs are reconciled.
   Full-feature simplify and docs-pass are complete with all findings resolved.
+- 2026-07-28 — Ed completed the real Rhino/Grasshopper acceptance check
+  against the PH-Navigator dev server on port 5173. The components imported
+  Empty (`void`) panels as expected. No implementation or acceptance work
+  remains.
 
 ## Next step
 
-Ed must pull the saved fixture through the real `PH-Nav Get Apertures`
-Rhino/GH component and confirm the door/sidelite/void geometry and glazed-only
-constructions. After that, push/open the companion and PH-Navigator PRs, merge,
-then archive the packet.
+None. Packet archived after the accepted implementation. Production deployment
+remains a separate explicit action.
 
 ## Blockers
 
-- Manual Rhino/GH visual acceptance requires Ed.
-- Companion and PH-Navigator branches are local-only for this closeout; push,
-  PR creation, merge, archive, and deployment have not been performed.
+- None.
 
 ## Verification ledger
 
@@ -106,4 +106,4 @@ then archive the packet.
 | 5 | live saved fixture route 3 → unmodified GH schema | Passed — 3 glazed elements; columns 0/1/2; reversed rows preserved |
 | 5 | live saved fixture route 4 construction count | Passed — 3 constructions = 3 glazed elements |
 | 5 | `make ci` | Green — backend 1629 passed; frontend 2312 passed |
-| 5 | real `PH-Nav Get Apertures` Rhino/GH visual check | Pending — Ed |
+| 5 | real `PH-Nav Get Apertures` Rhino/GH visual check | Passed — Ed, dev server `:5173` |

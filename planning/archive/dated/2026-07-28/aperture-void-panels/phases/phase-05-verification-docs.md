@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Implemented on branch — Ed Rhino acceptance pending
+STATUS: Complete — Ed verified the real Rhino/GH import against the dev server
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 5 — end-to-end + cross-repo verification, glossary/docs updates, closeout.
 RELATED: ../PRD.md §6 §8 §11, context/GLOSSARY.md, context/ui/pages/apertures-tab.md
@@ -83,8 +83,7 @@ but do not join the two by name.
 - Companion repo `honeybee_grasshopper_ph_plus` now derives each occupied
   column origin from the element's absolute `col` index. Local branch
   `fix/window-type-absolute-column-origin`, commit `963becb`; its isolated
-  fully-void-column regression, Ruff, and Black checks pass. Nothing was
-  pushed and no PR was opened.
+  fully-void-column regression, Ruff, and Black checks pass.
 - `backend/tests/test_aperture_void_cross_repo.py` parses the exact S15 route-3
   serializer payload with the unmodified companion V1 schema when that repo is
   available. It asserts void omission, all four absolute columns, bottom-up row
@@ -103,10 +102,9 @@ but do not join the two by name.
   passed with backend `1629 passed, 7 skipped` and frontend `247` files /
   `2312` tests plus the production build.
 
-## Remaining manual acceptance
+## Manual acceptance result
 
-Ed must pull the saved fixture through the real `PH-Nav Get Apertures`
-component in Rhino/GH and confirm the four visual/geometry conditions in step
-4 above. Until that check, the two PRs, and the merge are complete, this packet
-stays in place and is not archived. Deployment remains a separate explicit
-action.
+Ed completed the real `PH-Nav Get Apertures` Rhino/GH check against the
+PH-Navigator dev server on 2026-07-28. The components imported the Empty
+(`void`) panels as expected. Automated placement/count checks and this manual
+consumer check complete Phase 5.

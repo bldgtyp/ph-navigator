@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Implemented on branch — Ed Rhino acceptance, PRs, and merge pending
+STATUS: Complete — all phases and real Rhino/GH acceptance passed
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for void ("Empty") panels in the Aperture Builder.
 RELATED: ./PRD.md, ./STATUS.md, ./decisions.md, ./phases/,
@@ -58,5 +58,5 @@ from U-value math and every export.
 | 2 | `phases/phase-02-command.md` | `setElementKind` command + guards on existing commands | Complete |
 | 3 | `phases/phase-03-consumers.md` | U-value, route-3 GH export, route-4 HBJSON export, cache key | Complete |
 | 4 | `phases/phase-04-frontend.md` | Canvas rendering, element card, pick/paste/merge guards | Complete |
-| 5 | `phases/phase-05-verification-docs.md` | End-to-end + GH smoke, glossary, docs pass | Automated work complete; Ed Rhino check pending |
+| 5 | `phases/phase-05-verification-docs.md` | End-to-end + GH smoke, glossary, docs pass | Complete |
 | — | (deferred) | Solid spandrel panels | Deferred — see PRD §7 |

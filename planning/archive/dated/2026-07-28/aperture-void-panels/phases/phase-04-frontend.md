@@ -6,7 +6,7 @@ AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — builder UI: void rendering, element card, kind toggle,
   pick/paste/merge guards.
 RELATED: ../PRD.md §5, ../decisions.md D-1 D-3 D-4,
-  ../../..//context/ui/pages/apertures-tab.md, context/DESIGN_SYSTEM.md
+  context/ui/pages/apertures-tab.md, context/DESIGN_SYSTEM.md
 ---
 
 # Phase 4 — Frontend
