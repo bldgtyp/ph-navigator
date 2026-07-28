@@ -56,6 +56,30 @@ runtime dependency.
 - **No general ETL** — datasets are hand-curated JSON tables, not feeds.
 - **No move of open seed data** (`backend/seeds/*` stays; `decisions.md` §D-2).
 
+## 3a. Dataset inventory — what migrates, what doesn't (added 2026-07-28)
+
+Every known dataset, its current home, and its disposition. The rule of
+thumb: the pipeline carries **bulk licensed data tables**; code carries
+**method parameters** (`decisions.md` §D-11); in-repo seeds carry **own or
+synthetic data** (§D-2).
+
+| Dataset | Today | Disposition |
+| --- | --- | --- |
+| **ASHRAE surface films** (HoF 2017 Ch. 26) | R2, unversioned key, published by shell | ✅ **migrates first** — Phases 1–3 |
+| **ISO 6946 surface films** | in code (`ISO_6946_TABLE`) | **stays in code** — the boundary-conditions packet's deliberate call: it is the default, the values are quoted in its published PRD, and a deployment with no private store must still compute U-values. Method-parameter class (§D-11). |
+| **ISO 10456 µ/sd values** | doesn't exist yet | **born in the pipeline** — `iso10456-vapor-mu`, Phase 4 |
+| **ASHRAE HoF Ch. 26 Table 4 vapour permeance** (North-American sheathings, papers, coatings) | doesn't exist yet | **born in the pipeline** when the condensation feature wants it — a sibling dataset (`ashrae-f17-vapor-permeance`), same shape as the µ set. Not scheduled until a consumer asks. |
+| **Phius / PHI climate bundles** | R2, versioned `(provider, version)` keys, manual publish | **deferred** (§D-8) — the *publishing* migrates at the next climate release; the read path and keys are already pipeline-shaped |
+| **ISO 13788 interior-climate constants** (occupancy RH ramps, humidity-class Δp, psat coefficients, δ₀) | future — condensation engine Phase 2 | **in code** — method parameters integral to implementing the standard, same class as ISO 6946 films (§D-11); already quoted in that feature's committed research docs |
+| **Own catalog seeds** (materials/glazings/frames/apertures, `backend/seeds/`) | in-repo | **stays in-repo** (§D-2) — synthetic/own data; zero-credential dev and CI story |
+| **Census locality artifacts** | in-repo | stays — public domain, not this feature's concern |
+| **Heavy local-only fixtures** (Hillandale `.hbjson`) | local-only via env var | unchanged; Q-3 records the possibility of riding the pipeline later |
+
+End state after Phase 4: **every licensed data table an operator ever
+published by hand either flows through `phn-data` or is explicitly
+grandfathered with a named revisit trigger** (climate: next release). Nothing
+licensed remains that requires a shell to update.
+
 ## 4. The `phn-data` repo (source of truth)
 
 Private GitHub repo under `bldgtyp` (name = open question Q-1; working name

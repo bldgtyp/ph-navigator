@@ -111,6 +111,25 @@ climate release next forces the question; the pipeline's layout
 (`datasets/<slug>/<version>/`) deliberately mirrors theirs so the move is
 mechanical later.
 
+### D-11. Method parameters stay in code — the line, stated ⚠️ Ed ratifies
+
+There is a de facto line the repo has already drawn twice and never named:
+**small constant sets integral to implementing a standard live in code**
+(the ISO 6946 film table; next, the condensation engine's psat coefficients,
+δ₀, ISO 13788 occupancy RH ramps and humidity-class Δp — all already quoted
+in that feature's committed planning docs), while **bulk data tables route
+through the private store** (ASHRAE films, ISO 10456 µ, climate bundles).
+
+The distinction is defensible — you cannot implement a method without its
+parameters, and a handful of constants in standards-implementing code with a
+citation is normal practice everywhere — but it *is* a judgment call about
+licensed sources, and it should be a ratified decision rather than drift.
+The practical test used so far: **if the values fit legibly in the
+implementing function's docstring-adjacent code and are already quoted in a
+committed planning doc, they are method parameters; if they are a table you
+would paginate, they are data.** → Ed ratifies (or redraws) the line; the
+`PRD.md` §3a inventory applies it dataset by dataset.
+
 ### D-9. Two dataset kinds, explicit in the registry ✅
 
 `runtime_read` (fetched at serve time, cached, cache-reset hook, typed
