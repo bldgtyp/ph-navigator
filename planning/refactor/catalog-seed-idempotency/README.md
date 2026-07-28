@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-20
-TIME: 08:27 EDT
-STATUS: Deferred
+DATE: 2026-07-28
+TIME: 11:24 EDT
+STATUS: Ready to implement
 AUTHOR: Claude with Ed May
 SCOPE: Router for the catalog seed-script idempotency defect (materials,
   glazings, frames).

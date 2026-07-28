@@ -137,12 +137,15 @@ remains is sequencing, not decisions:
 | ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
+| ⚠️ `planning/features/licensed-data-pipeline/` | *New 2026-07-28 (Ed): infra-first prerequisite for the µ **seeding run** only.* The Q-3 "private DB" decision left publish/apply manual (Render shell); the pipeline packet automates it (private `phn-data` repo → CI → R2 → `db_seed` apply). Phases 0–1 here do **not** wait on it; the seed itself (pipeline Phase 4) does. |
 | ⚠️ **Q-8 — screen `unconditioned_space`?** | *New 2026-07-28.* The value exists and gets a film, but Ft is modelled nowhere and both prerequisite packets deferred it here. Recommendation: **not screened in v1** (same treatment as `ground`); a nullable `adjacent_temp_factor` is an additive v1.1. Not blocking. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-**Both external prerequisites are cleared**, so nothing outside this packet gates
-it. What remains is Phase 0 (the coverage probe) plus two calls that can be made
-during it — the composite-stud policy and Q-8.
+**Both original external prerequisites are cleared.** One new external
+sequencing item exists (the licensed-data pipeline, above) but it gates only
+the µ seeding run — Phase 0 (the coverage probe) and Phase 1 (the fields) are
+free to start now, along with the two calls that can be made during Phase 0:
+the composite-stud policy and Q-8.
 
 ### The vapour fields are this feature's own work, not a dependency
 

@@ -49,7 +49,13 @@ Modelled on the **PHI Condensation Tool v1.7.5**
      loader only (Q-3). The boundary-conditions work has since proved that path
      end-to-end for the ASHRAE surface films.
 
-## Dependencies — both cleared ✅
+## Dependencies — both cleared ✅ (plus one new infra split, 2026-07-28)
+
+➕ **`planning/features/licensed-data-pipeline/`** — split out 2026-07-28
+(Ed). Automates the licensed-data publish/apply path (private `phn-data` repo
+→ CI → R2 → `db_seed` apply) that Q-3 decided but left manual. Gates only the
+µ **seeding run** (its Phase 4 = our seed's dry-run); Phases 0–1 here proceed
+in parallel.
 
 ✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/`** — all four
 phases, shipped 2026-07-26 (rendering reworked 07-27). Assemblies hold membrane

@@ -1,7 +1,7 @@
 ---
-DATE: 2026-07-20
-TIME: 08:27 EDT
-STATUS: Deferred
+DATE: 2026-07-28
+TIME: 11:24 EDT
+STATUS: Ready to implement
 AUTHOR: Claude with Ed May
 SCOPE: Current mitigation state and remaining work for catalog seed
   idempotency.
@@ -48,6 +48,15 @@ rather than extended to the other two scripts. Verified in the plan against the
 current pipeline — no import-semantics change, and the transition is local/CI
 only (there is no production catalog to migrate; the scripts are hard-guarded to
 the dev database).
+
+Independently reviewed 2026-07-28 (upstream/downstream consequence check): the
+approach was confirmed correct and the plan updated in place. Additions worth
+knowing: the id derivation is namespaced by catalog `kind` and keyed on `name`
+alone; the guard test also excludes the `PHN-Default-*` sentinel names; the
+transition ship-note now spells out both paths (`make db-seed` wipes local
+users/sessions/projects; the catalog-only alternative preserves them but can
+leave dangling `catalog_origin` references); and matched rows remain skip-only,
+so seeds insert missing rows but never update existing ones.
 
 No deadline. Nothing is blocked on this; the failure mode only bites someone who
 runs a standalone catalog seed target against an already-populated database.
