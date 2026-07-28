@@ -223,6 +223,12 @@ export type ApertureCommand =
       operation: ApertureOperation | null;
     }
   | {
+      kind: "setElementKind";
+      aperture_type_id: string;
+      element_ids: string[];
+      element_kind: ApertureElementKind;
+    }
+  | {
       kind: "editDimension";
       aperture_type_id: string;
       axis: "row" | "column";

@@ -52,6 +52,23 @@ def find_element(
     )
 
 
+def find_elements(
+    entry: ApertureTypeEntry,
+    element_ids: list[str],
+) -> list[tuple[int, ApertureElement]]:
+    """Resolve a batch before mutation so missing ids fail atomically."""
+    by_id = {element.id: (index, element) for index, element in enumerate(entry.elements)}
+    missing_ids = list(dict.fromkeys(element_id for element_id in element_ids if element_id not in by_id))
+    if missing_ids:
+        raise api_error(
+            status.HTTP_404_NOT_FOUND,
+            "aperture_element_not_found",
+            "One or more aperture elements were not found.",
+            {"aperture_type_id": entry.id, "missing_ids": missing_ids},
+        )
+    return [by_id[element_id] for element_id in element_ids]
+
+
 def replace_aperture(
     body: ProjectDocumentV1,
     aperture_idx: int,
@@ -73,6 +90,18 @@ def replace_element(
     next_elements[element_idx] = element
     next_aperture = aperture.model_copy(update={"elements": next_elements})
     return replace_aperture(body, aperture_idx, next_aperture)
+
+
+def require_glazed_element(element: ApertureElement, *, action: str) -> None:
+    """Reject assignment edits that are meaningless for a void element."""
+    if element.kind == "glazed":
+        return
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "aperture_element_is_void",
+        "Empty aperture elements cannot carry window assignments.",
+        {"element_id": element.id, "action": action},
+    )
 
 
 def build_audit(kind: str, actor_user_id: str, **payload: object) -> dict[str, object]:

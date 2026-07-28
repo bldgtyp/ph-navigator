@@ -18,10 +18,12 @@ Notes on the add / delete rules:
 - **Add at index *i*:** elements with ``span_start >= i`` shift outward
   by ``+1``; elements that straddle the insertion line
   (``span_start < i <= span_end``) extend their ``span_end`` by ``+1``
-  so the new line passes through them transparently. For columns of the
-  inserted row that are *not* already covered by a straddling element,
-  one new default-frame / default-glazing element is created (via the
-  Phase 01 factory's catalog reader).
+  so the new line passes through them transparently. This applies to
+  void elements too: inserting through a void intentionally grows the
+  "not window" region. For columns of the inserted row that are *not*
+  already covered by a straddling element, one new default-frame /
+  default-glazing element is created (via the Phase 01 factory's
+  catalog reader).
 
 - **Delete at index *i*:** elements whose entire span ``== [i, i]``
   become orphans and are dropped; elements that straddle shrink their

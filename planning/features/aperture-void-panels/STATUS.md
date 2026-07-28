@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+STATUS: Active — Phases 1–2 complete; Phase 3 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -40,10 +40,18 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   green. Full `make ci`: backend `1595 passed, 7 skipped`; frontend `245`
   files / `2294` tests passed, all structural guards and production build
   green.
+- 2026-07-28 — Phase 2 implemented: atomic batch `setElementKind`,
+  unconditional assignment clearing for Empty elements, server guards across
+  operation/pick/paste, uniform-kind merge enforcement, kind-preserving
+  merge/split, documented straddle growth and delete-to-all-void behavior,
+  frontend command typing, and MCP dispatch coverage. Focused suite:
+  `75 passed, 1 skipped`; simplify reuse/quality/efficiency review complete
+  with all findings resolved. Full `make ci`: backend `1609 passed, 7
+  skipped`; frontend `245` files / `2294` tests passed.
 
 ## Next step
 
-Implement Phase 2 (`phases/phase-02-command.md`).
+Implement Phase 3 (`phases/phase-03-consumers.md`).
 
 ## Blockers
 
@@ -55,6 +63,8 @@ Implement Phase 2 (`phases/phase-02-command.md`).
 | --- | --- | --- |
 | 1 | focused backend + frontend type checks | `79 passed, 1 skipped`; TypeScript green |
 | 1 | `make ci` | Green — backend 1595 passed; frontend 2294 passed |
-| 2–5 | `make ci` per phase | — |
+| 2 | focused backend + frontend type checks | `75 passed, 1 skipped`; TypeScript green |
+| 2 | `make ci` | Green — backend 1609 passed; frontend 2294 passed |
+| 3–5 | `make ci` per phase | — |
 | 4 | agent-browser smoke (S15 layout build) | — |
 | 5 | Route-3 → GH schema parse + Rhino visual check (Ed) | — |

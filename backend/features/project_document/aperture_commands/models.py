@@ -15,6 +15,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.document import (
+    ApertureElementKind,
     ApertureOperation,
     FrameRef,
     GlazingRef,
@@ -69,6 +70,14 @@ class SetElementOperation(BaseModel):
     operation: ApertureOperation | None = None
 
 
+class SetElementKind(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["setElementKind"] = "setElementKind"
+    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    element_ids: list[str] = Field(min_length=1, max_length=400)
+    element_kind: ApertureElementKind
+
+
 # ---- Stubs (handlers raise not_implemented; ship in later phases) ----
 
 
@@ -117,7 +126,7 @@ class MergeElements(BaseModel):
     The element ids must reference elements within the same
     ``aperture_type_id`` and form a contiguous rectangle (no holes,
     no overlaps, no L-shapes). The merged element inherits its 6
-    assignment fields (operation, glazing, four frames) and its
+    assignment fields (operation, glazing, four frames), ``kind``, and
     ``name`` from the top-left source — sorted by
     ``row_span[0]`` then ``column_span[0]``.
     """
@@ -132,9 +141,10 @@ class SplitElement(BaseModel):
     """Explode a multi-cell element into one fresh 1×1 element per cell.
 
     Requires ``row_span`` or ``column_span`` to cover more than one
-    cell. Every new element inherits the source's 6 assignment fields
-    and ``name``. Catalog-origin ``synced_at`` is re-stamped on the
-    copies so Phase 12 drift detection treats them as distinct picks.
+    cell. Every new element inherits the source's 6 assignment fields,
+    ``kind``, and ``name``. Catalog-origin ``synced_at`` is re-stamped
+    on the copies so Phase 12 drift detection treats them as distinct
+    picks.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -237,6 +247,7 @@ ApertureCommand = Annotated[
         | DeleteApertureType
         | SetElementName
         | SetElementOperation
+        | SetElementKind
         | EditDimension
         | AddRow
         | AddColumn
@@ -262,6 +273,7 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "deleteApertureType": "project_version_aperture_type_delete",
     "setElementName": "project_version_aperture_element_set_name",
     "setElementOperation": "project_version_aperture_element_set_operation",
+    "setElementKind": "project_version_aperture_element_set_kind",
     "editDimension": "project_version_aperture_dimension_edit",
     "addRow": "project_version_aperture_row_add",
     "addColumn": "project_version_aperture_column_add",

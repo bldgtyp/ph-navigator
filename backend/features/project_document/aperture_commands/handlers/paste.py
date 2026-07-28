@@ -17,8 +17,10 @@ from starlette import status
 
 from features.project_document.aperture_commands.handlers._shared import (
     build_audit,
+    find_elements,
     find_entry,
     replace_aperture,
+    require_glazed_element,
 )
 from features.project_document.aperture_commands.models import PasteAssignment
 from features.project_document.apertures.factories import DefaultsCatalogReader
@@ -33,26 +35,12 @@ def apply_paste_assignment(
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, entry = find_entry(body, command.aperture_type_id)
-    by_id = {el.id: (i, el) for i, el in enumerate(entry.elements)}
-
-    if command.source_element_id not in by_id:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "Paste source element was not found in the aperture type.",
-            {
-                "aperture_type_id": entry.id,
-                "source_element_id": command.source_element_id,
-            },
-        )
-    missing_targets = [tid for tid in command.target_element_ids if tid not in by_id]
-    if missing_targets:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "One or more paste targets were not found in the aperture type.",
-            {"aperture_type_id": entry.id, "missing_ids": missing_targets},
-        )
+    resolved = find_elements(
+        entry,
+        [command.source_element_id, *command.target_element_ids],
+    )
+    _, source = resolved[0]
+    targets = resolved[1:]
     if command.source_element_id in command.target_element_ids:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -61,10 +49,12 @@ def apply_paste_assignment(
             {"source_element_id": command.source_element_id},
         )
 
-    _, source = by_id[command.source_element_id]
+    require_glazed_element(source, action="pasteAssignmentSource")
+    for _, target in targets:
+        require_glazed_element(target, action="pasteAssignmentTarget")
+
     next_elements = list(entry.elements)
-    for target_id in command.target_element_ids:
-        idx, target = by_id[target_id]
+    for idx, target in targets:
         next_elements[idx] = target.model_copy(
             update={
                 "operation": source.operation.model_copy(deep=True) if source.operation else None,

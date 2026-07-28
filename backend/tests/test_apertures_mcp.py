@@ -218,6 +218,40 @@ def test_apply_aperture_command_renames_aperture_and_tags_audit_with_mcp(
     assert draft["updated_via"] == "mcp"
 
 
+def test_apply_aperture_command_sets_element_kind_through_mcp(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+    _issue_token(client, project_id, monkeypatch, ["project:read", "project:write"])
+
+    result = tool_apply_aperture_command(
+        project_id,
+        version_id,
+        {
+            "kind": "setElementKind",
+            "aperture_type_id": "apt_A",
+            "element_ids": ["aptel_A1"],
+            "element_kind": "void",
+        },
+        cast(Context, None),
+        allow_env_token=True,
+        if_match_version=saved_etag,
+    )
+
+    response = cast(dict[str, object], result["response"])
+    apertures = cast(list[dict[str, object]], response["apertures"])
+    elements = cast(list[dict[str, object]], apertures[0]["elements"])
+    assert elements[0]["kind"] == "void"
+    audit = cast(dict[str, object], result["audit"])
+    assert audit["action_kind"] == "project_version_aperture_element_set_kind"
+
+
 def test_apply_aperture_command_rejects_project_document_over_size_limit(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,

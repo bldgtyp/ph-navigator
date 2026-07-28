@@ -20,6 +20,7 @@ from features.project_document.aperture_commands.handlers.dimensions import (
     apply_edit_dimension,
 )
 from features.project_document.aperture_commands.handlers.element import (
+    apply_set_element_kind,
     apply_set_element_name,
     apply_set_element_operation,
 )
@@ -67,6 +68,7 @@ _HANDLERS: dict[str, _Handler] = {
     "deleteApertureType": cast(_Handler, apply_delete_aperture_type),
     "setElementName": cast(_Handler, apply_set_element_name),
     "setElementOperation": cast(_Handler, apply_set_element_operation),
+    "setElementKind": cast(_Handler, apply_set_element_kind),
     "editDimension": cast(_Handler, apply_edit_dimension),
     "addRow": cast(_Handler, apply_add_row),
     "addColumn": cast(_Handler, apply_add_column),
@@ -110,5 +112,7 @@ def apply_aperture_command(
             {"kind": kind},
         )
     next_body, audit = handler(body, command, actor_user_id, catalog)
+    if next_body is body:
+        return body, audit
     validated = validate_document(next_body.model_dump(mode="json"))
     return validated, audit
