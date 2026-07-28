@@ -8,6 +8,7 @@ SCOPE: Current mitigation state and remaining work for catalog seed
 RELATED:
   - ./README.md
   - ./PRD.md
+  - ./PLAN.md
 ---
 
 # Status — Catalog seed idempotency
@@ -39,10 +40,14 @@ database still duplicates. Only callers that pass the flag are protected.
 
 ## Next step
 
-Pick up PRD options **B + D** together — add the same flag to the glazing and
-frame seeders and delete the unreachable `counts.new == 0` guard from all three.
-Small and self-contained. Option **A** (stable ids in the seed files) is the
-real fix and needs an owner plus a de-dupe plan for existing databases.
+Implement `PLAN.md`, which now specifies the real fix (option A: deterministic
+ids baked into the three seed files) plus retiring the dead guard (option D).
+The plan supersedes the earlier "B + D" holding recommendation: with stable ids
+the import is idempotent by design, so the `--skip-if-not-empty` flag is retired
+rather than extended to the other two scripts. Verified in the plan against the
+current pipeline — no import-semantics change, and the transition is local/CI
+only (there is no production catalog to migrate; the scripts are hard-guarded to
+the dev database).
 
 No deadline. Nothing is blocked on this; the failure mode only bites someone who
 runs a standalone catalog seed target against an already-populated database.

@@ -7,6 +7,7 @@ SCOPE: Router for the catalog seed-script idempotency defect (materials,
   glazings, frames).
 RELATED:
   - ./PRD.md
+  - ./PLAN.md
   - ./STATUS.md
   - ../../../backend/scripts/seed_materials_catalog.py
   - ../../../backend/scripts/seed_glazing_catalog.py
@@ -26,7 +27,9 @@ Observed 2026-07-20 during unrelated CI work: two consecutive runs of
 Read in this order:
 
 1. `PRD.md` — symptom, verified root cause, blast radius, resolution options.
-2. `STATUS.md` — what is mitigated today and what remains.
+2. `PLAN.md` — implementation plan for the real fix (option A: stable ids in
+   the seed files) plus retiring the dead guard.
+3. `STATUS.md` — what is mitigated today and what remains.
 
 ## One-line summary
 
