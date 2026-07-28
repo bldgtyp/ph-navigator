@@ -87,6 +87,7 @@ export type ProjectFrameRead = ProjectFrame & {
 
 export type ApertureOperationType = "swing" | "slide";
 export type ApertureOperationDirection = "left" | "right" | "up" | "down";
+export type ApertureElementKind = "glazed" | "void";
 
 export type ApertureOperation = {
   type: ApertureOperationType;
@@ -105,6 +106,7 @@ export type ApertureElementFrames = {
 export type ApertureElement = {
   id: string;
   name: string;
+  kind: ApertureElementKind;
   row_span: [number, number];
   column_span: [number, number];
   frames: ApertureElementFrames;

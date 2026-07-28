@@ -45,6 +45,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
   return {
     id: "aptel_1",
     name: "E",
+    kind: "glazed",
     row_span: [0, 0],
     column_span: [0, 0],
     frames: {

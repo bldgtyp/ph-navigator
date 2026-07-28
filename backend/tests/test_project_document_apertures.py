@@ -42,6 +42,7 @@ from features.project_document.document import (
     APERTURE_DEFAULT_GLAZING_NAME,
     ApertureElement,
     ApertureElementFrames,
+    ApertureElementKind,
     ApertureOperation,
     ApertureTypeEntry,
     CatalogOrigin,
@@ -107,11 +108,13 @@ def _element(
     name: str = "Unnamed",
     row_span: tuple[int, int] = (0, 0),
     column_span: tuple[int, int] = (0, 0),
+    kind: ApertureElementKind = "glazed",
     operation: ApertureOperation | None = None,
 ) -> ApertureElement:
     return ApertureElement(
         id=id,
         name=name,
+        kind=kind,
         row_span=row_span,
         column_span=column_span,
         frames=ApertureElementFrames(),
@@ -154,6 +157,20 @@ def test_aperture_type_2x2_four_elements_validates() -> None:
             _element(id="aptel_TR", row_span=(0, 0), column_span=(1, 1)),
             _element(id="aptel_BL", row_span=(1, 1), column_span=(0, 0)),
             _element(id="aptel_BR", row_span=(1, 1), column_span=(1, 1)),
+        ],
+    )
+    check_aperture_coverage(entry)
+
+
+def test_aperture_type_coverage_accepts_void_elements() -> None:
+    entry = _aperture(
+        row_heights_mm=[1000.0, 1000.0],
+        column_widths_mm=[1000.0, 1000.0],
+        elements=[
+            _element(id="aptel_TL", row_span=(0, 0), column_span=(0, 0)),
+            _element(id="aptel_TR", row_span=(0, 0), column_span=(1, 1)),
+            _element(id="aptel_BL", row_span=(1, 1), column_span=(0, 0)),
+            _element(id="aptel_BR", row_span=(1, 1), column_span=(1, 1), kind="void"),
         ],
     )
     check_aperture_coverage(entry)
@@ -249,6 +266,49 @@ def test_aperture_element_rejects_empty_name() -> None:
                 "glazing_id": None,
             }
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("frames", {"top": "pfrm_top", "right": None, "bottom": None, "left": None}),
+        ("glazing_id", "pglz_glass"),
+        ("operation", {"type": "swing", "directions": ["left"]}),
+    ],
+)
+def test_void_aperture_element_rejects_assignments(field: str, value: object) -> None:
+    payload: dict[str, object] = {
+        "id": "aptel_void",
+        "kind": "void",
+        "row_span": [0, 0],
+        "column_span": [0, 0],
+        "frames": {"top": None, "right": None, "bottom": None, "left": None},
+        "glazing_id": None,
+        "operation": None,
+    }
+    payload[field] = value
+
+    with pytest.raises(ValidationError, match="must not carry frames/glazing/operation"):
+        ApertureElement.model_validate(payload)
+
+
+def test_aperture_element_kind_defaults_to_glazed() -> None:
+    legacy_payload = {
+        "id": "aptel_existing",
+        "name": "Existing",
+        "row_span": [0, 0],
+        "column_span": [0, 0],
+        "frames": {"top": None, "right": None, "bottom": None, "left": None},
+        "glazing_id": None,
+        "operation": None,
+    }
+    element = ApertureElement.model_validate(legacy_payload)
+    serialized = element.model_dump(mode="json")
+    round_tripped = ApertureElement.model_validate(serialized)
+
+    assert element.kind == "glazed"
+    assert round_tripped == element
+    assert {key: serialized[key] for key in legacy_payload} == legacy_payload
 
 
 def test_aperture_operation_rejects_duplicate_directions() -> None:

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — planning accepted; ready to start Phase 1
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -32,12 +32,18 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   `no_glazed_elements` warning + export 422; F-6 straddle-grows-voids
   documented + tested; F-7 pick/paste guard retargeted to
   `usePickPasteHandlers.ts` + paste-undo integrity fix.
-- No code changes yet. No branch yet.
+- 2026-07-28 — Phase 1 implemented on
+  `feature/aperture-void-panels`: backend schema/default/void invariant,
+  `project_document.document` re-export, frontend wire/domain mirror and
+  hydration, schema/coverage/legacy-default/MCP `replace_table` regressions.
+  Focused backend suite: `79 passed, 1 skipped`; frontend TypeScript build:
+  green. Full `make ci`: backend `1595 passed, 7 skipped`; frontend `245`
+  files / `2294` tests passed, all structural guards and production build
+  green.
 
 ## Next step
 
-Start Phase 1 (`phases/phase-01-schema.md`) on a feature branch
-(`feature/aperture-void-panels`).
+Implement Phase 2 (`phases/phase-02-command.md`).
 
 ## Blockers
 
@@ -47,6 +53,8 @@ Start Phase 1 (`phases/phase-01-schema.md`) on a feature branch
 
 | Phase | Gate | Result |
 | --- | --- | --- |
-| 1–5 | `make ci` per phase | — |
+| 1 | focused backend + frontend type checks | `79 passed, 1 skipped`; TypeScript green |
+| 1 | `make ci` | Green — backend 1595 passed; frontend 2294 passed |
+| 2–5 | `make ci` per phase | — |
 | 4 | agent-browser smoke (S15 layout build) | — |
 | 5 | Route-3 → GH schema parse + Rhino visual check (Ed) | — |

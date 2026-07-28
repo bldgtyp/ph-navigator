@@ -47,6 +47,7 @@ APERTURE_DEFAULT_GLAZING_ID = "recPHNDefGlazng01"
 
 ApertureOperationType = Literal["swing", "slide"]
 ApertureOperationDirection = Literal["left", "right", "up", "down"]
+ApertureElementKind = Literal["glazed", "void"]
 
 
 class CatalogOrigin(BaseModel):
@@ -489,19 +490,21 @@ class ApertureElementFrames(BaseModel):
 
 
 class ApertureElement(BaseModel):
-    """One sash inside an aperture type, spanning a contiguous grid rectangle.
+    """One layout element inside an aperture type, spanning a grid rectangle.
 
     `name` defaults to "Unnamed" so newly created elements are valid
     without an explicit label; empty / whitespace-only names are rejected
     at validation time. `operation=None` means Fixed. `row_span` /
     `column_span` are inclusive on both ends; coverage of the aperture
     grid is enforced by `check_aperture_coverage` (no holes, no overlaps).
+    Void elements tile the layout but carry no window assignments.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=r"^aptel_[A-Za-z0-9_-]+$", max_length=80)
     name: str = Field(default="Unnamed", min_length=1, max_length=200)
+    kind: ApertureElementKind = "glazed"
     row_span: tuple[int, int]
     column_span: tuple[int, int]
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
@@ -527,6 +530,16 @@ class ApertureElement(BaseModel):
         if start > end:
             raise ValueError("span start must be <= end")
         return value
+
+    @model_validator(mode="after")
+    def _validate_kind_assignments(self) -> ApertureElement:
+        if self.kind == "void" and (
+            any((self.frames.top, self.frames.right, self.frames.bottom, self.frames.left))
+            or self.glazing_id is not None
+            or self.operation is not None
+        ):
+            raise ValueError("ApertureElement(kind=void) must not carry frames/glazing/operation")
+        return self
 
 
 class ApertureTypeEntry(BaseModel):

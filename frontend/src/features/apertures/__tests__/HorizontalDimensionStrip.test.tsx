@@ -12,6 +12,7 @@ function fixture(columns: number[]): ApertureTypeEntry {
     elements: columns.map((_, i) => ({
       id: `aptel_${i}`,
       name: "Unnamed",
+      kind: "glazed",
       row_span: [0, 0],
       column_span: [i, i],
       frames: { top: null, right: null, bottom: null, left: null },

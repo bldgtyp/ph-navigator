@@ -45,6 +45,7 @@ function element(name = "W1"): ApertureElement {
   return {
     id: "aptel_1",
     name,
+    kind: "glazed",
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: frame(), right: frame(), bottom: frame(), left: frame() },

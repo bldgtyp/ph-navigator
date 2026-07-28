@@ -10,6 +10,7 @@ function element(
   return {
     id,
     name: id,
+    kind: "glazed",
     row_span: rowSpan,
     column_span: columnSpan,
     frames: { top: null, right: null, bottom: null, left: null },
