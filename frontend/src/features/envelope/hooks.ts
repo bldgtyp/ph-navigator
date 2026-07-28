@@ -22,6 +22,7 @@ import type {
   EnvelopeCommand,
   EnvelopeReadResponse,
   EnvelopeReadSource,
+  ThermalStandardsResponse,
 } from "./types";
 
 export function useEnvelopeReadQuery(
@@ -53,6 +54,7 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
     },
     onSuccess: (slice, variables) => {
       queryClient.setQueryData(envelopeQueryKeys.read(projectId, slice.version_id, "draft"), slice);
+      writeActiveThermalStandard(queryClient, projectId, slice.version_id, variables.command);
       invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
       if (statusSummaryInvalidationCommands.has(variables.command.kind)) {
@@ -237,6 +239,29 @@ export function useEnvelopeAttachmentMutation({
       onError(errorMessage(error, "Attachment update failed."));
     },
   });
+}
+
+// The active standard lives in its own query rather than the command's response
+// slice, and `thermal-standards` is a sibling of the `thermal` key, not a child
+// — so neither line above refreshes it, and the selector kept showing the
+// previous standard until a save changed the query's key.
+//
+// Written rather than invalidated so the select never flashes back to the old
+// label while a refetch is in flight. Writing the requested value is safe: the
+// backend resolves the film table *before* storing it, so a success means this
+// exact standard landed, and availability is a deployment fact that no command
+// can change.
+function writeActiveThermalStandard(
+  queryClient: QueryClient,
+  projectId: string,
+  versionId: string,
+  command: EnvelopeCommand,
+): void {
+  if (command.kind !== "set_thermal_standard") return;
+  queryClient.setQueryData<ThermalStandardsResponse>(
+    envelopeQueryKeys.thermalStandards(projectId, versionId, "draft"),
+    (current) => (current ? { ...current, active: command.thermal_standard } : current),
+  );
 }
 
 function invalidateThermalQueries(

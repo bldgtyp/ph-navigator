@@ -405,20 +405,7 @@ describe("EnvelopePage", () => {
   });
 
   test("choosing a standard sends the project-wide command", async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.includes("/envelope/thermal-standards?")) {
-        return Promise.resolve(
-          jsonResponse({
-            active: "iso_6946",
-            options: [
-              { thermal_standard: "iso_6946", label: "ISO 6946", available: true },
-              { thermal_standard: "ashrae", label: "ASHRAE Fundamentals", available: true },
-            ],
-          } satisfies ThermalStandardsResponse),
-        );
-      }
-      return defaultFetchImplementation(url);
-    });
+    mockBothStandardsAvailable();
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const select = await screen.findByRole("combobox", { name: "Surface film standard" });
@@ -435,6 +422,20 @@ describe("EnvelopePage", () => {
         thermal_standard: "ashrae",
       });
     });
+  });
+
+  test("the selector shows the new standard immediately, without a save", async () => {
+    // The standards endpoint keeps answering `iso_6946` — a save is what would
+    // normally make it re-serve. The select must still settle on ASHRAE, or the
+    // control silently snaps back to the standard the user just replaced.
+    mockBothStandardsAvailable();
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const select = await screen.findByRole("combobox", { name: "Surface film standard" });
+    await userEvent.selectOptions(select, "ashrae");
+
+    await waitFor(() => expect(select).toBeEnabled());
+    expect(select).toHaveValue("ashrae");
   });
 
   test("thermal tooltip discloses the films, the standard, and the construction-only value", async () => {
@@ -1955,6 +1956,29 @@ function commandRequestBodies(): unknown[] {
   return fetchMock.mock.calls
     .filter((call) => String(call[0]).includes("/draft/envelope/commands"))
     .map((call) => JSON.parse(call[1]?.body as string));
+}
+
+// A deployment where an operator HAS published the ASHRAE table, so the standard
+// is actually selectable. The standards endpoint keeps answering `iso_6946`
+// throughout: refetching it must not be what makes the selector correct.
+function mockBothStandardsAvailable(): void {
+  fetchMock.mockImplementation((url: string) => {
+    if (url.includes("/envelope/thermal-standards?")) {
+      return Promise.resolve(
+        jsonResponse({
+          active: "iso_6946",
+          options: [
+            { thermal_standard: "iso_6946", label: "ISO 6946", available: true },
+            { thermal_standard: "ashrae", label: "ASHRAE Fundamentals", available: true },
+          ],
+        } satisfies ThermalStandardsResponse),
+      );
+    }
+    if (url.includes("/draft/envelope/commands")) {
+      return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+    }
+    return defaultFetchImplementation(url);
+  });
 }
 
 // ASHRAE unavailable by default: that is the state of a deployment where no
