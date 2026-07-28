@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-26
+UPDATED: 2026-07-28 — both prerequisites shipped; §D-15 reconciles as-built
 TIME: 10:14 EDT
-STATUS: Active — open questions unresolved, awaiting Ed
+STATUS: Active — Q-1…Q-7 resolved, prerequisites cleared, Q-8 newly open
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Interrogation of the feature from several angles, the design decisions it
   forces, edge cases, and the open questions that block a build.
@@ -266,13 +267,21 @@ as a stack of callouts at the top of modal tier 1.
 Split out to `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (all four phases shipped 2026-07-26). A wall's sd is
 dominated by its membranes and coatings — in a typical 2×6 wall, 6-mil poly is
 ~95 % of the total, and the interior paint is comparable to the plywood — and
-PHN cannot represent either today. Running the engine on membrane-less
-assemblies produces a confident number for a wall that does not exist, wrong in a
+PHN could represent neither. Running the engine on membrane-less assemblies
+would have produced a confident number for a wall that does not exist, wrong in a
 direction that depends on which membrane is missing.
 
-**`assembly-membrane-layers` Phases 1–2 gate this feature's Phase 2.** The
-`vapor_sd_equivalent_m` field defined in `PRD.md` §4 is shared between the two;
-whichever ships first lands it.
+**✅ CLEARED 2026-07-26** — all four phases shipped and archived to
+`planning/archive/dated/2026-07-26/assembly-membrane-layers/`. Assemblies hold
+membrane layers (a `membrane` material category, excluded from R, single-segment,
+drawn as a reserved band); materials carry `air_permeance_l_s_m2_at_75pa`;
+`Assembly.air_barrier` designates a face with a three-state ASTM E2178 verdict.
+
+The `vapor_sd_equivalent_m` / `vapor_diffusion_resistance_mu` pair was
+**deliberately not** landed there — that packet scoped its Phase 1 to air
+permeance. The pair is unambiguously this feature's Phase 1, per `PRD.md` §4/§8.
+The earlier "whichever ships first lands it" note was about two features running
+in parallel; that ambiguity is gone.
 
 The air-barrier designation in that feature is explicitly **not** an input here —
 ISO 13788 ignores air leakage. But the two belong together in copy: convective
@@ -296,13 +305,29 @@ and **three of the four criteria** (surface condensation, mould growth, fRsi) ar
 evaluated at a *second* Rsi of 0.25 m²K/W. With no film model, three of four
 criteria cannot be computed.
 
-Split out to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. **Its Phase 1
-gates this feature's Phase 2**, alongside `assembly-membrane-layers` Phases 1–2.
-The two prerequisites are independent of each other and can proceed in parallel.
+**✅ CLEARED.** All four phases shipped 2026-07-26 → 2026-07-28 and archived to
+`planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. What this
+feature inherits is tabulated in `PRD.md` §2a; the short version is
+`resolve_surface_resistances()`, `ISO_13788_SURFACE_CHECK_RSI = 0.25`, a
+four-value `Assembly.exterior_condition`, and a live `thermal_standard` carrying
+both ISO 6946 (in code) and ASHRAE (private object store).
 
-That feature also carries Q-B1 — whether the header "Effective U-Value" starts
-including films — which is a live semantics question in today's app, independent
-of condensation.
+Q-B1 resolved *yes* — films are now in the thermal metric, so the header number
+moved for every project (IP R up, SI U down) and the
+`#assembly-thermal-metric` tooltip was rewritten to say so.
+
+**Two obligations came back with it**, both recorded in that packet as deferred
+*to this feature*:
+
+1. **Ft for `unconditioned_space`.** The films treat it identically to
+   `ventilated`, but the far-side temperature — the thing that actually
+   distinguishes an unheated garage from a rainscreen cavity — is modelled
+   nowhere. `PRD.md` §6.5 and Q-8 below.
+2. **The ventilated/unconditioned standard seam.** Both resolve `Rse = Rsi` via
+   ISO 6946 §6 under *whichever* table is loaded, so an ASHRAE project gets
+   ASHRAE numbers under an ISO rule on those two faces. Deliberately shipped and
+   disclosed in the selector's help text. Small, but the condensation screen
+   inherits it and the Assumptions tier should not pretend otherwise.
 
 ### D-12. Q-1 coverage — preliminary read, and a new problem ⚠️
 
@@ -375,6 +400,39 @@ Ed's related note — that HBJSON has no place to put membranes — is taken for
 `EnergyMaterial` with real thickness and conductivity, which round-trips today,
 with the membrane identity carried in the existing `ph_nav` block.
 
+### D-15. As-built reconciliation, 2026-07-28
+
+Both prerequisites shipped. Reading their archived packets and the merged code
+changed four things in this one — none of them a reversal, all of them
+tightenings:
+
+**(a) The sd-wins rule became load-bearing, not merely preferable.** §D-4's
+"if `sd` is set it wins" was argued on data honesty. As shipped, a membrane's
+`thickness_mm` is decoupled from everything visible — not drawn to scale (fixed
+9 mm band), excluded from Total Thickness, no R — and
+`membranes.should_snap_membrane_thickness` will **auto-rewrite it to 1 mm** when
+it is implausible. So `µ · d` on a membrane would read a number the app itself
+mutates. `sd` is now the only valid source for a membrane, and a membrane
+without one blocks the calculation rather than falling through.
+
+**(b) Total Thickness now excludes membranes** (reversed 2026-07-27, moved to
+`membranes.total_thickness_mm`). Only cosmetic here — the chip sits beside that
+metric in the header — but the docs should not repeat the old claim.
+
+**(c) The purity boundary is now a demonstrated constraint, not a preference.**
+The boundary-conditions work drafted the film-table lookup *inside* `thermal.py`
+and produced a real import cycle through the storage layer. The engine takes its
+table as an argument; so must ours (`PRD.md` §7).
+
+**(d) The inherited lesson worth the most.** From the membrane packet's Phase 4:
+*"every place that assumed 'layers' and 'layers with an R-value' were the same
+set needed revisiting once membranes existed, and the passing tests said nothing
+about any of it."* Five defects came out of that, four found in review rather
+than by a green suite. The Glaser engine inverts the bias — membranes contribute
+**nothing** to the temperature profile and **dominate** the vapour profile — so
+every layer loop has to declare which set it means. This is the single most
+likely source of a silent wrong answer in Phase 2.
+
 ---
 
 ## Part 3 — Edge cases
@@ -384,9 +442,12 @@ with the membrane identity carried in the existing `ph_nav` block.
 | E-1 | µ = ∞ (metals, glass, cellular glass) | No float sentinel. Use `sd ≥ 1500 m` as PHI's vapour-tight convention; document it. |
 | E-2 | Air cavity layers | ISO 13788 override `sd = 0.01 m`; never blocks (D-5). |
 | E-3 | Assembly with a single layer | Valid; only surface criteria are meaningful. |
-| E-4 | `Assembly.type == "other"` | No Rsi/Rse mapping and no roof −2 K rule. Either require a real type or default to wall with a visible note. → open. |
-| E-5 | Ground-contact floors | Rse = 0 and monthly ground temperature (PHN has `ClimateMonthlyTemps.ground_c`) — but ISO 13788's model is for air-facing elements. Recommend: **exclude floors-on-grade from v1** rather than produce a wrong answer. |
-| E-6 | Ventilated assemblies (rainscreen) | Workbook sets Rse = Rsi and treats the cavity as exterior. PHN has `rainscreen_insulation` category but no per-assembly "ventilated" flag. → needs a flag or an exclusion. |
+| E-4 | `Assembly.type == "other"` | ✅ **solved upstream** — resolves to horizontal heat flow, Rsi 0.13 (`boundary_conditions.py`, Q-B2). The roof −2 K rule is still ours: apply it on `type == "roof"` only. |
+| E-5 | Ground-contact floors | ✅ decided — `exterior_condition == "ground"` is expressible but **not screened** (`PRD.md` §6.5). Chip reads "not screened". |
+| E-6 | Ventilated assemblies (rainscreen) | ✅ **solved upstream** — `exterior_condition == "ventilated"` exists and resolves `Rse = Rsi` per ISO 6946 §6. In scope for the screen; treat the far side as outdoor air. |
+| E-6a | *(new)* `unconditioned_space` | Expressible, films identical to `ventilated`, but the far-side temperature (Ft) is modelled nowhere and was deferred here. Not screened in v1. → **Q-8**. |
+| E-6b | *(new)* Membrane with no `sd` | Blocks. Must not fall through to `µ · d` (the thickness is app-mutable, §D-15a) and must not be treated as an air cavity. |
+| E-6c | *(new)* All-membrane assembly | `thermal.py` already reports `no_thermal_layers` rather than dividing by zero; the condensation engine needs the equivalent guard, not a crash. |
 | E-7 | No climate source attached | Chip = "needs climate"; deep-link to the Climate tab. |
 | E-8 | Climate record missing dew point | Some EPW-derived / custom records may have `dewpoint_c` unset or zeroed. Must be validated, not assumed. |
 | E-9 | Assembly is all-insulation, zero R elsewhere | Guard divide-by-zero on `Σsd = 0` (a fully vapour-open stack). |
@@ -414,6 +475,21 @@ are folded into `PRD.md` and §§D-1, D-9, D-10, D-11.
 | Q-5 | Floors-on-grade and ventilated rainscreens | ✅ **excluded from the screen** — and the underlying gap became its own prerequisite feature (§D-11) |
 | Q-6 | Ma limit per project or per material? | ✅ per project, default 200 g/m² |
 | Q-7 | Export path or screen-only? | ✅ **screen-only, internal to PHN, preview not compliance** (§D-14) |
+
+### Q-8 — new, opened 2026-07-28
+
+**Does v1 screen `unconditioned_space` assemblies?** The value now exists and
+gets a surface film, but the far-side temperature (Ft) is modelled nowhere and
+both prerequisite packets deferred it here.
+
+- **Recommendation: no.** Report "not screened — adjacent space temperature not
+  modelled", exactly as `ground` is handled. Inventing a temperature for a space
+  nobody has described is the same class of error as serving ISO numbers under
+  an ASHRAE label.
+- **v1.1:** one nullable `Assembly.adjacent_temp_factor`, the PHI formula
+  `θe,eff = θi − (θi − θe)·Ft`, and a provenance line in the Assumptions tier.
+
+→ Ed's call, but not blocking: (1) is the safe default and (2) is additive.
 
 ## Part 5 — Non-blocking questions
 

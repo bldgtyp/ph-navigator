@@ -41,30 +41,45 @@ Modelled on the **PHI Condensation Tool v1.7.5**
    `sd` stored directly. Both fields are optional and backwards-compatible by
    construction. (`research.md` §6, `PRD.md` §4)
 
-3. **Two things could sink it**, and both are open questions, not code problems:
-   - **Catalog coverage** — if µ is unknown for most materials the chip reads
-     "not available" everywhere (Q-1, gate on a measurement).
-   - **Licensed data** — the µ tables we want are ISO 10456 / ASHRAE, and this
-     repo is public with a hard no-licensed-data rule (Q-3).
+3. **Two things could have sunk it; both are now settled** (2026-07-26):
+   - **Catalog coverage** — build it (Q-1). One live sub-question remains: 24 %
+     of the catalog is stud+cavity pseudo-materials with no single defensible µ
+     (`decisions.md` §D-12).
+   - **Licensed data** — µ values live in the private DB; the repo carries the
+     loader only (Q-3). The boundary-conditions work has since proved that path
+     end-to-end for the ASHRAE surface films.
 
-## Dependencies — two prerequisite features gate Phase 2
+## Dependencies — both cleared ✅
 
-✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/` Phases 1–2 — shipped 2026-07-26.** Membranes and
-coatings dominate a wall's vapour resistance and PHN cannot represent them yet.
-(`decisions.md` §D-10)
+✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/`** — all four
+phases, shipped 2026-07-26 (rendering reworked 07-27). Assemblies hold membrane
+layers, excluded from R, with `air_permeance_l_s_m2_at_75pa` and an air-barrier
+face designation. It deliberately did *not* land the vapour fields — those are
+this feature's Phase 1. (`decisions.md` §D-10)
 
-✅ **`planning/archive/dated/2026-07-28/assembly-boundary-conditions/` Phase 1 — landed
-2026-07-26.** Was blocking because `thermal.py` added no surface films at all
-and three of ISO 13788's four criteria are evaluated *at the surface*.
-`backend/features/envelope/boundary_conditions.py` now supplies both
-`resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`.
-(`decisions.md` §D-11)
+✅ **`planning/archive/dated/2026-07-28/assembly-boundary-conditions/`** — all
+four phases, 2026-07-26 → 2026-07-28. `boundary_conditions.py` supplies
+`resolve_surface_resistances()` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`;
+`Assembly.exterior_condition` has four values; `thermal_standard` carries both
+ISO 6946 and ASHRAE. (`decisions.md` §D-11)
 
-Independent of each other; can run in parallel. See `PRD.md` §2a.
+See `PRD.md` §2a for the full inherited-API table, and `decisions.md` §D-15 for
+what reading the as-built code changed here.
+
+## What came back with them
+
+- **Ft is now our obligation.** `unconditioned_space` is expressible and gets a
+  film, but nothing models the far-side temperature. New **Q-8**; recommendation
+  is "not screened" in v1, same as `ground`. (`PRD.md` §6.5)
+- **`sd` must win, and now must exist.** A membrane's thickness is app-mutable
+  (auto-snapped to 1 mm when implausible), so `µ · d` is not a valid fallback for
+  a membrane — a membrane without `sd` blocks. (`decisions.md` §D-15a)
+- **The engine takes its film table and climate as arguments.** Looking them up
+  inside the calculation produced a real import cycle last time.
 
 ## Phase map
 
-Phase 0 coverage probe → 1 material fields → **1½ both prerequisites
-(external)** → 2 engine + golden tests → 3 chip + "what's missing" state → 4
-modal verdict/diagrams → 5 modal numbers/assumptions. See `PRD.md` §8.
+Phase 0 coverage probe → 1 material fields (µ/sd) → ~~1½ prerequisites~~ ✅ done
+→ 2 engine + golden tests → 3 chip + "what's missing" state → 4 modal
+verdict/diagrams → 5 modal numbers/assumptions. See `PRD.md` §8.
 Phases 1–3 are independently valuable; work can stop after any.

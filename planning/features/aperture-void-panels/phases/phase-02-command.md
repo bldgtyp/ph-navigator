@@ -18,22 +18,24 @@ class SetElementKind(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["setElementKind"] = "setElementKind"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
-    element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
+    element_ids: list[str] = Field(min_length=1, max_length=400)
     element_kind: ApertureElementKind
 ```
 
-Note the field name `element_kind` — the union discriminator already uses
-`kind` for the command name; do not overload it.
+Notes: `element_kind`, not `kind` — the union discriminator already uses
+`kind` for the command name. `element_ids` is a **list** (review F-3,
+decisions A-5), mirroring `pasteAssignment`: one document write, one audit
+row, all-or-nothing (any unknown id fails the whole batch).
 
 - Add to the `ApertureCommand` union + `AUDIT_KIND_BY_APERTURE_COMMAND`
   (`"setElementKind": "project_version_aperture_element_set_kind"`).
 - Handler in `handlers/element.py` (alongside setElementName/Operation):
-  - →`void`: clear all four frames, `glazing_id`, `operation`, set kind.
-    (Per D-3 default: server clears unconditionally; the *frontend* owns the
-    confirm. If D-3 flips to hard-refuse, refuse when any assignment is set.)
+  - →`void`: clear all four frames, `glazing_id`, `operation`, set kind (D-3:
+    server clears unconditionally; the *frontend* owns the confirm).
   - →`glazed`: just set kind (element becomes a normal unfinished sash).
-  - No-op when kind already matches (return unchanged document, mirroring
-    existing idempotent-handler patterns if present — check `_shared.py`).
+  - Elements already at the requested kind: no-op within the batch; a batch
+    that changes nothing returns the unchanged document (mirror existing
+    idempotent-handler patterns — check `_shared.py`).
 
 ## Guards on existing handlers
 
@@ -50,6 +52,19 @@ error-code helper in `_shared.py` before inventing anything):
 Unchanged: sidebar CRUD, dimensions, flip, refresh (unreachable for voids),
 manufacturer filters.
 
+## Documented-behavior tests (no code change — review F-5/F-6)
+
+- **`addRow`/`addColumn` straddle grows voids** (`_add_along_axis`,
+  `dimensions.py` — verified): inserting a row/column *through* a void
+  extends its span, so new cells become "not window" without an explicit
+  gesture. This is intended (the void grows with the grid) but it is a second
+  void-creation path besides `setElementKind`: assert it with a test and
+  state it in the handler docstring.
+- **`deleteRow`/`deleteColumn` can orphan the last glazed element** and leave
+  an all-void aperture (orphans whose span == the deleted index are dropped).
+  Not blocked here; Phase 3's `no_glazed_elements` warning + export guard
+  surface it. Add a test that the resulting document validates.
+
 ## Frontend types only
 
 `frontend/src/features/apertures/types.ts`: add the `setElementKind` variant
@@ -65,10 +80,13 @@ existing suite covers commands individually (mirror whatever
 ## Tests
 
 - setElementKind →void clears assignments + audits; →glazed round-trip;
-  idempotent no-op; unknown element/aperture errors match existing codes.
+  batch across several elements is one write/audit; mixed batch where some
+  elements already match; all-or-nothing on one unknown id; idempotent no-op;
+  unknown aperture errors match existing codes.
 - Each guard: refusal error code + document unchanged.
 - merge void+void OK (result void); merge mixed refused; split void →
   1×1 voids.
+- Straddle-growth + delete-to-all-void documented-behavior tests (above).
 
 ## Verification
 

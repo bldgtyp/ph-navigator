@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-26
+UPDATED: 2026-07-28
 TIME: 10:14 EDT
-STATUS: Blocked — awaiting decisions on Q-1…Q-7
+STATUS: Ready — both prerequisites shipped; Phase 0 (coverage probe) is next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -41,8 +42,8 @@ Added 2026-07-26 (Ed's review of the above):
   (`decisions.md` §D-9)
 - **Membrane layers spun out as a prerequisite feature** —
   `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (complete). Membranes and coatings dominate
-  a wall's sd, and PHN cannot represent them; the engine must not ship before
-  they land. (`decisions.md` §D-10, `PRD.md` §2a)
+  a wall's sd, and PHN could represent neither; the engine must not ship before
+  they land. (`decisions.md` §D-10, `PRD.md` §2a) — **shipped 2026-07-26.**
 
 Resolved 2026-07-26 (Ed, second review) — **all seven open questions closed**:
 - Q-1 build it (with a preliminary coverage read in `decisions.md` §D-12 that
@@ -52,7 +53,42 @@ Resolved 2026-07-26 (Ed, second review) — **all seven open questions closed**:
   prerequisite feature** (§D-11); Q-6 per-project Ma limit, default 200; Q-7
   screen-only preview, no export, no download-report affordance (§D-14).
 
-Not done: nothing implemented. No branch, no migration, no models.
+### As-built reconciliation, 2026-07-28
+
+Both prerequisites are shipped and deployed. Reviewing their archived packets and
+the merged code produced four tightenings to this packet, recorded in
+`decisions.md` §D-15 — none a reversal:
+
+- **The "sd wins" rule is now load-bearing.** A membrane's `thickness_mm` is not
+  drawn to scale, is excluded from Total Thickness, carries no R, and is
+  **auto-snapped to 1 mm** by `membranes.should_snap_membrane_thickness` when
+  implausible. `µ · d` on a membrane would read a number the app itself mutates.
+  A membrane with no `sd` now **blocks** rather than falling through.
+- **Total Thickness excludes membranes** (reversed 2026-07-27; moved to
+  `membranes.total_thickness_mm`). Cosmetic here, but the chip sits beside that
+  metric.
+- **The engine must take its film table and climate as arguments.** The
+  boundary-conditions work drafted the lookup inside `thermal.py` and produced a
+  real import cycle through the storage layer. `calculate_assembly_thermal
+  (assembly, materials_by_id, film_table=…)` is the shipped shape to copy.
+- **"Layers" ≠ "layers with an R-value."** The membrane packet's closing lesson,
+  worth five defects — four found in review, not by a green suite. Glaser
+  inverts the bias: membranes contribute nothing to the temperature profile and
+  dominate the vapour profile. Highest-risk source of a silent wrong answer in
+  Phase 2.
+
+Two obligations came back **to** this feature from the boundary-conditions work:
+Ft for `unconditioned_space` (nothing models the far-side temperature → new Q-8,
+recommendation is "not screened" in v1), and the disclosed seam that
+`ventilated` / `unconditioned_space` apply ISO 6946 §6's `Rse = Rsi` under
+whichever standard is loaded.
+
+Also inherited, and directly reusable: `ThermalStatusFlag` gained
+`no_thermal_layers` (the named-flag-per-cause pattern), and
+`envelope/air_barrier.py` keeps `unknown` strictly distinct from `pass` — the
+same rule this feature's blocked state needs.
+
+Not done: nothing implemented here. No branch, no migration, no models.
 
 ## Next step
 
@@ -70,14 +106,15 @@ remains is sequencing, not decisions:
 
 | Blocker | Nature |
 | --- | --- |
-| ✅ `assembly-boundary-conditions` **Phase 1** | **cleared 2026-07-26.** `backend/features/envelope/boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25` for the surface-condensation / mould / fRsi criteria |
+| ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
+| ⚠️ **Q-8 — screen `unconditioned_space`?** | *New 2026-07-28.* The value exists and gets a film, but Ft is modelled nowhere and both prerequisite packets deferred it here. Recommendation: **not screened in v1** (same treatment as `ground`); a nullable `adjacent_temp_factor` is an additive v1.1. Not blocking. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-**Both external prerequisites are now cleared**, so nothing outside this packet
-gates it. What remains is Phase 0 (the coverage probe) and the composite-stud
-call above.
+**Both external prerequisites are cleared**, so nothing outside this packet gates
+it. What remains is Phase 0 (the coverage probe) plus two calls that can be made
+during it — the composite-stud policy and Q-8.
 
 ### The vapour fields are this feature's own work, not a dependency
 
@@ -102,3 +139,9 @@ corpus snapshot.
 Nothing to verify yet. When Phase 2 lands, the gate is acceptance criterion 3 in
 `PRD.md` §9: golden-file agreement with the PHI workbook's own outputs for a
 reference assembly, to within rounding.
+
+Both prerequisite packets ended up finding most of their real defects in review
+or in a browser rather than from a green suite (membranes: five defects, four
+found in review; boundary conditions: two rendering defects only a real browser
+caught). Budget for that here — a passing `pytest` will not tell you the Glaser
+engine is iterating the wrong set of layers.

@@ -9,6 +9,15 @@ RELATED: ../PRD.md §6 §8 §11, context/GLOSSARY.md, context/ui/pages/apertures
 
 # Phase 5 — Verification + docs
 
+## GH-side fix (separate repo — `honeybee_grasshopper_ph_plus`)
+
+Per review F-1 / PRD §6: in `hb_tools/win_create_types.py`
+`WindowUnitType.build()` (~:233), derive the column origin index from
+`col_element_lists[0].col` instead of the `enumerate` position — one line,
+back-compatible, also fixes the latent col-span variant. Own PR in that repo
+with a fully-void-column regression test; PHN's route-3 422 guard stays
+regardless (old GH installs persist).
+
 ## Cross-repo GH smoke (the one external contract)
 
 1. On the local stack, build the S15 layout in a fixture project (Phase 3/4
@@ -16,20 +25,35 @@ RELATED: ../PRD.md §6 §8 §11, context/GLOSSARY.md, context/ui/pages/apertures
 2. Parse it with the *unmodified* GH schema —
    `honeybee_ph_plus_rhino/gh_compo_io/ph_navigator/v1/window_types_schema.py`
    can be exercised under CPython for this (it is 2.7-compatible plain
-   Python): assert every element parses, absolute row/column indices survive
-   the bottom-to-top reversal, and no void ever appears.
-3. **Ed's manual step**: pull the project through the real
+   Python). Assert **placement, not just parseability** (review): every
+   element parses; every grid column index appears as some element's
+   `column_number`; absolute row/column indices survive the bottom-to-top
+   reversal; no void ever appears in the payload.
+3. Confirm the fully-void-column fixture 422s on route 3 (guard from
+   Phase 3) rather than reaching GH at all.
+4. **Ed's manual step**: pull the project through the real
    `PH-Nav Get Apertures` component in Rhino/GH; confirm the door spans to the
    floor row, sidelites sit on the sill, nothing is built in the void cells,
    and `WindowConstruction`s exist only for glazed elements.
-4. Export route 4 (`ExportHbjsonAction` in the UI) and confirm constructions
+5. Export route 4 (`ExportHbjsonAction` in the UI) and confirm constructions
    count = glazed-element count.
+
+Recorded, no action (review note): route 4 keys constructions by the
+top-down `row_span[0]` while GH's route-3-derived names use the reversed row —
+inert today because `v1/apertures_get.py` deliberately never calls route 4,
+but do not join the two by name.
 
 ## Docs updates (same diff)
 
 - `context/GLOSSARY.md`: add **Empty panel (void element)** — grid-tiling
   element with `kind: "void"`; occupies layout cells; excluded from U-value,
-  spec report, and all exports. UI label "Empty"; wire value `void`.
+  spec report, and all exports. UI label "Empty"; wire value `void`. The
+  entry must also state: (1) the boundary rule — edges between glazed and
+  Empty are window-to-wall junctions (jamb/sill/head), not mullions (PRD
+  §2.1); (2) Empty is for regions that really are the host wall — a spandrel
+  panel is NOT an Empty, use a g=0 glazing entry until `"solid"` exists (PRD
+  §7); (3) it is distinct from the empty-*state* UI term
+  (`ApertureEmptyState.tsx` — the no-apertures-yet placeholder).
 - `context/ui/pages/apertures-tab.md`: void rendering (near-transparent +
   dashed outline), kind toggle + shared tooltip, confirm dialog, guard
   behaviors.

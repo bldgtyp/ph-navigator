@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: All decisions resolved 2026-07-28 (Ed)
+STATUS: All decisions resolved 2026-07-28 (Ed); Opus review findings F-1..F-7
+  dispositioned and folded 2026-07-28
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Accepted / rejected / open decisions for aperture void panels.
 RELATED: ./PRD.md §7 §9
@@ -23,8 +24,25 @@ RELATED: ./PRD.md §7 §9
 
 - **A-3 — Route-3 export omits void elements** rather than emitting them with
   a flag. The GH consumer places elements by absolute grid indices inside full
-  grid dims, so omission needs zero changes in `honeybee_grasshopper_ph_plus`
-  / `honeybee_ph`, and old GH definitions keep working against new payloads.
+  grid dims, so old GH definitions keep working against new payloads.
+  **Amended per review F-1 (2026-07-28):** "zero GH changes" holds for the
+  S15 shape but not for fully-void grid *columns* — `WindowUnitType.build()`
+  enumerates occupied columns positionally. Disposition: one-line GH-side fix
+  (index by `element.col`) + a PHN route-3 422 guard on fully-void columns
+  (guard is permanent; old GH installs persist). See PRD §6.
+
+- **A-4 — Rejected: relax the coverage invariant to "at most one" and treat
+  uncovered cells as implicit voids** (recorded per review F-4). Explicit
+  void elements are selectable, nameable, mergeable, and hit-testable, and —
+  decisively — they distinguish "intentionally not window" from "authoring
+  mistake / not drawn yet". Holes would make every coverage-adjacent code
+  path (merge/split/add/delete, canvas hit-testing, GH export) reason about
+  absent cells, and validation could no longer catch tiling mistakes.
+
+- **A-5 — `setElementKind` takes `element_ids: list[str]`** (review F-3),
+  mirroring `pasteAssignment`: the canvas is multi-select aware, notched
+  units convert several cells at once, and a batch is one document write +
+  one audit row with no half-converted failure state.
 
 - **D-2 — Solid spandrel panels DEFERRED to a future feature** (Ed leaned
   toward folding them in 2026-07-28; recommendation to defer accepted on the

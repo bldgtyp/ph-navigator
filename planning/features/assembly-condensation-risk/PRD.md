@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-26
+UPDATED: 2026-07-28 — both prerequisites shipped; as-built reconciliation
 TIME: 10:14 EDT
-STATUS: Draft — blocked on Q-1…Q-7 in decisions.md
+STATUS: Ready — all questions resolved, both prerequisites cleared, Phase 0 next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Product and behaviour contract for an ISO 13788 interstitial-condensation
   risk screen on the Envelope ▸ Assemblies page, plus the material vapour-data
@@ -44,18 +45,38 @@ other and can proceed in parallel.
 **1. ✅ `planning/archive/dated/2026-07-26/assembly-membrane-layers/` (Phases 1–2, shipped 2026-07-26).** A wall's
 vapour resistance is dominated by its membranes and coatings — 6-mil poly is
 ≈ 95 % of a typical 2×6 wall's total sd, and the interior latex paint is
-comparable to the plywood sheathing — and PHN cannot represent either today.
-Running the engine on membrane-less assemblies yields a confident number for a
-wall that does not exist. (`decisions.md` §D-10.) **Cleared 2026-07-26** —
+comparable to the plywood sheathing — and PHN could represent neither. Running
+the engine on membrane-less assemblies would have yielded a confident number for
+a wall that does not exist. (`decisions.md` §D-10.) **Cleared 2026-07-26** —
 all four membrane phases shipped. The vapour fields in §4 are *not* shared:
 membranes deliberately left them, so they are this feature's Phase 1.
 
-**2. `planning/archive/dated/2026-07-28/assembly-boundary-conditions/` (Phase 1).** `thermal.py`
-adds no Rsi/Rse at all. ISO 13788's entire temperature profile depends on
-`R_total = Rsi + ΣR + Rse`, and **three of the four criteria** — surface
-condensation, mould growth, fRsi — are evaluated at a second Rsi of 0.25 m²K/W.
-Without a film model, three of four criteria cannot be computed.
-(`decisions.md` §D-11.)
+**2. ✅ `planning/archive/dated/2026-07-28/assembly-boundary-conditions/` (all
+four phases, shipped 2026-07-26 → 2026-07-28).** Was blocking because
+`thermal.py` added no Rsi/Rse at all, while ISO 13788's temperature profile
+depends on `R_total = Rsi + ΣR + Rse` and **three of the four criteria** —
+surface condensation, mould growth, fRsi — are evaluated at a second Rsi of
+0.25 m²K/W. (`decisions.md` §D-11.)
+
+As-built, what this feature now inherits:
+
+| What | Where |
+| --- | --- |
+| `resolve_surface_resistances(assembly_type, exterior_condition, table)` → `SurfaceResistances(rsi, rse, heat_flow_direction)` | `backend/features/envelope/boundary_conditions.py` |
+| `ISO_13788_SURFACE_CHECK_RSI = 0.25` — reserved for this screen, never in a U-value | same |
+| `SurfaceFilmTable` as a **passed-in value**, ISO 6946 in code, ASHRAE from the private object store | same + `surface_film_store.py` |
+| `Assembly.exterior_condition` — `outdoor_air` / `ventilated` / `ground` / `unconditioned_space` | `project_document/envelope_models.py` |
+| `tables.assumptions.thermal_standard` — `"iso_6946" \| "ashrae"`, both live | `project_document/document.py` |
+
+Two inherited caveats this feature now owns:
+
+- **`ventilated` and `unconditioned_space` resolve `Rse = Rsi`** via ISO 6946 §6
+  under *whichever* table is loaded, so an ASHRAE project gets ASHRAE numbers
+  under an ISO rule on those two faces. Disclosed in the thermal-standard
+  selector's help text. `outdoor_air` and `ground` are clean.
+- **The Ft temperature factor is explicitly deferred to this feature.**
+  `unconditioned_space` exists as a value and gets a film, but the far-side
+  temperature is not modelled anywhere. See §6.5.
 
 ## 2b. Standing constraint — preview, not compliance
 
@@ -97,6 +118,22 @@ Resolution, per layer, at calculation time:
 Rationale in `research.md` §6; the two-field decision is `decisions.md` §D-4.
 A fully vapour-tight layer is expressed as `sd ≥ 1500 m`, not ∞ (E-1).
 
+**Step 1 is now load-bearing, not merely preferable.** As shipped, a membrane
+layer's `thickness_mm` is decoupled from everything the user can see: it is not
+drawn to scale (membranes get a fixed 9 mm band), it is excluded from Total
+Thickness, it carries no R — and `membranes.should_snap_membrane_thickness`
+auto-corrects it to 1 mm when it is implausible for a membrane. So `µ · d` on a
+membrane layer would be computed from a number nobody is maintaining and that
+the app may silently rewrite. `vapor_sd_equivalent_m` must win, and for
+membranes it is effectively the *only* valid source. (`membranes.total_thickness_mm`'s
+own docstring already anticipates this rule.)
+
+**A membrane with no `sd` blocks the calculation.** It cannot fall through to
+step 2, and it must not be treated like an air cavity. Membranes are the
+dominant sd contributor in most assemblies (`decisions.md` §D-10), so a missing
+value there is the single most consequential gap the "what's missing" state
+(§6.2) will report.
+
 ### 4.2 Backwards compatibility
 
 This is designed to be a non-event for everything that exists:
@@ -135,9 +172,20 @@ assumptions rather than two siblings.
 `backend/features/project_document/document.py`, reachable as
 `tables.assumptions` with `ProjectDocumentTables.resolved_assumptions()` as
 the None-means-defaults accessor. This feature adds `condensation_settings`
-to it as a second field — do not create a sibling block. Note the as-built
-narrowing of `thermal_standard` to `Literal["iso_6946"]` until the ASHRAE
-values land (`../../archive/dated/2026-07-28/assembly-boundary-conditions/PRD.md` §4.2).
+to it as a second field — do not create a sibling block.
+
+`thermal_standard` shipped narrowed to a single-member literal and was
+**widened to `Literal["iso_6946", "ashrae"]` on 2026-07-28** when the ASHRAE
+values were published to the private object store. Both standards are live;
+neither is a placeholder.
+
+Precedent worth copying from that work: **a standard with no published table
+raises rather than falling back**, surfacing as a typed 409
+`surface_film_table_unavailable`, and the write path rejects an unavailable
+standard so a document can never name a convention this deployment cannot
+compute. Serving one standard's numbers under another's label would be a wrong
+answer confidently presented — the same principle as §6.2's refusal to compute
+on missing vapour data.
 
 ```
 assumptions:
@@ -203,6 +251,19 @@ Clicking the chip opens the modal in a **"what's missing"** state that lists eac
 offending material, the layer(s) it sits on, and an inline affordance to enter
 the value. This is the on-ramp that fixes catalog coverage; at launch it will be
 the most common state, so it must be the best-designed one.
+
+Two shipped precedents to follow rather than reinvent:
+
+- **`ThermalStatusFlag` is the model.** It gained `no_thermal_layers` when
+  membranes landed, so an all-membrane assembly reports *why* it cannot compute
+  instead of falling through to `invalid_geometry`. This feature's flags follow
+  the same shape — a named flag per distinguishable cause, never a generic
+  failure.
+- **`unknown` must stay distinct from `pass`.** `envelope/air_barrier.py`
+  returns three states and deliberately does not let an unrecorded permeance
+  read as passing, on the grounds that a face not shown to qualify has not
+  qualified. The same rule holds here: an assembly whose vapour data is
+  incomplete is never "no condensation predicted".
 
 ### 6.3 The modal — progressive disclosure
 
@@ -271,6 +332,46 @@ chip updates as layers are edited. Results are cached on an input hash covering
 assembly + referenced vapour/thermal fields + climate record identity + settings
 block.
 
+`thermal_input_hash` has since had to absorb two inputs that live outside the
+assembly subtree — material `category` (it now decides membrane-ness) and
+`thermal_standard` (a project switching standards would otherwise serve stale
+previews). Both apply here too, plus climate identity, `exterior_condition`, and
+the whole `condensation_settings` block. **Anything that can change the answer
+and is not in the assembly subtree has to be in the key**; that has now been the
+cause of two near-misses in this codebase, so treat it as a checklist rather than
+an afterthought.
+
+### 6.5 Exterior conditions — what each one means here
+
+`Assembly.exterior_condition` now exists with four values, and the condensation
+screen has to say what it does with each. Only the first is fully modelled.
+
+| Condition | Films (inherited) | Condensation screen |
+| --- | --- | --- |
+| `outdoor_air` | Rse from the standard | ✅ **in scope** — monthly θe from the attached climate source |
+| `ventilated` | `Rse = Rsi` (ISO 6946 §6) | ✅ in scope — treat the far side as outdoor air, per ISO 6946's own logic that everything outboard of a well-ventilated cavity is ignored |
+| `ground` | `Rse = 0` | ❌ **not screened** (`decisions.md` E-5). ISO 13788 is an air-facing method; `ClimateMonthlyTemps.ground_c` exists but producing a Glaser answer for a slab would be a wrong answer confidently presented. Chip reads "not screened". |
+| `unconditioned_space` | `Rse = Rsi` | ⚠️ **needs Ft, which does not exist yet** — see below |
+
+**The Ft obligation is now this feature's.** Both prerequisite packets deferred
+it here explicitly. The films treat `unconditioned_space` identically to
+`ventilated`, but the *temperature* on the far side is what actually
+distinguishes them, and nothing models it: an unheated garage is neither
+outdoor air nor indoor air. The PHI tool handles this with a temperature factor
+(`Assembly!L135`): `θe,eff = θi − (θi − θe)·Ft`.
+
+Options, in the order I would take them:
+
+1. **v1: do not screen `unconditioned_space`.** Chip reads "not screened —
+   adjacent space temperature not modelled". Honest, costs nothing, and matches
+   how `ground` is handled.
+2. **v1.1: add `adjacent_temp_factor: float | None` to the assembly** and screen
+   when it is set. One nullable field, the PHI formula, and a clear "you told us
+   this" provenance line in the Assumptions tier.
+
+Recommend (1) for v1 — the alternative is inventing a temperature for a space
+nobody has described. → open question Q-8.
+
 ## 7. Backend contract
 
 New feature module `backend/features/envelope/condensation.py` (or a sibling
@@ -278,10 +379,29 @@ New feature module `backend/features/envelope/condensation.py` (or a sibling
 routes/models/service/repository layering. All calculation is backend-side per
 the hard rule.
 
-- Pure engine: `(assembly, materials_by_id, climate_record, settings) → CondensationResult`.
+- Pure engine:
+  `(assembly, materials_by_id, climate_record, film_table, settings) → CondensationResult`.
   No I/O, deterministic, mirrors `thermal.py`'s shape including an
   issues/flags/status triple so the frontend handles blocked states the same way
   it already handles `missing_conductivity`.
+- **The film table and the climate record are passed in, resolved at the service
+  edge — not looked up inside the engine.** This is not a style preference: the
+  boundary-conditions work drafted the lookup inside `thermal.py` and produced a
+  genuine import cycle through the storage layer, and the cycle was the design
+  saying a pure calculation should not reach for I/O. `calculate_assembly_thermal
+  (assembly, materials_by_id, film_table=ISO_6946_TABLE)` is the shipped shape;
+  copy it.
+- **Reuse, do not re-derive:** `boundary_conditions.resolve_surface_resistances()`
+  for Rsi/Rse/direction, `ISO_13788_SURFACE_CHECK_RSI` for the surface criteria,
+  `membranes.is_membrane_layer()` for the sd resolution ladder, and
+  `thermal.calculate_construction_thermal()` if a construction-only R is needed.
+  Every one of these already exists and is tested.
+- **Layers ≠ layers with an R-value.** The membrane work's closing lesson was
+  that "every place that assumed those were the same set needed revisiting once
+  membranes existed, and the passing tests said nothing about any of it." The
+  Glaser engine inverts the usual bias: membrane layers contribute **nothing** to
+  the temperature profile and **dominate** the vapour profile. Any loop that
+  filters layers must state which of the two sets it means.
 - `GET /api/v1/projects/{id}/assemblies/{assembly_id}/condensation` returning the
   full result (all tiers' data in one payload — it is small: 12 months × ~12
   layers).
@@ -297,7 +417,7 @@ risk (A-4) is retired first.
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
 | **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. | materials can be specified; data entry can begin |
-| **1½** | ✅ **`assembly-membrane-layers` Phases 1–2** (all four phases shipped 2026-07-26) and ✅ **`assembly-boundary-conditions` Phase 1** (landed 2026-07-26) — **both external dependencies are now cleared.** | assemblies can hold the layers that dominate the answer, and have surface films at all |
+| ~~**1½**~~ | ✅ **Both external dependencies cleared.** `assembly-membrane-layers` — all four phases, shipped 2026-07-26 (rendering reworked 2026-07-27). `assembly-boundary-conditions` — all four phases, 2026-07-26 → ASHRAE set + selector 2026-07-28. | assemblies hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |
 | **4** | Modal tiers 1–2 (verdict + Glaser/temperature diagrams). | the feature is legible |
@@ -324,4 +444,15 @@ Phases 1–3 are independently valuable; the feature can pause after any of them
    high-storage caveat, and a caveated clear result never renders as
    full-confidence green.
 10. A membrane layer's `sd` is used directly (not `µ · d`), so changing its
-    nominal thickness does not change the condensation result.
+    nominal thickness — including an automatic snap by
+    `should_snap_membrane_thickness` — does not change the condensation result.
+11. A membrane layer with no `vapor_sd_equivalent_m` blocks the calculation and
+    is named in the "what's missing" state; it never falls through to `µ · d`
+    and is never treated as an air cavity.
+12. A `ground` assembly reports "not screened" rather than a Glaser result; an
+    `unconditioned_space` assembly does the same until Ft exists (§6.5, Q-8).
+13. The engine performs no I/O: the film table, climate record, and settings are
+    all arguments. Enforced by the existing backend-boundaries check.
+14. The condensation input hash changes when any of material `category`,
+    `thermal_standard`, `exterior_condition`, the climate source, or any
+    `condensation_settings` field changes.

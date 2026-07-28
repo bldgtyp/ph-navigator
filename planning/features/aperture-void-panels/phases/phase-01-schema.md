@@ -48,6 +48,11 @@ produce a void is hand-crafted JSON or `replace_table`).
 ### Explicitly NOT in this phase
 
 - No command changes, no U-value/export changes, no UI.
+- **Known intermediate state** (review note): until Phase 3 lands, a
+  `replace_table`/MCP-authored void computes a U-value over real area and
+  exports a bogus `WindowConstruction`. Accepted — no UI authoring path
+  exists yet, and phases 1–3 land before the feature is announced or used.
+  Do not "fix" this partially in Phase 1.
 - No document migration/upgrade step — default `"glazed"` keeps every stored
   version and draft valid. Confirm no schema-version bump is required by the
   project-document validation conventions (check

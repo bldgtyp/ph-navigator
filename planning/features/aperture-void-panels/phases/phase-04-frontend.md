@@ -40,19 +40,47 @@ All work under `frontend/src/features/apertures/`.
   it is excluded from U-value, spec report, and all exports."* Keep it as a
   single shared constant so wording stays consistent.
 - Toggle glazed→void with any assignment present: confirm dialog listing what
-  will be cleared (D-3), then dispatch `setElementKind`. Follow the existing
-  dialog pattern (`DeleteApertureDialog.tsx` / `DeleteDimensionDialog.tsx`).
+  will be cleared (D-3) **and reminding that frames on adjacent glazed edges
+  become window-to-wall junctions (jamb/sill/head, not mullion) and should be
+  re-checked** (PRD §2.1, review F-2), then dispatch `setElementKind`. Follow
+  the existing dialog pattern (`DeleteApertureDialog.tsx` /
+  `DeleteDimensionDialog.tsx`).
 
 ## Interaction guards (mirror server; server remains the authority)
 
-- `pick-paste-machine.ts`: voids are invalid pick sources and paste
-  targets/sources — same UX as other invalid targets.
+- Pick/paste target validity lives in **`hooks/usePickPasteHandlers.ts`**
+  (`pasteOnto`) **and the Zustand store** — NOT `pick-paste-machine.ts`,
+  which is a pure mode machine (idle→picking→pasting) with no element
+  knowledge (review F-7 corrected the original pointer). Voids become invalid
+  pick sources and paste targets there, same UX as other invalid targets.
+- **Paste-undo integrity** (review F-7): `undoLastPaste` awaits
+  `onPasteAssignment` with no try/catch (`pasteOnto` has one). Convert a
+  pasted-onto element to Empty, then "Undo paste" → paste at a void → server
+  refusal → unhandled rejection. Fix both ends: `setElementKind` drops that
+  element's undo entries from the store, and `undoLastPaste` gets the same
+  catch as `pasteOnto`.
 - `merge-validation.ts`: mixed-kind merge invalid with a reason string
   consistent with existing invalid-merge messages; void+void allowed.
 - `operation-*`/`picker-filters` surfaces: not reachable for voids once the
   card hides the rows; verify nothing else (keyboard shortcuts, context
   menus, `ApertureCanvasToolbar.tsx`) can dispatch picks/operation onto a
   void.
+
+## Toolbar + multi-select (review F-3)
+
+`ApertureCanvasToolbar.tsx` already carries `selectionCount` / Merge / Split.
+Add the Empty toggle there for multi-element selections, dispatching one
+`setElementKind` batch (the command takes `element_ids`). Mixed selections:
+converting applies to the elements not already at the target kind.
+
+## Kind branching + warnings
+
+- Branch on `kind` via a switch / lookup table, not an `isVoid` boolean —
+  the reserved `"solid"` slot must slot into the canvas/card without a
+  rewrite (review note; PRD §5).
+- Surface the two new Phase-3 warning kinds (`no_glazed_elements`,
+  `mullion_frame_at_void_boundary`) wherever `missing_frame` /
+  `missing_glazing` warnings already render — no new warning surface.
 
 ## Command wiring
 
@@ -62,9 +90,11 @@ All work under `frontend/src/features/apertures/`.
 
 ## Tests
 
-- vitest: merge-validation kind rules; pick-paste machine void guards; element
-  card renders void state (hidden panels + caption + tooltip); confirm-dialog
-  flow dispatches the command only on confirm.
+- vitest: merge-validation kind rules; `usePickPasteHandlers`/store void
+  guards; undo-entry drop on kind change + `undoLastPaste` catch; toolbar
+  batch dispatch (one command, N ids); element card renders void state
+  (hidden panels + caption + tooltip); confirm-dialog flow (incl. the
+  adjacent-frames reminder) dispatches the command only on confirm.
 - Browser smoke (`make agent-browser-ready` + `frontend/scripts/agent-browser.mjs`,
   per `context/USING_A_WEB_BROWSER.md`): build the S15 layout end-to-end —
   create type, shape the grid, span the door, convert two cells to Empty,

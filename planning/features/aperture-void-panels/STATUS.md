@@ -20,6 +20,18 @@ RELATED: ./README.md, ./PRD.md, ./phases/
 - 2026-07-28 — Ed resolved all open decisions: D-1 UI label **"Empty"** with
   explanatory tooltips; D-3 confirm-then-clear; D-4 near-fully transparent
   fill + dashed outline. PRD/decisions/phases updated to match.
+- 2026-07-28 — Independent Opus review
+  (`reviews/2026-07-28-plan-review.md`) verified against code and **folded
+  in full** (all seven findings valid). Headlines: F-1 fully-void grid
+  columns silently misplace geometry in GH → one-line GH-repo fix + permanent
+  PHN route-3 422 guard ("zero GH changes" claim amended, decisions A-3);
+  F-2 mullion-vs-jamb frame semantics at void boundaries → PRD §2.1, confirm-
+  dialog copy + `mullion_frame_at_void_boundary` warning; F-3 `setElementKind`
+  now batch `element_ids` + toolbar affordance (A-5); F-4 "allow holes"
+  alternative recorded as rejected (A-4); F-5 all-void apertures get a
+  `no_glazed_elements` warning + export 422; F-6 straddle-grows-voids
+  documented + tested; F-7 pick/paste guard retargeted to
+  `usePickPasteHandlers.ts` + paste-undo integrity fix.
 - No code changes yet. No branch yet.
 
 ## Next step

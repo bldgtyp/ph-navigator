@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Accepted — D-1/D-3/D-4 resolved by Ed 2026-07-28; ready for Phase 1
+STATUS: Accepted — D-1/D-3/D-4 resolved by Ed 2026-07-28; Opus review
+  (reviews/2026-07-28-plan-review.md) folded in same day; ready for Phase 1
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Product/behavior contract for void ("Empty") aperture elements, with a
   reserved-but-deferred extension path for solid spandrel panels.
@@ -98,22 +99,49 @@ kind: Literal["glazed", "void"] = "glazed"
   null, and `operation` is null. Name is allowed (defaults "Unnamed").
 - **Coverage check: unchanged.** Voids tile the grid like any element; merge/
   split/add-row/add-column/flip geometry machinery is untouched.
-- An all-void aperture is degenerate but valid (U-value 0.0 over 0 area,
-  empty exports); no special-casing.
+- An all-void aperture validates (no schema special-casing) but is **never
+  silent**: it triggers the `no_glazed_elements` warning and blocks route-3
+  export (§4) — reachable via `deleteRow`/`deleteColumn` dropping the last
+  glazed element (review F-5).
+
+## §2.1 Frame semantics at a void boundary (review F-2)
+
+An edge between two glazed elements is a **mullion**; an edge between a glazed
+element and a void is a **jamb / sill / head** — a real window-to-wall
+junction with a different width, U_f, and critically a real Ψ_install (mullion
+frame types conventionally carry 0). Converting a cell to Empty re-classifies
+the adjacent elements' edges *without touching their frame assignments* —
+U_w, install-psi, and the spec report would silently inherit the mullion.
+
+Mitigations (all in scope):
+
+- The glazed→void confirm dialog and the shared Empty tooltip both remind the
+  user to re-check frames on adjacent edges (§5).
+- A soft warning through the existing `ApertureUValueWarning` channel:
+  `mullion_frame_at_void_boundary` — element X carries a frame with a mullion
+  `mull_type` on an edge adjacent to a void. `mull_type` already exists on
+  `FrameRef`/`ProjectFrame` (`envelope_models.py:102/:397`), so the adjacency
+  check is cheap (Phase 3).
+- The GLOSSARY entry states the rule.
 
 ## §3 Command surface
 
-One new command:
+One new command (multi-element, mirroring `pasteAssignment` — review F-3: the
+canvas is multi-select aware and a notched unit means converting several cells
+at once; N single-element commands would mean N draft writes + N audit rows
+and a half-converted state on partial failure):
 
 ```text
-setElementKind { aperture_type_id, element_id, kind: "glazed" | "void" }
+setElementKind { aperture_type_id, element_ids: [..], element_kind: "glazed" | "void" }
 ```
 
+- All-or-nothing across `element_ids` (one document write, one audit row).
 - glazed→void **clears** the six assignment slots (4 frames, glazing,
   operation) server-side in the same command. The frontend shows a confirm
-  when assignments exist (§5); the edit lands in the draft, so it is
-  discardable. (Open decision D-3: confirm-then-clear vs hard-refuse.)
-- void→glazed produces a bare unassigned element (normal "unfinished" state).
+  when assignments exist (§5, D-3 confirm-then-clear); the edit lands in the
+  draft, so it is discardable.
+- void→glazed produces bare unassigned elements (normal "unfinished" state).
+- Elements already at the requested kind are a no-op within the batch.
 - Audit kind: `project_version_aperture_element_set_kind`.
 - Reaches MCP automatically via `apply_aperture_command`'s union.
 
@@ -126,20 +154,25 @@ handler error style):
 | `pasteAssignment` | refuse when any target is void; refuse void source |
 | `mergeElements` | all sources must share one `kind` (void+void merge OK; result keeps the kind) |
 | `splitElement` | works as-is; each child inherits `kind` (assignments already null for voids) |
-| `setElementName`, `flipLeftRight`, dimension commands | unchanged |
+| `setElementName`, `flipLeftRight`, `editDimension` | unchanged |
+| `addRow` / `addColumn` | unchanged code — but the straddle rule (`_add_along_axis`, `dimensions.py`) **extends a void's span** when inserting through it. Intended (the "not window" region grows with the grid) but it is a second void-creation path: documented + tested in Phase 2 (review F-6) |
+| `deleteRow` / `deleteColumn` | unchanged code — orphaned elements are dropped, so deleting the last glazed row/column leaves an **all-void aperture**. Not blocked; surfaced by the `no_glazed_elements` warning + route-3 export guard (§4, review F-5) |
 | `refreshRefFromCatalog` | unreachable for voids (no refs) — no change needed |
 
-`addRow`/`addColumn` keep creating glazed elements; users convert cells to
-Empty afterward.
+New glazed elements from `addRow`/`addColumn` stay glazed; users convert
+cells to Empty afterward.
 
 ## §4 Consumer behavior matrix
 
 | Consumer | Behavior for `kind == "void"` |
 | --- | --- |
-| U-value (`aperture_u_value/service.py`) | Skipped entirely: excluded from `total_q` **and** `total_area`; no `missing_frame` / `missing_glazing` warnings; no per-element result row. `total_area_m2` therefore becomes the true window area (correct for PHPP/takeoffs — void region is wall). |
-| U-value cache (`cache.py:77`) | `kind` **must be added to the hash** — it changes the result. (Adding the field to the hashed subtree also naturally invalidates stale entries.) |
-| Route-3 GH export (`gh_api/aperture_types_export.py`) | Void elements **omitted** from `elements`; grid dims stay full. No payload shape change → old GH definitions keep working. |
-| Route-4 HBJSON export (`aperture_hbjson_export/service.py`) | Skipped — no `WindowConstruction` emitted. Identifier scheme untouched. |
+| U-value (`aperture_u_value/service.py`) | Skipped entirely: excluded from `total_q` **and** `total_area`; no `missing_frame` / `missing_glazing` warnings; no per-element result row. `total_area_m2` therefore becomes the true window area (void region is wall). NB: today `total_area_m2`'s only consumer is a TS type in `hooks/useApertureUValues.ts` — the corrected semantics are right, but don't count "correct PHPP area" as a shipped deliverable (review note). |
+| U-value warnings | Two **new warning kinds** through the existing `ApertureUValueWarning` channel: `no_glazed_elements` (aperture type contains only voids — review F-5) and `mullion_frame_at_void_boundary` (§2.1, review F-2). Warnings must not be suppressed by the void skip. |
+| U-value cache (`cache.py:77`) | `kind` **must be added to the hash** — it changes the result, and a void hashes identically to an unassigned glazed element today (all refs null), so without this the Phase-3 skip returns stale cached results (review-confirmed, load-bearing). |
+| Route-3 GH export (`gh_api/aperture_types_export.py`) | Void elements **omitted** from `elements`; grid dims stay full. No payload shape change → old GH definitions keep working. **Plus two export guards (422, alongside the existing duplicate-names guard):** (1) any aperture type with a **fully-void grid column** — the GH `WindowUnitType.build()` enumerates occupied columns positionally and would silently shift every later column left (review F-1, §6); (2) any **all-void aperture type** — GH would silently build nothing for faces using it (review F-5). |
+| Route-4 HBJSON export (`aperture_hbjson_export/service.py`) | Skipped — no `WindowConstruction` emitted. Identifier scheme untouched. All-void types emit zero constructions; acceptable because route 3 is the geometry path and it hard-errors (above). |
+| MCP `list_aperture_types` (`apertures_mcp/tools.py:77`) | `element_count` currently counts voids — add `glazed_element_count` so agents don't miscount (review note). |
+| Orphaned refs | glazed→void clears ref ids but there is no `project_frames`/`project_glazings` GC — orphans linger in the spec report with empty `use_sites`. Pre-existing behavior (`deleteRow` already does this); voids make it routine. Verify-only this feature (Phase 3); GC is out of scope. |
 | Spec report / use-sites (`apertures/` selectors) | No change needed — voids reference no frames/glazings, so they never appear in `use_sites`. Verify with a test. |
 | Aperture drift (`aperture_drift/`) | No change needed — drift compares picked refs; voids have none. Verify with a test. |
 | MCP read tools (`get_table`, `get_aperture_type`, …) | Field flows through automatically; `calculate_aperture_u_values` tool reflects the skip. |
@@ -161,8 +194,21 @@ Empty afterward.
   *"Empty panel: occupies the layout but is not part of the window unit. The
   area is wall; it is excluded from U-value, spec report, and all exports."*
   The same explanation appears as the tooltip on void cells in the canvas.
-  glazed→void with any assignment present opens a confirm dialog stating what
-  will be cleared.
+  With a multi-element selection, the toggle also appears on the canvas
+  toolbar beside Merge / Split (review F-3 — the toolbar already carries
+  `selectionCount`). glazed→void with any assignment present opens a confirm
+  dialog stating what will be cleared **and reminding that frames on adjacent
+  glazed edges become window-to-wall junctions (jamb/sill/head, not mullion)
+  and should be re-checked** (§2.1).
+- **Kind branching**: components branch on `kind` via a switch / lookup
+  table, not an `isVoid` boolean — the reserved `"solid"` slot (§7) must not
+  require rewriting the canvas and element card (review note).
+- **Paste-undo integrity** (review F-7): `undoLastPaste` in
+  `hooks/usePickPasteHandlers.ts` awaits the paste command with no try/catch
+  (unlike `pasteOnto`); converting a pasted-onto element to Empty and then
+  undoing would fire a paste at a void → server refusal → unhandled
+  rejection. `setElementKind` drops that element's undo entries, and
+  `undoLastPaste` gets the same catch as `pasteOnto` for defense in depth.
 - **Interaction guards** (mirror server): `pick-paste-machine.ts` — voids are
   invalid pick and paste targets/sources; `merge-validation.ts` — mixed-kind
   merges invalid with a reason string, consistent with existing invalid-merge
@@ -172,17 +218,32 @@ Empty afterward.
 
 ## §6 GH / Rhino contract
 
-**Zero code changes required** in `honeybee_grasshopper_ph_plus` /
-`honeybee_ph` for void support:
+**Zero GH code changes for the S15 shape; one small GH fix + one PHN guard
+for the general case** (review F-1 corrected the original "zero changes"
+claim):
 
 - Route 3 omits voids; `row_heights_mm` / `column_widths_mm` remain the full
   grid, so `WindowElement` placement indices stay valid, the bottom-to-top row
   reversal is unaffected, and no sash is built in void cells — the wall stays
   wall there. The door still spans to the floor row; sidelites sit on their
   sill. `_C{col}_R{row}` identifiers remain collision-free (voids emit
-  nothing).
-- Verification is still required (Phase 5): pull an S15-shaped fixture through
-  route 3 into Rhino and confirm geometry + constructions.
+  nothing). Review-traced end-to-end for S15, including the row reversal.
+- **The exception — fully-void grid columns** (`win_create_types.py`
+  `WindowUnitType.build()` ~:233): the column origin uses the `enumerate`
+  position over *occupied* columns (`cum_col_widths_m_[i]`), while rows index
+  by value (`cum_row_heights_m_[row_element.row]`). A fully-void **row**
+  leaves a correct gap; a fully-void **column** silently shifts every later
+  column one slot left. (A latent col-span variant of this bug exists today;
+  voids make it reachable.) Plan:
+  1. **GH-side fix** in `honeybee_grasshopper_ph_plus`: derive the column
+     index from `col_element_lists[0].col` instead of `enumerate` — one line,
+     back-compatible, also fixes the latent bug (Phase 5, separate repo/PR).
+  2. **PHN-side guard**: route-3 export 422s on fully-void columns (§4) —
+     stays even after the GH fix ships, since old GH installs persist.
+- Verification (Phase 5): CPython-parse the route-3 payload with the
+  unmodified `v1/window_types_schema.py` **asserting column placement** (every
+  grid column index appears as some element's `column_number`), then Ed's
+  manual Rhino pull.
 
 ## §7 Solid (spandrel) panels — reserved, DEFERRED
 
@@ -202,9 +263,16 @@ waits for a driving project.** Rationale (decisions.md D-2):
    reuse the glazing slot with "panel" glazing entries (g=0), or a dedicated
    panel-type catalog/table (new pickers, drift, spec-report)? A real project
    answers this.
-4. **Escape hatch exists today.** A spandrel can be modeled as a glazed
-   element with a g=0 "panel" glazing entry — standard PHPP practice — so no
-   project is blocked while deferred.
+4. **Escape hatch exists today — with a sharp edge** (review-corrected). A
+   spandrel can be modeled as a glazed element with a g=0 "panel" glazing
+   entry — standard PHPP practice: the panel's area counts in the window area
+   and window U, which is what PHPP wants for a window-integrated spandrel.
+   **Empty is NOT the spandrel workaround**: a void's area is absorbed into
+   the host wall in Rhino (no unit-bounding surface is built), so an
+   insulated spandrel modeled as Empty would silently get the *wall's*
+   U-value. Criterion: **use Empty only when the region really is the host
+   wall assembly** (S15's wood base — yes; a spandrel panel — no, use the
+   g=0 glazing until `"solid"` exists).
 5. **Partial support would be worse than none.** Shipping solid with
    void-style export omission would delete real unit geometry in Rhino.
 
@@ -234,13 +302,23 @@ Backend-first; every phase independently mergeable; `main` stays deployable.
 See `phases/phase-0N-*.md` for full plans, file lists, and verification.
 
 1. **Schema** — `kind` on `ApertureElement` (+ void invariant validator),
-   wire + TS types. No behavior change anywhere yet.
-2. **Command** — `setElementKind` + guards on pick/paste/merge/operation.
-3. **Consumers** — U-value skip + cache-key inclusion, route-3 omission,
-   route-4 skip; verify spec-report/drift need no change.
-4. **Frontend** — canvas, element card, machine/merge guards, confirm dialog.
-5. **Verification + docs** — e2e browser smoke, GH round-trip smoke (S15
-   fixture), GLOSSARY + `context/ui/pages/apertures-tab.md` updates, closeout.
+   wire + TS types. No behavior change anywhere yet. NB: until Phase 3 lands,
+   a `replace_table`/MCP-authored void computes a U-value over real area and
+   exports — accepted intermediate state, no UI authoring path exists yet
+   (review note); phases 1–3 land before the feature is announced or used.
+2. **Command** — `setElementKind` (multi-element) + guards on
+   pick/paste/merge/operation; document + test void span growth via
+   `addRow`/`addColumn` straddle.
+3. **Consumers** — U-value skip + new warnings + cache-key inclusion, route-3
+   omission + export guards, route-4 skip, MCP `glazed_element_count`; verify
+   spec-report/drift/orphaned-refs behavior.
+4. **Frontend** — canvas, element card + toolbar toggle, guards in
+   `usePickPasteHandlers`/store + merge validation, confirm dialog,
+   paste-undo integrity.
+5. **Verification + docs** — e2e browser smoke, GH round-trip smoke (S15 +
+   fully-void-column fixtures, column-placement assertion), the GH-side
+   `win_create_types.py` fix (separate repo), GLOSSARY +
+   `context/ui/pages/apertures-tab.md` updates, closeout.
 
 ## §11 Verification (feature-level)
 

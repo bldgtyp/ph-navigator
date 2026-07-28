@@ -190,22 +190,43 @@ over the spreadsheet.
 
 ## 4. Required inputs → what PHN already has
 
+Updated 2026-07-28, after both prerequisite features shipped.
+
 | Input | Source in tool | PHN today | Gap |
 | --- | --- | --- | --- |
-| Layer thickness `d` | Assembly definition | `AssemblyLayer.thickness_mm` | ✅ none |
+| Layer thickness `d` | Assembly definition | `AssemblyLayer.thickness_mm` | ✅ none — but see the membrane caveat below |
 | Conductivity `λ` | Assembly definition | `ProjectMaterial.conductivity_w_mk` | ✅ none |
-| **µ-value** | Assembly definition | — | ❌ **new material field** |
-| Assembly type (Rsi/Rse, roof −2 K) | Dropdown | `Assembly.type` (`wall`/`roof`/`floor`/`other`) | ✅ maps directly |
+| **µ / sd** | Assembly definition | — | ❌ **new material fields — this feature's Phase 1** |
+| Assembly type → heat-flow direction | Dropdown | `Assembly.type`, resolved by `boundary_conditions.heat_flow_direction()` | ✅ **shipped 2026-07-26** |
+| **Rsi / Rse** | ISO 6946 lookup | `resolve_surface_resistances(type, exterior_condition, table)` | ✅ **shipped** — ISO 6946 in code, ASHRAE from the private store |
+| **Second Rsi = 0.25** (surface criteria) | `Data!D33` | `ISO_13788_SURFACE_CHECK_RSI` | ✅ **shipped**, reserved for this screen |
+| **Exterior condition** (outdoor / ground / ventilated) | `Data!C30:C32` | `Assembly.exterior_condition`, four values | ✅ **shipped 2026-07-26** |
+| Roof −2 K | automatic on roofs | — | ❌ ours, trivial: apply on `type == "roof"` |
 | Layer order in/out | — | `Assembly.orientation` + `layers_outside_to_inside()` | ✅ already solved |
+| **Membrane layers** | thin layers with huge µ | `membrane` category; `membranes.is_membrane_layer()` | ✅ **shipped 2026-07-26** |
 | Monthly exterior θe | PHPP dataset | `ClimateMonthlyTemps.air_c` (12) | ✅ none |
 | Monthly exterior RH | derived from dew point | `ClimateMonthlyTemps.dewpoint_c` (12) | ✅ same derivation |
-| Monthly interior θi, φi | 4 interior-climate models | — | ❌ **new settings** |
+| Monthly interior θi, φi | 4 interior-climate models | — | ❌ **new settings** (`tables.assumptions` block exists; add `condensation_settings`) |
+| **Ft** (unheated adjacent space) | `Assembly!L135` | — | ❌ deferred *to this feature*; v1 does not screen `unconditioned_space` |
 | Solar radiation (sol-air) | monthly kWh/m² by orientation | `ClimateMonthlyRadiation` (N/E/S/W/glob) | ✅ available — but **out of scope**, not in ISO 13788 |
 | Heating/cooling design temps | PHPP peak loads | `ClimatePeakLoads` | ✅ available — out of scope for v1 |
 | Ma limit | User input, default 200 | — | ❌ new setting (default 200) |
 | Start month | User pick | — | auto-derived (§3.7) |
 
-**The headline finding: the exterior climate side is already complete.**
+⚠️ **Membrane thickness is not a usable input.** As shipped, a membrane layer's
+`thickness_mm` is not drawn to scale, is excluded from Total Thickness, carries
+no R, and is auto-snapped to 1 mm when implausible. `sd` must come from
+`vapor_sd_equivalent_m`, never `µ · d`. See `decisions.md` §D-15a.
+
+**2026-07-28: the inventory is now mostly green.** Every ❌ that existed when
+this was written has either shipped (surface films, exterior condition, the
+0.25 surface-check Rsi, membrane layers) or is scheduled as this feature's own
+Phase 1 (the µ/sd pair) or Phase 5 (`condensation_settings`). What remains
+genuinely unsolved is Ft, and v1 sidesteps it by not screening
+`unconditioned_space`.
+
+**The original headline finding still holds: the exterior climate side was
+already complete.**
 `ClimateRecord` carries monthly air temperature *and* monthly dew-point
 temperature, which is exactly the pair the PHI tool uses (its Climate sheet
 derives exterior RH from dew point the same way). No new climate ingestion, no
@@ -307,6 +328,11 @@ the calculation.
 Both (1) and (2) are licensed. See §D-7.
 
 ## 8. Structural mismatch: PHN assemblies are 2-D, Glaser is 1-D
+
+*(Resolved: worst-of-all-paths, bounded — `decisions.md` §D-1. Note that shipped
+membrane layers are full-width and single-segment by validation, and now
+**follow** the assembly width rather than contributing to it, so they are shared
+by every path and never multiply the enumeration.)*
 
 `AssemblyLayer` holds **multiple side-by-side `AssemblySegment`s** with widths
 (studs, cavities, continuous insulation), and `thermal.py` reduces them with the

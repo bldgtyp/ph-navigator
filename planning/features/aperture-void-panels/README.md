@@ -19,10 +19,11 @@ from U-value math and every export.
 ## Read order
 
 1. **`PRD.md`** — verified current model, the `kind` design, consumer behavior
-   matrix, GH/Rhino contract, the deferred solid-panel extension, open
-   decisions.
+   matrix, GH/Rhino contract, the deferred solid-panel extension, decisions.
 2. **`STATUS.md`** — current state and next step.
 3. Active phase file under `phases/` (phase map below).
+4. Background only: `reviews/2026-07-28-plan-review.md` — independent Opus
+   review, fully folded into the docs above; read for the F-1/F-2 traces.
 
 ## The four things to know
 
@@ -31,10 +32,13 @@ from U-value math and every export.
    `ApertureTypeEntry`). A void element preserves that invariant while marking
    cells as "not window" — all dimension/merge/split machinery is untouched.
 
-2. **The GH/Rhino side needs zero code changes.** The route-3 export simply
-   omits void elements; `create_hbph_window_unit_types` iterates elements by
-   absolute grid indices, so missing cells just build no sash. Verified in
-   `honeybee_ph_plus_rhino/.../v0/window_types_get.py:157-177`.
+2. **The GH/Rhino side needs zero code changes for the S15 shape — with one
+   exception.** Route 3 omits void elements; the GH builder places elements
+   by absolute grid indices, so missing cells just build no sash. But a
+   **fully-void grid column** silently shifts later columns left
+   (`WindowUnitType.build()` enumerates occupied columns positionally —
+   review F-1). Plan: one-line GH-side fix + a permanent PHN route-3 422
+   guard. See PRD §6.
 
 3. **`kind` is an enum, not a bool** (`"glazed" | "void"`), specifically so a
    future `"solid"` spandrel-panel kind is an additive change. The solid
