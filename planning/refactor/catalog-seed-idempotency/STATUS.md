@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+STATUS: Active — Phases 1–2 complete; Phase 3 next
 AUTHOR: Claude with Ed May
 SCOPE: Current mitigation state and remaining work for catalog seed
   idempotency.
@@ -15,36 +15,37 @@ RELATED:
 
 ## Current state
 
-Phase 1 is complete: all 638 canonical material, glazing, and frame rows now
-carry deterministic ids derived from catalog `kind` + row `name`.
+Phases 1–2 are complete: all 638 canonical material, glazing, and frame rows now
+carry deterministic ids derived from catalog `kind` + row `name`, and all three
+seeders validate those ids before preview.
 `tests/test_catalog_seed_ids.py` guards the derivation, id shape, uniqueness,
 ASCII names, first-key ordering, and exclusion of the two aperture-default
 sentinels.
 
-| Catalog | Rows | Guard today |
+| Catalog | Rows | Re-run behavior |
 | --- | --- | --- |
-| Materials | 408 | `--skip-if-not-empty` flag added; used by `make typography-eval` |
-| Glazings | 41 | **None** — unguarded |
-| Frames | 189 | **None** — unguarded |
+| Materials | 408 | `new=0`, `matched=408`; commit skipped |
+| Glazings | 41 | `new=0`, `matched=41`; commit skipped |
+| Frames | 189 | `new=0`, `matched=189`; commit skipped |
 
-The materials mitigation is opt-in: a bare `make seed-materials` on a populated
-database still duplicates. Only callers that pass the flag are protected.
+The obsolete materials-only `--skip-if-not-empty` mitigation is removed.
+Partially seeded catalogs now insert genuinely missing rows instead of skipping
+the entire operation.
 
 ## What was already done
 
-- `backend/scripts/seed_materials_catalog.py` gained `--skip-if-not-empty`,
-  which exits when the catalog has any live rows. Its help text states plainly
-  that the import is not idempotent.
-- `make typography-eval` passes that flag (it needs a non-empty catalog on a
-  fresh CI database, and would otherwise duplicate on every local run).
+- `backend/scripts/_catalog_seed_ids.py` owns derivation, validation, loading,
+  and regeneration; `backend/scripts/_catalog_seed.py` owns the shared
+  preview/commit CLI workflow for all three thin entrypoints.
+- `make typography-eval` uses the normal idempotent materials seeder.
 - No production impact. These are local/CI dev-seed scripts and
   `assert_local_dev_database()` refuses to run against production.
 
 ## Next step
 
-Implement Phase 2 of `PLAN.md`: make all three seeders validate the committed
-ids, report matched/no-op runs honestly, and retire the materials-only
-`--skip-if-not-empty` mitigation and its Typography Eval caller.
+Implement Phase 3 of `PLAN.md`: add the committed pipeline-level idempotency
+test and document re-seeding behavior plus the one-time stale-dev-database
+transition.
 
 Independently reviewed 2026-07-28 (upstream/downstream consequence check): the
 approach was confirmed correct and the plan updated in place. Additions worth
@@ -83,4 +84,4 @@ procedure used to restore the local catalog from 1224 rows back to its original
 - Run each catalog seed target twice against a populated database; row counts
   must not change on the second run.
 - Run `make db-seed` and confirm exactly one copy of each catalog.
-- Confirm no `counts.new == 0` guard remains in any of the three scripts.
+- Confirm matched-only runs report their counts and skip commit.

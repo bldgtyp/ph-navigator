@@ -2,101 +2,29 @@
 
 Reads the committed `backend/seeds/catalogs/materials.v1.json` envelope
 and pipes it through the same preview → commit pipeline the HTTP routes
-use. Idempotent on `id`; fresh ids are minted for seed rows that have
-none, so the FIRST run is the realistic case and subsequent runs insert
-duplicates unless the user re-exports the live catalog into the seed
-file.
+use. Every committed row carries a deterministic id, so repeated runs
+insert only missing rows and never update existing ones.
 """
 
 from __future__ import annotations
 
-import argparse
-import json
-import pathlib
-import sys
-
-from fastapi import Request
-
-from database import connection
-from features.auth.service import create_or_update_user
 from features.catalogs.materials.import_export.service import commit_import, preview_import
-from scripts._seed_paths import MATERIALS_SEED_PATH, assert_local_dev_database, default_user_kwargs
+from scripts._catalog_seed import CatalogSeedSpec, run_catalog_seed
+from scripts._seed_paths import MATERIALS_SEED_PATH
 
 DEFAULT_SEED_PATH = MATERIALS_SEED_PATH
-_DEFAULTS = default_user_kwargs()
-DEFAULT_EMAIL = _DEFAULTS["email"]
-DEFAULT_PASSWORD = _DEFAULTS["password"]
-DEFAULT_DISPLAY_NAME = _DEFAULTS["display_name"]
-
-
-def _fake_request() -> Request:
-    """Minimal Starlette Request stub for audit logging.
-
-    Audit log calls only read `client.host` and the User-Agent header;
-    a bare ASGI scope with those fields is enough.
-    """
-    scope = {
-        "type": "http",
-        "method": "POST",
-        "path": "/scripts/seed_materials_catalog",
-        "headers": [(b"user-agent", b"seed-materials-catalog")],
-        "client": ("127.0.0.1", 0),
-        "query_string": b"",
-    }
-    return Request(scope)
+SEED_SPEC = CatalogSeedSpec(
+    description="Seed the local materials catalog.",
+    default_seed_path=DEFAULT_SEED_PATH,
+    request_path="/scripts/seed_materials_catalog",
+    user_agent="seed-materials-catalog",
+    preview_import=preview_import,
+    commit_import=commit_import,
+)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the local materials catalog.")
-    parser.add_argument("--seed", type=pathlib.Path, default=DEFAULT_SEED_PATH)
-    parser.add_argument("--email", default=DEFAULT_EMAIL)
-    parser.add_argument("--display-name", default=DEFAULT_DISPLAY_NAME)
-    parser.add_argument("--password", default=DEFAULT_PASSWORD)
-    parser.add_argument(
-        "--skip-if-not-empty",
-        action="store_true",
-        help=(
-            "Exit without importing when the catalog already has rows. This import "
-            "is NOT idempotent -- preview matching does not recognise previously "
-            "seeded rows, so a second plain run duplicates the whole seed. Use this "
-            "flag for any automated caller that may run repeatedly."
-        ),
-    )
-    args = parser.parse_args()
-
-    assert_local_dev_database()
-
-    if args.skip_if_not_empty:
-        with connection() as conn:
-            existing = conn.execute("SELECT count(*) AS n FROM catalog_materials WHERE deleted_at IS NULL").fetchone()
-        count = int(existing["n"]) if existing else 0
-        if count:
-            print(f"Materials catalog already has {count} row(s); skipping seed.")
-            return
-
-    if not args.seed.is_file():
-        print(f"Seed file not found: {args.seed}", file=sys.stderr)
-        raise SystemExit(2)
-
-    payload = json.loads(args.seed.read_text())
-    user = create_or_update_user(email=args.email, display_name=args.display_name, password=args.password)
-
-    preview = preview_import(payload, user)
-    print(
-        f"Preview: new={preview.counts.new} matched={preview.counts.matched} "
-        f"errored={preview.counts.errored} warnings={preview.counts.warnings}"
-    )
-    for warning in preview.warnings:
-        print(f"  warning {warning.reason} on rows {warning.row_indices[:5]}")
-    for error in preview.errors:
-        print(f"  error {error.reason} on rows {error.row_indices[:5]}")
-
-    if preview.counts.new == 0:
-        print("Nothing new to commit; exiting.")
-        return
-
-    commit = commit_import(preview.token, user, _fake_request())
-    print(f"Committed: inserted={commit.inserted} skipped_conflict={len(commit.skipped_conflict_ids)}")
+    run_catalog_seed(SEED_SPEC)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+STATUS: Active — Phases 1–2 complete; Phase 3 next
 AUTHOR: Claude with Ed May
 SCOPE: Router for the catalog seed-script idempotency defect (materials,
   glazings, frames).

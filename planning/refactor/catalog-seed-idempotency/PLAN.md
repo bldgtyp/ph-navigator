@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 11:24 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+STATUS: Active — Phases 1–2 complete; Phase 3 next
 AUTHOR: Claude with Ed May
 REVIEWED: 2026-07-28 — claims re-verified against code; edge cases folded in
   (sentinel rows, id namespacing, transition cost, soft-delete re-runs).
@@ -192,7 +192,7 @@ uv run ruff check scripts/_catalog_seed_ids.py tests/test_catalog_seed_ids.py
 uv run ty check scripts/_catalog_seed_ids.py tests/test_catalog_seed_ids.py
 ```
 
-### Phase 2 — Make the seeders honest and idempotent
+### Phase 2 — Make the seeders honest and idempotent — COMPLETE (2026-07-28)
 
 1. Rework the `if preview.counts.new == 0: … return` block in all three
    scripts (option D). Note the framing shift: **after Phase 1 this guard is no
@@ -223,6 +223,19 @@ uv run ty check scripts/_catalog_seed_ids.py tests/test_catalog_seed_ids.py
 
 Exit: running each target twice against a catalog seeded from these files leaves
 the row count unchanged, with no dead code.
+
+Completed by routing all three thin entrypoints through the shared
+`run_catalog_seed()` workflow, which loads every seed through
+`load_catalog_seed()`, reports matched-only counts, and skips no-op commits.
+`--skip-if-not-empty` is retired, and the Typography Eval caller now uses the
+normal idempotent materials seed. Verification:
+
+```text
+uv run pytest tests/test_catalog_seed_ids.py tests/test_catalog_seed_scripts.py tests/test_auth.py -q
+# 31 passed
+pipeline replay: materials matched=408; frames matched=189; glazings matched=41
+# all three: new=0, errored=0
+```
 
 ### Phase 3 — Transition, tests, and docs
 

@@ -13,7 +13,7 @@ import json
 import re
 import string
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from scripts._seed_paths import FRAME_SEED_PATH, GLAZING_SEED_PATH, MATERIALS_SEED_PATH
 
@@ -99,6 +99,13 @@ def add_catalog_seed_ids(document: object) -> dict[str, object]:
     updated_document: dict[str, object] = {**document_object, "rows": updated_rows}
     validate_catalog_seed_ids(updated_document)
     return updated_document
+
+
+def load_catalog_seed(path: Path) -> dict[str, Any]:
+    """Load a seed only when every committed id matches its natural key."""
+    document: object = json.loads(path.read_text(encoding="utf-8"))
+    validate_catalog_seed_ids(document)
+    return cast(dict[str, Any], document)
 
 
 def write_catalog_seed_ids(path: Path) -> tuple[int, bool]:
