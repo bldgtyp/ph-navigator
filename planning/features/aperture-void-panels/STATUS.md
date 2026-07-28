@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — planning drafted; no implementation started
+STATUS: Active — planning accepted; ready to start Phase 1
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -17,19 +17,19 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   Trigger project: storefront unit S15 (doors extend below sidelite sills).
 - Solid spandrel panels: deferred (decisions.md D-2, PRD §7); `kind` enum
   reserves the slot.
+- 2026-07-28 — Ed resolved all open decisions: D-1 UI label **"Empty"** with
+  explanatory tooltips; D-3 confirm-then-clear; D-4 near-fully transparent
+  fill + dashed outline. PRD/decisions/phases updated to match.
 - No code changes yet. No branch yet.
 
 ## Next step
 
-1. Ed reviews `PRD.md` and confirms open decisions D-1 / D-3 / D-4 (§9) and
-   the D-2 deferral.
-2. Start Phase 1 (`phases/phase-01-schema.md`) on a feature branch
-   (`feature/aperture-void-panels`).
+Start Phase 1 (`phases/phase-01-schema.md`) on a feature branch
+(`feature/aperture-void-panels`).
 
 ## Blockers
 
-- None hard. D-1/D-3/D-4 have stated defaults; only a reversal of D-2
-  (folding solid panels in now) would require re-planning.
+- None.
 
 ## Verification ledger
 

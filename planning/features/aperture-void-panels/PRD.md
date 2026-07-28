@@ -1,15 +1,15 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Draft — awaiting Ed's sign-off on §9 open decisions
+STATUS: Accepted — D-1/D-3/D-4 resolved by Ed 2026-07-28; ready for Phase 1
 AUTHOR: Claude (Fable 5) with Ed May
-SCOPE: Product/behavior contract for void ("Filler") aperture elements, with a
+SCOPE: Product/behavior contract for void ("Empty") aperture elements, with a
   reserved-but-deferred extension path for solid spandrel panels.
 RELATED: ./README.md, ./decisions.md, ./phases/,
   context/ui/pages/apertures-tab.md, context/GLOSSARY.md
 ---
 
-# PRD — Aperture void ("Filler") panels
+# PRD — Aperture void ("Empty") panels
 
 ## §0 Problem
 
@@ -130,7 +130,7 @@ handler error style):
 | `refreshRefFromCatalog` | unreachable for voids (no refs) — no change needed |
 
 `addRow`/`addColumn` keep creating glazed elements; users convert cells to
-Filler afterward.
+Empty afterward.
 
 ## §4 Consumer behavior matrix
 
@@ -148,16 +148,21 @@ Filler afterward.
 ## §5 Frontend behavior
 
 - **Canvas** (`ApertureSvgCanvas.tsx` + element layers): voids render as
-  visually inert cells — muted fill with a diagonal-hatch pattern from design
-  tokens, no glazing inset, no operation symbols, no U-value chip, no frame
-  edges. Still selectable (needed to convert back / merge / name).
+  "not there" — near-fully transparent fill (very light, per D-4) with a
+  **dashed outline** from design tokens; no glazing inset, no operation
+  symbols, no U-value chip, no solid frame edges. Still selectable (needed to
+  convert back / merge / name).
 - **Element card** (`ApertureElementCard.tsx`): for a void, hide
   `FramesPanel` / `GlazingRow` / `OperationRow` / `UValueChip`; show a single
-  caption: *"Filler — not part of the aperture. Excluded from U-value and
+  caption: *"Empty — not part of the aperture. Excluded from U-value and
   exports."* plus the kind toggle.
-- **Kind control**: a small "Filler" toggle (placement per apertures-tab page
-  doc conventions). glazed→void with any assignment present opens a confirm
-  dialog stating what will be cleared.
+- **Kind control**: a small "Empty" toggle (placement per apertures-tab page
+  doc conventions) with a **clear tooltip** explaining the concept — e.g.
+  *"Empty panel: occupies the layout but is not part of the window unit. The
+  area is wall; it is excluded from U-value, spec report, and all exports."*
+  The same explanation appears as the tooltip on void cells in the canvas.
+  glazed→void with any assignment present opens a confirm dialog stating what
+  will be cleared.
 - **Interaction guards** (mirror server): `pick-paste-machine.ts` — voids are
   invalid pick and paste targets/sources; `merge-validation.ts` — mixed-kind
   merges invalid with a reason string, consistent with existing invalid-merge
@@ -209,20 +214,19 @@ its foundation.
 
 ## §8 Naming
 
-- Wire/schema value: `"void"`. UI label: **"Filler"** (reads best to
-  non-developers; "None" is ambiguous next to unassigned slots).
-- Add **Filler panel (void element)** to `context/GLOSSARY.md` in Phase 5.
+- Wire/schema value: `"void"`. UI label: **"Empty"** (Ed, 2026-07-28), with
+  explanatory tooltips everywhere the label appears (§5).
+- Add **Empty panel (void element)** to `context/GLOSSARY.md` in Phase 5.
 
-## §9 Open decisions (Ed)
+## §9 Decisions (resolved by Ed, 2026-07-28)
 
-| # | Question | Default if unanswered |
+| # | Question | Resolution |
 | --- | --- | --- |
-| D-1 | UI label "Filler" (wire `void`)? | Yes — "Filler" |
-| D-3 | glazed→void with assignments: confirm-then-clear or hard-refuse? | Confirm-then-clear |
-| D-4 | Canvas treatment: token-based diagonal hatch on muted fill? | Yes (final look per design system during Phase 4) |
+| D-1 | UI label for wire value `void` | **"Empty"**, with clear explanatory tooltips wherever it appears |
+| D-3 | glazed→void with assignments | **Confirm-then-clear** |
+| D-4 | Canvas treatment | **Near-fully transparent fill + dashed outline** — reads as "not there" (final tokens per design system during Phase 4) |
 
-(D-2, solid deferral, is recorded as accepted in `decisions.md` pending Ed's
-confirmation of this PRD.)
+(D-2, solid deferral, accepted — see `decisions.md`.)
 
 ## §10 Phasing
 

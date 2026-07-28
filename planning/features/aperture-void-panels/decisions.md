@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: D-2 accepted (pending Ed's PRD confirmation); D-1/D-3/D-4 open
+STATUS: All decisions resolved 2026-07-28 (Ed)
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Accepted / rejected / open decisions for aperture void panels.
 RELATED: ./PRD.md §7 §9
@@ -33,9 +33,18 @@ RELATED: ./PRD.md §7 §9
   existing g=0-glazing escape hatch. The enum slot is the part that was
   expensive to retrofit; that lands now.)
 
-## Open (defaults in PRD §9)
+- **D-1 — UI label "Empty"** for wire value `void` (Ed, 2026-07-28; "Filler"
+  proposal rejected). Every surface showing the label carries a clear
+  explanatory tooltip (PRD §5) — the term alone must never be the only
+  explanation.
 
-- **D-1** — UI label "Filler" for wire value `void`.
-- **D-3** — glazed→void with existing assignments: confirm-then-clear
-  (default) vs hard-refuse.
-- **D-4** — Canvas void treatment: muted fill + token-based diagonal hatch.
+- **D-3 — Confirm-then-clear** (Ed, 2026-07-28): converting a glazed element
+  with existing assignments to Empty shows a confirm dialog listing what will
+  be cleared; the server clears unconditionally, the frontend owns the
+  confirm.
+
+- **D-4 — Canvas treatment: near-fully transparent + dashed outline** (Ed,
+  2026-07-28): void cells are only very lightly shown — almost fully
+  transparent fill with a dashed outline, which reads unmistakably as "not
+  there". (Supersedes the drafted diagonal-hatch proposal.) Final token
+  values chosen during Phase 4 per `context/DESIGN_SYSTEM.md`.

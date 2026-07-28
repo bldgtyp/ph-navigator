@@ -1,14 +1,14 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — planning drafted, awaiting Ed's sign-off on open decisions
+STATUS: Active — planning accepted (all decisions resolved 2026-07-28); ready for Phase 1
 AUTHOR: Claude (Fable 5) with Ed May
-SCOPE: Router for void ("Filler") panels in the Aperture Builder.
+SCOPE: Router for void ("Empty") panels in the Aperture Builder.
 RELATED: ./PRD.md, ./STATUS.md, ./decisions.md, ./phases/,
   context/ui/pages/apertures-tab.md, context/GLOSSARY.md
 ---
 
-# Aperture void ("Filler") panels
+# Aperture void ("Empty") panels
 
 Support aperture-element layouts where part of the grid is **not part of the
 window unit** — e.g. a storefront whose doors extend below the sidelite sill
