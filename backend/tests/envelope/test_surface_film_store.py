@@ -29,9 +29,9 @@ from features.envelope.surface_film_store import (
 
 _FIXTURE_PAYLOAD = {
     "standard": "ashrae",
-    "rsi_by_direction": {"upward": 0.11, "horizontal": 0.12, "downward": 0.16},
-    "rse_outdoor_air_m2k_w": 0.03,
-    "source": "invented test fixture, not ASHRAE",
+    "rsi_by_direction": {"upward": 0.25, "horizontal": 0.35, "downward": 0.45},
+    "rse_outdoor_air_m2k_w": 0.05,
+    "source": "synthetic test fixture — invented values, no published standard",
 }
 
 
@@ -84,10 +84,10 @@ def test_missing_object_reads_as_unpublished_not_an_error() -> None:
 @pytest.mark.parametrize(
     "payload",
     [
-        {"rse_outdoor_air_m2k_w": 0.03},
-        {"rsi_by_direction": {"upward": 0.11}, "rse_outdoor_air_m2k_w": 0.03},
-        {"rsi_by_direction": {"upward": 0, "horizontal": 0.12, "downward": 0.16}, "rse_outdoor_air_m2k_w": 0.03},
-        {"rsi_by_direction": {"upward": 0.11, "horizontal": 0.12, "downward": 0.16}},
+        {"rse_outdoor_air_m2k_w": 0.05},
+        {"rsi_by_direction": {"upward": 0.25}, "rse_outdoor_air_m2k_w": 0.05},
+        {"rsi_by_direction": {"upward": 0, "horizontal": 0.35, "downward": 0.45}, "rse_outdoor_air_m2k_w": 0.05},
+        {"rsi_by_direction": {"upward": 0.25, "horizontal": 0.35, "downward": 0.45}},
         "not-an-object",
     ],
 )
@@ -119,7 +119,7 @@ def test_a_different_table_moves_the_resolved_films() -> None:
     ashrae_wall = resolve_surface_resistances("wall", "outdoor_air", ashrae)
 
     assert (iso_wall.rsi_m2k_w, iso_wall.rse_m2k_w) == (0.13, 0.04)
-    assert (ashrae_wall.rsi_m2k_w, ashrae_wall.rse_m2k_w) == (0.12, 0.03)
+    assert (ashrae_wall.rsi_m2k_w, ashrae_wall.rse_m2k_w) == (0.35, 0.05)
     assert ashrae_wall.standard == "ashrae"
     # Direction is structural, not standard-specific.
     assert iso_wall.heat_flow_direction == ashrae_wall.heat_flow_direction
@@ -131,7 +131,7 @@ def test_ventilated_and_ground_rules_apply_to_any_table() -> None:
     ventilated = resolve_surface_resistances("roof", "ventilated", ashrae)
     ground = resolve_surface_resistances("floor", "ground", ashrae)
 
-    assert ventilated.rse_m2k_w == ventilated.rsi_m2k_w == 0.11
+    assert ventilated.rse_m2k_w == ventilated.rsi_m2k_w == 0.25
     assert ground.rse_m2k_w == 0.0
 
 
