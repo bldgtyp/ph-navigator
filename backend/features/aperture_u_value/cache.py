@@ -1,9 +1,12 @@
 """Content-hash + FIFO cache for ``calculate_aperture_u_values``.
 
 The cache key is a SHA-256 over the canonical-JSON representation of
-the U-Value-affecting subtree. ``operation`` and ``name`` are
-explicitly excluded so toggling operation type or renaming an element
-does not invalidate the cache (PRD §14).
+the result-affecting subtree. Element ``kind`` is included because
+void elements are excluded from the calculation, and frame
+``mull_type`` is included because it controls void-boundary warnings.
+``operation`` and ``name`` are explicitly excluded so toggling
+operation type or renaming an element does not invalidate the cache
+(PRD §14).
 
 Cache is process-local with a 256-entry FIFO bound — enough for
 multi-aperture documents on a single request, small enough that
@@ -77,18 +80,22 @@ def cache_clear() -> None:
 def content_hash_for_aperture(entry: ApertureTypeEntry, tables: ProjectDocumentTables) -> str:
     """Stable SHA-256 hex over the U-Value-affecting subtree.
 
-    Element ``name`` and ``operation`` are excluded so changes to
-    those fields don't invalidate the cache. ``catalog_origin`` is
-    excluded — the values referenced by the origin are already in
-    the hash via the frame / glazing properties.
+    Aperture id and element ``kind`` are included. The id keeps cached
+    response envelopes distinct across otherwise-identical aperture
+    types. ``name`` and ``operation`` are excluded so changes to those
+    fields don't invalidate the cache. ``catalog_origin`` is excluded —
+    the values referenced by the origin are already in the hash via the
+    frame / glazing properties.
     """
 
     payload = {
+        "aperture_type_id": entry.id,
         "row_heights_mm": [_round(v) for v in entry.row_heights_mm],
         "column_widths_mm": [_round(v) for v in entry.column_widths_mm],
         "elements": [
             {
                 "id": el.id,
+                "kind": el.kind,
                 "row_span": list(el.row_span),
                 "column_span": list(el.column_span),
                 "frames": {
@@ -106,17 +113,21 @@ def content_hash_for_aperture(entry: ApertureTypeEntry, tables: ProjectDocumentT
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def _frame_payload_for_id(tables: ProjectDocumentTables, frame_id: str | None) -> dict[str, float | None] | None:
+def _frame_payload_for_id(
+    tables: ProjectDocumentTables,
+    frame_id: str | None,
+) -> dict[str, float | str | None] | None:
     return _frame_payload(frame_by_id(tables, frame_id))
 
 
-def _frame_payload(frame: ProjectFrame | None) -> dict[str, float | None] | None:
+def _frame_payload(frame: ProjectFrame | None) -> dict[str, float | str | None] | None:
     if frame is None:
         return None
     return {
         "width_mm": _round_opt(frame.width_mm),
         "u_value_w_m2k": _round_opt(frame.u_value_w_m2k),
         "psi_g_w_mk": _round_opt(frame.psi_g_w_mk),
+        "mull_type": frame.mull_type,
     }
 
 

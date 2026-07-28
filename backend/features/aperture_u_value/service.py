@@ -12,23 +12,28 @@ The window-level U-Value is the area-weighted average of the per-
 element values (same formula at aggregate). Operation is excluded —
 PRD §14 + V1 keep operation orthogonal to U_w.
 
-Missing assignments are reported via ``ApertureUValueWarning`` rather
-than raising; the value still computes from the picked elements.
+Void elements are excluded from the area, heat flow, and per-element
+results. Missing assignments, all-void types, and mullion frames beside
+voids are reported via ``ApertureUValueWarning`` rather than raising.
 
 Cache: results are keyed by ``content_hash_for_aperture(entry)`` so
-operation / name changes hit the cache instantly.
+operation / name changes hit the cache instantly while kind, geometry,
+thermal assignments, and warning-affecting mull types invalidate it.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
 
 from features.aperture_u_value.cache import cache_get, cache_put, content_hash_for_aperture
 from features.aperture_u_value.models import (
     ApertureElementUValue,
     ApertureUValueResult,
     ApertureUValueWarning,
+)
+from features.project_document.aperture_commands.models import (
+    APERTURE_SIDES,
+    ApertureSide,
 )
 from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
@@ -58,8 +63,23 @@ def calculate_aperture_u_values(entry: ApertureTypeEntry, tables: ProjectDocumen
     total_q = 0.0
     total_area = 0.0
 
-    for element in entry.elements:
-        per_el = _calculate_element(entry, element, tables)
+    glazed_elements = [element for element in entry.elements if element.kind == "glazed"]
+    if not glazed_elements:
+        aggregate_warnings.append(
+            ApertureUValueWarning(
+                kind="no_glazed_elements",
+                message=f"Aperture type {entry.id} contains no glazed elements.",
+            )
+        )
+
+    void_adjacency = _void_adjacency_by_element(entry, glazed_elements)
+    for element in glazed_elements:
+        per_el = _calculate_element(
+            entry,
+            element,
+            tables,
+            void_adjacent_sides=void_adjacency.get(element.id, ()),
+        )
         element_results.append(per_el)
         aggregate_warnings.extend(per_el.warnings)
         total_q += per_el.u_value_w_m2k * per_el.area_m2
@@ -79,24 +99,64 @@ def calculate_aperture_u_values(entry: ApertureTypeEntry, tables: ProjectDocumen
     return result
 
 
+def _void_adjacency_by_element(
+    entry: ApertureTypeEntry,
+    glazed_elements: list[ApertureElement],
+) -> dict[str, tuple[ApertureSide, ...]]:
+    """Index Empty cells once, then inspect only each glazed perimeter."""
+    if not glazed_elements:
+        return {}
+    void_cells: set[tuple[int, int]] = set()
+    for element in entry.elements:
+        if element.kind != "void":
+            continue
+        for row in range(element.row_span[0], element.row_span[1] + 1):
+            for column in range(element.column_span[0], element.column_span[1] + 1):
+                void_cells.add((row, column))
+    if not void_cells:
+        return {}
+
+    adjacency: dict[str, tuple[ApertureSide, ...]] = {}
+    for element in glazed_elements:
+        row_start, row_end = element.row_span
+        column_start, column_end = element.column_span
+        sides: list[ApertureSide] = []
+        if row_start > 0 and any(
+            (row_start - 1, column) in void_cells for column in range(column_start, column_end + 1)
+        ):
+            sides.append("top")
+        if column_end + 1 < len(entry.column_widths_mm) and any(
+            (row, column_end + 1) in void_cells for row in range(row_start, row_end + 1)
+        ):
+            sides.append("right")
+        if row_end + 1 < len(entry.row_heights_mm) and any(
+            (row_end + 1, column) in void_cells for column in range(column_start, column_end + 1)
+        ):
+            sides.append("bottom")
+        if column_start > 0 and any((row, column_start - 1) in void_cells for row in range(row_start, row_end + 1)):
+            sides.append("left")
+        if sides:
+            adjacency[element.id] = tuple(sides)
+    return adjacency
+
+
 def _calculate_element(
     entry: ApertureTypeEntry,
     element: ApertureElement,
     tables: ProjectDocumentTables,
+    *,
+    void_adjacent_sides: tuple[ApertureSide, ...] = (),
 ) -> ApertureElementUValue:
     width_m = _element_width_m(entry, element)
     height_m = _element_height_m(entry, element)
     total_area = width_m * height_m
 
-    sides: tuple[Literal["top", "right", "bottom", "left"], ...] = ("top", "right", "bottom", "left")
-    frames: dict[Literal["top", "right", "bottom", "left"], _FrameData | None] = {
-        "top": _frame_data(frame_by_id(tables, element.frames.top)),
-        "right": _frame_data(frame_by_id(tables, element.frames.right)),
-        "bottom": _frame_data(frame_by_id(tables, element.frames.bottom)),
-        "left": _frame_data(frame_by_id(tables, element.frames.left)),
+    frame_refs: dict[ApertureSide, ProjectFrame | None] = {
+        side: frame_by_id(tables, getattr(element.frames, side)) for side in APERTURE_SIDES
     }
+    frames = {side: _frame_data(frame_refs[side]) for side in APERTURE_SIDES}
     warnings: list[ApertureUValueWarning] = []
-    for side in sides:
+    for side in APERTURE_SIDES:
         if frames[side] is None:
             warnings.append(
                 ApertureUValueWarning(
@@ -106,6 +166,21 @@ def _calculate_element(
                     message=f"Element {element.id} is missing a {side} frame assignment.",
                 )
             )
+    for side in void_adjacent_sides:
+        frame = frame_refs[side]
+        if frame is None or not frame.mull_type:
+            continue
+        warnings.append(
+            ApertureUValueWarning(
+                kind="mullion_frame_at_void_boundary",
+                element_id=element.id,
+                side=side,
+                message=(
+                    f"Element {element.id} has a mullion frame on its {side} edge next to an Empty panel; "
+                    "re-check the jamb, sill, or head frame assignment."
+                ),
+            )
+        )
 
     glazing_u = _glazing_u_value(glazing_by_id(tables, element.glazing_id))
     if glazing_u is None:

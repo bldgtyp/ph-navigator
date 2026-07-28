@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — U-value, cache key, route-3 GH export, route-4 HBJSON export;
   verify spec-report/drift untouched.
@@ -111,3 +111,26 @@ Shared pytest fixtures (Phases 4–5 reuse them):
 `make ci` green. Manual spot-check via MCP against the local fixture project:
 build the S15 layout with Phase-2 commands, read back
 `calculate_aperture_u_values` and the route-3 JSON.
+
+## Completion evidence
+
+- U-value calculation omits Empty elements from heat flow, area, warnings,
+  and element rows; all-Empty types and mullion frames beside Empty panels
+  use the two planned warning kinds.
+- The result cache hashes aperture id, element `kind`, and frame `mull_type`;
+  name and operation remain excluded. Identical aperture types cannot cross-
+  contaminate cached response envelopes.
+- Route 3 omits Empty elements, preserves the full grid and absolute indices,
+  rejects all-Empty types and fully-Empty columns, and permits fully-Empty
+  rows. Route 4 emits no construction or identifier for Empty elements.
+- MCP summaries now distinguish `element_count` from
+  `glazed_element_count`. Spec-report, drift, and orphaned-product behaviors
+  have explicit mixed/transition regressions.
+- Shared S15 and fully-Empty-column fixtures live in
+  `backend/tests/aperture_void_fixtures.py` for Phase 4–5 reuse.
+- Focused backend suite: `60 passed`; Ruff, Ty, and frontend TypeScript
+  checks green.
+- Simplify reuse, quality, and efficiency passes complete with all findings
+  resolved.
+- Full `make ci`: backend `1624 passed, 7 skipped`; frontend `245` files /
+  `2294` tests passed; structural guards and production build green.
