@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Active — Phases 1–4 complete; Phase 5 next
+STATUS: Implemented on branch — Ed Rhino acceptance, PRs, and merge pending
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, blockers, verification for aperture void panels.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -66,15 +66,28 @@ RELATED: ./README.md, ./PRD.md, ./phases/
   completed with all findings resolved. The S15 browser fixture was built and
   visually verified; screenshot:
   `assets/phase-04-s15-empty-panels.png`.
+- 2026-07-28 — Phase 5 automated work implemented. The unmodified GH V1
+  schema parses the exact S15 route-3 payload with absolute placement intact
+  and no Empty elements; the fully-Empty-column fixture returns route-level
+  422; route-4 construction count equals glazed-element count. Companion repo
+  branch `fix/window-type-absolute-column-origin` commit `963becb` fixes
+  absolute column placement and carries an isolated CPython regression. The
+  live saved fixture also passed route-3 schema parsing and route-4 count
+  checks. Glossary, UI, data-model, API, and export/cache docs are reconciled.
+  Full-feature simplify and docs-pass are complete with all findings resolved.
 
 ## Next step
 
-Implement Phase 5 (`phases/phase-05-verification-docs.md`): cross-repo GH
-placement fix/smoke, final documentation, and closeout verification.
+Ed must pull the saved fixture through the real `PH-Nav Get Apertures`
+Rhino/GH component and confirm the door/sidelite/void geometry and glazed-only
+constructions. After that, push/open the companion and PH-Navigator PRs, merge,
+then archive the packet.
 
 ## Blockers
 
-- None.
+- Manual Rhino/GH visual acceptance requires Ed.
+- Companion and PH-Navigator branches are local-only for this closeout; push,
+  PR creation, merge, archive, and deployment have not been performed.
 
 ## Verification ledger
 
@@ -89,5 +102,8 @@ placement fix/smoke, final documentation, and closeout verification.
 | 4 | focused backend + frontend tests | Backend restore subset: `5 passed`; frontend: `46 passed`; TypeScript green |
 | 4 | `make ci` | Green — backend 1627 passed; frontend 2312 passed |
 | 4 | agent-browser smoke (S15 layout build) | Passed; screenshot retained |
-| 5 | `make ci` | — |
-| 5 | Route-3 → GH schema parse + Rhino visual check (Ed) | — |
+| 5 | focused cross-repo/route regressions | `3 passed`; companion test `1 passed`; Ruff/Black green |
+| 5 | live saved fixture route 3 → unmodified GH schema | Passed — 3 glazed elements; columns 0/1/2; reversed rows preserved |
+| 5 | live saved fixture route 4 construction count | Passed — 3 constructions = 3 glazed elements |
+| 5 | `make ci` | Green — backend 1629 passed; frontend 2312 passed |
+| 5 | real `PH-Nav Get Apertures` Rhino/GH visual check | Pending — Ed |

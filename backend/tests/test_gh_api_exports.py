@@ -15,7 +15,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from honeybee_energy.construction.opaque import OpaqueConstruction
+from psycopg.types.json import Jsonb
 
+from database import transaction
 from features.gh_api.aperture_types_export import export_aperture_types
 from features.gh_api.constructions_export import export_rich_constructions
 from features.project_document.document import (
@@ -398,6 +400,32 @@ def test_aperture_types_reject_fully_void_column_with_type_and_index() -> None:
         "aperture_type_name": "Void column",
         "column_index": 1,
     }
+
+
+def test_aperture_types_route_rejects_fully_void_column(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = _create_project(client, "2601")
+    body = aperture_void_document()
+    body.tables.apertures = [fully_void_column_aperture()]
+    with transaction() as conn:
+        conn.execute(
+            """
+            UPDATE project_versions
+            SET body = %(body)s,
+                schema_version = %(schema_version)s
+            WHERE id = %(version_id)s
+            """,
+            {
+                "body": Jsonb(body.model_dump(mode="json")),
+                "schema_version": body.schema_version,
+                "version_id": project["active_version_id"],
+            },
+        )
+
+    response = TestClient(app).get(_gh_url("2601") + "/aperture-types")
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "aperture_export_fully_void_column"
 
 
 def test_aperture_types_allow_fully_void_row() -> None:

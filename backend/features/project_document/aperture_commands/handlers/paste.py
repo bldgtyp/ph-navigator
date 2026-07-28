@@ -24,10 +24,23 @@ from features.project_document.aperture_commands.handlers._shared import (
     replace_aperture,
     require_glazed_element,
 )
-from features.project_document.aperture_commands.models import PasteAssignment
+from features.project_document.aperture_commands.models import (
+    ApertureAssignmentSnapshot,
+    PasteAssignment,
+)
 from features.project_document.apertures.factories import DefaultsCatalogReader
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ApertureElement, ProjectDocumentV1
 from features.shared.errors import api_error
+
+
+def _assignment_updates(
+    source: ApertureElement | ApertureAssignmentSnapshot,
+) -> dict[str, object]:
+    return {
+        "operation": source.operation.model_copy(deep=True) if source.operation else None,
+        "glazing_id": source.glazing_id,
+        "frames": source.frames.model_copy(deep=True),
+    }
 
 
 def apply_paste_assignment(
@@ -58,13 +71,7 @@ def apply_paste_assignment(
         ((target_idx, target),) = find_elements(entry, command.target_element_ids)
         require_glazed_element(target, action="pasteAssignmentRestore")
         snapshot = command.restore_assignment
-        restored = target.model_copy(
-            update={
-                "operation": snapshot.operation.model_copy(deep=True) if snapshot.operation else None,
-                "glazing_id": snapshot.glazing_id,
-                "frames": snapshot.frames.model_copy(deep=True),
-            }
-        )
+        restored = target.model_copy(update=_assignment_updates(snapshot))
         next_elements = list(entry.elements)
         next_elements[target_idx] = restored
         next_entry = entry.model_copy(update={"elements": next_elements})
@@ -99,13 +106,7 @@ def apply_paste_assignment(
 
     next_elements = list(entry.elements)
     for idx, target in targets:
-        next_elements[idx] = target.model_copy(
-            update={
-                "operation": source.operation.model_copy(deep=True) if source.operation else None,
-                "glazing_id": source.glazing_id,
-                "frames": source.frames.model_copy(deep=True),
-            }
-        )
+        next_elements[idx] = target.model_copy(update=_assignment_updates(source))
 
     next_entry = entry.model_copy(update={"elements": next_elements})
     next_body = replace_aperture(body, aperture_idx, next_entry)

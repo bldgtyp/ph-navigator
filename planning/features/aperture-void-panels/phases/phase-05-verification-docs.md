@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Implemented on branch — Ed Rhino acceptance pending
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 5 — end-to-end + cross-repo verification, glossary/docs updates, closeout.
 RELATED: ../PRD.md §6 §8 §11, context/GLOSSARY.md, context/ui/pages/apertures-tab.md
@@ -77,3 +77,36 @@ but do not join the two by name.
 - On completion, archive the folder to
   `planning/archive/dated/<date>/aperture-void-panels/` + one line in
   `planning/archive/README.md`.
+
+## Implementation result — 2026-07-28
+
+- Companion repo `honeybee_grasshopper_ph_plus` now derives each occupied
+  column origin from the element's absolute `col` index. Local branch
+  `fix/window-type-absolute-column-origin`, commit `963becb`; its isolated
+  fully-void-column regression, Ruff, and Black checks pass. Nothing was
+  pushed and no PR was opened.
+- `backend/tests/test_aperture_void_cross_repo.py` parses the exact S15 route-3
+  serializer payload with the unmodified companion V1 schema when that repo is
+  available. It asserts void omission, all four absolute columns, bottom-up row
+  reversal, spans, and route-4 construction count.
+- The fully-void-column fixture now has an HTTP route-level 422 regression in
+  addition to the serializer guard test.
+- A saved local browser fixture was fetched through routes 3 and 4. The
+  unmodified GH schema parsed three glazed elements in absolute columns 0/1/2
+  with correct reversed row origins; route 4 emitted three constructions.
+- Durable vocabulary, data-model, REST-command, HBJSON-export, cache, and
+  Apertures UI docs now describe Empty panels and `setElementKind`.
+- Full-feature simplify reuse/quality/efficiency reviews are clear after
+  centralizing assignment snapshot copying and isolating the companion test's
+  dependency stubs.
+- `make format` made no changes; Graphify was refreshed; final `make ci`
+  passed with backend `1629 passed, 7 skipped` and frontend `247` files /
+  `2312` tests plus the production build.
+
+## Remaining manual acceptance
+
+Ed must pull the saved fixture through the real `PH-Nav Get Apertures`
+component in Rhino/GH and confirm the four visual/geometry conditions in step
+4 above. Until that check, the two PRs, and the merge are complete, this packet
+stays in place and is not archived. Deployment remains a separate explicit
+action.

@@ -86,6 +86,9 @@ collision by renaming one of the apertures.
 
 Field mapping:
 
+- Only `kind: "glazed"` aperture elements emit constructions. Empty
+  (`kind: "void"`) elements preserve the Builder grid but produce no identifier
+  or HBJSON object.
 - `u_factor` — per-element composite ISO 10077-1 U-Value from the
   Apertures U-Value service (W/m²K, SI canonical), rounded to 4 dp.
 - `shgc` — element's `glazing.g_value`, rounded to 4 dp. Falls back to
@@ -106,8 +109,8 @@ is the long-lived contract.
 The U-Value service backs every export through its content-hash + LRU
 cache. The cache key excludes the element `name` and `operation` fields,
 so renaming an element or toggling its operation type is a free cache
-hit. Any change to dimensions, frame / glazing assignments, or the
-override values invalidates the cache for that aperture.
+hit. Any change to element `kind`, dimensions, frame / glazing assignments,
+or the override values invalidates the cache for that aperture.
 
 ## Test fixture
 
