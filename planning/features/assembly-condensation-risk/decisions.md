@@ -296,7 +296,7 @@ and **three of the four criteria** (surface condensation, mould growth, fRsi) ar
 evaluated at a *second* Rsi of 0.25 m²K/W. With no film model, three of four
 criteria cannot be computed.
 
-Split out to `planning/features/assembly-boundary-conditions/`. **Its Phase 1
+Split out to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. **Its Phase 1
 gates this feature's Phase 2**, alongside `assembly-membrane-layers` Phases 1–2.
 The two prerequisites are independent of each other and can proceed in parallel.
 

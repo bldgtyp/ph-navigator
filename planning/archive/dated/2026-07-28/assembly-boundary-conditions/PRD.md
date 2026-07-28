@@ -1,15 +1,15 @@
 ---
 DATE: 2026-07-26
 TIME: 11:05 EDT
-STATUS: Accepted — Phase 1 implemented; Phases 2–4 open (see ./STATUS.md)
+STATUS: Complete — all four phases implemented, merged, and deployed 2026-07-28 (see ./STATUS.md)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: A real boundary-condition model for assemblies — exterior condition
   (outdoor air / ground / ventilated / unconditioned), standard-based surface
   resistances, heat-flow direction, and a graphic interior/exterior indication
   on the section.
 RELATED: ./README.md, ./STATUS.md,
-  ../assembly-condensation-risk/PRD.md (depends on this),
-  ../../archive/dated/2026-07-26/assembly-membrane-layers/PRD.md (complete),
+  ../../../../features/assembly-condensation-risk/PRD.md (depends on this),
+  ../../2026-07-26/assembly-membrane-layers/PRD.md (complete),
   backend/features/envelope/thermal.py, context/ui/pages/envelope-tab.md
 ---
 
@@ -227,7 +227,7 @@ assumptions:
 > single-member literal — so no document could name a standard whose values
 > did not exist. Phase 4 widened it to `"iso_6946" | "ashrae"` alongside the
 > loader. ISO's values stay in code; ASHRAE's live only in the private
-> object store (`../../../context/DATA_STORAGE.md` class ④), and asking for
+> object store (`../../../../../context/DATA_STORAGE.md` class ④), and asking for
 > an unpublished standard returns a typed 409 rather than falling back to
 > ISO numbers under an ASHRAE label.
 
@@ -339,8 +339,8 @@ this must not become a legend-heavy diagram.
 | --- | --- |
 | **1** ✅ | `exterior_condition` + `assumptions.thermal_standard` fields, ISO 6946 resistance table, heat-flow direction from `type`. **No change to any displayed number.** Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
 | **2** ✅ | Fold films into the thermal calculation (§6): both unit branches move, **`#assembly-thermal-metric` tooltip rewritten** (it currently asserts the opposite), construction-only R kept in the tooltip, `thermal_input_hash` extended, PHPP double-count regression test added, Ch. 25/27 citation reconciled. Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
-| **3** ✅ | Rendering — exterior label becomes a select, interior label shows derived Rsi, face bands, ground/ventilated treatments. Delivered 2026-07-26 — as-built notes in `./STATUS.md`. |
-| **4** 🟡 | ASHRAE resistance set (private-DB routed) + the standard selector in the UI. Low priority — Ed reports ~99 % ISO. **Routing decided 2026-07-26 (Ed): private object store, loader only** (D-7 option 1). The mechanism landed; the values and the selector are outstanding — see `./STATUS.md` → "Still open on Phase 4". |
+| **3** ✅ | Rendering — exterior caption becomes a select, face bands, ground/ventilated treatments. Delivered 2026-07-26; **amended 2026-07-28** to drop the Rsi/Rse values and heat-flow direction from the captions (they duplicated the header tooltip, which is now their only home). As-built notes in `./STATUS.md`. |
+| **4** ✅ | ASHRAE resistance set (private-object-store routed) + the standard selector. **Routing decided 2026-07-26 (Ed): private object store, loader only** (D-7 option 1). Mechanism landed 2026-07-26; values published to `ph-navigator-prod` + local MinIO and `ThermalStandardSelect` shipped 2026-07-28. As-built notes in `./STATUS.md`. |
 
 Phase 1 alone unblocks `assembly-condensation-risk` Phase 2, and does so without
 moving a single number a user can see. Phase 2 is the one that changes reported

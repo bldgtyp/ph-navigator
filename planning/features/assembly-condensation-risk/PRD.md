@@ -50,7 +50,7 @@ wall that does not exist. (`decisions.md` §D-10.) **Cleared 2026-07-26** —
 all four membrane phases shipped. The vapour fields in §4 are *not* shared:
 membranes deliberately left them, so they are this feature's Phase 1.
 
-**2. `planning/features/assembly-boundary-conditions/` (Phase 1).** `thermal.py`
+**2. `planning/archive/dated/2026-07-28/assembly-boundary-conditions/` (Phase 1).** `thermal.py`
 adds no Rsi/Rse at all. ISO 13788's entire temperature profile depends on
 `R_total = Rsi + ΣR + Rse`, and **three of the four criteria** — surface
 condensation, mould growth, fRsi — are evaluated at a second Rsi of 0.25 m²K/W.
@@ -137,7 +137,7 @@ assumptions rather than two siblings.
 the None-means-defaults accessor. This feature adds `condensation_settings`
 to it as a second field — do not create a sibling block. Note the as-built
 narrowing of `thermal_standard` to `Literal["iso_6946"]` until the ASHRAE
-values land (`../assembly-boundary-conditions/PRD.md` §4.2).
+values land (`../../archive/dated/2026-07-28/assembly-boundary-conditions/PRD.md` §4.2).
 
 ```
 assumptions:
