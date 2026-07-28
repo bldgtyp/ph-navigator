@@ -130,6 +130,7 @@ const ACTIVE_APERTURE: ApertureTypeEntry = {
     {
       id: "aptel-active",
       name: "A",
+      kind: "glazed",
       row_span: [0, 0],
       column_span: [0, 0],
       frames: { top: null, right: null, bottom: null, left: null },

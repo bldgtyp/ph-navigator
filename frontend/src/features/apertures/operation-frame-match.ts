@@ -3,12 +3,10 @@
 // so rows allowed by picker operation filtering do not immediately warn.
 
 import { frameOperationMatchesElement } from "./picker-filters";
-import type { ApertureElement, ApertureSide, FrameRef } from "./types";
-
-const FRAME_SIDES: readonly ApertureSide[] = ["top", "right", "bottom", "left"];
+import { APERTURE_SIDES, type ApertureElement, type ApertureSide, type FrameRef } from "./types";
 
 export function mismatchedSides(element: ApertureElement): ApertureSide[] {
-  return FRAME_SIDES.filter((side) => sideMismatches(element.frames[side], element));
+  return APERTURE_SIDES.filter((side) => sideMismatches(element.frames[side], element));
 }
 
 function sideMismatches(frame: FrameRef | null, element: ApertureElement): boolean {

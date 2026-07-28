@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 2 — `setElementKind` command + void guards on existing commands.
 RELATED: ../PRD.md §3, ../decisions.md D-3
@@ -92,3 +92,19 @@ existing suite covers commands individually (mirror whatever
 
 `make ci` green. No UI yet — exercise via pytest and (optionally) MCP
 `apply_aperture_command` against the local fixture project.
+
+## Completion evidence
+
+- `setElementKind` is atomic across the requested element ids, clears every
+  glazed-only assignment on transition to `void`, and preserves document
+  identity for a fully idempotent batch.
+- Pick, paste, and operation commands reject void elements with
+  `aperture_element_is_void`; merge rejects mixed kinds and merge/split
+  preserve a uniform kind.
+- Straddle-growth and delete-to-all-void behaviors are covered explicitly.
+- Focused backend suite: `75 passed, 1 skipped`; Ruff, Ty, and frontend
+  TypeScript checks green.
+- Simplify review: reuse, quality, and efficiency passes complete with all
+  findings resolved.
+- Full `make ci`: backend `1609 passed, 7 skipped`; frontend `245` files /
+  `2294` tests passed; structural guards and production build green.

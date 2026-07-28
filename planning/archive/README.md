@@ -3,6 +3,21 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-28
+
+- `aperture-void-panels` - Aperture Elements now support `kind: "void"` for
+  grid cells that are host wall rather than part of the window unit. Empty
+  panels preserve exact grid coverage while carrying no frame, glazing, or
+  operation assignments; U-value math, specification reports, route-3 GH
+  export, and route-4 HBJSON export exclude them. The Builder renders a
+  near-transparent dashed cell with per-element and batch kind controls,
+  assignment-aware confirmation, pick/paste and merge guards, and durable
+  paste-undo restoration. Cross-repo verification added the companion
+  Grasshopper absolute-column-origin fix plus an unmodified-schema S15 smoke
+  and fully-void-column 422 guard. Final `make ci` passed (backend 1629,
+  frontend 2312); Ed verified the real Rhino/GH components against dev
+  `:5173`, where Empty panels imported as expected.
+
 ## 2026-07-26
 
 - `assembly-membrane-layers` - Assemblies can now hold membrane / sheet-good

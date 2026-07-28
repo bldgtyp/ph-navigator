@@ -667,3 +667,7 @@ GET    /api/v1/gh/projects/{bt_number}/aperture-types
 GET    /api/v1/gh/projects/{bt_number}/aperture-constructions/hbjson
 GET    /api/v1/gh/projects/{bt_number}/tables/{table_name}
 ```
+
+The ApertureCommand union includes batched `setElementKind`
+(`element_ids` + wire `element_kind: "glazed" | "void"`). Converting to
+`void` atomically clears glazing, operation, and all four frame assignments.

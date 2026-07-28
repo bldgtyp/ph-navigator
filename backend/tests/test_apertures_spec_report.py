@@ -2,13 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from features.apertures.selectors import build_apertures_read_parts
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.aperture_commands.dispatcher import apply_aperture_command
+from features.project_document.aperture_commands.models import SetElementKind
+from features.project_document.apertures.factories import DefaultsCatalogReader
+from features.project_document.document import ApertureTypeEntry, ProjectDocumentV1
 from features.project_document.validation import document_etag
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
+from tests.aperture_void_fixtures import (
+    FRAME_ID,
+    GLAZING_ID,
+    aperture_void_document,
+    glazed_element,
+    s15_aperture,
+)
 from tests.envelope.test_envelope_document_contracts import write_saved_body
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
@@ -144,6 +154,50 @@ def test_build_apertures_read_parts_derives_use_sites() -> None:
     assert [site.side for site in main_frame.use_sites] == ["top", "right", "bottom", "left"]
     assert {site.aperture_type_name for site in main_frame.use_sites} == {"W1"}
     assert next(frame for frame in frames if frame.id == "pfrm_unused").use_sites == []
+
+
+def test_glazed_to_void_clears_use_sites_but_keeps_orphaned_products() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [
+        ApertureTypeEntry(
+            id="apt_orphan",
+            name="Orphan test",
+            row_heights_mm=[1000.0],
+            column_widths_mm=[1000.0],
+            elements=[glazed_element("aptel_orphan", row_span=(0, 0), column_span=(0, 0))],
+        )
+    ]
+    updated, _audit = apply_aperture_command(
+        body,
+        SetElementKind(
+            aperture_type_id="apt_orphan",
+            element_ids=["aptel_orphan"],
+            element_kind="void",
+        ),
+        actor_user_id="test",
+        catalog=cast(DefaultsCatalogReader, object()),
+    )
+    glazings, frames = build_apertures_read_parts(updated)
+
+    glazing = next(item for item in glazings if item.id == GLAZING_ID)
+    frame = next(item for item in frames if item.id == FRAME_ID)
+    assert glazing.use_sites == []
+    assert frame.use_sites == []
+    assert {item.id for item in updated.tables.project_glazings} == {GLAZING_ID}
+    assert FRAME_ID in {item.id for item in updated.tables.project_frames}
+
+
+def test_mixed_aperture_voids_add_no_spec_report_use_sites() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [s15_aperture()]
+    glazings, _frames = build_apertures_read_parts(body)
+    glazing = next(item for item in glazings if item.id == GLAZING_ID)
+    assert {site.element_name for site in glazing.use_sites} == {
+        "aptel_left_sidelite",
+        "aptel_left_door",
+        "aptel_right_door",
+        "aptel_right_sidelite",
+    }
 
 
 def test_aperture_spec_report_returns_saved_and_draft_sources(clean_document_tables: None) -> None:

@@ -12,7 +12,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchJson } from "../../../shared/api/client";
 
 export type ApertureUValueWarning = {
-  kind: "missing_frame" | "missing_glazing" | "missing_dimension" | "non_positive_glazing_area";
+  kind:
+    | "missing_frame"
+    | "missing_glazing"
+    | "missing_dimension"
+    | "non_positive_glazing_area"
+    | "no_glazed_elements"
+    | "mullion_frame_at_void_boundary";
   element_id: string | null;
   side: "top" | "right" | "bottom" | "left" | null;
   axis: "row" | "column" | null;

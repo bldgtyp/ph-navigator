@@ -45,6 +45,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
   return {
     id: "aptel_1",
     name: "E",
+    kind: "glazed",
     row_span: [0, 0],
     column_span: [0, 0],
     frames: {
@@ -93,6 +94,27 @@ describe("ApertureSvgCanvas", () => {
     expect(within(group).getByTestId("region-aptel_1-bottom")).toBeInTheDocument();
     expect(within(group).getByTestId("region-aptel_1-left")).toBeInTheDocument();
     expect(within(group).getByTestId("region-aptel_1-glazing")).toBeInTheDocument();
+  });
+
+  it("renders an Empty element as one dashed void region without glazing or operation symbols", () => {
+    const empty = element({
+      kind: "void",
+      operation: { type: "swing", directions: ["left"] },
+    });
+    render(
+      <ApertureSvgCanvas
+        aperture={entry({ elements: [empty] })}
+        zoom={1}
+        viewDirection="exterior"
+      />,
+    );
+
+    expect(screen.getByTestId("region-aptel_1-void")).toHaveAttribute(
+      "fill",
+      "var(--aperture-void-fill)",
+    );
+    expect(screen.queryByTestId("region-aptel_1-glazing")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("operation-symbols-aptel_1")).not.toBeInTheDocument();
   });
 
   it("marks a null-frame region with dashed stroke and no fill", () => {

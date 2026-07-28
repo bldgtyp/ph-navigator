@@ -15,7 +15,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from honeybee_energy.construction.opaque import OpaqueConstruction
+from psycopg.types.json import Jsonb
 
+from database import transaction
 from features.gh_api.aperture_types_export import export_aperture_types
 from features.gh_api.constructions_export import export_rich_constructions
 from features.project_document.document import (
@@ -34,6 +36,13 @@ from features.project_document.document import (
 from features.project_document.templates import empty_project_document
 from features.projects.models import CreateProjectRequest
 from main import app
+from tests.aperture_void_fixtures import (
+    aperture_void_document,
+    fully_void_column_aperture,
+    glazed_element,
+    s15_aperture,
+    void_element,
+)
 from tests.test_gh_api_foundation import _create_project, _gh_url
 from tests.test_project_document import signed_in_client
 
@@ -359,6 +368,102 @@ def test_duplicate_aperture_type_names_rejected() -> None:
     with pytest.raises(HTTPException) as excinfo:
         export_aperture_types(body)
     assert excinfo.value.status_code == 409
+
+
+def test_aperture_types_omit_voids_but_preserve_full_grid_and_absolute_indices() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [s15_aperture()]
+    aperture = export_aperture_types(body)["S15"]
+    assert aperture["row_heights_mm"] == [500.0, 500.0, 500.0, 500.0]
+    assert aperture["column_widths_mm"] == [500.0, 900.0, 900.0, 500.0]
+    assert {element["name"] for element in aperture["elements"]} == {
+        "aptel_left_sidelite",
+        "aptel_left_door",
+        "aptel_right_door",
+        "aptel_right_sidelite",
+    }
+    right_sidelite = next(element for element in aperture["elements"] if element["name"] == "aptel_right_sidelite")
+    assert right_sidelite["column_number"] == 3
+    assert right_sidelite["row_number"] == 0
+
+
+def test_aperture_types_reject_fully_void_column_with_type_and_index() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [fully_void_column_aperture()]
+    with pytest.raises(HTTPException) as excinfo:
+        export_aperture_types(body)
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, Any], excinfo.value.detail)
+    assert detail["error_code"] == "aperture_export_fully_void_column"
+    assert detail["details"] == {
+        "aperture_type_id": "apt_void_column",
+        "aperture_type_name": "Void column",
+        "column_index": 1,
+    }
+
+
+def test_aperture_types_route_rejects_fully_void_column(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = _create_project(client, "2601")
+    body = aperture_void_document()
+    body.tables.apertures = [fully_void_column_aperture()]
+    with transaction() as conn:
+        conn.execute(
+            """
+            UPDATE project_versions
+            SET body = %(body)s,
+                schema_version = %(schema_version)s
+            WHERE id = %(version_id)s
+            """,
+            {
+                "body": Jsonb(body.model_dump(mode="json")),
+                "schema_version": body.schema_version,
+                "version_id": project["active_version_id"],
+            },
+        )
+
+    response = TestClient(app).get(_gh_url("2601") + "/aperture-types")
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "aperture_export_fully_void_column"
+
+
+def test_aperture_types_allow_fully_void_row() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [
+        ApertureTypeEntry(
+            id="apt_void_row",
+            name="Void row",
+            row_heights_mm=[1000.0, 400.0],
+            column_widths_mm=[1000.0, 1000.0],
+            elements=[
+                glazed_element("aptel_top", row_span=(0, 0), column_span=(0, 1)),
+                void_element("aptel_bottom_empty", row_span=(1, 1), column_span=(0, 1)),
+            ],
+        )
+    ]
+    aperture = export_aperture_types(body)["Void row"]
+    assert aperture["row_heights_mm"] == [1000.0, 400.0]
+    assert [element["name"] for element in aperture["elements"]] == ["aptel_top"]
+
+
+def test_aperture_types_reject_all_void_type() -> None:
+    body = aperture_void_document()
+    body.tables.apertures = [
+        ApertureTypeEntry(
+            id="apt_all_empty",
+            name="All Empty",
+            row_heights_mm=[1000.0],
+            column_widths_mm=[1000.0],
+            elements=[void_element("aptel_empty", row_span=(0, 0), column_span=(0, 0))],
+        )
+    ]
+    with pytest.raises(HTTPException) as excinfo:
+        export_aperture_types(body)
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, Any], excinfo.value.detail)
+    assert detail["error_code"] == "aperture_export_all_void"
+    assert cast(dict[str, object], detail["details"])["aperture_type_name"] == "All Empty"
 
 
 # --- route smokes -----------------------------------------------------------

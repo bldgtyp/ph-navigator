@@ -80,7 +80,7 @@ def _seed_aperture(version_id: str) -> dict[str, object]:
 # ----------------------------- read tools ---------------------------------
 
 
-def test_list_aperture_types_returns_id_name_and_element_count(
+def test_list_aperture_types_distinguishes_total_and_glazed_element_counts(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -88,14 +88,41 @@ def test_list_aperture_types_returns_id_name_and_element_count(
     project = create_project(client)
     project_id = cast(str, project["id"])
     version_id = cast(str, project["active_version_id"])
-    _seed_aperture(version_id)
+    body = _seed_aperture(version_id)
+    tables = cast(dict[str, object], body["tables"])
+    aperture = cast(list[dict[str, object]], tables["apertures"])[0]
+    cast(list[float], aperture["column_widths_mm"]).append(1000.0)
+    cast(list[dict[str, object]], aperture["elements"]).append(
+        {
+            "id": "aptel_A2",
+            "name": "Empty",
+            "kind": "void",
+            "row_span": [0, 0],
+            "column_span": [1, 1],
+            "frames": {"top": None, "right": None, "bottom": None, "left": None},
+            "glazing_id": None,
+            "operation": None,
+        }
+    )
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE project_versions SET body = %(body)s WHERE id = %(version_id)s",
+            {"body": Jsonb(body), "version_id": version_id},
+        )
     _issue_token(client, project_id, monkeypatch, ["project:read"])
 
     result = tool_list_aperture_types(
         project_id, version_id, cast(Context, None), allow_env_token=True, source="version"
     )
     apertures = cast(list[dict[str, object]], result["apertures"])
-    assert apertures == [{"id": "apt_A", "name": "Type A", "element_count": 1}]
+    assert apertures == [
+        {
+            "id": "apt_A",
+            "name": "Type A",
+            "element_count": 2,
+            "glazed_element_count": 1,
+        }
+    ]
 
 
 def test_get_aperture_type_returns_full_entry(
@@ -216,6 +243,40 @@ def test_apply_aperture_command_renames_aperture_and_tags_audit_with_mcp(
         ).fetchone()
     assert draft is not None
     assert draft["updated_via"] == "mcp"
+
+
+def test_apply_aperture_command_sets_element_kind_through_mcp(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+    _issue_token(client, project_id, monkeypatch, ["project:read", "project:write"])
+
+    result = tool_apply_aperture_command(
+        project_id,
+        version_id,
+        {
+            "kind": "setElementKind",
+            "aperture_type_id": "apt_A",
+            "element_ids": ["aptel_A1"],
+            "element_kind": "void",
+        },
+        cast(Context, None),
+        allow_env_token=True,
+        if_match_version=saved_etag,
+    )
+
+    response = cast(dict[str, object], result["response"])
+    apertures = cast(list[dict[str, object]], response["apertures"])
+    elements = cast(list[dict[str, object]], apertures[0]["elements"])
+    assert elements[0]["kind"] == "void"
+    audit = cast(dict[str, object], result["audit"])
+    assert audit["action_kind"] == "project_version_aperture_element_set_kind"
 
 
 def test_apply_aperture_command_rejects_project_document_over_size_limit(

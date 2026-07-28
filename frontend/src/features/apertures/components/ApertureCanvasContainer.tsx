@@ -31,7 +31,8 @@ import {
 import { validateMergeSelection } from "../merge-validation";
 import { isSplittable } from "../split-geometry";
 import { usePickPasteHandlers } from "../hooks/usePickPasteHandlers";
-import type { ApertureTypeEntry } from "../types";
+import { useElementKindHandlers } from "../hooks/useElementKindHandlers";
+import type { ApertureAssignmentSnapshot, ApertureElementKind, ApertureTypeEntry } from "../types";
 import { ApertureCanvasOverlay } from "./ApertureCanvasOverlay";
 import { ApertureCanvasToolbar } from "./ApertureCanvasToolbar";
 import { ApertureElementCardStack } from "./ApertureElementCardStack";
@@ -41,33 +42,17 @@ import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
 import { HorizontalDimensionStrip } from "./HorizontalDimensionStrip";
 import { TotalDimensionsCaption } from "./TotalDimensionsCaption";
 import { VerticalDimensionStrip } from "./VerticalDimensionStrip";
+import { SetElementKindDialog } from "./SetElementKindDialog";
 
-// Educational tooltip text shown when the user presses Delete / Backspace
-// with elements selected. PRD §9.2.3: no direct-delete; route via Merge or
-// row / column deletion in the dimension strips.
 const NO_DIRECT_DELETE_MESSAGE =
   "To remove an element, merge it into a neighbor (Toolbar → Merge) or delete its row / column (hover the dimension label, click −).";
 
-// Once-per-session flag for the tooltip dedupe so repeated Delete presses
-// across navigations stay quiet. Module scope mirrors the "stable toast id"
-// pattern the phase doc calls for with Sonner — Sonner is not in the dep
-// tree in V2, so we ship a local inline notice instead.
 let noDeleteTooltipShown = false;
 
 type DimensionConfirm = { axis: "row" | "column"; index: number; customizedCount: number } | null;
 
-// Stable empty array used by the dismissed-warning selector so Zustand's
-// snapshot loop guard doesn't churn on fresh ``[]`` references.
 const EMPTY_DISMISSED: readonly string[] = Object.freeze([]);
 
-// Phase 03 + 04 keep view direction as component-local state. Zoom and
-// selection live in the apertures builder Zustand store so they survive
-// route-level unmounts while staying ephemeral to the browser session.
-//
-// Phase 05 adds the dimension strips + format selector + edge-add /
-// row-column delete affordances. Dimension commands fan out through the
-// optional `onDimensionCommand` callback so the route layer keeps owning
-// the actual dispatch + error handling.
 export function ApertureCanvasContainer({
   aperture,
   dimFormat,
@@ -81,12 +66,15 @@ export function ApertureCanvasContainer({
   onPickFrame,
   onPickGlazing,
   onSetElementOperation,
+  onSetElementKind,
   onMergeElements,
   onSplitElement,
   onFlipLeftRight,
   onPasteAssignment,
+  onRestoreAssignment,
   uValueByElementId,
   commandBusy = false,
+  commandError = null,
 }: {
   aperture: ApertureTypeEntry;
   dimFormat: ApertureDimFormatState;
@@ -103,6 +91,10 @@ export function ApertureCanvasContainer({
     elementId: string,
     operation: import("../types").ApertureOperation | null,
   ) => void;
+  onSetElementKind?: (
+    elementIds: string[],
+    elementKind: ApertureElementKind,
+  ) => Promise<boolean> | boolean;
   onMergeElements?: (elementIds: string[]) => void;
   onSplitElement?: (elementId: string) => void;
   onFlipLeftRight?: () => void;
@@ -110,9 +102,14 @@ export function ApertureCanvasContainer({
     sourceElementId: string,
     targetElementIds: string[],
     payload: PickedAssignment,
-  ) => Promise<void> | void;
+  ) => Promise<boolean> | boolean;
+  onRestoreAssignment?: (
+    targetElementId: string,
+    prior: ApertureAssignmentSnapshot,
+  ) => Promise<boolean> | boolean;
   uValueByElementId?: Map<string, number>;
   commandBusy?: boolean;
+  commandError?: string | null;
 }) {
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
@@ -145,7 +142,22 @@ export function ApertureCanvasContainer({
     handleEyedropper,
     handlePaintBucket,
     sendEsc,
-  } = usePickPasteHandlers({ apertureId: aperture.id, onPasteAssignment });
+  } = usePickPasteHandlers({
+    apertureId: aperture.id,
+    onPasteAssignment,
+    onRestoreAssignment,
+  });
+  const {
+    pendingElements: pendingKindElements,
+    requestElementKind,
+    confirmPending: confirmElementKind,
+    cancelPending: cancelElementKind,
+  } = useElementKindHandlers({
+    apertureId: aperture.id,
+    elements: aperture.elements,
+    onSetElementKind,
+    disabled: !canEdit || commandBusy,
+  });
 
   const unitSystem = dimFormat.system === "ip" ? "ip" : "si";
 
@@ -268,10 +280,25 @@ export function ApertureCanvasContainer({
 
   const mergeValidation = validateMergeSelection(aperture, selection);
   const canMerge = canEdit && mergeValidation.ok;
-  const selectedElement =
-    selection.length === 1 ? (aperture.elements.find((e) => e.id === selection[0]) ?? null) : null;
+  const selectionSet = useMemo(() => new Set(selection), [selection]);
+  const selectedElements = useMemo(
+    () => aperture.elements.filter((element) => selectionSet.has(element.id)),
+    [aperture.elements, selectionSet],
+  );
+  const selectedElement = selectedElements.length === 1 ? (selectedElements[0] ?? null) : null;
   const canSplit = canEdit && selectedElement !== null && isSplittable(selectedElement);
   const canFlipLeftRight = canEdit && !commandBusy && pickPasteMode === "idle";
+  const canUndoPaste = canEdit && !commandBusy && undoDepth > 0;
+  const elementKindTarget: ApertureElementKind | null =
+    !canEdit ||
+    !onSetElementKind ||
+    commandBusy ||
+    pickPasteMode !== "idle" ||
+    selectedElements.length === 0
+      ? null
+      : selectedElements.every((element) => element.kind === "void")
+        ? "glazed"
+        : "void";
 
   const handleMerge = useCallback(() => {
     if (!canMerge || !mergeValidation.ok) return;
@@ -305,7 +332,7 @@ export function ApertureCanvasContainer({
       canEdit &&
       (event.key === "z" || event.key === "Z") &&
       (event.metaKey || event.ctrlKey) &&
-      undoDepth > 0
+      canUndoPaste
     ) {
       event.preventDefault();
       void undoLastPaste();
@@ -336,8 +363,9 @@ export function ApertureCanvasContainer({
         canMerge={canMerge}
         canSplit={canSplit}
         canFlipLeftRight={canFlipLeftRight}
+        elementKindTarget={elementKindTarget}
         pickPasteMode={pickPasteMode}
-        undoDepth={undoDepth}
+        canUndoPaste={canUndoPaste}
         onZoomIn={() => setZoom((current) => nextZoomStep(current))}
         onZoomOut={() => setZoom((current) => previousZoomStep(current))}
         onFit={fitZoom}
@@ -348,6 +376,10 @@ export function ApertureCanvasContainer({
         onMerge={handleMerge}
         onSplit={handleSplit}
         onFlipLeftRight={handleFlipLeftRight}
+        onToggleElementKind={() => {
+          if (elementKindTarget === null) return;
+          requestElementKind(selection, elementKindTarget);
+        }}
         onEyedropper={handleEyedropper}
         onPaintBucket={handlePaintBucket}
         onUndoPaste={() => void undoLastPaste()}
@@ -421,7 +453,7 @@ export function ApertureCanvasContainer({
           </div>
         </div>
       </div>
-      {(onPickFrame || onPickGlazing || onSetElementName) && (
+      {(onPickFrame || onPickGlazing || onSetElementName || onSetElementKind) && (
         <ApertureElementCardStack
           aperture={aperture}
           viewDirection={viewDirection}
@@ -433,6 +465,8 @@ export function ApertureCanvasContainer({
           onSetElementOperation={(elementId, operation) =>
             onSetElementOperation?.(elementId, operation)
           }
+          onSetElementKind={(elementId, kind) => requestElementKind([elementId], kind)}
+          commandBusy={commandBusy}
           dismissedOperationWarnings={dismissedOpWarnings}
           onDismissOperationWarning={(elementId) => dismissOperationWarning(aperture.id, elementId)}
           uValueByElementId={uValueByElementId}
@@ -445,6 +479,13 @@ export function ApertureCanvasContainer({
         customizedCount={pendingDelete?.customizedCount ?? 0}
         onCancel={() => setPendingDelete(null)}
         onConfirm={handleConfirmDelete}
+      />
+      <SetElementKindDialog
+        elements={pendingKindElements}
+        busy={commandBusy}
+        error={commandError}
+        onCancel={cancelElementKind}
+        onConfirm={() => void confirmElementKind()}
       />
     </div>
   );

@@ -76,6 +76,7 @@ describe("builder-store", () => {
       { type: "click-element" },
       {
         source_element_id: "el_source",
+        source_element_kind: "glazed",
         operation: { type: "swing", directions: ["left"] },
         glazing: null,
         frames,
@@ -86,6 +87,7 @@ describe("builder-store", () => {
     expect(state.pickPasteMode).toBe("pasting");
     expect(state.pickedAssignment).toEqual({
       source_element_id: "el_source",
+      source_element_kind: "glazed",
       operation: { type: "swing", directions: ["left"] },
       glazing: null,
       frames,
@@ -107,6 +109,62 @@ describe("builder-store", () => {
 
     const state = useApertureBuilderStore.getState();
     expect(state.pickPasteMode).toBe("picking");
+    expect(state.pickedAssignment).toBeNull();
+  });
+
+  it("does not arm paste mode from an Empty source", () => {
+    initial.pickPasteAction({ type: "click-eyedropper" });
+    initial.pickPasteAction(
+      { type: "click-element" },
+      {
+        source_element_id: "el_void",
+        source_element_kind: "void",
+        operation: null,
+        glazing: null,
+        frames: { top: null, right: null, bottom: null, left: null },
+      },
+    );
+
+    expect(useApertureBuilderStore.getState().pickPasteMode).toBe("picking");
+    expect(useApertureBuilderStore.getState().pickedAssignment).toBeNull();
+  });
+
+  it("drops undo entries and a captured source when elements become Empty", () => {
+    initial.pushUndoEntry("apt_1", {
+      target_element_id: "el_keep",
+      prior: {
+        operation: null,
+        glazing_id: null,
+        frames: { top: null, right: null, bottom: null, left: null },
+      },
+    });
+    initial.pushUndoEntry("apt_1", {
+      target_element_id: "el_void",
+      prior: {
+        operation: null,
+        glazing_id: null,
+        frames: { top: null, right: null, bottom: null, left: null },
+      },
+    });
+    initial.pickPasteAction({ type: "click-eyedropper" });
+    initial.pickPasteAction(
+      { type: "click-element" },
+      {
+        source_element_id: "el_void",
+        source_element_kind: "glazed",
+        operation: null,
+        glazing: null,
+        frames: { top: null, right: null, bottom: null, left: null },
+      },
+    );
+
+    initial.dropUndoEntriesForElements("apt_1", ["el_void"]);
+
+    const state = useApertureBuilderStore.getState();
+    expect(state.undoStacksByAperture["apt_1"]?.map((entry) => entry.target_element_id)).toEqual([
+      "el_keep",
+    ]);
+    expect(state.pickPasteMode).toBe("idle");
     expect(state.pickedAssignment).toBeNull();
   });
 });

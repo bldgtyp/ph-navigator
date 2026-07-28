@@ -6,6 +6,7 @@ function element(row: [number, number], col: [number, number]): ApertureElement 
   return {
     id: "aptel_X",
     name: "X",
+    kind: "glazed",
     row_span: row,
     column_span: col,
     frames: { top: null, right: null, bottom: null, left: null },

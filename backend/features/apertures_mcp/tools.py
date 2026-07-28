@@ -68,13 +68,22 @@ def tool_list_aperture_types(
     allow_env_token: bool,
     source: ProjectDocumentSource = "draft",
 ) -> dict[str, object]:
-    """Return ``{ apertures: [{ id, name, element_count }] }`` for the
-    chosen body. Read scope; viewers can call this."""
+    """Return aperture summaries for the chosen body.
+
+    ``element_count`` includes Empty panels; ``glazed_element_count`` counts
+    only real window elements. Read scope; viewers can call this.
+    """
 
     body = _load_body(project_id, version_id, ctx, allow_env_token, source)
     return {
         "apertures": [
-            {"id": apt.id, "name": apt.name, "element_count": len(apt.elements)} for apt in body.tables.apertures
+            {
+                "id": apt.id,
+                "name": apt.name,
+                "element_count": len(apt.elements),
+                "glazed_element_count": sum(element.kind == "glazed" for element in apt.elements),
+            }
+            for apt in body.tables.apertures
         ]
     }
 

@@ -8,7 +8,9 @@ A single command writes all targets atomically inside one
 ``model_copy`` chain so partial failures leave the document
 unchanged. Refs are deep-copied so the targets don't share Pydantic
 instances with the source (avoids accidental mutation if a later
-override edits one target).
+override edits one target). The optional ``restore_assignment`` snapshot
+is the builder's single-target Undo path; it restores the prior wire ids
+without pretending that the target is a separate source element.
 """
 
 from __future__ import annotations
@@ -17,13 +19,28 @@ from starlette import status
 
 from features.project_document.aperture_commands.handlers._shared import (
     build_audit,
+    find_elements,
     find_entry,
     replace_aperture,
+    require_glazed_element,
 )
-from features.project_document.aperture_commands.models import PasteAssignment
+from features.project_document.aperture_commands.models import (
+    ApertureAssignmentSnapshot,
+    PasteAssignment,
+)
 from features.project_document.apertures.factories import DefaultsCatalogReader
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import ApertureElement, ProjectDocumentV1
 from features.shared.errors import api_error
+
+
+def _assignment_updates(
+    source: ApertureElement | ApertureAssignmentSnapshot,
+) -> dict[str, object]:
+    return {
+        "operation": source.operation.model_copy(deep=True) if source.operation else None,
+        "glazing_id": source.glazing_id,
+        "frames": source.frames.model_copy(deep=True),
+    }
 
 
 def apply_paste_assignment(
@@ -33,26 +50,48 @@ def apply_paste_assignment(
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, entry = find_entry(body, command.aperture_type_id)
-    by_id = {el.id: (i, el) for i, el in enumerate(entry.elements)}
+    if command.restore_assignment is not None:
+        if len(command.target_element_ids) != 1:
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                "aperture_paste_restore_requires_one_target",
+                "Paste undo can restore exactly one target element.",
+                {"target_element_ids": list(command.target_element_ids)},
+            )
+        if command.source_element_id != command.target_element_ids[0]:
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                "aperture_paste_restore_requires_self_target",
+                "Paste undo must identify its target as the source element.",
+                {
+                    "source_element_id": command.source_element_id,
+                    "target_element_id": command.target_element_ids[0],
+                },
+            )
+        ((target_idx, target),) = find_elements(entry, command.target_element_ids)
+        require_glazed_element(target, action="pasteAssignmentRestore")
+        snapshot = command.restore_assignment
+        restored = target.model_copy(update=_assignment_updates(snapshot))
+        next_elements = list(entry.elements)
+        next_elements[target_idx] = restored
+        next_entry = entry.model_copy(update={"elements": next_elements})
+        next_body = replace_aperture(body, aperture_idx, next_entry)
+        return next_body, build_audit(
+            "pasteAssignment",
+            actor_user_id,
+            aperture_type_id=entry.id,
+            source_element_id=command.source_element_id,
+            target_element_ids=list(command.target_element_ids),
+            restore=True,
+            affects_u_value=True,
+        )
 
-    if command.source_element_id not in by_id:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "Paste source element was not found in the aperture type.",
-            {
-                "aperture_type_id": entry.id,
-                "source_element_id": command.source_element_id,
-            },
-        )
-    missing_targets = [tid for tid in command.target_element_ids if tid not in by_id]
-    if missing_targets:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "One or more paste targets were not found in the aperture type.",
-            {"aperture_type_id": entry.id, "missing_ids": missing_targets},
-        )
+    resolved = find_elements(
+        entry,
+        [command.source_element_id, *command.target_element_ids],
+    )
+    _, source = resolved[0]
+    targets = resolved[1:]
     if command.source_element_id in command.target_element_ids:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -61,17 +100,13 @@ def apply_paste_assignment(
             {"source_element_id": command.source_element_id},
         )
 
-    _, source = by_id[command.source_element_id]
+    require_glazed_element(source, action="pasteAssignmentSource")
+    for _, target in targets:
+        require_glazed_element(target, action="pasteAssignmentTarget")
+
     next_elements = list(entry.elements)
-    for target_id in command.target_element_ids:
-        idx, target = by_id[target_id]
-        next_elements[idx] = target.model_copy(
-            update={
-                "operation": source.operation.model_copy(deep=True) if source.operation else None,
-                "glazing_id": source.glazing_id,
-                "frames": source.frames.model_copy(deep=True),
-            }
-        )
+    for idx, target in targets:
+        next_elements[idx] = target.model_copy(update=_assignment_updates(source))
 
     next_entry = entry.model_copy(update={"elements": next_elements})
     next_body = replace_aperture(body, aperture_idx, next_entry)

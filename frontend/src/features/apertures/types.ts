@@ -87,6 +87,7 @@ export type ProjectFrameRead = ProjectFrame & {
 
 export type ApertureOperationType = "swing" | "slide";
 export type ApertureOperationDirection = "left" | "right" | "up" | "down";
+export type ApertureElementKind = "glazed" | "void";
 
 export type ApertureOperation = {
   type: ApertureOperationType;
@@ -94,6 +95,12 @@ export type ApertureOperation = {
 };
 
 export type ApertureSide = "top" | "right" | "bottom" | "left";
+export const APERTURE_SIDES = [
+  "top",
+  "right",
+  "bottom",
+  "left",
+] as const satisfies readonly ApertureSide[];
 
 export type ApertureElementFrames = {
   top: FrameRef | null;
@@ -105,6 +112,7 @@ export type ApertureElementFrames = {
 export type ApertureElement = {
   id: string;
   name: string;
+  kind: ApertureElementKind;
   row_span: [number, number];
   column_span: [number, number];
   frames: ApertureElementFrames;
@@ -117,6 +125,12 @@ export type WireApertureElementFrames = {
   right: string | null;
   bottom: string | null;
   left: string | null;
+};
+
+export type ApertureAssignmentSnapshot = {
+  operation: ApertureOperation | null;
+  glazing_id: string | null;
+  frames: WireApertureElementFrames;
 };
 
 export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {
@@ -221,6 +235,12 @@ export type ApertureCommand =
       operation: ApertureOperation | null;
     }
   | {
+      kind: "setElementKind";
+      aperture_type_id: string;
+      element_ids: string[];
+      element_kind: ApertureElementKind;
+    }
+  | {
       kind: "editDimension";
       aperture_type_id: string;
       axis: "row" | "column";
@@ -256,6 +276,7 @@ export type ApertureCommand =
       aperture_type_id: string;
       source_element_id: string;
       target_element_ids: string[];
+      restore_assignment?: ApertureAssignmentSnapshot;
     }
   | { kind: "flipLeftRight"; aperture_type_id: string }
   | {

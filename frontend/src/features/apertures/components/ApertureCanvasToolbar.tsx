@@ -5,11 +5,14 @@ import {
   Pipette,
   RotateCcw,
   Scissors,
+  SquareDashed,
   type LucideIcon,
   X,
 } from "lucide-react";
 import type { ButtonHTMLAttributes } from "react";
 import type { AperturePickPasteMode } from "../store/builder-store";
+import { EMPTY_PANEL_EXPLANATION } from "../empty-panel";
+import type { ApertureElementKind } from "../types";
 import type { ApertureViewDirection } from "./ApertureSvgCanvas";
 import { ViewDirectionToggle } from "./ViewDirectionToggle";
 import { ZoomCluster } from "./ZoomCluster";
@@ -22,8 +25,9 @@ export function ApertureCanvasToolbar({
   canMerge,
   canSplit,
   canFlipLeftRight,
+  elementKindTarget,
   pickPasteMode,
-  undoDepth,
+  canUndoPaste,
   onZoomIn,
   onZoomOut,
   onFit,
@@ -32,6 +36,7 @@ export function ApertureCanvasToolbar({
   onMerge,
   onSplit,
   onFlipLeftRight,
+  onToggleElementKind,
   onEyedropper,
   onPaintBucket,
   onUndoPaste,
@@ -43,8 +48,9 @@ export function ApertureCanvasToolbar({
   canMerge: boolean;
   canSplit: boolean;
   canFlipLeftRight: boolean;
+  elementKindTarget: ApertureElementKind | null;
   pickPasteMode: AperturePickPasteMode;
-  undoDepth: number;
+  canUndoPaste: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFit: () => void;
@@ -53,6 +59,7 @@ export function ApertureCanvasToolbar({
   onMerge: () => void;
   onSplit: () => void;
   onFlipLeftRight: () => void;
+  onToggleElementKind: () => void;
   onEyedropper: () => void;
   onPaintBucket: () => void;
   onUndoPaste: () => void;
@@ -102,6 +109,21 @@ export function ApertureCanvasToolbar({
             onClick={onFlipLeftRight}
             disabled={!canFlipLeftRight}
           />
+          <ApertureToolbarButton
+            icon={SquareDashed}
+            label={
+              elementKindTarget === "glazed"
+                ? "Mark selected elements Glazed"
+                : "Mark selected elements Empty"
+            }
+            tooltip={
+              elementKindTarget === "glazed" ? "Mark selected Glazed" : EMPTY_PANEL_EXPLANATION
+            }
+            data-testid="aperture-canvas-toggle-empty"
+            onClick={onToggleElementKind}
+            disabled={elementKindTarget === null}
+            aria-pressed={elementKindTarget === "glazed"}
+          />
           <ApertureToolbarDivider />
           <ApertureToolbarButton
             icon={Pipette}
@@ -126,7 +148,7 @@ export function ApertureCanvasToolbar({
             tooltip="Undo paste"
             data-testid="aperture-canvas-undo-paste"
             onClick={onUndoPaste}
-            disabled={undoDepth === 0}
+            disabled={!canUndoPaste}
           />
         </>
       ) : null}

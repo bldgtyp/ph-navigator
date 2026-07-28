@@ -473,6 +473,7 @@ JSON document. Illustrative sketch (the canonical model is the
           {
             "id": "aptel_...",
             "name": "Aptel 1",
+            "kind": "glazed",                       // "glazed" | "void"; absent legacy values hydrate as "glazed"
             "row_span": [0, 0],
             "column_span": [0, 0],
             "frames": {                          // each side: ProjectFrame id | null
@@ -487,6 +488,9 @@ JSON document. Illustrative sketch (the canonical model is the
         ]
       }
     ],
+    // kind:"void" elements preserve exact grid coverage but must carry no
+    // frame, glazing, or operation assignments. Consumers exclude them from
+    // U-value math, specification reports, and all exports.
     // ProjectFrame fields mirror catalog_frame_types and carry
     // specification_status + datasheet_asset_ids. Pick commands still accept
     // FrameRef DTOs, then upsert/dedup into project_frames by

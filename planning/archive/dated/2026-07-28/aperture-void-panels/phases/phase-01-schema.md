@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 1 — add `kind` to ApertureElement (schema + wire + TS). No behavior change.
 RELATED: ../PRD.md §2, ../decisions.md A-2
@@ -72,3 +72,22 @@ produce a void is hand-crafted JSON or `replace_table`).
 
 - `make ci` green (backend `ty` strict typing + pytest, frontend tsc/vitest).
 - Grep check: no consumer branches on `kind` yet.
+
+## Implementation evidence
+
+- Branch: `feature/aperture-void-panels`.
+- Added the backend `ApertureElementKind` alias, defaulted
+  `ApertureElement.kind` to `"glazed"`, and enforced the assignment-free void
+  invariant.
+- Re-exported the alias through `project_document.document`; mirrored and
+  hydrated the required field in the Apertures frontend contract.
+- Focused backend verification:
+  `uv run pytest tests/test_project_document_apertures.py tests/test_mcp.py -q`
+  (`79 passed, 1 skipped`).
+- Frontend type verification: `pnpm exec tsc -b --pretty false` (green).
+- Consumer-branch grep found only the schema invariant in
+  `envelope_models.py`; no U-value/export/UI consumer behavior changed.
+- `make format` and `make ci` green:
+  - backend: `1595 passed, 7 skipped`;
+  - frontend: `245` test files / `2294` tests passed, structural guards green,
+    production build green.

@@ -25,6 +25,7 @@ from features.project_document.aperture_commands.models import (
     PickFrame,
     PickGlazing,
     RenameApertureType,
+    SetElementKind,
     SetElementName,
     SetElementOperation,
 )
@@ -42,6 +43,7 @@ from features.project_document.document import (
     APERTURE_DEFAULT_GLAZING_NAME,
     ApertureElement,
     ApertureElementFrames,
+    ApertureElementKind,
     ApertureOperation,
     ApertureTypeEntry,
     CatalogOrigin,
@@ -107,11 +109,13 @@ def _element(
     name: str = "Unnamed",
     row_span: tuple[int, int] = (0, 0),
     column_span: tuple[int, int] = (0, 0),
+    kind: ApertureElementKind = "glazed",
     operation: ApertureOperation | None = None,
 ) -> ApertureElement:
     return ApertureElement(
         id=id,
         name=name,
+        kind=kind,
         row_span=row_span,
         column_span=column_span,
         frames=ApertureElementFrames(),
@@ -154,6 +158,20 @@ def test_aperture_type_2x2_four_elements_validates() -> None:
             _element(id="aptel_TR", row_span=(0, 0), column_span=(1, 1)),
             _element(id="aptel_BL", row_span=(1, 1), column_span=(0, 0)),
             _element(id="aptel_BR", row_span=(1, 1), column_span=(1, 1)),
+        ],
+    )
+    check_aperture_coverage(entry)
+
+
+def test_aperture_type_coverage_accepts_void_elements() -> None:
+    entry = _aperture(
+        row_heights_mm=[1000.0, 1000.0],
+        column_widths_mm=[1000.0, 1000.0],
+        elements=[
+            _element(id="aptel_TL", row_span=(0, 0), column_span=(0, 0)),
+            _element(id="aptel_TR", row_span=(0, 0), column_span=(1, 1)),
+            _element(id="aptel_BL", row_span=(1, 1), column_span=(0, 0)),
+            _element(id="aptel_BR", row_span=(1, 1), column_span=(1, 1), kind="void"),
         ],
     )
     check_aperture_coverage(entry)
@@ -249,6 +267,49 @@ def test_aperture_element_rejects_empty_name() -> None:
                 "glazing_id": None,
             }
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("frames", {"top": "pfrm_top", "right": None, "bottom": None, "left": None}),
+        ("glazing_id", "pglz_glass"),
+        ("operation", {"type": "swing", "directions": ["left"]}),
+    ],
+)
+def test_void_aperture_element_rejects_assignments(field: str, value: object) -> None:
+    payload: dict[str, object] = {
+        "id": "aptel_void",
+        "kind": "void",
+        "row_span": [0, 0],
+        "column_span": [0, 0],
+        "frames": {"top": None, "right": None, "bottom": None, "left": None},
+        "glazing_id": None,
+        "operation": None,
+    }
+    payload[field] = value
+
+    with pytest.raises(ValidationError, match="must not carry frames/glazing/operation"):
+        ApertureElement.model_validate(payload)
+
+
+def test_aperture_element_kind_defaults_to_glazed() -> None:
+    legacy_payload = {
+        "id": "aptel_existing",
+        "name": "Existing",
+        "row_span": [0, 0],
+        "column_span": [0, 0],
+        "frames": {"top": None, "right": None, "bottom": None, "left": None},
+        "glazing_id": None,
+        "operation": None,
+    }
+    element = ApertureElement.model_validate(legacy_payload)
+    serialized = element.model_dump(mode="json")
+    round_tripped = ApertureElement.model_validate(serialized)
+
+    assert element.kind == "glazed"
+    assert round_tripped == element
+    assert {key: serialized[key] for key in legacy_payload} == legacy_payload
 
 
 def test_aperture_operation_rejects_duplicate_directions() -> None:
@@ -820,6 +881,109 @@ def test_paste_assignment_target_equals_source_rejects() -> None:
             PasteAssignment(aperture_type_id=apt_id, source_element_id=el.id, target_element_ids=[el.id]),
         )
     assert "aperture_paste_target_is_source" in str(exc.value)
+
+
+def test_paste_assignment_restore_snapshot_allows_undo_on_same_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    source, target = entry.elements[:2]
+    body, _ = _apply(
+        body,
+        SetElementOperation(
+            aperture_type_id=apt_id,
+            element_id=source.id,
+            operation=ApertureOperation(type="swing", directions=["left"]),
+        ),
+    )
+    prior = ApertureAssignmentSnapshot(
+        operation=target.operation,
+        glazing_id=target.glazing_id,
+        frames=target.frames,
+    )
+    body, _ = _apply(
+        body,
+        PasteAssignment(
+            aperture_type_id=apt_id,
+            source_element_id=source.id,
+            target_element_ids=[target.id],
+        ),
+    )
+    pasted = next(element for element in body.tables.apertures[0].elements if element.id == target.id)
+    assert pasted.operation is not None
+
+    body, audit = _apply(
+        body,
+        PasteAssignment(
+            aperture_type_id=apt_id,
+            source_element_id=target.id,
+            target_element_ids=[target.id],
+            restore_assignment=prior,
+        ),
+    )
+
+    restored = next(element for element in body.tables.apertures[0].elements if element.id == target.id)
+    assert restored.operation is None
+    assert restored.glazing_id == prior.glazing_id
+    assert restored.frames == prior.frames
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["restore"] is True
+
+
+def test_paste_assignment_restore_rejects_void_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    target = body.tables.apertures[0].elements[0]
+    body, _ = _apply(
+        body,
+        SetElementKind(
+            aperture_type_id=apt_id,
+            element_ids=[target.id],
+            element_kind="void",
+        ),
+    )
+
+    with pytest.raises(Exception) as exc:
+        _apply(
+            body,
+            PasteAssignment(
+                aperture_type_id=apt_id,
+                source_element_id=target.id,
+                target_element_ids=[target.id],
+                restore_assignment=ApertureAssignmentSnapshot(),
+            ),
+        )
+    assert "aperture_element_is_void" in str(exc.value)
+
+
+def test_paste_assignment_restore_requires_self_target() -> None:
+    from features.project_document.aperture_commands.models import (
+        ApertureAssignmentSnapshot,
+        PasteAssignment,
+    )
+
+    body, apt_id = _two_by_two_aperture()
+    source, target = body.tables.apertures[0].elements[:2]
+
+    with pytest.raises(Exception) as exc:
+        _apply(
+            body,
+            PasteAssignment(
+                aperture_type_id=apt_id,
+                source_element_id=source.id,
+                target_element_ids=[target.id],
+                restore_assignment=ApertureAssignmentSnapshot(),
+            ),
+        )
+    assert "aperture_paste_restore_requires_self_target" in str(exc.value)
 
 
 def test_flip_left_right_single_column_preserves_span_and_mirrors_operation() -> None:

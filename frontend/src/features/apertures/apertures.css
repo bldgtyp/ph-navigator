@@ -1,6 +1,8 @@
 /* @size-exception: planning/archive/css-structure-discoverability/PRD.md §2
    Apertures feature stylesheet; tracked for a sectioned split (styles/README.md). */
 .apertures-page {
+  --aperture-void-fill: color-mix(in oklab, var(--bg-card) 22%, transparent);
+  --aperture-void-stroke: color-mix(in oklab, var(--text-muted) 70%, transparent);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -705,6 +707,43 @@
   font-size: var(--fs-xs);
   gap: 3px;
   white-space: nowrap;
+}
+
+.aperture-element-card__header-actions {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--space-8);
+}
+
+.aperture-element-kind-toggle {
+  background: var(--bg-input, var(--bg-card));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-ui);
+  padding: 1px var(--space-8);
+}
+
+.aperture-element-kind-toggle[aria-checked="true"] {
+  background: color-mix(in oklab, var(--text-muted) 12%, var(--bg-card));
+  border-style: dashed;
+  color: var(--text-primary);
+}
+
+.aperture-element-kind-toggle:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.aperture-element-card__void-caption {
+  border-top: 1px dashed var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  margin: 0 var(--space-8);
+  padding: var(--space-10) var(--space-4);
 }
 
 .aperture-element-table {

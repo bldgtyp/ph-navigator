@@ -6,6 +6,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type {
   ApertureElement,
+  ApertureElementKind,
   ApertureOperation,
   ApertureSide,
   ApertureTypeEntry,
@@ -28,6 +29,8 @@ export type ApertureElementCardStackProps = {
   onPickFrame: (elementId: string, side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (elementId: string, glazing: GlazingRef) => void;
   onSetElementOperation: (elementId: string, operation: ApertureOperation | null) => void;
+  onSetElementKind: (elementId: string, kind: ApertureElementKind) => void;
+  commandBusy?: boolean;
   dismissedOperationWarnings: readonly string[];
   onDismissOperationWarning: (elementId: string) => void;
   uValueByElementId?: Map<string, number>;
@@ -42,6 +45,8 @@ export function ApertureElementCardStack({
   onPickFrame,
   onPickGlazing,
   onSetElementOperation,
+  onSetElementKind,
+  commandBusy = false,
   dismissedOperationWarnings,
   onDismissOperationWarning,
   uValueByElementId,
@@ -95,6 +100,8 @@ export function ApertureElementCardStack({
           onPickFrame={(side, frame) => onPickFrame(element.id, side, frame)}
           onPickGlazing={(glazing) => onPickGlazing(element.id, glazing)}
           onSetOperation={(op) => onSetElementOperation(element.id, op)}
+          onSetKind={(kind) => onSetElementKind(element.id, kind)}
+          commandBusy={commandBusy}
           operationWarningDismissed={dismissedOperationWarnings.includes(element.id)}
           onDismissOperationWarning={() => onDismissOperationWarning(element.id)}
           uValueWm2k={uValueByElementId?.get(element.id) ?? null}

@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from starlette import status
+
 from features.gh_api.export_helpers import reject_duplicate_names
 from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import ProjectDocumentTables, ProjectDocumentV1
@@ -27,6 +29,7 @@ from features.project_document.envelope_models import (
     ProjectFrame,
     ProjectGlazing,
 )
+from features.shared.errors import api_error
 
 __all__ = ["export_aperture_types"]
 
@@ -40,17 +43,62 @@ def export_aperture_types(body: ProjectDocumentV1) -> dict[str, dict[str, Any]]:
         error_code="duplicate_aperture_type_names",
         message="Aperture types have duplicate names; rename them so each is unique before exporting to Grasshopper.",
     )
-    return {aperture.name: _aperture_type(aperture, body.tables) for aperture in body.tables.apertures}
+    payloads: dict[str, dict[str, Any]] = {}
+    for aperture in body.tables.apertures:
+        glazed = _glazed_elements(aperture)
+        _reject_unsafe_void_layout(aperture, glazed)
+        payloads[aperture.name] = _aperture_type(aperture, glazed, body.tables)
+    return payloads
 
 
-def _aperture_type(aperture: ApertureTypeEntry, tables: ProjectDocumentTables) -> dict[str, Any]:
+def _glazed_elements(aperture: ApertureTypeEntry) -> list[ApertureElement]:
+    return [element for element in aperture.elements if element.kind == "glazed"]
+
+
+def _aperture_type(
+    aperture: ApertureTypeEntry,
+    glazed_elements: list[ApertureElement],
+    tables: ProjectDocumentTables,
+) -> dict[str, Any]:
     return {
         "name": aperture.name,
         "display_name": aperture.name,
         "row_heights_mm": list(aperture.row_heights_mm),
         "column_widths_mm": list(aperture.column_widths_mm),
-        "elements": [_element(element, tables) for element in aperture.elements],
+        "elements": [_element(element, tables) for element in glazed_elements],
     }
+
+
+def _reject_unsafe_void_layout(
+    aperture: ApertureTypeEntry,
+    glazed_elements: list[ApertureElement],
+) -> None:
+    details: dict[str, object] = {
+        "aperture_type_id": aperture.id,
+        "aperture_type_name": aperture.name,
+    }
+    if not glazed_elements:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "aperture_export_all_void",
+            "An all-Empty aperture type cannot be exported to Grasshopper.",
+            details,
+        )
+    coverage_delta = [0] * (len(aperture.column_widths_mm) + 1)
+    for element in glazed_elements:
+        coverage_delta[element.column_span[0]] += 1
+        coverage_delta[element.column_span[1] + 1] -= 1
+    active = 0
+    for column_index in range(len(aperture.column_widths_mm)):
+        active += coverage_delta[column_index]
+        if active:
+            continue
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "aperture_export_fully_void_column",
+            "An aperture type with a fully Empty column cannot be exported safely to Grasshopper.",
+            {**details, "column_index": column_index},
+        )
 
 
 def _element(element: ApertureElement, tables: ProjectDocumentTables) -> dict[str, Any]:

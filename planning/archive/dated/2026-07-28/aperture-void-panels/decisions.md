@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: All decisions resolved 2026-07-28 (Ed); Opus review findings F-1..F-7
+STATUS: Complete — all decisions resolved and implemented; Opus review findings F-1..F-7
   dispositioned and folded 2026-07-28
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Accepted / rejected / open decisions for aperture void panels.

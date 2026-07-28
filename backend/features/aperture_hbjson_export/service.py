@@ -1,9 +1,10 @@
 """HBJSON ``WindowConstruction`` export for the Apertures feature.
 
-Each aperture-element becomes a ``WindowConstruction`` with one
+Each glazed aperture element becomes a ``WindowConstruction`` with one
 ``EnergyWindowMaterialSimpleGlazSys`` material whose ``u_factor`` is
 the per-element ISO 10077-1 value from Phase 09 and whose ``shgc`` is
-the element's glazing ``g_value`` (V1 default ``0.5`` if null).
+the element's glazing ``g_value`` (V1 default ``0.5`` if null). Empty
+elements emit no construction and reserve no identifier.
 
 The output dict shape is the minimal stable subset of honeybee_energy's
 ``WindowConstruction.to_dict()`` — type / identifier / materials — that
@@ -71,6 +72,8 @@ def export_apertures(apertures: list[ApertureTypeEntry], tables: ProjectDocument
         u_by_element = {e.element_id: e.u_value_w_m2k for e in u_values.elements}
 
         for element in entry.elements:
+            if element.kind == "void":
+                continue
             ident = _element_identifier(escaped_name, element)
             identifiers.append((ident, entry.name))
             payloads[ident] = _build_construction_dict(

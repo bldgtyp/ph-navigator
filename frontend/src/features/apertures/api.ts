@@ -109,6 +109,7 @@ function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
       elements: aperture.elements.map((element) => ({
         id: element.id,
         name: element.name,
+        kind: element.kind,
         row_span: element.row_span,
         column_span: element.column_span,
         frames: hydrateFrames(element.frames, framesById),

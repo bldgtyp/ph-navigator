@@ -15,15 +15,23 @@ export type MergeValidation =
       merged: { row_span: [number, number]; column_span: [number, number] };
       sources: ApertureElement[];
     }
-  | { ok: false; reason: "too-few" | "non-rectangle" | "overlap"; message: string };
+  | { ok: false; reason: "too-few" | "mixed-kind" | "non-rectangle" | "overlap"; message: string };
 
 export function validateMergeSelection(
   aperture: ApertureTypeEntry,
   selectedIds: readonly string[],
 ): MergeValidation {
-  const sources = aperture.elements.filter((e) => selectedIds.includes(e.id));
+  const selectedIdSet = new Set(selectedIds);
+  const sources = aperture.elements.filter((element) => selectedIdSet.has(element.id));
   if (sources.length < 2) {
     return { ok: false, reason: "too-few", message: "Select at least two elements to merge." };
+  }
+  if (sources.some((element) => element.kind !== sources[0]?.kind)) {
+    return {
+      ok: false,
+      reason: "mixed-kind",
+      message: "Glazed and Empty elements cannot be merged together.",
+    };
   }
   const r0 = Math.min(...sources.map((e) => e.row_span[0]));
   const r1 = Math.max(...sources.map((e) => e.row_span[1]));

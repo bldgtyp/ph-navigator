@@ -3,12 +3,12 @@
 ``mergeElements`` validates that the selected element ids form a
 contiguous rectangle inside the aperture grid; the merged element
 inherits its 6 assignment fields (operation, glazing, four frames)
-*and* its ``name`` from the top-left source (sorted by row_span[0]
-then column_span[0]). The other sources are dropped.
+plus its ``kind`` and ``name`` from the top-left source (sorted by
+row_span[0] then column_span[0]). The other sources are dropped.
 
 ``splitElement`` explodes a multi-cell element into one fresh 1×1
-element per covered cell. Every new element inherits the source's
-assignments and name; catalog-origin ``synced_at`` is re-stamped so
+element per covered cell. Every new element inherits the source's kind,
+assignments, and name; catalog-origin ``synced_at`` is re-stamped so
 Phase 12 drift detection treats the copies as distinct picks.
 
 Both handlers re-run the document validator at the dispatcher seam,
@@ -25,6 +25,7 @@ from starlette import status
 from features.project_document.aperture_commands.handlers._shared import (
     build_audit,
     find_element,
+    find_elements,
     find_entry,
     replace_aperture,
 )
@@ -49,12 +50,21 @@ def apply_merge_elements(
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, entry = find_entry(body, command.aperture_type_id)
     sources = _resolve_sources(entry, command.element_ids)
+    kinds = {source.kind for source in sources}
+    if len(kinds) != 1:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "aperture_merge_mixed_kinds",
+            "Glazed and Empty elements cannot be merged together.",
+            {"element_ids": command.element_ids},
+        )
     union = _validate_rectangle(sources, command.element_ids)
     top_left = _top_left(sources)
 
     merged = ApertureElement(
         id=f"aptel_{uuid.uuid4().hex[:12]}",
         name=top_left.name,
+        kind=top_left.kind,
         row_span=union["row_span"],
         column_span=union["column_span"],
         frames=top_left.frames.model_copy(deep=True),
@@ -105,6 +115,7 @@ def apply_split_element(
                 ApertureElement(
                     id=f"aptel_{uuid.uuid4().hex[:12]}",
                     name=source.name,
+                    kind=source.kind,
                     row_span=(r, r),
                     column_span=(c, c),
                     frames=source.frames.model_copy(deep=True),
@@ -133,15 +144,6 @@ def apply_split_element(
 
 
 def _resolve_sources(entry: ApertureTypeEntry, ids: list[str]) -> list[ApertureElement]:
-    by_id = {el.id: el for el in entry.elements}
-    missing = [i for i in ids if i not in by_id]
-    if missing:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "aperture_element_not_found",
-            "One or more merge source elements were not found.",
-            {"aperture_type_id": entry.id, "missing_ids": missing},
-        )
     if len(set(ids)) != len(ids):
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -149,7 +151,7 @@ def _resolve_sources(entry: ApertureTypeEntry, ids: list[str]) -> list[ApertureE
             "Merge source list contains duplicate element ids.",
             {"element_ids": ids},
         )
-    return [by_id[i] for i in ids]
+    return [element for _, element in find_elements(entry, ids)]
 
 
 def _validate_rectangle(

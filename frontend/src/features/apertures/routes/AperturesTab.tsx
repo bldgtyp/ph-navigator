@@ -462,6 +462,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                           aperture={activeAperture}
                           canEdit={canEdit}
                           commandBusy={mutation.isPending}
+                          commandError={actionError}
                           onSetElementName={(elementId, newName) =>
                             void dispatch({
                               kind: "setElementName",
@@ -534,6 +535,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                               operation,
                             })
                           }
+                          onSetElementKind={(element_ids, element_kind) =>
+                            dispatch({
+                              kind: "setElementKind",
+                              aperture_type_id: activeAperture.id,
+                              element_ids,
+                              element_kind,
+                            }).then((result) => result !== null)
+                          }
                           onMergeElements={(element_ids) =>
                             void dispatch({
                               kind: "mergeElements",
@@ -560,7 +569,16 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                               aperture_type_id: activeAperture.id,
                               source_element_id,
                               target_element_ids,
-                            }).then(() => undefined)
+                            }).then((result) => result !== null)
+                          }
+                          onRestoreAssignment={(target_element_id, restore_assignment) =>
+                            dispatch({
+                              kind: "pasteAssignment",
+                              aperture_type_id: activeAperture.id,
+                              source_element_id: target_element_id,
+                              target_element_ids: [target_element_id],
+                              restore_assignment,
+                            }).then((result) => result !== null)
                           }
                           uValueByElementId={elementUValueById}
                           dimFormat={dimFormat}

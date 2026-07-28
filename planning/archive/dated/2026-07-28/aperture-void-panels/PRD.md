@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Accepted — D-1/D-3/D-4 resolved by Ed 2026-07-28; Opus review
+STATUS: Complete — accepted decisions implemented and verified; Opus review
   (reviews/2026-07-28-plan-review.md) folded in same day; ready for Phase 1
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Product/behavior contract for void ("Empty") aperture elements, with a

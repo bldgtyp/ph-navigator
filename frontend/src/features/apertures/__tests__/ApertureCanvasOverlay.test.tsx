@@ -46,6 +46,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
   return {
     id: "aptel_1",
     name: "E",
+    kind: "glazed",
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: frame(50), right: frame(50), bottom: frame(50), left: frame(50) },
@@ -115,6 +116,17 @@ describe("ApertureCanvasOverlay", () => {
     expect(within(elementHit).getByTestId("hit-aptel_1-bottom")).toBeInTheDocument();
     expect(within(elementHit).getByTestId("hit-aptel_1-left")).toBeInTheDocument();
     expect(within(elementHit).getByTestId("hit-aptel_1-glazing")).toBeInTheDocument();
+  });
+
+  it("keeps an Empty element selectable without exposing glazing or frame hit regions", () => {
+    renderOverlay({ aperture: entry({ elements: [element({ kind: "void" })] }) });
+    const hit = screen.getByTestId("hit-element-aptel_1");
+
+    expect(hit).toHaveAttribute("data-element-kind", "void");
+    expect(hit).toHaveAttribute("title", expect.stringContaining("occupies the layout"));
+    expect(within(hit).queryByTestId("hit-aptel_1-glazing")).not.toBeInTheDocument();
+    fireEvent.click(hit);
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["aptel_1"]);
   });
 
   it("bare click selects the clicked element", () => {

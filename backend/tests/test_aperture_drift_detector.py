@@ -19,6 +19,7 @@ from features.project_document.document import (
 )
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
+from tests.aperture_void_fixtures import void_element
 
 
 class _StubCatalog:
@@ -134,6 +135,28 @@ def test_field_delta_surfaces_one_entry_per_drifted_side() -> None:
     assert all(e.kind == "field_delta" for e in report.entries)
     delta = report.entries[0].deltas[0]
     assert delta.field_key == "u_value_w_m2k"
+
+
+def test_void_in_mixed_aperture_adds_no_drift_entries() -> None:
+    tables = ProjectDocumentTables()
+    glazed = _element(tables)
+    aperture = ApertureTypeEntry(
+        id="apt_A",
+        name="Type A",
+        row_heights_mm=[1000.0],
+        column_widths_mm=[1000.0, 1000.0],
+        elements=[
+            glazed,
+            void_element("aptel_empty", row_span=(0, 0), column_span=(1, 1)),
+        ],
+    )
+    body = empty_project_document(CreateProjectRequest(name="P", bt_number="BT-1"))
+    body.tables = tables.model_copy(update={"apertures": [aperture]})
+    catalog = _StubCatalog(frame_rows={"rec000000000FRAME": _frame_row(u_value_w_m2k=1.2)})
+
+    report = detect_aperture_drift(body, catalog)
+    assert len(report.entries) == 4
+    assert {entry.element_id for entry in report.entries} == {"aptel_A1"}
 
 
 def test_hand_entered_refs_are_skipped() -> None:

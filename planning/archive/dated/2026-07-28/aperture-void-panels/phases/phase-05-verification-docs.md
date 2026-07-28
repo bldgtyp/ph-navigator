@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 09:17 EDT
-STATUS: Not started
+STATUS: Complete — Ed verified the real Rhino/GH import against the dev server
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 5 — end-to-end + cross-repo verification, glossary/docs updates, closeout.
 RELATED: ../PRD.md §6 §8 §11, context/GLOSSARY.md, context/ui/pages/apertures-tab.md
@@ -77,3 +77,34 @@ but do not join the two by name.
 - On completion, archive the folder to
   `planning/archive/dated/<date>/aperture-void-panels/` + one line in
   `planning/archive/README.md`.
+
+## Implementation result — 2026-07-28
+
+- Companion repo `honeybee_grasshopper_ph_plus` now derives each occupied
+  column origin from the element's absolute `col` index. Local branch
+  `fix/window-type-absolute-column-origin`, commit `963becb`; its isolated
+  fully-void-column regression, Ruff, and Black checks pass.
+- `backend/tests/test_aperture_void_cross_repo.py` parses the exact S15 route-3
+  serializer payload with the unmodified companion V1 schema when that repo is
+  available. It asserts void omission, all four absolute columns, bottom-up row
+  reversal, spans, and route-4 construction count.
+- The fully-void-column fixture now has an HTTP route-level 422 regression in
+  addition to the serializer guard test.
+- A saved local browser fixture was fetched through routes 3 and 4. The
+  unmodified GH schema parsed three glazed elements in absolute columns 0/1/2
+  with correct reversed row origins; route 4 emitted three constructions.
+- Durable vocabulary, data-model, REST-command, HBJSON-export, cache, and
+  Apertures UI docs now describe Empty panels and `setElementKind`.
+- Full-feature simplify reuse/quality/efficiency reviews are clear after
+  centralizing assignment snapshot copying and isolating the companion test's
+  dependency stubs.
+- `make format` made no changes; Graphify was refreshed; final `make ci`
+  passed with backend `1629 passed, 7 skipped` and frontend `247` files /
+  `2312` tests plus the production build.
+
+## Manual acceptance result
+
+Ed completed the real `PH-Nav Get Apertures` Rhino/GH check against the
+PH-Navigator dev server on 2026-07-28. The components imported the Empty
+(`void`) panels as expected. Automated placement/count checks and this manual
+consumer check complete Phase 5.

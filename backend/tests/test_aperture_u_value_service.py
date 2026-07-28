@@ -29,14 +29,28 @@ from features.project_document.document import (
     GlazingRef,
     ProjectDocumentTables,
 )
+from tests.aperture_void_fixtures import (
+    MULLION_FRAME_ID,
+    aperture_void_document,
+    glazed_element,
+    s15_aperture,
+    void_element,
+)
 
 
-def _frame(*, u: float = 1.0, psi: float = 0.04, width_mm: float = 80.0) -> FrameRef:
+def _frame(
+    *,
+    u: float = 1.0,
+    psi: float = 0.04,
+    width_mm: float = 80.0,
+    mull_type: str | None = None,
+) -> FrameRef:
     return FrameRef(
         name="F",
         manufacturer="ABC",
         operation="Fixed",
         location="head",
+        mull_type=mull_type,
         width_mm=width_mm,
         u_value_w_m2k=u,
         psi_g_w_mk=psi,
@@ -172,6 +186,48 @@ def test_content_hash_differs_when_frame_u_value_changes() -> None:
     assert content_hash_for_aperture(entry_a, tables_a) != content_hash_for_aperture(entry_b, tables_b)
 
 
+def test_content_hash_differs_when_frame_mull_type_changes() -> None:
+    tables_a = ProjectDocumentTables()
+    tables_b = ProjectDocumentTables()
+    el_a = _element(tables=tables_a, frame=_frame(mull_type=None))
+    el_b = _element(tables=tables_b, frame=_frame(mull_type="OP-to-FX"))
+    entry_a = _aperture([el_a], rows=[1000.0], cols=[1000.0])
+    entry_b = _aperture([el_b], rows=[1000.0], cols=[1000.0])
+    assert content_hash_for_aperture(entry_a, tables_a) != content_hash_for_aperture(entry_b, tables_b)
+
+
+def test_content_hash_keeps_identical_aperture_types_cache_distinct() -> None:
+    tables = ProjectDocumentTables()
+    element = _element(tables=tables)
+    entry_a = _aperture([element], rows=[1000.0], cols=[1000.0])
+    entry_b = entry_a.model_copy(update={"id": "apt_Y"})
+    result_a = calculate_aperture_u_values(entry_a, tables)
+    result_b = calculate_aperture_u_values(entry_b, tables)
+    assert result_a.aperture_type_id == "apt_X"
+    assert result_b.aperture_type_id == "apt_Y"
+    assert result_b is not result_a
+
+
+def test_content_hash_differs_when_element_kind_changes() -> None:
+    tables = ProjectDocumentTables()
+    glazed = ApertureElement(
+        id="aptel_kind",
+        name="Kind",
+        row_span=(0, 0),
+        column_span=(0, 0),
+    )
+    empty = ApertureElement(
+        id="aptel_kind",
+        name="Kind",
+        kind="void",
+        row_span=(0, 0),
+        column_span=(0, 0),
+    )
+    glazed_entry = _aperture([glazed], rows=[1000.0], cols=[1000.0])
+    empty_entry = _aperture([empty], rows=[1000.0], cols=[1000.0])
+    assert content_hash_for_aperture(glazed_entry, tables) != content_hash_for_aperture(empty_entry, tables)
+
+
 def test_cache_returns_same_instance_for_identical_aperture() -> None:
     tables = ProjectDocumentTables()
     entry = _aperture([_element(tables=tables)], rows=[1000.0], cols=[1000.0])
@@ -209,3 +265,85 @@ def test_2x2_aperture_aggregates_window_value_as_area_weighted_mean() -> None:
     # All four elements share the same payload → window U == element U.
     assert result.window_u_value_w_m2k == result.elements[0].u_value_w_m2k
     assert result.total_area_m2 == pytest.approx(4.0, rel=1e-3)
+
+
+def test_s15_voids_are_excluded_from_u_value_area_results_and_assignment_warnings() -> None:
+    body = aperture_void_document()
+    result = calculate_aperture_u_values(s15_aperture(), body.tables)
+
+    assert {item.element_id for item in result.elements} == {
+        "aptel_left_sidelite",
+        "aptel_left_door",
+        "aptel_right_door",
+        "aptel_right_sidelite",
+    }
+    assert result.total_area_m2 == pytest.approx(5.1)
+    expected_u = sum(item.u_value_w_m2k * item.area_m2 for item in result.elements) / result.total_area_m2
+    assert result.window_u_value_w_m2k == pytest.approx(expected_u, abs=1e-4)
+    assert not any(warning.element_id in {"aptel_left_empty", "aptel_right_empty"} for warning in result.warnings)
+
+
+def test_all_void_aperture_emits_no_glazed_elements_warning() -> None:
+    entry = _aperture(
+        [void_element("aptel_empty", row_span=(0, 0), column_span=(0, 0))],
+        rows=[1000.0],
+        cols=[1000.0],
+    )
+    result = calculate_aperture_u_values(entry, ProjectDocumentTables())
+    assert result.elements == []
+    assert result.total_area_m2 == 0.0
+    assert [warning.kind for warning in result.warnings] == ["no_glazed_elements"]
+
+
+def test_mullion_frame_next_to_void_emits_boundary_warning() -> None:
+    body = aperture_void_document()
+    entry = _aperture(
+        [
+            glazed_element(
+                "aptel_glazed",
+                row_span=(0, 0),
+                column_span=(0, 0),
+                frame_id=MULLION_FRAME_ID,
+            ),
+            void_element("aptel_empty", row_span=(0, 0), column_span=(1, 1)),
+        ],
+        rows=[1000.0],
+        cols=[1000.0, 1000.0],
+    )
+    result = calculate_aperture_u_values(entry, body.tables)
+    warning = next(warning for warning in result.warnings if warning.kind == "mullion_frame_at_void_boundary")
+    assert warning.element_id == "aptel_glazed"
+    assert warning.side == "right"
+
+
+def test_non_mullion_frame_or_glazed_neighbor_emits_no_void_boundary_warning() -> None:
+    body = aperture_void_document()
+    with_empty = _aperture(
+        [
+            glazed_element("aptel_glazed", row_span=(0, 0), column_span=(0, 0)),
+            void_element("aptel_empty", row_span=(0, 0), column_span=(1, 1)),
+        ],
+        rows=[1000.0],
+        cols=[1000.0, 1000.0],
+    )
+    both_glazed = _aperture(
+        [
+            glazed_element(
+                "aptel_left",
+                row_span=(0, 0),
+                column_span=(0, 0),
+                frame_id=MULLION_FRAME_ID,
+            ),
+            glazed_element("aptel_right", row_span=(0, 0), column_span=(1, 1)),
+        ],
+        rows=[1000.0],
+        cols=[1000.0, 1000.0],
+    )
+    assert not any(
+        warning.kind == "mullion_frame_at_void_boundary"
+        for warning in calculate_aperture_u_values(with_empty, body.tables).warnings
+    )
+    assert not any(
+        warning.kind == "mullion_frame_at_void_boundary"
+        for warning in calculate_aperture_u_values(both_glazed, body.tables).warnings
+    )

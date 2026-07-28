@@ -27,6 +27,7 @@ from features.project_document.document import (
     GlazingRef,
     ProjectDocumentTables,
 )
+from tests.aperture_void_fixtures import aperture_void_document, s15_aperture
 
 _FIXTURES = Path(__file__).parent / "fixtures" / "aperture_hbjson_export"
 
@@ -165,3 +166,15 @@ def test_identifier_format_uses_column_and_row_span_origin() -> None:
     )
     result = export_apertures([entry], tables)
     assert "CW01_C0_R0" in result
+
+
+def test_void_elements_emit_no_window_construction_or_identifier() -> None:
+    body = aperture_void_document()
+    entry = s15_aperture()
+    result = export_apertures([entry], body.tables)
+    assert set(result) == {
+        "S15_C0_R0",
+        "S15_C1_R0",
+        "S15_C2_R0",
+        "S15_C3_R0",
+    }

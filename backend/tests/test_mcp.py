@@ -835,6 +835,7 @@ def test_mcp_replace_table_allows_semantic_table_browser_parity(
             {
                 "id": "aptel_mcp",
                 "name": "Fixed",
+                "kind": "void",
                 "row_span": [0, 0],
                 "column_span": [0, 0],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
@@ -854,7 +855,10 @@ def test_mcp_replace_table_allows_semantic_table_browser_parity(
         base_version_etag=initial.version_body_etag,
     )
 
-    assert cast(list[dict[str, object]], replaced["apertures"])[0]["id"] == "apt_mcp"
+    replaced_aperture = cast(list[dict[str, object]], replaced["apertures"])[0]
+    assert replaced_aperture["id"] == "apt_mcp"
+    replaced_elements = cast(list[dict[str, object]], replaced_aperture["elements"])
+    assert replaced_elements[0]["kind"] == "void"
     assert replaced["source"] == "draft"
 
 

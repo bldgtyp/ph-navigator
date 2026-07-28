@@ -62,6 +62,7 @@ function aperture(opts: {
       {
         id: "aptel_X",
         name: "X",
+        kind: "glazed",
         row_span: [0, 0],
         column_span: [0, 0],
         frames: {

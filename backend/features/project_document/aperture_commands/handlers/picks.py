@@ -24,6 +24,7 @@ from features.project_document.aperture_commands.handlers._shared import (
     find_element,
     find_entry,
     replace_element,
+    require_glazed_element,
 )
 from features.project_document.aperture_commands.models import (
     PickFrame,
@@ -49,6 +50,7 @@ def apply_pick_frame(
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, aperture = find_entry(body, command.aperture_type_id)
     element_idx, element = find_element(aperture, command.element_id)
+    require_glazed_element(element, action="pickFrame")
     _require_catalog_origin(command.frame, "frame")
     frame_ref = _stamp_synced_at(command.frame)
     frame_origin = frame_ref.catalog_origin
@@ -81,6 +83,7 @@ def apply_pick_glazing(
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, aperture = find_entry(body, command.aperture_type_id)
     element_idx, element = find_element(aperture, command.element_id)
+    require_glazed_element(element, action="pickGlazing")
     _require_catalog_origin(command.glazing, "glazing")
     glazing_ref = _stamp_synced_at(command.glazing)
     glazing_origin = glazing_ref.catalog_origin
