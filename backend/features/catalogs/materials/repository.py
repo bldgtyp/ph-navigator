@@ -25,6 +25,8 @@ SELECT
     conductivity_w_mk,
     emissivity,
     air_permeance_l_s_m2_at_75pa,
+    vapor_diffusion_resistance_mu,
+    vapor_sd_equivalent_m,
     color,
     source,
     url,
@@ -46,6 +48,8 @@ _UPDATABLE_FIELDS = frozenset(
         "conductivity_w_mk",
         "emissivity",
         "air_permeance_l_s_m2_at_75pa",
+        "vapor_diffusion_resistance_mu",
+        "vapor_sd_equivalent_m",
         "color",
         "source",
         "url",
@@ -101,6 +105,8 @@ def insert_material(
     conductivity_w_mk: float | None,
     emissivity: float | None,
     air_permeance_l_s_m2_at_75pa: float | None,
+    vapor_diffusion_resistance_mu: float | None,
+    vapor_sd_equivalent_m: float | None,
     color: str | None,
     source: str | None,
     url: str | None,
@@ -113,6 +119,7 @@ def insert_material(
             id, name, category,
             density_kg_m3, specific_heat_j_kgk, conductivity_w_mk, emissivity,
             air_permeance_l_s_m2_at_75pa,
+            vapor_diffusion_resistance_mu, vapor_sd_equivalent_m,
             color, source, url, comments,
             created_by, updated_by
         )
@@ -120,6 +127,7 @@ def insert_material(
             %(id)s, %(name)s, %(category)s,
             %(density_kg_m3)s, %(specific_heat_j_kgk)s, %(conductivity_w_mk)s, %(emissivity)s,
             %(air_permeance_l_s_m2_at_75pa)s,
+            %(vapor_diffusion_resistance_mu)s, %(vapor_sd_equivalent_m)s,
             %(color)s, %(source)s, %(url)s, %(comments)s,
             %(user_id)s, %(user_id)s
         )
@@ -133,6 +141,8 @@ def insert_material(
             "conductivity_w_mk": conductivity_w_mk,
             "emissivity": emissivity,
             "air_permeance_l_s_m2_at_75pa": air_permeance_l_s_m2_at_75pa,
+            "vapor_diffusion_resistance_mu": vapor_diffusion_resistance_mu,
+            "vapor_sd_equivalent_m": vapor_sd_equivalent_m,
             "color": color,
             "source": source,
             "url": url,

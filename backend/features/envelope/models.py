@@ -17,6 +17,7 @@ from features.project_document.document import (
     AssemblyFace,
     AssemblyOrientation,
     AssemblyType,
+    CondensationSettings,
     EvidenceStatus,
     ExteriorCondition,
     ProjectMaterial,
@@ -184,6 +185,8 @@ ProjectMaterialDriftFieldKey = Literal[
     "conductivity_w_mk",
     "emissivity",
     "air_permeance_l_s_m2_at_75pa",
+    "vapor_diffusion_resistance_mu",
+    "vapor_sd_equivalent_m",
     "color",
     "source",
     "url",
@@ -303,6 +306,15 @@ class SetThermalStandardCommand(BaseModel):
 
     kind: Literal["set_thermal_standard"]
     thermal_standard: ThermalStandard
+
+
+class SetCondensationSettingsCommand(BaseModel):
+    """Persist the ISO 13788 assumptions that produced the versioned result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["set_condensation_settings"]
+    settings: CondensationSettings
 
 
 class DuplicateAssemblyCommand(BaseModel):
@@ -462,6 +474,8 @@ class HandEnterMaterialCommand(BaseModel):
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
 
     @field_validator("color", mode="before")
@@ -482,6 +496,8 @@ class UpdateProjectMaterialCommand(BaseModel):
     conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
@@ -632,6 +648,7 @@ EnvelopeCommand = Annotated[
     | UpdateAssemblyTypeCommand
     | UpdateAssemblyExteriorConditionCommand
     | SetThermalStandardCommand
+    | SetCondensationSettingsCommand
     | DuplicateAssemblyCommand
     | DeleteAssemblyCommand
     | AddLayerCommand

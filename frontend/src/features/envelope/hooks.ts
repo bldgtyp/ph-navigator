@@ -8,6 +8,7 @@ import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import {
   downloadEnvelopeHbjson,
   downloadEnvelopePhpp,
+  fetchAssemblyCondensation,
   fetchAssemblyThermal,
   fetchEnvelopeReadModel,
   fetchMaterialCatalogDrift,
@@ -57,6 +58,7 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
       writeActiveThermalStandard(queryClient, projectId, slice.version_id, variables.command);
       invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
+      invalidateCondensationQueries(queryClient, projectId, slice.version_id, variables.command);
       if (statusSummaryInvalidationCommands.has(variables.command.kind)) {
         queryClient.invalidateQueries({
           queryKey: projectDocumentQueryKeys.statusSummary(projectId, slice.version_id, "editor"),
@@ -92,6 +94,28 @@ export function useAssemblyThermalQuery(
     queryKey: envelopeQueryKeys.thermal(projectId, resolvedVersionId, resolvedAssemblyId, source),
     queryFn: ({ signal }) =>
       fetchAssemblyThermal(projectId, resolvedVersionId, resolvedAssemblyId, source, signal),
+    enabled: enabled && resolvedVersionId.length > 0 && resolvedAssemblyId.length > 0,
+  });
+}
+
+export function useAssemblyCondensationQuery(
+  projectId: string,
+  versionId: string | null,
+  assemblyId: string | null,
+  source: EnvelopeReadSource,
+  enabled = true,
+) {
+  const resolvedVersionId = versionId ?? "";
+  const resolvedAssemblyId = assemblyId ?? "";
+  return useQuery({
+    queryKey: envelopeQueryKeys.condensation(
+      projectId,
+      resolvedVersionId,
+      resolvedAssemblyId,
+      source,
+    ),
+    queryFn: ({ signal }) =>
+      fetchAssemblyCondensation(projectId, resolvedVersionId, resolvedAssemblyId, source, signal),
     enabled: enabled && resolvedVersionId.length > 0 && resolvedAssemblyId.length > 0,
   });
 }
@@ -270,6 +294,7 @@ function invalidateThermalQueries(
   versionId: string,
   command: EnvelopeCommand,
 ): void {
+  if (command.kind === "set_condensation_settings") return;
   if ("assembly_id" in command && !broadThermalInvalidationCommands.has(command.kind)) {
     queryClient.invalidateQueries({
       queryKey: envelopeQueryKeys.thermal(projectId, versionId, command.assembly_id, "draft"),
@@ -277,6 +302,23 @@ function invalidateThermalQueries(
     return;
   }
   queryClient.invalidateQueries({ queryKey: [...envelopeQueryKeys.all(projectId), "thermal"] });
+}
+
+function invalidateCondensationQueries(
+  queryClient: QueryClient,
+  projectId: string,
+  versionId: string,
+  command: EnvelopeCommand,
+): void {
+  if ("assembly_id" in command && !broadCondensationInvalidationCommands.has(command.kind)) {
+    queryClient.invalidateQueries({
+      queryKey: envelopeQueryKeys.condensation(projectId, versionId, command.assembly_id, "draft"),
+    });
+    return;
+  }
+  queryClient.invalidateQueries({
+    queryKey: envelopeQueryKeys.condensationScope(projectId, versionId, "draft"),
+  });
 }
 
 function invalidateMaterialDriftQueries(
@@ -301,6 +343,11 @@ const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "refresh_project_material_from_catalog",
   "remove_unused_project_materials",
   "remove_project_material",
+]);
+
+const broadCondensationInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+  ...broadThermalInvalidationCommands,
+  "set_condensation_settings",
 ]);
 
 const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([

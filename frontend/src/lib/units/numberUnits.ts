@@ -6,9 +6,21 @@ import {
   kgM3ToLbFt3,
   lbFt3ToKgM3,
   lSM2ToCfmFt2,
+  isPositiveInfinity,
+  muToPermIn,
+  permInToMu,
+  permToSdM,
+  sdMToPerm,
 } from "./material";
 import { cToF, fToC } from "./temperature";
-import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
+import {
+  btuHft2FToWm2K,
+  btuHftFToWmK,
+  hft2FBtuToM2kW,
+  m2kWToHft2FBtu,
+  wm2kToBtuHft2F,
+  wmkToBtuHftF,
+} from "./thermal";
 import { cfmToM3h, m3hToCfm } from "./airflow";
 import type { UnitSystem } from "./types";
 
@@ -20,6 +32,8 @@ const L_PER_GAL = 3.785411784;
 const KWH_TO_KBTU = 3.412141633;
 const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
 const KW_TO_KBTU_PER_H = 3.412141633;
+const GRAINS_FT2_PER_G_M2 = 1.433076;
+const GRAINS_FT2_PER_KG_M2 = GRAINS_FT2_PER_G_M2 * 1000;
 
 type UnitDefinitionInput = {
   id: string;
@@ -52,6 +66,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "U-value",
     siUnits: [{ id: "w_m2_k", label: "W/(m2-K)", system: "SI" }],
     ipUnits: [{ id: "btu_h_ft2_f", label: "Btu/(h-ft2-F)", system: "IP" }],
+  },
+  {
+    id: "thermal_resistance",
+    label: "Thermal Resistance",
+    siUnits: [{ id: "m2_k_w", label: "m2-K/W", system: "SI" }],
+    ipUnits: [{ id: "h_ft2_f_btu", label: "h-ft2-F/Btu", system: "IP" }],
   },
   {
     id: "specific_heat",
@@ -104,6 +124,30 @@ export const NUMBER_UNIT_TYPES = [
     ipUnits: [{ id: "f", label: "deg F", system: "IP" }],
   },
   {
+    id: "pressure",
+    label: "Pressure",
+    siUnits: [{ id: "pa", label: "Pa", system: "SI" }],
+    ipUnits: [{ id: "pa", label: "Pa", system: "IP" }],
+  },
+  {
+    id: "percentage",
+    label: "Percentage",
+    siUnits: [{ id: "percent", label: "%", system: "SI" }],
+    ipUnits: [{ id: "percent", label: "%", system: "IP" }],
+  },
+  {
+    id: "surface_mass",
+    label: "Surface Mass",
+    siUnits: [{ id: "g_m2", label: "g/m2", system: "SI" }],
+    ipUnits: [{ id: "gr_ft2", label: "gr/ft2", system: "IP" }],
+  },
+  {
+    id: "surface_mass_flux",
+    label: "Surface Mass Flux",
+    siUnits: [{ id: "kg_m2_s", label: "kg/(m2-s)", system: "SI" }],
+    ipUnits: [{ id: "gr_ft2_s", label: "gr/(ft2-s)", system: "IP" }],
+  },
+  {
     id: "airflow",
     label: "Airflow",
     siUnits: [{ id: "m3_h", label: "m3/h", system: "SI" }],
@@ -140,6 +184,18 @@ export const NUMBER_UNIT_TYPES = [
     label: "Air Permeance",
     siUnits: [{ id: "l_s_m2_75pa", label: "L/(s-m2) @ 75Pa", system: "SI" }],
     ipUnits: [{ id: "cfm_ft2_75pa", label: "cfm/ft2 @ 1.57psf", system: "IP" }],
+  },
+  {
+    id: "vapor_diffusion_resistance",
+    label: "Vapor Diffusion Resistance",
+    siUnits: [{ id: "mu", label: "mu", system: "SI" }],
+    ipUnits: [{ id: "perm_in", label: "perm-in", system: "IP" }],
+  },
+  {
+    id: "vapor_sd",
+    label: "Equivalent Air-Layer Thickness",
+    siUnits: [{ id: "sd_m", label: "m", system: "SI" }],
+    ipUnits: [{ id: "perm", label: "perm", system: "IP" }],
   },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
@@ -226,6 +282,21 @@ export function numberUnitRegistrySnapshot(): Record<string, { si: string[]; ip:
   );
 }
 
+export function numberUnitsForType(
+  unitType: NumberUnitType,
+  options: Pick<NumberUnitsConfig, "mode" | "precision_si" | "precision_ip">,
+): NumberUnitsConfig {
+  const definition = NUMBER_UNIT_TYPES_BY_ID.get(unitType) ?? NUMBER_UNIT_TYPES[0];
+  return {
+    mode: options.mode,
+    unit_type: definition.id,
+    si_unit: definition.siUnits[0].id,
+    ip_unit: definition.ipUnits[0].id,
+    precision_si: options.precision_si,
+    precision_ip: options.precision_ip,
+  };
+}
+
 export function numberUnitPrecision(config: NumberUnitsConfig, unitSystem: UnitSystem): number {
   return unitSystem === "IP" ? config.precision_ip : config.precision_si;
 }
@@ -245,6 +316,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return wmkToBtuHftF(valueSi);
     case "u_value":
       return wm2kToBtuHft2F(valueSi);
+    case "thermal_resistance":
+      return m2kWToHft2FBtu(valueSi);
     case "specific_heat":
       return jKgKToBtuLbF(valueSi);
     case "length":
@@ -261,6 +334,13 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi / L_PER_GAL;
     case "temperature":
       return cToF(valueSi);
+    case "pressure":
+    case "percentage":
+      return valueSi;
+    case "surface_mass":
+      return valueSi * GRAINS_FT2_PER_G_M2;
+    case "surface_mass_flux":
+      return valueSi * GRAINS_FT2_PER_KG_M2;
     case "airflow":
       return m3hToCfm(valueSi);
     case "electric_efficiency":
@@ -273,6 +353,10 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi * KW_TO_KBTU_PER_H;
     case "air_permeance":
       return lSM2ToCfmFt2(valueSi);
+    case "vapor_diffusion_resistance":
+      return muToPermIn(valueSi);
+    case "vapor_sd":
+      return sdMToPerm(valueSi);
   }
 }
 
@@ -284,6 +368,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return btuHftFToWmK(valueIp);
     case "u_value":
       return btuHft2FToWm2K(valueIp);
+    case "thermal_resistance":
+      return hft2FBtuToM2kW(valueIp);
     case "specific_heat":
       return btuLbFToJKgK(valueIp);
     case "length":
@@ -300,6 +386,13 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp * L_PER_GAL;
     case "temperature":
       return fToC(valueIp);
+    case "pressure":
+    case "percentage":
+      return valueIp;
+    case "surface_mass":
+      return valueIp / GRAINS_FT2_PER_G_M2;
+    case "surface_mass_flux":
+      return valueIp / GRAINS_FT2_PER_KG_M2;
     case "airflow":
       return cfmToM3h(valueIp);
     case "electric_efficiency":
@@ -312,6 +405,10 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp / KW_TO_KBTU_PER_H;
     case "air_permeance":
       return cfmFt2ToLSM2(valueIp);
+    case "vapor_diffusion_resistance":
+      return permInToMu(valueIp);
+    case "vapor_sd":
+      return permToSdM(valueIp);
   }
 }
 
@@ -326,6 +423,7 @@ export function formatNumberUnitsDisplay(
   if (valueSi === null || valueSi === undefined || valueSi === "") return "";
   const numeric = typeof valueSi === "number" ? valueSi : Number(valueSi);
   if (!Number.isFinite(numeric)) return "";
+  if (unitSystem === "IP" && config.unit_type === "vapor_sd" && numeric === 0) return "∞";
   const displayed = unitSystem === "IP" ? convertNumberUnitsToDisplay(numeric, config) : numeric;
   return displayed.toFixed(numberUnitPrecision(config, unitSystem));
 }
@@ -341,6 +439,9 @@ export function parseNumberUnitsInput(
 ): number | null | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+  if (unitSystem === "IP" && config.unit_type === "vapor_sd" && isPositiveInfinity(trimmed)) {
+    return 0;
+  }
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) return undefined;
   return unitSystem === "IP" ? convertNumberUnitsToSi(parsed, config) : parsed;

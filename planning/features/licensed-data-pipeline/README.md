@@ -1,12 +1,12 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 delivered to main and films v1 published;
-  Phase 3 live cutover and Phase 4 local proof remain
+STATUS: Active — Phases 1–3 delivered, films v1 and ISO µ v1 published;
+  Phase 3 live cutover and production µ apply remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the licensed-data pipeline feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
-  context/DATA_STORAGE.md, planning/features/assembly-condensation-risk/
+  context/DATA_STORAGE.md, planning/archive/dated/2026-07-29/assembly-condensation-risk/
 ---
 
 # Licensed-data pipeline (`ph-navigator-data` → R2 → PHN)
@@ -70,7 +70,7 @@ unrepeatable, and it does not scale past the person who did it last time.
 | **1** | ✅ **Complete 2026-07-28** — private PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) squash-merged as `8d4baa1`; standalone publisher, schema/checksum/version gates, serialized CI, `ashrae-surface-films` v1, synthetic tests, and MinIO interruption + rollback drills. The first hosted main-branch publish completed successfully (Actions run `30418485049`). |
 | **2** | ✅ **Delivered to PHN main 2026-07-28** — manifest/integrity store, registry, guarded status/apply CLIs, `applied_datasets`, per-slug apply serialization, Make targets, and manifest-pinned film loading. Phase 3 removed the temporary legacy fallback before merge. |
 | **3** | 🟡 **Code/docs delivered to PHN main 2026-07-28; live cutover remains** — Ed-dispatched Render one-off workflow, canonical runbook, manifest-only film loader, and retired `seed_surface_films.py` are merged. The private films publish succeeded; PHN Actions configuration, explicit deploy, production verification, no-op dispatch, and legacy-key deletion remain. |
-| **4** | ⏸ **Held at prerequisite boundary 2026-07-28** — first `db_seed` end-to-end proof waits for condensation Phase 0's target-roster/composite policy and Phase 1's µ/sd catalog columns; no licensed payload or placeholder applier authored |
+| **4** | ✅ **Local proof complete and private payload published 2026-07-29** — the 201-row `iso10456-vapor-mu` dataset, typed applier, unmatched/idempotency/change/rollback drill, private PR [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2), and manifest-last production publish all passed. Production DB apply remains Ed-dispatched after the PHN deploy. |
 
 Phases 1–2 are independently valuable (versioned source + auditability);
 Phase 3 removes the last manual step; Phase 4 is the proof by first consumer.

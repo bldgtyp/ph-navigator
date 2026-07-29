@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 — pipeline mechanics implemented; phase plans drafted
-TIME: 22:52 EDT
-STATUS: Ready — all questions resolved, prerequisites cleared, phase plans in
-  ./phases/; Phase 0 next
+UPDATED: 2026-07-29 — Complete
+TIME: 07:17 EDT
+STATUS: Complete — implementation verified; production data apply remains operator-held
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the assembly condensation-risk feature.
 RELATED: ./research.md, ./PRD.md, ./decisions.md, ./STATUS.md
@@ -25,7 +24,7 @@ Modelled on the **PHI Condensation Tool v1.7.5**
    logic), the ISO 13788 interior-climate models, the µ/perm unit story, and a
    line-by-line map of what PHN already has vs what is missing.
 2. **`decisions.md`** — is this worth building (7 angles), the design decisions
-   it forces, 21 edge cases, and the 8 open questions (7 resolved, Q-8 open).
+   it forces, 21 edge cases, and the eight resolved questions.
 3. **`PRD.md`** — the product contract: material fields, assumption model, chip
    states, modal tiers, backend contract, phasing, acceptance criteria.
 4. **`STATUS.md`** — current state and next step.
@@ -45,10 +44,10 @@ Modelled on the **PHI Condensation Tool v1.7.5**
    `sd` stored directly. Both fields are optional and backwards-compatible by
    construction. (`research.md` §6, `PRD.md` §4)
 
-3. **Two things could have sunk it; both are now settled** (2026-07-26):
-   - **Catalog coverage** — build it (Q-1). One live sub-question remains: 24 %
-     of the catalog is stud+cavity pseudo-materials with no single defensible µ
-     (`decisions.md` §D-12).
+3. **Two things could have sunk it; both are now settled** (by 2026-07-29):
+   - **Catalog coverage** — the Phase 0 probe is go: 93.4% resolves before
+     product entry. The 99 stud+cavity pseudo-materials use the named cavity
+     family plus a caveat (`decisions.md` §D-12).
    - **Licensed data** — µ values live in the private DB; the repo carries the
      loader only (Q-3). Since resolved *in mechanism* too: the licensed-data
      pipeline (implemented 2026-07-28) publishes reviewed, versioned datasets
@@ -64,7 +63,8 @@ Modelled on the **PHI Condensation Tool v1.7.5**
 manifest → PHN `datasets` feature with `applied_datasets` audit and guarded
 apply CLIs). The Q-3 "values live in the private DB" decision now has running
 machinery; the µ seed rides its `db_seed` path (pipeline Phase 4 = our seed's
-local dry-run, resumed once our Phases 0–1 supply the roster and columns).
+local dry-run, resumed once Phase 1 supplies the columns; Phase 0 already
+supplied the accepted 201-row roster).
 Only the *production* apply waits on the pipeline's Ed-gated Phase 3 cutover.
 
 ✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/`** — all four
@@ -85,8 +85,9 @@ what reading the as-built code changed here.
 ## What came back with them
 
 - **Ft is now our obligation.** `unconditioned_space` is expressible and gets a
-  film, but nothing models the far-side temperature. New **Q-8**; recommendation
-  is "not screened" in v1, same as `ground`. (`PRD.md` §6.5)
+  film, but nothing models the far-side temperature. It is not screened in v1,
+  same as `ground`.
+  (`PRD.md` §6.5)
 - **`sd` must win, and now must exist.** A membrane's thickness is app-mutable
   (auto-snapped to 1 mm when implausible), so `µ · d` is not a valid fallback for
   a membrane — a membrane without `sd` blocks. (`decisions.md` §D-15a)
@@ -99,11 +100,11 @@ Contract in `PRD.md` §8; implementation plans in `./phases/`:
 
 | Phase | Plan | Ships |
 | --- | --- | --- |
-| 0 | `phases/phase-00-coverage-probe.md` | the coverage number, the seed roster, the §D-12 + Q-8 calls, go/no-go |
-| 1 | `phases/phase-01-material-vapor-fields.md` | µ/sd fields end-to-end + the `iso10456-vapor-mu` seed drilled locally (joint with pipeline Phase 4) |
-| 2 | `phases/phase-02-glaser-engine.md` | the pure engine, golden-tested against the PHI workbook |
-| 3 | `phases/phase-03-route-and-chip.md` | route + chip + the "what's missing" state — usable |
-| 4 | `phases/phase-04-modal-verdict-diagrams.md` | modal tiers 1–2 — legible |
-| 5 | `phases/phase-05-modal-numbers-assumptions.md` | modal tiers 3–4 + closeout — complete |
+| 0 | ✅ `phases/phase-00-coverage-probe.md` + `phase-00-report.md` | Complete: 93.4% catalog coverage, 201-row roster, go; both policies accepted |
+| 1 | ✅ `phases/phase-01-material-vapor-fields.md` | Complete: µ/sd fields end-to-end + the private `iso10456-vapor-mu` seed drilled locally and published through private PR #2; production DB apply remains Ed-dispatched |
+| 2 | ✅ `phases/phase-02-glaser-engine.md` | Complete: pure engine, synthetic-golden-tested against the PHI workbook |
+| 3 | ✅ `phases/phase-03-route-and-chip.md` | Complete: cached live route + eight-state chip + corrective blocked/not-screened modal |
+| 4 | ✅ `phases/phase-04-modal-verdict-diagrams.md` | Complete: risk verdict, criteria, Ma and layer-profile diagrams |
+| 5 | ✅ `phases/phase-05-modal-numbers-assumptions.md` | Complete: shared number tables, versioned assumptions editor, acceptance closeout |
 
-Phases 1–3 are independently valuable; work can stop after any.
+Phases 1–4 are independently valuable; work can stop after any.

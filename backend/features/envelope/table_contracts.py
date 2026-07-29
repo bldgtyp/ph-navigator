@@ -177,6 +177,8 @@ project_materials_contract = TableContract(
         "density_kg_m3": "density",
         "specific_heat_j_kgk": "specific_heat",
         "air_permeance_l_s_m2_at_75pa": "air_permeance",
+        "vapor_diffusion_resistance_mu": "vapor_diffusion_resistance",
+        "vapor_sd_equivalent_m": "vapor_sd",
     },
 )
 

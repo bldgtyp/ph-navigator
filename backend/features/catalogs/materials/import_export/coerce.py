@@ -96,6 +96,8 @@ _CANONICAL_FIELDS: Final[set[str]] = {
     "conductivity_w_mk",
     "emissivity",
     "air_permeance_l_s_m2_at_75pa",
+    "vapor_diffusion_resistance_mu",
+    "vapor_sd_equivalent_m",
     "color",
     "source",
     "url",
@@ -175,6 +177,13 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
     conductivity = _coerce_number(raw.get("conductivity_w_mk"), warnings, allow_negative=False)
     emissivity = _coerce_emissivity(raw.get("emissivity"), warnings)
     air_permeance = _coerce_number(raw.get("air_permeance_l_s_m2_at_75pa"), warnings, allow_negative=False)
+    vapor_mu = _coerce_number(
+        raw.get("vapor_diffusion_resistance_mu"),
+        warnings,
+        allow_negative=False,
+        minimum=1,
+    )
+    vapor_sd = _coerce_number(raw.get("vapor_sd_equivalent_m"), warnings, allow_negative=False)
 
     color = _coerce_color(raw.get("color"), warnings)
 
@@ -186,6 +195,8 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
         "conductivity_w_mk": conductivity,
         "emissivity": emissivity,
         "air_permeance_l_s_m2_at_75pa": air_permeance,
+        "vapor_diffusion_resistance_mu": vapor_mu,
+        "vapor_sd_equivalent_m": vapor_sd,
         "color": color,
         "source": _coerce_text(raw.get("source"), warnings, field="source"),
         "url": _coerce_text(raw.get("url"), warnings, field="url"),
@@ -217,7 +228,13 @@ def _coerce_category(value: object, warnings: list[str]) -> str | None:
     return None
 
 
-def _coerce_number(value: object, warnings: list[str], *, allow_negative: bool) -> float | None:
+def _coerce_number(
+    value: object,
+    warnings: list[str],
+    *,
+    allow_negative: bool,
+    minimum: float | None = None,
+) -> float | None:
     if value is None:
         return None
     if isinstance(value, bool):
@@ -239,7 +256,11 @@ def _coerce_number(value: object, warnings: list[str], *, allow_negative: bool) 
     else:
         warnings.append(WARN_BAD_NUMBER)
         return None
-    if not math.isfinite(numeric) or (not allow_negative and numeric < 0):
+    if (
+        not math.isfinite(numeric)
+        or (not allow_negative and numeric < 0)
+        or (minimum is not None and numeric < minimum)
+    ):
         warnings.append(WARN_BAD_NUMBER)
         return None
     return numeric

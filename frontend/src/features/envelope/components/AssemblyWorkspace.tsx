@@ -12,6 +12,7 @@ import type {
   ExteriorCondition,
   ProjectMaterial,
 } from "../types";
+import type { AssemblyCondensationResponse } from "../condensation-types";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 
 export function AssemblyWorkspace({
@@ -25,12 +26,16 @@ export function AssemblyWorkspace({
   canEdit,
   thermal,
   thermalLoading,
+  condensation,
+  condensationLoading,
+  condensationUnavailable,
   commandBusy,
   paint,
   actions,
   children,
   onAddAssembly,
   onRenameActive,
+  onOpenCondensation,
   onZoomIn,
   onZoomOut,
   onFitZoom,
@@ -58,12 +63,16 @@ export function AssemblyWorkspace({
   canEdit: boolean;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
+  condensation: AssemblyCondensationResponse | null;
+  condensationLoading: boolean;
+  condensationUnavailable: boolean;
   commandBusy: boolean;
   paint: AssemblyCanvasPaintController;
   actions?: ReactNode;
   children?: ReactNode;
   onAddAssembly: () => void;
   onRenameActive: (name: string) => void;
+  onOpenCondensation: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitZoom: (zoom: number) => void;
@@ -129,10 +138,14 @@ export function AssemblyWorkspace({
             activeAssembly={activeAssembly}
             thermal={thermal}
             thermalLoading={thermalLoading}
+            condensation={condensation}
+            condensationLoading={condensationLoading}
+            condensationUnavailable={condensationUnavailable}
             canEdit={canEdit}
             busy={commandBusy}
             actions={actions}
             onRename={onRenameActive}
+            onOpenCondensation={onOpenCondensation}
           />
           {children}
           <AssemblyCanvas

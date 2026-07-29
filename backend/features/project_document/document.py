@@ -368,6 +368,25 @@ class ManufacturerFilters(BaseModel):
 #: without that table raises rather than silently serving ISO numbers under
 #: an ASHRAE label.
 ThermalStandard = Literal["iso_6946", "ashrae"]
+InteriorClimateModel = Literal[
+    "iso13788_continental",
+    "iso13788_humidity_class",
+    "fixed_setpoint",
+]
+OccupancyClass = Literal["low", "normal", "high"]
+
+
+class CondensationSettings(BaseModel):
+    """Versioned ISO 13788 interior-climate and moisture-limit assumptions."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    interior_climate_model: InteriorClimateModel = "iso13788_continental"
+    occupancy_class: OccupancyClass = "normal"
+    humidity_class: int = Field(default=2, ge=1, le=5)
+    setpoint_temp_c: float | None = Field(default=None, allow_inf_nan=False)
+    setpoint_rh: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    ma_limit_g_m2: float = Field(default=200, gt=0, allow_inf_nan=False)
 
 
 class ProjectAssumptions(BaseModel):
@@ -383,6 +402,12 @@ class ProjectAssumptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     thermal_standard: ThermalStandard = "iso_6946"
+    condensation_settings: CondensationSettings | None = None
+
+    def resolved_condensation_settings(self) -> CondensationSettings:
+        """Return condensation assumptions, substituting zero-config defaults."""
+
+        return self.condensation_settings or CondensationSettings()
 
 
 class ProjectDocumentTables(BaseModel):
@@ -468,6 +493,7 @@ __all__ = [
     "AssemblyType",
     "CATALOG_RECORD_ID_PATTERN",
     "CATALOG_VERSION_ID_PATTERN",
+    "CondensationSettings",
     "CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION",
     "CatalogOrigin",
     "CatalogTableName",
@@ -502,6 +528,7 @@ __all__ = [
     "HotWaterTankRow",
     "HotWaterTanksTableEnvelope",
     "ManufacturerFilters",
+    "InteriorClimateModel",
     "HeatPumpIndoorEquipRow",
     "HeatPumpIndoorEquipTableEnvelope",
     "HeatPumpIndoorUnitRow",
@@ -548,6 +575,7 @@ __all__ = [
     "ThermalBridgeRow",
     "ThermalBridgesTableEnvelope",
     "ThermalStandard",
+    "OccupancyClass",
     "VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY",
     "VENTILATOR_FROST_PROTECTION_OPTION_KEY",
     "VENTILATOR_STATUS_OPTION_KEY",

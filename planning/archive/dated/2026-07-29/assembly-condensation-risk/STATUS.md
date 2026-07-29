@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 (third pass — pipeline as-built folded in; phase plans drafted)
-TIME: 22:52 EDT
-STATUS: Ready — prerequisites shipped, pipeline mechanics implemented, phase
-  plans drafted under ./phases/; Phase 0 (coverage probe) is next
+UPDATED: 2026-07-29 (implementation complete)
+TIME: 08:47 EDT
+STATUS: Complete — verified; production data apply remains operator-held
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -13,7 +12,11 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Research and documentation phase complete. No code written.**
+**Phases 0–5 complete. Material vapour data is available end-to-end, the
+licensed local seed drill is proven, the pure ISO 13788 engine agrees with
+synthetic PHI-workbook goldens, and every assembly now has a live route, chip,
+complete blocked/not-screened correction workflow, and actionable verdict and
+profile diagrams, number tables, and versioned assumptions editor.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -132,20 +135,75 @@ out). Five corrections applied directly to the docs:
 - **Six phase plans drafted** under `./phases/` (00–05), mapping 1:1 to
   `PRD.md` §8 and folding in the §D-15 as-built lessons, the E-15…E-18 edge
   cases, and the pipeline hand-off points.
+- **Phase 0 coverage probe complete** — deterministic catalog coverage is
+  381/408 rows (93.4%) before per-product entry; the proposed private dataset
+  roster has 201 stable ids; 26 proprietary rows remain product-entry and one
+  generic Stone row remains unmappable. The committed dev-seed assembly proxy
+  resolves 5/5 layers and 2/2 outdoor-air/ventilated assemblies.
+  Composite rows use their named cavity/base family with a caveat, and
+  `unconditioned_space` is not screened in v1. Ed explicitly accepted both
+  policies on 2026-07-29. Go. See `phases/phase-00-report.md`.
 
-Not done: nothing implemented here. No branch, no migration, no models.
+Completed 2026-07-29:
+- **Phase 1 Part A:** nullable µ/sd fields landed across the catalog DB/API,
+  public import/export, project documents, drift/refresh, table unit metadata,
+  and both material editors. SI/IP conversion and backwards compatibility are
+  covered by focused tests and live browser verification.
+- **Phase 1 Part B:** the private 201-row `iso10456-vapor-mu` dataset, typed
+  `db_seed` registry/applier, and full local MinIO/Postgres drill are complete.
+  The drill proved loud unmatched reporting, 201/201 matching after stable
+  catalog seeding, idempotent re-apply, a one-row v2 change, and rollback to
+  reviewed v1. Final status is clean; no licensed value entered this repo.
+- **Private production publish complete:** private PR
+  [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2) squash-merged as
+  `3a171f6`; manifest-last publish run `30480924508` passed. Production DB
+  apply remains Ed-dispatched after the PHN deploy.
+- **Phase 2:** the pure typed condensation engine, bounded worst-path
+  enumeration, blocked/not-screened states, d1–d4 verdicts, caveats,
+  diagnostics, and all monthly profiles are implemented. Thirty-five focused
+  tests pass, including exact synthetic PHI-workbook agreement for wall and
+  roof gc/Ma/interface results, direct-sd membranes, summer reverse drive, d4
+  non-closure, and the 64-path cap. The backend boundary check confirms the
+  engine has no storage dependency.
+- **Phase 3:** persisted zero-config assumptions, project climate resolution,
+  a bounded input-hash cache, and the version-scoped condensation route now
+  serve live draft or saved results. The header exposes all eight chip states;
+  the wide modal's blocked state groups missing materials/layers, focuses µ or
+  membrane sd correctly, links to Climate, explains excluded boundaries, and
+  refreshes after envelope or climate writes. Focused backend/frontend suites
+  and the live edit roundtrip are green.
+- **Phase 4:** the screened modal now carries risk-framed d1–d4 verdicts,
+  worst-path and caveat disclosure, four criterion tiles, a 12-month
+  accumulated-Ma plot with the selected limit, and month-selectable
+  vapour-pressure/temperature profiles defaulting to physical thickness with
+  the sd axis available by toggle. Profile legends clear their x-axis labels,
+  and the two figures use a 32 px gap. Chart thresholds extend their domains
+  rather than clipping. Component tests
+  cover all verdict and caveat variants; the clear live route was browser-smoked
+  through month/axis interactions with no horizontal overflow.
+- **Phase 5:** three shared read-only DataTables expose the selected-month layer
+  intermediates, 12-month cycle, and per-interface accumulation. Quantitative
+  fields use the shared Unit-field header/bare-cell pipeline, follow SI/IP
+  display, and omit view controls on this fixed analytical screen. The
+  Assumptions tier shows monthly
+  exterior climate, edits all three interior models and Ma limit through a
+  complete versioned settings command, and discloses method facts plus
+  per-material provenance. Live verification proved settings/hash/chip updates
+  for humidity-class and fixed models without reload, then restored the default
+  continental/normal block. Invalid persisted settings remain repairable.
+
+Feature implementation is complete. The licensed payload is published; the
+production DB apply remains operator-held. Additional visual polish is
+non-blocking and can continue as small follow-up changes without reopening
+this completed packet.
 
 ## Next step
 
-**Phase 0 — the catalog coverage probe (Q-1)** — plan at
-`phases/phase-00-coverage-probe.md`. Before any code, measure: across the
-production catalog and the assemblies in live projects, what fraction of
-layers would have a µ or sd value after an ISO 10456 category-level seed? This is
-the one number that decides whether the feature ships as a calculation or as a
-data-entry push. It requires no schema change — it is a read-only analysis of
-existing catalog rows against the ISO 10456 category list in `research.md` §7.
-Its deliverables include the seed target roster the pipeline's Phase 4
-consumes, plus the two Ed calls (§D-12 composite studs, Q-8).
+**Operator-held production data sequence only:** after this branch is merged,
+Ed runs **Deploy Production**, then **Apply Production Datasets**. The repo
+still lacks Actions secret `RENDER_API_KEY` and variable
+`RENDER_API_SERVICE_ID`; merge alone does not update production. Those manual
+actions are not part of this implementation branch.
 
 ## Blockers
 
@@ -156,16 +214,14 @@ remains is sequencing, not decisions:
 | --- | --- |
 | ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
-| ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
-| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data` (branch `b0bd933`), PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs) in `06064906`. The µ seed's `db_seed` path exists and is drilled on the films dataset. Pipeline Phase 3 (production cutover) is Ed-gated but does **not** block the local µ dry-run; pipeline Phase 4 resumes once our Phases 0–1 supply the roster and columns. Only the *production* µ apply waits on Phase 3 + Ed's dispatch. |
-| ⚠️ **Q-8 — screen `unconditioned_space`?** | *New 2026-07-28.* The value exists and gets a film, but Ft is modelled nowhere and both prerequisite packets deferred it here. Recommendation: **not screened in v1** (same treatment as `ground`); a nullable `adjacent_temp_factor` is an additive v1.1. Not blocking. |
+| ✅ Composite stud materials | Phase 0 accepted the named cavity/base family plus an uncertainty caveat; real segments remain the encouraged model. |
+| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data`, PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs). Phase 4's private µ payload and local db-seed drill completed 2026-07-29; private PR #2 then published it successfully. Only the production DB apply waits on the PHN deploy, missing Actions configuration, and Ed's dispatch. |
+| ✅ **Q-8 — screen `unconditioned_space`?** | **No in v1.** Report not screened because Ft is not modelled; a nullable `adjacent_temp_factor` remains additive v1.1 scope. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-**All external prerequisites are cleared, including the pipeline's mechanics.**
-Nothing external blocks Phases 0–2 at all; the only Ed-gated external event
-left is the pipeline's Phase 3 production sequence, which gates just the
-*production* µ apply (schedulable as late as our Phase 5 closeout). Phase 0
-carries the two remaining calls: the composite-stud policy and Q-8.
+**All external prerequisites are cleared, including the pipeline's mechanics
+and private publication.** The remaining Ed-gated external event is the
+production deploy/apply sequence, which gates just the production µ apply.
 
 ### The vapour fields are this feature's own work, not a dependency
 
@@ -187,12 +243,43 @@ corpus snapshot.
 
 ## Verification
 
-Nothing to verify yet. When Phase 2 lands, the gate is acceptance criterion 3 in
-`PRD.md` §9: golden-file agreement with the PHI workbook's own outputs for a
-reference assembly, to within rounding.
+Phase 0 evidence is in `phases/phase-00-report.md`: 408 catalog rows accounted
+for, 201 stable target ids, no licensed values, and a committed dev-seed proxy
+resolving 5/5 layers and 2/2 screened assemblies. Phase 2 satisfies acceptance
+criterion 3 in `PRD.md` §9: the committed synthetic fixture agrees with a
+locally recalculated PHI workbook on the wall and roof monthly outputs to
+`1e-6`; the workbook and licensed material values are not redistributed.
 
 Both prerequisite packets ended up finding most of their real defects in review
 or in a browser rather than from a green suite (membranes: five defects, four
 found in review; boundary conditions: two rendering defects only a real browser
 caught). Budget for that here — a passing `pytest` will not tell you the Glaser
 engine is iterating the wrong set of layers.
+
+### Acceptance evidence
+
+| AC | Evidence |
+| --- | --- |
+| 1 | Phase 1 threaded nullable µ/sd through catalog/project models, drift, HBJSON and PHPP regressions; full `make ci` remains green. |
+| 2 | `test_missing_climate_and_vapor_are_200_blocked_states` loads the additive document shape and returns a typed blocked payload rather than an error. |
+| 3 | `test_reference_wall_matches_locally_recalculated_phi_workbook_golden`, `test_roof_profile_offset_matches_locally_recalculated_phi_workbook_golden`, and the membrane golden agree to the committed tolerance using synthetic inputs. |
+| 4 | `test_air_layer_uses_iso_sd_exemption` proves air cavities do not block. |
+| 5 | `test_layer_thickness_command_invalidates_the_live_result` proves the input hash changes; the frontend's assembly-scoped invalidation refreshes the open chip/result without reload. |
+| 6 | `test_settings_zero_config_defaults_are_versioned_method_defaults` plus the fresh-project route/browser flow proves tier 4 is not required to compute. |
+| 7 | Golden inputs are synthetic; repo/source scans and full CI confirm no PHI/ISO/ASHRAE licensed table is committed here. The 201-row µ payload remains private. |
+| 8 | Verdict/component tests and the user-facing source scan contain no pass/fail verdict copy. |
+| 9 | `test_reference_wall_returns_complete_monthly_profiles_and_masonry_caveat` plus chip/panel tests prove masonry always caveats and a caveated clear is muted. |
+| 10 | `test_direct_sd_wins_over_mu_times_thickness` and `test_membrane_uses_direct_sd_and_contributes_zero_thermal_resistance` prove nominal membrane thickness cannot move the result. |
+| 11 | `test_membrane_without_direct_sd_blocks_even_when_mu_exists` proves the missing membrane and corrective path. |
+| 12 | Engine and route parameterized boundary tests return not-screened for `ground` and `unconditioned_space`. |
+| 13 | The engine takes climate/film/settings arguments; `scripts.check_backend_boundaries` passes in `make ci`. |
+| 14 | Input-hash tests cover material category/vapour data, climate identity, thermal standard, exterior condition, all settings fields, thickness, and the live settings command. Browser verification observed distinct hashes for continental, humidity-class, and fixed models. |
+| 15 | `test_ventilated_outer_air_layer_reports_stack_diagnostic` proves the named convention diagnostic. |
+| 16 | `test_verdict_ladder_distinguishes_d1_d2_d3_and_d4` proves non-closing cycles return d4 and the canonical month after the last annual minimum. |
+
+Phase 5 focused verification: backend condensation suites **47 passed**;
+frontend Phase 5 plus Envelope integration suites **67 passed**; TypeScript
+passed. Browser smoke covered the three tables, July month selection, absent
+download actions, SI/IP conversions, all interior-model controls,
+settings/hash/chip refresh, Climate routing, and zero horizontal overflow at
+1280 px and 900 px widths. Full `make ci` is the final phase gate.

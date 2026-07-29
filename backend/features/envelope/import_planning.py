@@ -282,6 +282,10 @@ def _create_project_material(material: ImportedMaterial) -> ProjectMaterial:
         # Carried only for membranes, via `ph_nav`; honeybee has no field for
         # it, so an ordinary imported material starts unrecorded.
         air_permeance_l_s_m2_at_75pa=_non_negative_or_none(material.air_permeance_l_s_m2_at_75pa),
+        # HBJSON has no vapor-property contract. Keep these explicitly
+        # unrecorded rather than guessing from an imported material name.
+        vapor_diffusion_resistance_mu=None,
+        vapor_sd_equivalent_m=None,
         color=material.color,
         specification_status=material.specification_status or "needed",
     )

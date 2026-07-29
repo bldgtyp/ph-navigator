@@ -21,6 +21,8 @@ export type CatalogFileRow = {
   conductivity_w_mk: number | null;
   emissivity: number | null;
   air_permeance_l_s_m2_at_75pa: number | null;
+  vapor_diffusion_resistance_mu: number | null;
+  vapor_sd_equivalent_m: number | null;
   color: string | null;
   source: string | null;
   url: string | null;

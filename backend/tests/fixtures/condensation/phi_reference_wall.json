@@ -1,0 +1,111 @@
+{
+  "provenance": {
+    "tool": "PHI Condensation Tool March v1.7.5",
+    "calculated_locally": "2026-07-29",
+    "note": "Synthetic layer properties and synthetic climate only; workbook itself is not redistributed."
+  },
+  "assembly": {
+    "layers_outside_to_inside": [
+      {
+        "id": "outer",
+        "name": "Synthetic outer board",
+        "category": "masonry",
+        "thickness_mm": 20.0,
+        "conductivity_w_mk": 0.18,
+        "mu": 20.0
+      },
+      {
+        "id": "insulation",
+        "name": "Synthetic insulation",
+        "category": "insulation",
+        "thickness_mm": 180.0,
+        "conductivity_w_mk": 0.04,
+        "mu": 2.0
+      },
+      {
+        "id": "inner",
+        "name": "Synthetic inner board",
+        "category": "board",
+        "thickness_mm": 13.0,
+        "conductivity_w_mk": 0.25,
+        "mu": 8.0
+      }
+    ]
+  },
+  "climate": {
+    "air_c": [-5.0, -3.0, 2.0, 8.0, 14.0, 19.0, 23.0, 22.0, 17.0, 10.0, 4.0, -2.0],
+    "dewpoint_c": [-8.0, -6.0, -2.0, 3.0, 8.0, 13.0, 17.0, 16.0, 12.0, 5.0, 0.0, -5.0],
+    "interior_temp_c": 20.0,
+    "interior_rh": 0.5
+  },
+  "expected_january_to_december": {
+    "gc_g_m2": [
+      693.9281722904706,
+      526.12644157499,
+      210.61901552909507,
+      -367.31772643422295,
+      -1248.109195891584,
+      -2064.6628279175657,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      64.93246565358587,
+      520.5886681651501
+    ],
+    "ma_g_m2": [
+      1279.4493061092066,
+      1805.5757476841968,
+      2016.194763213292,
+      1648.877036779069,
+      400.7678408874849,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      64.93246565358587,
+      585.521133818736
+    ],
+    "interface_count": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1],
+    "surface_condensation_clear": [true, true, true, true, true, true, true, true, true, true, true, true],
+    "mold_growth_clear": [true, true, true, true, true, true, true, true, true, true, true, true],
+    "frsi_clear": [true, true, true, true, true, true, true, true, true, true, true, true],
+    "verdict": "d3",
+    "peak_ma_g_m2": 2016.194763213292,
+    "final_ma_g_m2": 0.0
+  },
+  "expected_roof_january_to_december": {
+    "gc_g_m2": [
+      857.1404807054719,
+      697.4280365690955,
+      447.95883790773024,
+      -38.14560234364605,
+      -769.2147623070522,
+      -1456.0989588298353,
+      -2243.7411645766947,
+      0.0,
+      0.0,
+      0.0,
+      324.4223322033612,
+      724.8537033601084
+    ],
+    "ma_g_m2": [
+      1906.4165162689415,
+      2603.844552838037,
+      3051.8033907457675,
+      3013.6577884021212,
+      2244.443026095069,
+      788.3440672652337,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      324.4223322033612,
+      1049.2760355634696
+    ],
+    "interface_count": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1],
+    "verdict": "d3",
+    "peak_ma_g_m2": 3051.8033907457675
+  }
+}

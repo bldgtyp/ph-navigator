@@ -123,6 +123,40 @@ the Apertures list — see the design-system component inventory). Styled to the
 > ISO 6946 surface films; its `ⓘ` tooltip names the standard, the Rsi/Rse in
 > force, the derived heat-flow direction, and the construction-only value.
 
+> The header also carries a **Moisture** fact with a clickable eight-state
+> condensation chip. It reads the live draft from the version-scoped ISO 13788
+> route. Clicking opens the wide four-tab risk modal. Blocked results group
+> missing µ/sd by material and layer; ordinary layers focus µ, membranes focus
+> direct sd, missing climate links to the Climate tab, and ground /
+> unconditioned-space assemblies explain why v1 does not screen them. Copy uses
+> design-screen language (`none predicted`, `predicted — review`, `exceeds
+> limit`) rather than pass/fail.
+>
+> Screened results open on a Verdict tier: a d1–d4 risk sentence, worst path,
+> caveats before conclusions, four worst-month criteria, and the annual
+> accumulated-Ma curve against the selected limit. The Where tier defaults to
+> the worst month and plots `psat`/`pv` plus temperature through the layers;
+> users can switch the common horizontal axis between cumulative sd and real
+> thickness. The ISO 13788 limitations statement remains visible under the
+> verdict rather than hiding behind disclosure.
+>
+> The Numbers tier uses three shared read-only DataTables: selected-month layer
+> intermediates, the 12-month gc/Ma/criterion cycle, and per-interface monthly
+> accumulation. Numeric columns keep numeric sort/filter behavior; displayed
+> values follow SI/IP (`µ`/`perm-in`, `sd`/`perm`, `g/m²`/`gr/ft²`). Copy is
+> retained, while CSV/download is deliberately unavailable because this is a
+> design screen rather than a compliance export.
+>
+> The Assumptions tier shows the active exterior-climate source and its 12
+> monthly temperature/RH pairs, then edits the versioned interior-climate model
+> (continental + occupancy, humidity class + temperature, or fixed temperature
+> + RH) and the accumulated-Ma limit. Applying writes the complete
+> `tables.assumptions.condensation_settings` block and refreshes every assembly's
+> condensation result without affecting thermal queries. Invalid persisted
+> settings remain repairable here. The same tier discloses the exact films,
+> standard, roof offset, start month, ventilated-boundary conventions, and each
+> assigned material's µ/sd provenance.
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │  Assembly Details   [WALL-C3 ▾]    Total Thickness: 304.8 mm  ⓘ      │

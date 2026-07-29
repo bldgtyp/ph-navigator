@@ -8,6 +8,8 @@ import {
   formatDensityFromKgM3,
   formatLengthFromMm,
   formatUValueFromWm2K,
+  formatVaporMu,
+  formatVaporSd,
   hft2FBtuToM2kW,
   inToMm,
   jKgKToBtuLbF,
@@ -19,6 +21,8 @@ import {
   mmToIn,
   lSM2ToCfmFt2,
   parseAirPermeanceToLSM2,
+  parseVaporMu,
+  parseVaporSd,
   NUMBER_UNIT_TYPES,
   convertNumberUnitsToDisplay,
   convertNumberUnitsToSi,
@@ -26,6 +30,7 @@ import {
   isCompatibleNumberUnitPair,
   isNumberUnitsConfig,
   numberUnitRegistrySnapshot,
+  numberUnitsForType,
   parseNumberUnitsInput,
   parseLengthToMm,
   wm2kToBtuHft2F,
@@ -143,6 +148,31 @@ describe("unit display helpers", () => {
       code: "negative",
     });
   });
+
+  test("converts vapor resistance and equivalent air layer between SI and IP", () => {
+    expect(formatVaporMu(137.6, { unitSystem: "IP" })).toBe("1 perm-in");
+    expect(formatVaporSd(50, { unitSystem: "IP" })).toBe("0.07 perm");
+    expect(formatVaporSd(0, { unitSystem: "IP" })).toBe("∞ perm");
+    expect(formatVaporSd(0, { unitSystem: "IP", showUnit: false })).toBe("∞");
+
+    const mu = parseVaporMu("1", { unitSystem: "IP" });
+    expect(mu.ok).toBe(true);
+    if (mu.ok) expect(mu.valueSi).toBeCloseTo(137.6, 10);
+
+    const sixMilPoly = parseVaporSd("0.07", { unitSystem: "IP" });
+    expect(sixMilPoly.ok).toBe(true);
+    if (sixMilPoly.ok) expect(sixMilPoly.valueSi).toBeCloseTo(50, 0);
+    expect(parseVaporSd("∞", { unitSystem: "IP" })).toEqual({ ok: true, valueSi: 0 });
+
+    expect(parseVaporMu("0.5", { unitSystem: "SI" })).toMatchObject({
+      ok: false,
+      code: "out_of_range",
+    });
+    expect(parseVaporSd("-1", { unitSystem: "SI" })).toMatchObject({
+      ok: false,
+      code: "negative",
+    });
+  });
 });
 
 describe("number unit registry", () => {
@@ -151,6 +181,7 @@ describe("number unit registry", () => {
       "density",
       "conductivity",
       "u_value",
+      "thermal_resistance",
       "specific_heat",
       "length",
       "length_mm",
@@ -159,12 +190,18 @@ describe("number unit registry", () => {
       "volume_liters",
       "flow_rate",
       "temperature",
+      "pressure",
+      "percentage",
+      "surface_mass",
+      "surface_mass_flux",
       "airflow",
       "electric_efficiency",
       "heat_loss_rate",
       "energy",
       "power",
       "air_permeance",
+      "vapor_diffusion_resistance",
+      "vapor_sd",
     ]);
     expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
     expect(isCompatibleNumberUnitPair("area", "m3", "ft3")).toBe(false);
@@ -172,6 +209,7 @@ describe("number unit registry", () => {
       density: { si: ["kg_m3"], ip: ["lb_ft3"] },
       conductivity: { si: ["w_m_k"], ip: ["btu_h_ft_f"] },
       u_value: { si: ["w_m2_k"], ip: ["btu_h_ft2_f"] },
+      thermal_resistance: { si: ["m2_k_w"], ip: ["h_ft2_f_btu"] },
       specific_heat: { si: ["j_kg_k"], ip: ["btu_lb_f"] },
       length: { si: ["m"], ip: ["ft"] },
       length_mm: { si: ["mm"], ip: ["in"] },
@@ -180,12 +218,18 @@ describe("number unit registry", () => {
       volume_liters: { si: ["l"], ip: ["gal"] },
       flow_rate: { si: ["l_min"], ip: ["gpm"] },
       temperature: { si: ["c"], ip: ["f"] },
+      pressure: { si: ["pa"], ip: ["pa"] },
+      percentage: { si: ["percent"], ip: ["percent"] },
+      surface_mass: { si: ["g_m2"], ip: ["gr_ft2"] },
+      surface_mass_flux: { si: ["kg_m2_s"], ip: ["gr_ft2_s"] },
       airflow: { si: ["m3_h"], ip: ["cfm"] },
       electric_efficiency: { si: ["wh_m3"], ip: ["w_cfm"] },
       heat_loss_rate: { si: ["w_k"], ip: ["btu_h_f"] },
       energy: { si: ["kwh"], ip: ["kbtu"] },
       power: { si: ["kw"], ip: ["kbtu_h"] },
       air_permeance: { si: ["l_s_m2_75pa"], ip: ["cfm_ft2_75pa"] },
+      vapor_diffusion_resistance: { si: ["mu"], ip: ["perm_in"] },
+      vapor_sd: { si: ["sd_m"], ip: ["perm"] },
     });
   });
 
@@ -220,6 +264,23 @@ describe("number unit registry", () => {
         precision_ip: 1,
       }),
     ).toBe(false);
+  });
+
+  test("builds a canonical fixed config from a unit type", () => {
+    expect(
+      numberUnitsForType("thermal_resistance", {
+        mode: "fixed",
+        precision_si: 2,
+        precision_ip: 2,
+      }),
+    ).toEqual({
+      mode: "fixed",
+      unit_type: "thermal_resistance",
+      si_unit: "m2_k_w",
+      ip_unit: "h_ft2_f_btu",
+      precision_si: 2,
+      precision_ip: 2,
+    });
   });
 
   test("converts MVP number unit pairs", () => {
@@ -288,6 +349,39 @@ describe("number unit registry", () => {
     };
     expect(convertNumberUnitsToDisplay(0, temperature)).toBe(32);
     expect(convertNumberUnitsToSi(212, temperature)).toBe(100);
+
+    const thermalResistance = {
+      mode: "fixed" as const,
+      unit_type: "thermal_resistance" as const,
+      si_unit: "m2_k_w" as const,
+      ip_unit: "h_ft2_f_btu" as const,
+      precision_si: 2,
+      precision_ip: 2,
+    };
+    expect(convertNumberUnitsToDisplay(1, thermalResistance)).toBeCloseTo(5.678263337, 9);
+    expect(convertNumberUnitsToSi(5.678263337, thermalResistance)).toBeCloseTo(1, 9);
+
+    const surfaceMass = {
+      mode: "fixed" as const,
+      unit_type: "surface_mass" as const,
+      si_unit: "g_m2" as const,
+      ip_unit: "gr_ft2" as const,
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    expect(convertNumberUnitsToDisplay(1, surfaceMass)).toBeCloseTo(1.433076, 6);
+    expect(convertNumberUnitsToSi(1.433076, surfaceMass)).toBeCloseTo(1, 6);
+
+    const surfaceMassFlux = {
+      mode: "fixed" as const,
+      unit_type: "surface_mass_flux" as const,
+      si_unit: "kg_m2_s" as const,
+      ip_unit: "gr_ft2_s" as const,
+      precision_si: 10,
+      precision_ip: 7,
+    };
+    expect(convertNumberUnitsToDisplay(1, surfaceMassFlux)).toBeCloseTo(1433.076, 3);
+    expect(convertNumberUnitsToSi(1433.076, surfaceMassFlux)).toBeCloseTo(1, 6);
   });
 
   test("formatNumberUnitsDisplay renders bare numbers in active system", () => {
@@ -323,5 +417,18 @@ describe("number unit registry", () => {
     expect(parseNumberUnitsInput("   ", length, "IP")).toBe(null);
     // Garbage parses to undefined so callers can surface "expected a number"
     expect(parseNumberUnitsInput("abc", length, "SI")).toBe(undefined);
+  });
+
+  test("zero vapor sd remains editable as infinite IP permeance", () => {
+    const vaporSd = {
+      mode: "fixed" as const,
+      unit_type: "vapor_sd" as const,
+      si_unit: "sd_m" as const,
+      ip_unit: "perm" as const,
+      precision_si: 2,
+      precision_ip: 3,
+    };
+    expect(formatNumberUnitsDisplay(0, vaporSd, "IP")).toBe("∞");
+    expect(parseNumberUnitsInput("∞", vaporSd, "IP")).toBe(0);
   });
 });

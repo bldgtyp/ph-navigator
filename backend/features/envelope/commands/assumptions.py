@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from starlette import status
 
-from features.envelope.models import SetThermalStandardCommand
+from features.envelope.models import SetCondensationSettingsCommand, SetThermalStandardCommand
 from features.envelope.surface_film_store import (
     SurfaceFilmTableUnavailableError,
     surface_film_table,
@@ -42,5 +42,17 @@ def set_thermal_standard(
 
     assumptions = body.tables.resolved_assumptions().model_copy(
         update={"thermal_standard": command.thermal_standard},
+    )
+    return body.model_copy(update={"tables": body.tables.model_copy(update={"assumptions": assumptions})})
+
+
+def set_condensation_settings(
+    body: ProjectDocumentV1,
+    command: SetCondensationSettingsCommand,
+) -> ProjectDocumentV1:
+    """Store the complete effective settings block in the versioned draft."""
+
+    assumptions = body.tables.resolved_assumptions().model_copy(
+        update={"condensation_settings": command.settings},
     )
     return body.model_copy(update={"tables": body.tables.model_copy(update={"assumptions": assumptions})})

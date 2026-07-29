@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 22:52 EDT
-STATUS: Ready after Phase 3
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — modal tiers 1–2: the verdict and the Glaser/temperature
   diagrams. After this phase the feature is legible.
@@ -41,9 +42,9 @@ and — one tier deeper — where in the wall and in which month.
 
 ### Tier 2 — Where & when
 
-6. **Glaser diagram** — psat vs pv across the **sd axis**, condensing
-   interface(s) marked and labelled by layer name; a toggle re-plots against
-   real thickness (both views, as the workbook offers). Membranes are
+6. **Glaser diagram** — psat vs pv defaulting to **real thickness**, with
+   condensing interface(s) marked and labelled by layer name; a toggle
+   re-plots against the sd axis (both views, as the workbook offers). Membranes are
    near-zero-width on the thickness view and dominant on the sd view — the
    pair of views is itself the explanation.
 7. **Month selector** defaulting to the worst month; drives both diagrams.
@@ -65,11 +66,33 @@ Tiers 3–4 (numbers, assumptions editing); any export/download affordance
 
 ## Verification
 
-- AC 8 and 9 verified across every rendered state.
+- AC 8 and 9 verified across d1–d4 component states and both caveat types.
 - Component tests for tile states, caveat rendering rules, and the
   sd/thickness toggle; chart-data mapping unit-tested against a golden
   result fixture.
-- Browser smoke (`agent-browser.mjs`) with screenshots of: clear, caveated
-  clear, risk, over-limit, multi-interface, and a reverse-drive summer case —
-  checked against the workbook's diagrams for the same synthetic assembly.
+- Browser smoke against the seeded local route for the clear state, including
+  the default worst month and real-thickness axis, July selection,
+  sd/thickness toggle, all three charts, and no horizontal modal overflow.
+  Profile-chart geometry preserves about 7 px between the x-axis tick labels
+  and axis title, 13 px between the title and legend, and a 32 px inter-chart
+  gap at the 900 px viewport. Caveated, d2–d4, multi-interface, and
+  reverse-drive states are covered by component/engine fixtures rather than
+  claimed as browser-smoked.
 - `make ci` green.
+
+## Result — 2026-07-29
+
+- The screened modal now opens with a plain-language risk verdict, worst path,
+  caveats, four criterion tiles, annual accumulated-Ma chart, selected-limit
+  line, and persistent ISO 13788 method statement.
+- The Where tab plots `psat` and `pv` against cumulative sd or physical
+  thickness, labels condensing interfaces, defaults to the worst month and
+  real-thickness axis, and pairs the vapour plot with the layer-temperature
+  profile and all three interior-boundary temperatures. Legends sit below
+  clear x-axis labels, and the two profile figures have a 32 px gap.
+- Recharts reference marks use `ifOverflow="extendDomain"` so a selected Ma
+  limit or risk threshold outside the raw series range remains visible.
+- Focused verification: backend condensation suites **45 passed**; frontend
+  condensation suites **18 passed**; TypeScript and all frontend static
+  contracts passed. Full-repository CI evidence is recorded in the phase
+  commit.

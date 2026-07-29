@@ -7,25 +7,35 @@ import {
 } from "../../../lib/units";
 import { InfoTooltip } from "../../../shared/ui/info-tooltip";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
+import type { AssemblyCondensationResponse } from "../condensation-types";
 import { statusLabel } from "../lib";
 import type { Assembly, AssemblyThermalResponse, ThermalStandard } from "../types";
+import { CondensationStatusChip } from "./CondensationStatusChip";
 
 export function AssemblyHeader({
   activeAssembly,
   thermal,
   thermalLoading,
+  condensation,
+  condensationLoading,
+  condensationUnavailable,
   canEdit,
   busy,
   actions,
   onRename,
+  onOpenCondensation,
 }: {
   activeAssembly: Assembly;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
+  condensation: AssemblyCondensationResponse | null;
+  condensationLoading: boolean;
+  condensationUnavailable: boolean;
   canEdit: boolean;
   busy: boolean;
   actions?: ReactNode;
   onRename: (name: string) => void;
+  onOpenCondensation: () => void;
 }) {
   const { unitSystem } = useUnitPreference();
   const thermalLabel = formatThermalLabel(thermal, thermalLoading, unitSystem);
@@ -108,6 +118,27 @@ export function AssemblyHeader({
               </InfoTooltip>
             </dt>
             <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
+          </div>
+          <div id="assembly-condensation-metric">
+            <dt className="assembly-header-metric-label">
+              <span>Moisture</span>
+              <InfoTooltip id="assembly-condensation-info-button" label="Condensation risk details">
+                <strong>Interstitial condensation risk</strong>
+                <span>
+                  Monthly ISO 13788 screening of surface and interstitial moisture risk. This is a
+                  design screen, not a transient hygrothermal simulation.
+                </span>
+                <em>Open the result to review missing inputs, caveats, and assumptions.</em>
+              </InfoTooltip>
+            </dt>
+            <dd>
+              <CondensationStatusChip
+                result={condensation}
+                loading={condensationLoading}
+                unavailable={condensationUnavailable}
+                onClick={onOpenCondensation}
+              />
+            </dd>
           </div>
         </dl>
       </div>

@@ -79,6 +79,8 @@ def _good_row(name: str = "XPS", **overrides: Any) -> dict[str, Any]:
         "specific_heat_j_kgk": 1500.0,
         "conductivity_w_mk": 0.034,
         "emissivity": 0.9,
+        "vapor_diffusion_resistance_mu": 120.0,
+        "vapor_sd_equivalent_m": None,
         "color": "#dce6f0",
         "source": "Manufacturer datasheet 2024-Q2",
         "url": "https://example.com/xps.pdf",
@@ -158,6 +160,8 @@ def test_round_trip_existing_rows_are_skipped(clean_state: None) -> None:
                         "specific_heat_j_kgk",
                         "conductivity_w_mk",
                         "emissivity",
+                        "vapor_diffusion_resistance_mu",
+                        "vapor_sd_equivalent_m",
                         "color",
                         "source",
                         "url",
@@ -187,6 +191,41 @@ def test_round_trip_existing_rows_are_skipped(clean_state: None) -> None:
         "inserted_ids": [],
         "skipped_conflict_ids": [],
     }
+
+
+def test_vapor_fields_round_trip_and_invalid_values_are_blank_with_warning(
+    clean_state: None,
+) -> None:
+    client = _signed_in_client()
+    preview = client.post(
+        "/api/v1/catalogs/materials/import/preview",
+        headers={"Origin": ORIGIN},
+        json=_wrap(
+            [
+                _good_row(
+                    name="Vapor-known",
+                    vapor_diffusion_resistance_mu="80",
+                    vapor_sd_equivalent_m="50",
+                ),
+                _good_row(name="Bad mu", vapor_diffusion_resistance_mu=0.5),
+            ]
+        ),
+    ).json()
+    assert preview["counts"]["new"] == 2
+    assert {warning["reason"] for warning in preview["warnings"]} == {"bad_number"}
+
+    commit = client.post(
+        "/api/v1/catalogs/materials/import/commit",
+        headers={"Origin": ORIGIN},
+        json={"token": preview["token"]},
+    ).json()
+    inserted_rows = [
+        client.get(f"/api/v1/catalogs/materials/{record_id}").json() for record_id in commit["inserted_ids"]
+    ]
+    rows = {row["name"]: row for row in inserted_rows}
+    assert rows["Vapor-known"]["vapor_diffusion_resistance_mu"] == pytest.approx(80)
+    assert rows["Vapor-known"]["vapor_sd_equivalent_m"] == pytest.approx(50)
+    assert rows["Bad mu"]["vapor_diffusion_resistance_mu"] is None
 
 
 # 4 — Empty-DB seed ----------------------------------------------------

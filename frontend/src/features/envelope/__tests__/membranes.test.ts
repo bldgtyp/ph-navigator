@@ -15,6 +15,8 @@ function material(overrides: Partial<ProjectMaterial> = {}): ProjectMaterial {
     conductivity_w_mk: 0.04,
     emissivity: 0.9,
     air_permeance_l_s_m2_at_75pa: null,
+    vapor_diffusion_resistance_mu: null,
+    vapor_sd_equivalent_m: null,
     color: "#dce6f0",
     source: null,
     url: null,

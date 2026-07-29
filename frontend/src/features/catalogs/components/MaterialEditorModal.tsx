@@ -4,10 +4,14 @@ import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  formatVaporMu,
+  formatVaporSd,
   parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
+  parseVaporMu,
+  parseVaporSd,
   useUnitPreference,
   type UnitFormatOptions,
 } from "../../../lib/units";
@@ -31,6 +35,8 @@ import {
   conductivityUnitLabel,
   densityUnitLabel,
   specificHeatUnitLabel,
+  vaporMuUnitLabel,
+  vaporSdUnitLabel,
 } from "./unit-labels";
 
 type FormState = {
@@ -41,6 +47,8 @@ type FormState = {
   conductivity_w_mk: string;
   emissivity: string;
   air_permeance_l_s_m2_at_75pa: string;
+  vapor_diffusion_resistance_mu: string;
+  vapor_sd_equivalent_m: string;
   color: string;
   source: string;
   url: string;
@@ -54,6 +62,8 @@ type ParsedMaterialNumbers = Pick<
   | "conductivity_w_mk"
   | "emissivity"
   | "air_permeance_l_s_m2_at_75pa"
+  | "vapor_diffusion_resistance_mu"
+  | "vapor_sd_equivalent_m"
 >;
 
 function emptyForm(): FormState {
@@ -65,6 +75,8 @@ function emptyForm(): FormState {
     conductivity_w_mk: "",
     emissivity: "",
     air_permeance_l_s_m2_at_75pa: "",
+    vapor_diffusion_resistance_mu: "",
+    vapor_sd_equivalent_m: "",
     color: "",
     source: "",
     url: "",
@@ -84,6 +96,8 @@ function formFromRecord(record: CatalogMaterial, unitOptions: UnitFormatOptions)
       record.air_permeance_l_s_m2_at_75pa,
       unitOptions,
     ),
+    vapor_diffusion_resistance_mu: formatVaporMu(record.vapor_diffusion_resistance_mu, unitOptions),
+    vapor_sd_equivalent_m: formatVaporSd(record.vapor_sd_equivalent_m, unitOptions),
     color: stringOrEmpty(record.color),
     source: stringOrEmpty(record.source),
     url: stringOrEmpty(record.url),
@@ -111,6 +125,16 @@ function parseMaterialNumbers(
     air_permeance_l_s_m2_at_75pa: parseOptionalUnitNumber(
       form.air_permeance_l_s_m2_at_75pa,
       parseAirPermeanceToLSM2,
+      unitOptions,
+    ),
+    vapor_diffusion_resistance_mu: parseOptionalUnitNumber(
+      form.vapor_diffusion_resistance_mu,
+      parseVaporMu,
+      unitOptions,
+    ),
+    vapor_sd_equivalent_m: parseOptionalUnitNumber(
+      form.vapor_sd_equivalent_m,
+      parseVaporSd,
       unitOptions,
     ),
   };
@@ -273,6 +297,25 @@ export function MaterialEditorModal({
             onChange={(event) => updateForm("air_permeance_l_s_m2_at_75pa", event.target.value)}
           />
         </label>
+        <fieldset>
+          <legend>Vapour</legend>
+          <label>
+            <span>Resistance ({vaporMuUnitLabel(formUnitSystem)})</span>
+            <input
+              inputMode="decimal"
+              value={form.vapor_diffusion_resistance_mu}
+              onChange={(event) => updateForm("vapor_diffusion_resistance_mu", event.target.value)}
+            />
+          </label>
+          <label>
+            <span>Equivalent air layer, sd ({vaporSdUnitLabel(formUnitSystem)})</span>
+            <input
+              inputMode="decimal"
+              value={form.vapor_sd_equivalent_m}
+              onChange={(event) => updateForm("vapor_sd_equivalent_m", event.target.value)}
+            />
+          </label>
+        </fieldset>
         <label>
           <span>Color</span>
           <input

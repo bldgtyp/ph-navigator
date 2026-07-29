@@ -4,10 +4,14 @@ import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  formatVaporMu,
+  formatVaporSd,
   parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
+  parseVaporMu,
+  parseVaporSd,
   useUnitPreference,
   type UnitFormatOptions,
 } from "../../../lib/units";
@@ -36,6 +40,8 @@ const DRIFT_FIELD_LABELS: Record<ProjectMaterialDriftFieldKey, string> = {
   conductivity_w_mk: "Lambda",
   emissivity: "Emissivity",
   air_permeance_l_s_m2_at_75pa: "Air permeance",
+  vapor_diffusion_resistance_mu: "Vapor resistance",
+  vapor_sd_equivalent_m: "Vapor sd",
   color: "Color",
   source: "Source",
   url: "URL",
@@ -239,6 +245,8 @@ function formatDriftValue(
   if (key === "density_kg_m3") return formatDensityFromKgM3(numeric, options);
   if (key === "specific_heat_j_kgk") return formatSpecificHeatFromJKgK(numeric, options);
   if (key === "air_permeance_l_s_m2_at_75pa") return formatAirPermeanceFromLSM2(numeric, options);
+  if (key === "vapor_diffusion_resistance_mu") return formatVaporMu(numeric, options);
+  if (key === "vapor_sd_equivalent_m") return formatVaporSd(numeric, options);
   if (value === null || value === undefined || value === "") return "Empty";
   return String(value);
 }
@@ -259,6 +267,12 @@ function parseEditedValue(
   }
   if (key === "air_permeance_l_s_m2_at_75pa") {
     return parseOptionalUnitNumber(raw, parseAirPermeanceToLSM2, options);
+  }
+  if (key === "vapor_diffusion_resistance_mu") {
+    return parseOptionalUnitNumber(raw, parseVaporMu, options);
+  }
+  if (key === "vapor_sd_equivalent_m") {
+    return parseOptionalUnitNumber(raw, parseVaporSd, options);
   }
   if (key === "emissivity") return parseOptionalNumber(raw);
   return trimToNull(raw);

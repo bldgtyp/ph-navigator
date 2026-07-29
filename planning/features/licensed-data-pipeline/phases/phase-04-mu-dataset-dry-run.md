@@ -1,13 +1,15 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29 — local drill and private production publish complete
 TIME: 12:05 EDT
-STATUS: Held — required assembly-condensation-risk Phase 0 coverage decision
-  and Phase 1 catalog columns do not exist yet
+STATUS: Complete through publish — private payload, applier,
+  idempotency/change/rollback drill, unmatched reporting, and manifest-last
+  production publish pass; production DB apply remains held
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
   dataset, locally.
 RELATED: ../PRD.md §9, ../decisions.md §D-10,
-  planning/features/assembly-condensation-risk/PRD.md §4/§8
+  planning/archive/dated/2026-07-29/assembly-condensation-risk/PRD.md §4/§8
 ---
 
 # Phase 4 — First `db_seed` dataset: `iso10456-vapor-mu`
@@ -31,21 +33,23 @@ the Phase 3 workflow.
 - Condensation Phase 0's coverage probe has settled which rows get seeded
   values (including the §D-12 composite-stud call).
 
-## Current prerequisite check — 2026-07-28
+## Result — 2026-07-29
 
-This phase was reached by the licensed-pipeline implementation loop, but it
-cannot start without taking ownership away from the condensation feature:
-
-- `assembly-condensation-risk/STATUS.md` says no code has been written and
-  names Phase 0 as its next step;
-- neither `vapor_diffusion_resistance_mu` nor `vapor_sd_equivalent_m` exists
-  anywhere under `backend/`;
-- the composite stud/cavity policy is still a Phase 0 Ed decision;
-- the real ISO 10456 payload is licensed and cannot be invented or transcribed
-  in this public repo.
-
-No Phase 4 code or private payload was authored. Resume here after
-condensation Phases 0–1 establish the stable target roster and columns.
+- The condensation feature supplied its accepted 201-row stable-id roster,
+  both catalog columns, and the composite cavity/base-family policy.
+- `ph-navigator-data` now holds the licensed payload, schema, provenance, and
+  manifest entry. Private validation and all 8 publisher tests pass. Licensed
+  values were not copied into PHN.
+- PHN registers `iso10456-vapor-mu` as `db_seed` with a typed parser and an
+  absolute-value applier reporting matched / updated / unchanged / unmatched.
+- The local MinIO/Postgres sequence passed: pending before apply; deliberately
+  unmatched before stable catalog seeding; 201/201 matched after seeding;
+  clean status; zero-write forced re-apply; one-row temporary v2 update; then
+  rollback to reviewed v1. Final `make datasets-status` reports no mismatches.
+- Private PR [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2)
+  squash-merged as `3a171f6`; production publish run `30480924508` passed and
+  swapped the manifest last. The production DB apply remains on Ed's manual
+  schedule through the Phase 3 workflow after the PHN deploy.
 
 ## Work
 

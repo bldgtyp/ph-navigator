@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 — both prerequisites shipped; as-built reconciliation
-TIME: 10:14 EDT
-STATUS: Ready — all questions resolved, both prerequisites cleared, Phase 0 next
+UPDATED: 2026-07-29 — implementation complete
+TIME: 07:17 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Product and behaviour contract for an ISO 13788 interstitial-condensation
   risk screen on the Envelope ▸ Assemblies page, plus the material vapour-data
@@ -315,8 +315,8 @@ Four tiers, opening on tier 1:
   verdict), 12 rows.
 - **Per-interface breakdown**: gc and Ma per interface per month — the
   workbook's collapsed "+" table.
-- Standard `DataTable` behaviour throughout (uniformity is an iron-law here) and
-  copy/export affordances.
+- Standard `DataTable` grid, Unit-field, and copy behaviour throughout.
+  Fixed read-only analysis tables suppress view and download/export controls.
 
 **Tier 4 — Assumptions** *(why these numbers?)*
 
@@ -387,8 +387,8 @@ Options, in the order I would take them:
    when it is set. One nullable field, the PHI formula, and a clear "you told us
    this" provenance line in the Assumptions tier.
 
-Recommend (1) for v1 — the alternative is inventing a temperature for a space
-nobody has described. → open question Q-8.
+Phase 0 accepted (1) for v1 — the alternative is inventing a temperature for a
+space nobody has described.
 
 ## 7. Backend contract
 
@@ -434,7 +434,7 @@ risk (A-4) is retired first.
 | Phase | Content | Ships |
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
-| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. **The µ seed path itself** (Q-3/D-7) is owned by `planning/features/licensed-data-pipeline/` (split out 2026-07-28, Ed) — **whose mechanics are now implemented** (Phases 1–2: publisher + CI, PHN `datasets` registry, `applied_datasets`, guarded apply CLIs, all drilled on the films dataset). The ISO 10456 dataset is authored in the private `ph-navigator-data` repo and applied through the `db_seed` machinery — pipeline Phase 4 is this seed's local dry-run, resumed once this phase lands the columns and Phase 0 lands the roster. This feature keeps ownership of the µ *content* (which rows get which values, the §D-12 composite-stud call); the pipeline owns the publish/apply mechanics. Production apply is Ed-dispatched, on this feature's schedule. | materials can be specified; data entry can begin |
+| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. **The µ seed path itself** (Q-3/D-7) is owned by `planning/features/licensed-data-pipeline/` (split out 2026-07-28, Ed) — **whose mechanics are now implemented** (Phases 1–2: publisher + CI, PHN `datasets` registry, `applied_datasets`, guarded apply CLIs, all drilled on the films dataset). The ISO 10456 dataset is authored in the private `ph-navigator-data` repo and applied through the `db_seed` machinery — pipeline Phase 4 is this seed's local dry-run, resumed once this phase lands the columns; Phase 0 already supplied the 201-row roster and accepted composite policy. This feature keeps ownership of the µ *content* (which rows get which values); the pipeline owns the publish/apply mechanics. Production apply is Ed-dispatched, on this feature's schedule. | materials can be specified; data entry can begin |
 | ~~**1½**~~ | ✅ **Both external dependencies cleared.** `assembly-membrane-layers` — all four phases, shipped 2026-07-26 (rendering reworked 2026-07-27). `assembly-boundary-conditions` — all four phases, 2026-07-26 → ASHRAE set + selector 2026-07-28. | assemblies hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |

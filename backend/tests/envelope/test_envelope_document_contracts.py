@@ -220,6 +220,8 @@ def test_envelope_table_contracts_are_registered_with_unit_metadata() -> None:
         "density_kg_m3": "density",
         "specific_heat_j_kgk": "specific_heat",
         "air_permeance_l_s_m2_at_75pa": "air_permeance",
+        "vapor_diffusion_resistance_mu": "vapor_diffusion_resistance",
+        "vapor_sd_equivalent_m": "vapor_sd",
     }
     assert materials.field_registry is None
     assert segments.schema_slug == "assembly-segment"
@@ -228,6 +230,27 @@ def test_envelope_table_contracts_are_registered_with_unit_metadata() -> None:
         "steel_stud_spacing_mm": "length",
     }
     assert segments.field_registry is None
+
+
+def test_project_material_vapor_fields_are_optional_finite_and_bounded() -> None:
+    legacy = ProjectMaterial.model_validate(project_material())
+    assert legacy.vapor_diffusion_resistance_mu is None
+    assert legacy.vapor_sd_equivalent_m is None
+
+    material = ProjectMaterial.model_validate(
+        project_material(vapor_diffusion_resistance_mu=50.0, vapor_sd_equivalent_m=1500.0)
+    )
+    assert material.vapor_diffusion_resistance_mu == 50.0
+    assert material.vapor_sd_equivalent_m == 1500.0
+
+    for field, value in (
+        ("vapor_diffusion_resistance_mu", 0.99),
+        ("vapor_diffusion_resistance_mu", float("inf")),
+        ("vapor_sd_equivalent_m", -0.01),
+        ("vapor_sd_equivalent_m", float("inf")),
+    ):
+        with pytest.raises(ValidationError):
+            ProjectMaterial.model_validate(project_material(**{field: value}))
 
 
 def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_tables: None) -> None:

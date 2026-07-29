@@ -13,6 +13,7 @@ helpers so browser and MCP callers share one mutation boundary.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
 
@@ -21,7 +22,15 @@ from starlette import status
 
 from database import transaction
 from features.envelope import drift, ops
+from features.envelope.boundary_conditions import SurfaceFilmTable
 from features.envelope.commands.registry import apply_command as dispatch_envelope_command
+from features.envelope.condensation import (
+    AssemblyCondensationResponse,
+    CondensationClimateSource,
+    calculate_assembly_condensation,
+    condensation_input_hash,
+)
+from features.envelope.condensation_cache import condensation_cache_get, condensation_cache_put
 from features.envelope.hbjson_import import parse_or_422
 from features.envelope.import_models import ImportConstructionsPreviewResponse
 from features.envelope.import_planning import build_import_plan
@@ -39,8 +48,14 @@ from features.envelope.phpp_export import phpp_preflight
 from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.surface_film_store import SurfaceFilmTableUnavailableError, surface_film_table
 from features.envelope.thermal import calculate_assembly_thermal
+from features.project_climate_source.service import resolve_condensation_climate_record
 from features.project_document.audit import log_document_action
-from features.project_document.document import ProjectDocumentV1, ThermalStandard
+from features.project_document.document import (
+    Assembly,
+    ProjectDocumentV1,
+    ProjectMaterial,
+    ThermalStandard,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import (
     document_etag,
@@ -103,38 +118,16 @@ def get_assembly_thermal_model(
     keeps incomplete assemblies visible while still surfacing the same
     issue flags HBJSON export uses for blocking validation.
     """
-    if source == "version":
-        body = get_saved_document(version_id, access)
-        response_source: ProjectDocumentSource = "version"
-    else:
-        view = get_current_document_view(version_id, access)
-        body = view.body
-        response_source = view.source
-
-    assembly = ops.find_assembly(body.tables.assemblies, assembly_id)
-    # The film table is resolved here, at the I/O edge: a licensed set lives
-    # in the private object store, and `thermal` stays pure.
-    standard = body.tables.resolved_assumptions().thermal_standard
-    try:
-        film_table = surface_film_table(standard)
-    except SurfaceFilmTableUnavailableError as error:
-        # A typed 409 rather than a 500: the deployment is missing a licensed
-        # table it was asked for, which an operator can fix by seeding it.
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "surface_film_table_unavailable",
-            "This project's thermal standard has no published surface-film table on this deployment.",
-            {"thermal_standard": standard},
-        ) from error
+    context = _assembly_calculation_context(version_id, access, assembly_id, source)
     result = calculate_assembly_thermal(
-        assembly,
-        {material.id: material for material in body.tables.project_materials},
-        film_table,
+        context.assembly,
+        context.materials_by_id,
+        context.film_table,
     )
     return AssemblyThermalResponse(
         project_id=access.project_id,
         version_id=version_id,
-        source=response_source,
+        source=context.source,
         assembly_id=assembly_id,
         input_hash=result.input_hash,
         status=result.status,
@@ -149,6 +142,100 @@ def get_assembly_thermal_model(
         heat_flow_direction=result.heat_flow_direction,
         thermal_standard=result.thermal_standard,
         warnings=result.warnings,
+    )
+
+
+def get_assembly_condensation_model(
+    version_id: UUID,
+    access: ProjectAccess,
+    assembly_id: str,
+    source: ProjectDocumentSource,
+) -> AssemblyCondensationResponse:
+    """Calculate the ISO 13788 screen from the live document and climate basis."""
+
+    context = _assembly_calculation_context(version_id, access, assembly_id, source)
+    assumptions = context.body.tables.resolved_assumptions()
+    climate = (
+        None
+        if context.assembly.exterior_condition in {"ground", "unconditioned_space"}
+        else resolve_condensation_climate_record(access.project_id, access.project.cert_programs)
+    )
+    settings = assumptions.resolved_condensation_settings()
+    input_hash = condensation_input_hash(
+        context.assembly,
+        context.materials_by_id,
+        climate.record if climate is not None else None,
+        context.film_table,
+        settings,
+        climate.identity if climate is not None else None,
+    )
+    result = condensation_cache_get(input_hash)
+    if result is None:
+        result = calculate_assembly_condensation(
+            context.assembly,
+            context.materials_by_id,
+            climate.record if climate is not None else None,
+            context.film_table,
+            settings,
+            climate_source_identity=climate.identity if climate is not None else None,
+        )
+        condensation_cache_put(result)
+    return AssemblyCondensationResponse(
+        **result.model_dump(),
+        project_id=access.project_id,
+        version_id=version_id,
+        source=context.source,
+        assembly_id=assembly_id,
+        climate_source=(
+            CondensationClimateSource(id=climate.source_id, kind=climate.kind, label=climate.label)
+            if climate is not None
+            else None
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class _AssemblyCalculationContext:
+    body: ProjectDocumentV1
+    source: ProjectDocumentSource
+    assembly: Assembly
+    materials_by_id: dict[str, ProjectMaterial]
+    film_table: SurfaceFilmTable
+
+
+def _assembly_calculation_context(
+    version_id: UUID,
+    access: ProjectAccess,
+    assembly_id: str,
+    source: ProjectDocumentSource,
+) -> _AssemblyCalculationContext:
+    """Resolve the shared pure-calculation inputs at the storage edge."""
+
+    if source == "version":
+        body = get_saved_document(version_id, access)
+        response_source: ProjectDocumentSource = "version"
+    else:
+        view = get_current_document_view(version_id, access)
+        body = view.body
+        response_source = view.source
+
+    assembly = ops.find_assembly(body.tables.assemblies, assembly_id)
+    standard = body.tables.resolved_assumptions().thermal_standard
+    try:
+        film_table = surface_film_table(standard)
+    except SurfaceFilmTableUnavailableError as error:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "surface_film_table_unavailable",
+            "This project's thermal standard has no published surface-film table on this deployment.",
+            {"thermal_standard": standard},
+        ) from error
+    return _AssemblyCalculationContext(
+        body=body,
+        source=response_source,
+        assembly=assembly,
+        materials_by_id={material.id: material for material in body.tables.project_materials},
+        film_table=film_table,
     )
 
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
+import { envelopeQueryKeys } from "../envelope/query-keys";
 import {
   attachWeatherFromCatalog,
   attachWeatherFromUpload,
@@ -104,7 +105,12 @@ export function useEpwRosterQuery(
 // ---- Project-scoped climate sources (Phase 3b) ----
 
 function invalidateClimateSourceQueries(queryClient: QueryClient, projectId: string) {
-  return queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) }),
+    queryClient.invalidateQueries({
+      queryKey: [...envelopeQueryKeys.all(projectId), "condensation"],
+    }),
+  ]);
 }
 
 export function useClimateSourcesQuery(projectId: string) {

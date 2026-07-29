@@ -21,6 +21,7 @@ import type {
 // / overflow controls reaching for the same area.
 export type GridToolbarProps = {
   tableName: string;
+  showViewControls?: boolean;
   view: ViewState;
   fieldDefByKey: Map<string, FieldDef>;
   filterableFieldDefs: FieldDef[];
@@ -52,6 +53,7 @@ type AxisRule = { fieldKey: string };
 
 export function GridToolbar({
   tableName,
+  showViewControls = true,
   view,
   fieldDefByKey,
   filterableFieldDefs,
@@ -103,111 +105,116 @@ export function GridToolbar({
     Object.keys(view.expandedGroups).length > 0;
 
   return (
-    <div className="data-table-toolbar" aria-label="Table view controls">
+    <div
+      className="data-table-toolbar"
+      aria-label={showViewControls ? "Table view controls" : "Table toolbar"}
+    >
       <div className="data-table-toolbar-status">
         <h2 className="data-table-toolbar-title" title={tableName}>
           {tableName}
         </h2>
       </div>
-      <div className="data-table-toolbar-buttons">
-        <FilterPopover
-          open={filterOpen}
-          onOpenChange={setFilterOpen}
-          rules={view.filter}
-          onFilterChange={onFilterChange}
-          filterableFieldDefs={filterableFieldDefs}
-          linkedRecordOps={linkedRecordOps}
-          trigger={
-            <button
-              type="button"
-              className="data-table-toolbar-button"
-              data-axis="filter"
-              data-axis-active={filterActive ? "true" : undefined}
-              aria-label={filterLabel}
-            >
-              <span className="data-table-toolbar-button-icon" aria-hidden>
-                <Filter />
-              </span>
-              <span>{filterLabel}</span>
-            </button>
-          }
-        />
-        <SortPopover
-          open={sortOpen}
-          onOpenChange={setSortOpen}
-          rules={view.sort}
-          onSortChange={onSortChange}
-          sortableFieldDefs={sortableFieldDefs}
-          trigger={
-            <button
-              type="button"
-              className="data-table-toolbar-button"
-              data-axis="sort"
-              data-axis-active={sortActive ? "true" : undefined}
-              aria-label={sortLabel}
-            >
-              <span className="data-table-toolbar-button-icon" aria-hidden>
-                <ArrowUpDown />
-              </span>
-              <span>{sortLabel}</span>
-            </button>
-          }
-        />
-        <GroupPopover
-          open={groupOpen}
-          onOpenChange={setGroupOpen}
-          rules={view.group}
-          onGroupChange={onGroupChange}
-          groupableFieldDefs={groupableFieldDefs}
-          onCollapseAll={onCollapseAllGroups}
-          onExpandAll={onExpandAllGroups}
-          canToggleExpand={groupActive}
-          trigger={
-            <button
-              type="button"
-              className="data-table-toolbar-button"
-              data-axis="group"
-              data-axis-active={groupActive ? "true" : undefined}
-              aria-label={groupLabel}
-            >
-              <span className="data-table-toolbar-button-icon" aria-hidden>
-                <Group />
-              </span>
-              <span>{groupLabel}</span>
-            </button>
-          }
-        />
-        <HideFieldsPopover
-          open={hideFieldsOpen}
-          onOpenChange={setHideFieldsOpen}
-          orderedColumns={orderedColumnsForHidePanel}
-          fieldDefByKey={fieldDefByKey}
-          hiddenColumns={view.hiddenColumns}
-          onChange={onHideFieldsChange}
-          trigger={
-            <button
-              type="button"
-              className="data-table-toolbar-button"
-              data-axis="hide-fields"
-              data-axis-active={hideFieldsActive ? "true" : undefined}
-              aria-label={hideFieldsLabel}
-            >
-              <span className="data-table-toolbar-button-icon" aria-hidden>
-                <EyeOff />
-              </span>
-              <span>{hideFieldsLabel}</span>
-            </button>
-          }
-        />
-        <ViewMenuOverflow
-          onReset={onResetView}
-          canReset={canResetView}
-          onDownloadCsv={onDownloadCsv}
-          onDownloadJson={onDownloadJson}
-          canDownloadCsv={canDownloadCsv}
-          actions={overflowMenuActions}
-        />
-      </div>
+      {showViewControls ? (
+        <div className="data-table-toolbar-buttons">
+          <FilterPopover
+            open={filterOpen}
+            onOpenChange={setFilterOpen}
+            rules={view.filter}
+            onFilterChange={onFilterChange}
+            filterableFieldDefs={filterableFieldDefs}
+            linkedRecordOps={linkedRecordOps}
+            trigger={
+              <button
+                type="button"
+                className="data-table-toolbar-button"
+                data-axis="filter"
+                data-axis-active={filterActive ? "true" : undefined}
+                aria-label={filterLabel}
+              >
+                <span className="data-table-toolbar-button-icon" aria-hidden>
+                  <Filter />
+                </span>
+                <span>{filterLabel}</span>
+              </button>
+            }
+          />
+          <SortPopover
+            open={sortOpen}
+            onOpenChange={setSortOpen}
+            rules={view.sort}
+            onSortChange={onSortChange}
+            sortableFieldDefs={sortableFieldDefs}
+            trigger={
+              <button
+                type="button"
+                className="data-table-toolbar-button"
+                data-axis="sort"
+                data-axis-active={sortActive ? "true" : undefined}
+                aria-label={sortLabel}
+              >
+                <span className="data-table-toolbar-button-icon" aria-hidden>
+                  <ArrowUpDown />
+                </span>
+                <span>{sortLabel}</span>
+              </button>
+            }
+          />
+          <GroupPopover
+            open={groupOpen}
+            onOpenChange={setGroupOpen}
+            rules={view.group}
+            onGroupChange={onGroupChange}
+            groupableFieldDefs={groupableFieldDefs}
+            onCollapseAll={onCollapseAllGroups}
+            onExpandAll={onExpandAllGroups}
+            canToggleExpand={groupActive}
+            trigger={
+              <button
+                type="button"
+                className="data-table-toolbar-button"
+                data-axis="group"
+                data-axis-active={groupActive ? "true" : undefined}
+                aria-label={groupLabel}
+              >
+                <span className="data-table-toolbar-button-icon" aria-hidden>
+                  <Group />
+                </span>
+                <span>{groupLabel}</span>
+              </button>
+            }
+          />
+          <HideFieldsPopover
+            open={hideFieldsOpen}
+            onOpenChange={setHideFieldsOpen}
+            orderedColumns={orderedColumnsForHidePanel}
+            fieldDefByKey={fieldDefByKey}
+            hiddenColumns={view.hiddenColumns}
+            onChange={onHideFieldsChange}
+            trigger={
+              <button
+                type="button"
+                className="data-table-toolbar-button"
+                data-axis="hide-fields"
+                data-axis-active={hideFieldsActive ? "true" : undefined}
+                aria-label={hideFieldsLabel}
+              >
+                <span className="data-table-toolbar-button-icon" aria-hidden>
+                  <EyeOff />
+                </span>
+                <span>{hideFieldsLabel}</span>
+              </button>
+            }
+          />
+          <ViewMenuOverflow
+            onReset={onResetView}
+            canReset={canResetView}
+            onDownloadCsv={onDownloadCsv}
+            onDownloadJson={onDownloadJson}
+            canDownloadCsv={canDownloadCsv}
+            actions={overflowMenuActions}
+          />
+        </div>
+      ) : null}
       {actions ? <div className="data-table-toolbar-actions">{actions}</div> : null}
     </div>
   );

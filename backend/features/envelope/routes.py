@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Header, Query, UploadFile
 
 from features.access.capabilities import ENVELOPE_EXPORT_HBJSON, ENVELOPE_EXPORT_PHPP
+from features.envelope.condensation import AssemblyCondensationResponse
 from features.envelope.hbjson_export import export_hbjson_constructions
 from features.envelope.import_models import ImportConstructionsPreviewResponse
 from features.envelope.models import (
@@ -24,6 +25,7 @@ from features.envelope.phpp_types import UnitSystem
 from features.envelope.service import (
     MAX_IMPORT_FILE_BYTES,
     apply_envelope_command,
+    get_assembly_condensation_model,
     get_assembly_thermal_model,
     get_envelope_read_model,
     get_phpp_export_preflight,
@@ -67,6 +69,16 @@ def get_assembly_thermal(
     source: Annotated[ProjectDocumentSource, Query()] = "draft",
 ) -> AssemblyThermalResponse:
     return get_assembly_thermal_model(version_id, access, assembly_id, source)
+
+
+@router.get("/envelope/assemblies/{assembly_id}/condensation", response_model=AssemblyCondensationResponse)
+def get_assembly_condensation(
+    version_id: UUID,
+    assembly_id: str,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query()] = "draft",
+) -> AssemblyCondensationResponse:
+    return get_assembly_condensation_model(version_id, access, assembly_id, source)
 
 
 @router.get("/envelope/thermal-standards", response_model=ThermalStandardsResponse)

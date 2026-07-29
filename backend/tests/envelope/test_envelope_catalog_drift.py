@@ -86,7 +86,7 @@ def test_material_drift_report_detects_same_version_field_delta_and_overrides(
     edited_catalog = client.patch(
         f"/api/v1/catalogs/materials/{catalog['id']}",
         headers={"Origin": ORIGIN},
-        json={"density_kg_m3": 41.0},
+        json={"density_kg_m3": 41.0, "vapor_diffusion_resistance_mu": 120.0},
     )
     assert edited_catalog.status_code == 200
 
@@ -98,6 +98,7 @@ def test_material_drift_report_detects_same_version_field_delta_and_overrides(
     assert fields["conductivity_w_mk"]["is_overridden"] is True
     assert fields["conductivity_w_mk"]["differs"] is True
     assert fields["density_kg_m3"]["differs"] is True
+    assert fields["vapor_diffusion_resistance_mu"]["differs"] is True
 
 
 def test_refresh_writes_field_choices_and_preserves_local_overrides(

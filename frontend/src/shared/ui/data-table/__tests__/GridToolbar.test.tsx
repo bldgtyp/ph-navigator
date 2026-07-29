@@ -24,11 +24,13 @@ function renderToolbar(
     onCollapseAllGroups?: () => void;
     onExpandAllGroups?: () => void;
     onHideFieldsChange?: () => void;
+    showViewControls?: boolean;
   } = {},
 ) {
   render(
     <GridToolbar
       tableName="Rooms"
+      showViewControls={handlers.showViewControls}
       view={view}
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
@@ -60,6 +62,16 @@ describe("GridToolbar", () => {
     const button = screen.getByRole("button", { name: "Filter" });
     expect(button).toBeInTheDocument();
     expect(button).not.toHaveAttribute("data-axis-active");
+  });
+
+  test("can retain the table title without rendering view controls", () => {
+    renderToolbar(emptyViewState(), { showViewControls: false });
+    expect(screen.getByLabelText("Table toolbar")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rooms" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Filter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Group" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hide fields" })).not.toBeInTheDocument();
   });
 
   test("Filter button tints when any rule is present (matches AirTable chip color)", () => {

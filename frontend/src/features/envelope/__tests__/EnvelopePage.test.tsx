@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
+import type { AssemblyCondensationResponse } from "../condensation-types";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type {
@@ -24,6 +25,7 @@ import {
   phase16DriftFixture,
   phase16EnvelopeFixture,
 } from "./phase16-fixtures";
+import { screenedCondensationResult } from "./condensation-test-fixture";
 
 const PROJECT_ID = "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5";
 const VERSION_ID = "61561caa-44d0-401d-9daa-0fa113df8340";
@@ -126,6 +128,8 @@ const envelopePayload: EnvelopeReadResponse = {
       specific_heat_j_kgk: 2100,
       emissivity: 0.9,
       air_permeance_l_s_m2_at_75pa: null,
+      vapor_diffusion_resistance_mu: null,
+      vapor_sd_equivalent_m: null,
       color: "#dce6c8",
       specification_status: "needed",
       datasheet_asset_ids: [],
@@ -155,6 +159,8 @@ const envelopePayload: EnvelopeReadResponse = {
       specific_heat_j_kgk: 2110,
       emissivity: null,
       air_permeance_l_s_m2_at_75pa: null,
+      vapor_diffusion_resistance_mu: null,
+      vapor_sd_equivalent_m: null,
       color: null,
       specification_status: "complete",
       datasheet_asset_ids: [],
@@ -184,6 +190,8 @@ const envelopePayload: EnvelopeReadResponse = {
       specific_heat_j_kgk: null,
       emissivity: null,
       air_permeance_l_s_m2_at_75pa: null,
+      vapor_diffusion_resistance_mu: null,
+      vapor_sd_equivalent_m: null,
       color: null,
       specification_status: "na",
       datasheet_asset_ids: [],
@@ -217,6 +225,61 @@ const thermalPayload: AssemblyThermalResponse = {
   heat_flow_direction: "horizontal",
   thermal_standard: "iso_6946",
   warnings: ["One or more segments do not have a material assignment."],
+};
+
+const condensationPayload: AssemblyCondensationResponse = {
+  project_id: PROJECT_ID,
+  version_id: VERSION_ID,
+  source: "draft",
+  assembly_id: "asm_wall_c3",
+  climate_source: null,
+  status: {
+    state: "blocked",
+    is_complete: false,
+    flags: ["missing_material", "missing_vapor_data", "missing_climate_source"],
+  },
+  input_hash: "c".repeat(64),
+  issues: [
+    {
+      code: "missing_vapor_data",
+      message: "One or more materials need a direct sd or vapor resistance value.",
+      assembly_id: "asm_wall_c3",
+      assembly_name: "WALL-C3",
+      layer_id: "lyr_sheathing",
+      layer_order: 0,
+      segment_id: "seg_insul",
+      segment_order: 0,
+      project_material_id: "pmat_insul",
+      project_material_name: "Wood fiber board",
+    },
+  ],
+  caveats: [],
+  diagnostics: [],
+  rsi_m2k_w: 0.13,
+  rse_m2k_w: 0.04,
+  thermal_standard: "iso_6946",
+  settings: {
+    interior_climate_model: "iso13788_continental",
+    occupancy_class: "normal",
+    humidity_class: 2,
+    setpoint_temp_c: null,
+    setpoint_rh: null,
+    ma_limit_g_m2: 200,
+  },
+  roof_temperature_offset_k: 0,
+  path_count: 0,
+  paths_evaluated: 0,
+  worst_path_id: null,
+  path_summaries: [],
+  verdict: null,
+  criteria: null,
+  interface_count: 0,
+  interfaces: [],
+  start_month: null,
+  start_month_name: null,
+  peak_accumulated_moisture_g_m2: null,
+  final_accumulated_moisture_g_m2: null,
+  monthly: [],
 };
 
 const driftPayload = {
@@ -464,6 +527,124 @@ describe("EnvelopePage", () => {
     expect(document.body).not.toHaveTextContent("are NOT included");
   });
 
+  test("condensation chip opens the missing-input workflow and focuses Vapour editing", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const chip = await screen.findByRole("button", {
+      name: "Condensation: needs vapour data (1)",
+    });
+    await userEvent.click(chip);
+
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    expect(within(riskDialog).getByText("Layer 1 · µ or sd required")).toBeInTheDocument();
+    const verdictTab = within(riskDialog).getByRole("tab", { name: "Verdict" });
+    verdictTab.focus();
+    fireEvent.keyDown(verdictTab, { key: "ArrowRight" });
+    expect(within(riskDialog).getByRole("tab", { name: "Where & when" })).toHaveFocus();
+    expect(within(riskDialog).getByRole("tab", { name: "Where & when" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Enter vapour data" }));
+
+    const materialDialog = await screen.findByRole("dialog", {
+      name: "Edit material — Wood fiber board",
+    });
+    expect(within(materialDialog).getByLabelText(/Resistance/)).toHaveFocus();
+  });
+
+  test("membrane correction focuses direct sd instead of mu", async () => {
+    const membranePayload: AssemblyCondensationResponse = {
+      ...condensationPayload,
+      status: {
+        state: "blocked",
+        is_complete: false,
+        flags: ["missing_membrane_sd", "missing_climate_source"],
+      },
+      issues: [
+        {
+          ...condensationPayload.issues[0]!,
+          code: "missing_membrane_sd",
+          message: "Membrane layers require direct sd.",
+        },
+      ],
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/condensation?")) {
+        return Promise.resolve(jsonResponse(membranePayload));
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Condensation: needs vapour data (1)" }),
+    );
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    expect(within(riskDialog).getByText("Layer 1 · sd required")).toBeInTheDocument();
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Enter vapour data" }));
+
+    const materialDialog = await screen.findByRole("dialog", {
+      name: "Edit material — Wood fiber board",
+    });
+    expect(within(materialDialog).getByLabelText(/Equivalent air layer/)).toHaveFocus();
+  });
+
+  test("assumptions tier writes versioned condensation settings through the envelope command", async () => {
+    const screenedPayload: AssemblyCondensationResponse = {
+      ...screenedCondensationResult(),
+      project_id: PROJECT_ID,
+      version_id: VERSION_ID,
+      assembly_id: "asm_wall_c3",
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/condensation?")) {
+        return Promise.resolve(jsonResponse(screenedPayload));
+      }
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({ ...envelopePayload, draft_etag: "draft-settings-etag" }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Condensation: predicted — review" }),
+    );
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    await userEvent.click(within(riskDialog).getByRole("tab", { name: "Assumptions" }));
+    const limit = within(riskDialog).getByRole("spinbutton", {
+      name: "Accumulated moisture limit",
+    });
+    await userEvent.clear(limit);
+    await userEvent.type(limit, "150");
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Apply assumptions" }));
+
+    await waitFor(() =>
+      expect(commandRequestBodies()).toContainEqual({
+        command: {
+          kind: "set_condensation_settings",
+          settings: {
+            interior_climate_model: "iso13788_continental",
+            occupancy_class: "normal",
+            humidity_class: 2,
+            setpoint_temp_c: null,
+            setpoint_rh: null,
+            ma_limit_g_m2: 150,
+          },
+        },
+      }),
+    );
+  });
+
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -547,6 +728,8 @@ describe("EnvelopePage", () => {
           specific_heat_j_kgk: 2100,
           emissivity: 0.9,
           air_permeance_l_s_m2_at_75pa: null,
+          vapor_diffusion_resistance_mu: null,
+          vapor_sd_equivalent_m: null,
           comments: "Candidate product.",
         },
       });
@@ -1999,6 +2182,7 @@ function defaultFetchImplementation(url: string): Promise<Response> {
   }
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
+  if (url.includes("/condensation?")) return Promise.resolve(jsonResponse(condensationPayload));
   if (url.includes("/envelope/material-catalog-drift?")) {
     return Promise.resolve(jsonResponse(driftPayload));
   }

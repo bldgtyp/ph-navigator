@@ -4,6 +4,7 @@ import type {
   SpecificationStatus,
   WireSpecificationStatusRecord,
 } from "../project_document/specification-status";
+import type { CondensationSettings } from "./condensation-types";
 
 export type { SpecificationStatus } from "../project_document/specification-status";
 
@@ -78,6 +79,8 @@ export type ProjectMaterial = {
   conductivity_w_mk: number | null;
   emissivity: number | null;
   air_permeance_l_s_m2_at_75pa: number | null;
+  vapor_diffusion_resistance_mu: number | null;
+  vapor_sd_equivalent_m: number | null;
   color: string | null;
   source: string | null;
   url: string | null;
@@ -178,6 +181,8 @@ export type ProjectMaterialDriftFieldKey =
   | "conductivity_w_mk"
   | "emissivity"
   | "air_permeance_l_s_m2_at_75pa"
+  | "vapor_diffusion_resistance_mu"
+  | "vapor_sd_equivalent_m"
   | "color"
   | "source"
   | "url"
@@ -227,6 +232,7 @@ export type EnvelopeCommand =
       exterior_condition: ExteriorCondition;
     }
   | { kind: "set_thermal_standard"; thermal_standard: ThermalStandard }
+  | { kind: "set_condensation_settings"; settings: CondensationSettings }
   | { kind: "duplicate_assembly"; assembly_id: string; name?: string | null }
   | { kind: "delete_assembly"; assembly_id: string }
   | {
@@ -300,6 +306,8 @@ export type EnvelopeCommand =
       specific_heat_j_kgk?: number | null;
       emissivity?: number | null;
       air_permeance_l_s_m2_at_75pa?: number | null;
+      vapor_diffusion_resistance_mu?: number | null;
+      vapor_sd_equivalent_m?: number | null;
       color?: string | null;
     }
   | {
@@ -312,6 +320,8 @@ export type EnvelopeCommand =
       conductivity_w_mk?: number | null;
       emissivity?: number | null;
       air_permeance_l_s_m2_at_75pa?: number | null;
+      vapor_diffusion_resistance_mu?: number | null;
+      vapor_sd_equivalent_m?: number | null;
       color?: string | null;
       source?: string | null;
       url?: string | null;

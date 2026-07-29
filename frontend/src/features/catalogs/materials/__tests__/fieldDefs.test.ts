@@ -16,6 +16,8 @@ describe("materials field defs", () => {
       "conductivity_w_mk",
       "emissivity",
       "air_permeance_l_s_m2_at_75pa",
+      "vapor_diffusion_resistance_mu",
+      "vapor_sd_equivalent_m",
       "color",
       "source",
       "url",
@@ -49,6 +51,8 @@ describe("materials field defs", () => {
       "specific_heat_j_kgk",
       "conductivity_w_mk",
       "air_permeance_l_s_m2_at_75pa",
+      "vapor_diffusion_resistance_mu",
+      "vapor_sd_equivalent_m",
     ] as const) {
       const overlay = MATERIALS_FIELD_OVERLAY[key];
       expect(overlay?.numberUnits?.mode).toBe("fixed");

@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 22:52 EDT
-STATUS: Ready after Phase 2
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — service + route + the header chip + the "what's missing"
   modal state. After this phase the feature is usable.
@@ -78,3 +79,31 @@ roll-up.
   what's-missing list, the edit round-trip chip refresh, `--settle 1200` for
   persisted-state checks.
 - `make ci` green.
+
+## Result — 2026-07-29
+
+Complete. The version-scoped condensation route resolves the requested live
+draft or saved document, the project climate basis, the active surface-film
+table, and zero-config or persisted assumptions at the service edge. Pure
+results are cached in a bounded process-local FIFO by the complete input hash;
+blocked and not-screened outcomes remain typed 200 responses.
+
+The Assembly header now carries the eight-state clickable chip and wide
+four-tab modal shell. The blocked state groups missing inputs by material and
+layer, focuses µ for ordinary layers or direct sd for membranes, deep-links
+missing climate to the Climate tab, and refreshes after envelope or climate
+mutations. Ground and unconditioned-space states explain why they are outside
+v1 screening.
+
+Verification:
+
+- 45 focused backend tests, including route states, hash-cache reuse, live
+  draft refresh, climate priority, and the typed film-table 409.
+- 65 focused frontend tests, including all eight chip states, keyboard tabs,
+  ordinary µ focus, and membrane direct-sd focus.
+- Live T3 browser roundtrip: clear µ/sd → `needs vapour data (1)` → corrective
+  editor focus → enter µ → `needs a climate source`, without reload.
+- Simplify review completed across reuse, quality, and efficiency.
+- Full repository CI: backend `1714 passed, 7 skipped`; frontend `248` files /
+  `2324` tests; production build and version-marker check green.
+- `graphify update .` completed.

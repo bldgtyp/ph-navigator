@@ -2,6 +2,7 @@ import type { UnitSystem } from "../../lib/units/types";
 import { fetchBlob, fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
 import { normalizeSpecificationStatusRecord } from "../project_document/specification-status";
+import type { AssemblyCondensationResponse } from "./condensation-types";
 import type {
   AssemblyThermalResponse,
   EnvelopeCommandBody,
@@ -53,6 +54,19 @@ export async function fetchAssemblyThermal(
 ): Promise<AssemblyThermalResponse> {
   return fetchJson<AssemblyThermalResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope/assemblies/${assemblyId}/thermal?source=${source}`,
+    { signal },
+  );
+}
+
+export async function fetchAssemblyCondensation(
+  projectId: string,
+  versionId: string,
+  assemblyId: string,
+  source: EnvelopeReadSource,
+  signal?: AbortSignal,
+): Promise<AssemblyCondensationResponse> {
+  return fetchJson<AssemblyCondensationResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/assemblies/${assemblyId}/condensation?source=${source}`,
     { signal },
   );
 }
