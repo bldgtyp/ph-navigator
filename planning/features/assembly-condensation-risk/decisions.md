@@ -1,6 +1,7 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 — both prerequisites shipped; §D-15 reconciles as-built
+UPDATED: 2026-07-28 — both prerequisites shipped; §D-15 reconciles as-built;
+  §D-7 mechanized by the implemented licensed-data pipeline
 TIME: 10:14 EDT
 STATUS: Active — Q-1…Q-7 resolved, prerequisites cleared, Q-8 newly open
 AUTHOR: Claude (Opus 5) with Ed May
@@ -226,6 +227,19 @@ Options:
 
 **Recommendation: (1) for the bulk seed, (2) for products.** Either way, this must
 be settled *before* anyone writes a seed file. → **Ed's call.**
+
+**Resolution is now mechanized (added 2026-07-28 evening).** Option (1) was
+chosen (Q-3), then Ed split the mechanics into
+`planning/features/licensed-data-pipeline/` — and its Phases 1–3 were
+implemented the same day: the private `bldgtyp/ph-navigator-data` repo holds
+reviewed, versioned, schema-validated datasets; CI publishes them to R2 under
+immutable versioned keys with a manifest-last swap; PHN's
+`backend/features/datasets/` applies `db_seed` datasets idempotently with an
+`applied_datasets` audit row and guarded CLIs. The µ seed is that pipeline's
+first `db_seed` consumer (its Phase 4): values are transcribed in the private
+repo keyed by the deterministic catalog row ids (`catalog-seed-idempotency`),
+this repo carries only the applier. What this decision retains here: the
+*content* (Phase 0's roster, §D-12) and the golden-fixture corollary below.
 
 **Corollary (added 2026-07-28): the golden-test fixtures are inside this rule
 too.** The Phase 2 gold files reproduce the PHI workbook's outputs for a

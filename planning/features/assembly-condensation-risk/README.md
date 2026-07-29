@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-26
-TIME: 10:14 EDT
-STATUS: Active — research complete, PRD drafted, blocked on open questions
+UPDATED: 2026-07-28 — pipeline mechanics implemented; phase plans drafted
+TIME: 22:52 EDT
+STATUS: Ready — all questions resolved, prerequisites cleared, phase plans in
+  ./phases/; Phase 0 next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the assembly condensation-risk feature.
 RELATED: ./research.md, ./PRD.md, ./decisions.md, ./STATUS.md
@@ -27,6 +29,8 @@ Modelled on the **PHI Condensation Tool v1.7.5**
 3. **`PRD.md`** — the product contract: material fields, assumption model, chip
    states, modal tiers, backend contract, phasing, acceptance criteria.
 4. **`STATUS.md`** — current state and next step.
+5. **`phases/`** — one implementation plan per phase (00–05), drafted
+   2026-07-28.
 
 ## The three things to know
 
@@ -46,16 +50,22 @@ Modelled on the **PHI Condensation Tool v1.7.5**
      of the catalog is stud+cavity pseudo-materials with no single defensible µ
      (`decisions.md` §D-12).
    - **Licensed data** — µ values live in the private DB; the repo carries the
-     loader only (Q-3). The boundary-conditions work has since proved that path
-     end-to-end for the ASHRAE surface films.
+     loader only (Q-3). Since resolved *in mechanism* too: the licensed-data
+     pipeline (implemented 2026-07-28) publishes reviewed, versioned datasets
+     from the private `ph-navigator-data` repo to R2 and applies them
+     idempotently with an audit trail — the µ dataset is its first `db_seed`
+     consumer.
 
-## Dependencies — both cleared ✅ (plus one new infra split, 2026-07-28)
+## Dependencies — all cleared ✅ (pipeline mechanics implemented 2026-07-28)
 
-➕ **`planning/features/licensed-data-pipeline/`** — split out 2026-07-28
-(Ed). Automates the licensed-data publish/apply path (private `phn-data` repo
-→ CI → R2 → `db_seed` apply) that Q-3 decided but left manual. Gates only the
-µ **seeding run** (its Phase 4 = our seed's dry-run); Phases 0–1 here proceed
-in parallel.
+✅ **`planning/features/licensed-data-pipeline/`** — split out 2026-07-28
+(Ed) and **implemented the same day** (Phases 1–3 on branches: private
+`ph-navigator-data` repo + CI publisher → R2 immutable versioned keys +
+manifest → PHN `datasets` feature with `applied_datasets` audit and guarded
+apply CLIs). The Q-3 "values live in the private DB" decision now has running
+machinery; the µ seed rides its `db_seed` path (pipeline Phase 4 = our seed's
+local dry-run, resumed once our Phases 0–1 supply the roster and columns).
+Only the *production* apply waits on the pipeline's Ed-gated Phase 3 cutover.
 
 ✅ **`planning/archive/dated/2026-07-26/assembly-membrane-layers/`** — all four
 phases, shipped 2026-07-26 (rendering reworked 07-27). Assemblies hold membrane
@@ -85,7 +95,15 @@ what reading the as-built code changed here.
 
 ## Phase map
 
-Phase 0 coverage probe → 1 material fields (µ/sd) → ~~1½ prerequisites~~ ✅ done
-→ 2 engine + golden tests → 3 chip + "what's missing" state → 4 modal
-verdict/diagrams → 5 modal numbers/assumptions. See `PRD.md` §8.
+Contract in `PRD.md` §8; implementation plans in `./phases/`:
+
+| Phase | Plan | Ships |
+| --- | --- | --- |
+| 0 | `phases/phase-00-coverage-probe.md` | the coverage number, the seed roster, the §D-12 + Q-8 calls, go/no-go |
+| 1 | `phases/phase-01-material-vapor-fields.md` | µ/sd fields end-to-end + the `iso10456-vapor-mu` seed drilled locally (joint with pipeline Phase 4) |
+| 2 | `phases/phase-02-glaser-engine.md` | the pure engine, golden-tested against the PHI workbook |
+| 3 | `phases/phase-03-route-and-chip.md` | route + chip + the "what's missing" state — usable |
+| 4 | `phases/phase-04-modal-verdict-diagrams.md` | modal tiers 1–2 — legible |
+| 5 | `phases/phase-05-modal-numbers-assumptions.md` | modal tiers 3–4 + closeout — complete |
+
 Phases 1–3 are independently valuable; work can stop after any.
