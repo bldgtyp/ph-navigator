@@ -22,6 +22,8 @@ import type { AssemblyCondensationResponse, CondensationMonth } from "../condens
 
 const CHART_MARGIN = { top: 24, right: 28, bottom: 8, left: 2 };
 const INITIAL_CHART_DIMENSION = { width: 800, height: 280 };
+const PROFILE_CHART_MARGIN = { ...CHART_MARGIN, bottom: 28 };
+const PROFILE_CHART_DIMENSION = { ...INITIAL_CHART_DIMENSION, height: 300 };
 const PROFILE_LEGEND_STYLE = { bottom: 0 };
 
 export function AccumulatedMoistureChart({ result }: { result: AssemblyCondensationResponse }) {
@@ -86,14 +88,14 @@ export function PressureProfileChart({
   const rows = buildPressureProfileRows(month, axis, layerLabels);
   const interfaces = rows.filter((row) => row.interfaceLabel !== null);
   return (
-    <figure className="condensation-chart">
+    <figure className="condensation-chart condensation-chart--profile">
       <figcaption>
         Vapour-pressure profile <span>Pa · {month.month_name}</span>
         <span className="sr-only">Horizontal axis: {axisLabel(axis)}</span>
       </figcaption>
       <div className="condensation-chart__canvas">
-        <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_CHART_DIMENSION}>
-          <LineChart data={rows} margin={CHART_MARGIN}>
+        <ResponsiveContainer width="100%" height="100%" initialDimension={PROFILE_CHART_DIMENSION}>
+          <LineChart data={rows} margin={PROFILE_CHART_MARGIN}>
             <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
             <XAxis
               dataKey="position"
@@ -105,7 +107,7 @@ export function PressureProfileChart({
               label={{
                 value: axisLabel(axis),
                 position: "insideBottom",
-                offset: 10,
+                offset: -12,
                 fill: "var(--chart-axis)",
               }}
             />
@@ -171,14 +173,14 @@ export function TemperatureProfileChart({
   const rows = buildTemperatureProfileRows(month, axis);
   const interiorPosition = rows.at(-1)?.position ?? 0;
   return (
-    <figure className="condensation-chart">
+    <figure className="condensation-chart condensation-chart--profile">
       <figcaption>
         Temperature profile <span>°C · {month.month_name}</span>
         <span className="sr-only">Horizontal axis: {axisLabel(axis)}</span>
       </figcaption>
       <div className="condensation-chart__canvas">
-        <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_CHART_DIMENSION}>
-          <LineChart data={rows} margin={CHART_MARGIN}>
+        <ResponsiveContainer width="100%" height="100%" initialDimension={PROFILE_CHART_DIMENSION}>
+          <LineChart data={rows} margin={PROFILE_CHART_MARGIN}>
             <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
             <XAxis
               dataKey="position"
@@ -190,7 +192,7 @@ export function TemperatureProfileChart({
               label={{
                 value: axisLabel(axis),
                 position: "insideBottom",
-                offset: 10,
+                offset: -12,
                 fill: "var(--chart-axis)",
               }}
             />

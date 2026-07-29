@@ -73,10 +73,11 @@ Tiers 3–4 (numbers, assumptions editing); any export/download affordance
 - Browser smoke against the seeded local route for the clear state, including
   the default worst month and real-thickness axis, July selection,
   sd/thickness toggle, all three charts, and no horizontal modal overflow.
-  Profile-chart geometry preserves 15 px between each x-axis label and legend,
-  with a 32 px inter-chart gap at the 900 px viewport. Caveated, d2–d4,
-  multi-interface, and reverse-drive states are covered by component/engine
-  fixtures rather than claimed as browser-smoked.
+  Profile-chart geometry preserves about 7 px between the x-axis tick labels
+  and axis title, 13 px between the title and legend, and a 32 px inter-chart
+  gap at the 900 px viewport. Caveated, d2–d4, multi-interface, and
+  reverse-drive states are covered by component/engine fixtures rather than
+  claimed as browser-smoked.
 - `make ci` green.
 
 ## Result — 2026-07-29

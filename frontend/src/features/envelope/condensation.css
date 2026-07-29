@@ -112,6 +112,10 @@
   width: 100%;
 }
 
+.condensation-chart--profile .condensation-chart__canvas {
+  height: calc(var(--condensation-chart-height) + var(--space-20));
+}
+
 .condensation-chart .recharts-cartesian-axis-tick-value,
 .condensation-chart .recharts-default-tooltip,
 .condensation-chart .recharts-legend-wrapper,
