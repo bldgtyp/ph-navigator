@@ -130,6 +130,8 @@ def new_hand_entered_material(
     specific_heat_j_kgk: float | None,
     emissivity: float | None,
     air_permeance_l_s_m2_at_75pa: float | None,
+    vapor_diffusion_resistance_mu: float | None,
+    vapor_sd_equivalent_m: float | None,
     color: str | None,
     specification_status: SpecificationStatus = "needed",
 ) -> ProjectMaterial:
@@ -148,6 +150,8 @@ def new_hand_entered_material(
         specific_heat_j_kgk=specific_heat_j_kgk,
         emissivity=emissivity,
         air_permeance_l_s_m2_at_75pa=air_permeance_l_s_m2_at_75pa,
+        vapor_diffusion_resistance_mu=vapor_diffusion_resistance_mu,
+        vapor_sd_equivalent_m=vapor_sd_equivalent_m,
         color=color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
         specification_status=specification_status,
         datasheet_asset_ids=[],
@@ -164,6 +168,8 @@ def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialComma
         specific_heat_j_kgk=command.specific_heat_j_kgk,
         emissivity=command.emissivity,
         air_permeance_l_s_m2_at_75pa=command.air_permeance_l_s_m2_at_75pa,
+        vapor_diffusion_resistance_mu=command.vapor_diffusion_resistance_mu,
+        vapor_sd_equivalent_m=command.vapor_sd_equivalent_m,
         color=command.color,
     )
     body_with_material = ops.replace_project_materials(body, [*body.tables.project_materials, material])
@@ -374,6 +380,8 @@ def project_material_from_catalog(row: dict[str, Any]) -> ProjectMaterial:
         conductivity_w_mk=row["conductivity_w_mk"],
         emissivity=row["emissivity"],
         air_permeance_l_s_m2_at_75pa=row["air_permeance_l_s_m2_at_75pa"],
+        vapor_diffusion_resistance_mu=row["vapor_diffusion_resistance_mu"],
+        vapor_sd_equivalent_m=row["vapor_sd_equivalent_m"],
         color=row["color"],
         source=row["source"],
         url=row["url"],

@@ -1,8 +1,9 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 delivered and films v1 published; Phase 3 live
-  cutover and Phase 4 remain at their documented hold points
+STATUS: Active — Phases 1–3 delivered; Phase 4 complete locally; Phase 3 live
+  cutover and the production µ apply remain held
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the licensed-data pipeline.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -17,8 +18,8 @@ PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) squash-merged as
 `8d4baa1`, and its hosted production publish succeeded. PHN contains the
 dataset registry/apply machinery and Phase 3 workflow/runbook. Phase 3 is not
 live-complete: PHN Actions configuration, deployment, production verification,
-the no-op dispatch, and legacy-key deletion remain. Phase 4 stays held for
-Assembly Condensation Risk Phase 1's columns and the licensed µ payload.**
+the no-op dispatch, and legacy-key deletion remain. Phase 4's private payload
+and local drill are complete; only its production publish/apply remains held.**
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -129,9 +130,9 @@ Verification so far:
 **Two independent resumptions remain:**
 
 1. Finish the remaining Phase 3 PHN-side live cutover below.
-2. `assembly-condensation-risk` completes Phase 1's µ/sd catalog columns; its
-   Phase 0 201-row roster and composite policy are complete. Then Phase 4 resumes at
-   `phases/phase-04-mu-dataset-dry-run.md`.
+2. Schedule the production `iso10456-vapor-mu` publish/apply through the Phase
+   3 workflow after the application version carrying its catalog columns is
+   deployed. The local Phase 4 drill is complete.
 
 Before Phase 3 can close live: configure Actions secret `RENDER_API_KEY` and
 variable `RENDER_API_SERVICE_ID`; explicitly deploy PHN; verify the
@@ -146,7 +147,7 @@ legacy object. The private data merge/publish and PHN merge are complete.
 | ~~R2 write token → repo Actions secrets~~ | ✅ **Done 2026-07-28** — token scoped to `ph-navigator-prod`, secrets + `R2_BUCKET` set, "Check R2 Credentials" workflow green. |
 | ~~Q-2 apply-trigger confirmation (§D-5)~~ | ✅ Resolved — Ed-dispatched GitHub Actions → Render one-off job. |
 | Phase 3 production cutover | Private publish and PHN merge are complete. Actions `RENDER_API_KEY` / `RENDER_API_SERVICE_ID` are absent; explicit deploy, manifest-only verification, no-op dispatch, and legacy R2-key deletion remain. |
-| Phase 4 condensation prerequisites | Phase 0's 201-row target roster and composite-stud policy are complete; Phase 1's `vapor_diffusion_resistance_mu` / `vapor_sd_equivalent_m` columns are absent, and real ISO values cannot be fabricated in this public repo. |
+| Phase 4 production apply | Local payload/applier/drill are complete. Production publish/apply waits for Ed's schedule and a deployed PHN version carrying the two catalog columns. |
 | ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Named risk for the Phase 4 µ applier (stable catalog row identity), not a blocker for Phases 1–3. |
 
 ## Verification
@@ -160,5 +161,7 @@ Phase gates:
 - Phase 3: code/docs/focused tests are on `main`, and films v1 is published.
   PHN configuration/deploy, manifest-only production verification,
   legacy-key deletion, and no-pending workflow dispatch remain.
-- Phase 4: the µ dataset through the whole path locally, including the
-  idempotent re-apply and the E-10 unmatched-row report.
+- Phase 4: local path passed 2026-07-29, including the private validation,
+  deliberately unmatched precondition, 201/201 stable-id match, idempotent
+  re-apply, one-row v2 update, rollback to reviewed v1, and final clean status.
+  Production remains held.

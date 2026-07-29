@@ -1,8 +1,9 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 22:52 EDT
-STATUS: Ready after Phase 0 — the field work (Part A) could even start in
-  parallel with the probe; the seed (Part B) needs Phase 0's roster
+STATUS: Complete — fields are threaded end-to-end, the private dataset is
+  validated, and the full local db-seed drill passed; production remains held
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 1 — the µ/sd material fields end-to-end, then the
   `iso10456-vapor-mu` seed through the licensed-data pipeline (its Phase 4).
@@ -94,3 +95,28 @@ enum (v1.1, §D-9); production apply.
 - The Part B drill transcript, including a deliberately staged unmatched row.
 - `make ci` green; **no licensed values in this repo** (AC 7) — synthetic
   values only in fixtures.
+
+## Result — 2026-07-29
+
+- Both nullable fields now span the catalog database/API/import-export path,
+  project-document model, drift/refresh commands, table unit contracts, and
+  the Catalog and project editors. Existing documents still load without a
+  schema-version bump; thermal hashes and existing exports remain unchanged.
+- SI/IP conversion is covered with synthetic tests and live browser checks:
+  project and Catalog editors show `mu` / `m` in SI and `perm-in` / `perm` in
+  IP while storage remains SI-canonical.
+- `iso10456-vapor-mu` is registered as `db_seed`; its typed parser rejects
+  duplicate ids, non-finite/out-of-range values, and empty rows. The applier
+  reports matched / updated / unchanged / unmatched ids and writes absolute
+  values so re-apply and rollback are deterministic.
+- The private dataset contains the Phase 0 roster only. Private validation and
+  all 8 publisher tests pass. No licensed payload value was copied into this
+  public repository.
+- Local MinIO/Postgres drill passed: initial pending status, a deliberate
+  unmatched precondition, 201/201 matched after stable catalog seeding,
+  zero-write re-apply, one-row v2 update, and rollback to reviewed v1.
+  Final `make datasets-status` reports no mismatches.
+- Final `PYTEST_WORKERS=0 make ci` passes: backend 1669 passed / 7 skipped;
+  frontend 247 test files / 2314 tests passed; production build and version
+  marker passed.
+- Production publish/apply was not run and remains outside this phase.

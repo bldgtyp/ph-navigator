@@ -29,7 +29,15 @@ if TYPE_CHECKING:
     # cannot import the DTO union eagerly.
     from features.project_document.schema_mutations import FieldSchemaMutation
 
-UnitQuantity = Literal["length", "conductivity", "density", "specific_heat", "air_permeance"]
+UnitQuantity = Literal[
+    "length",
+    "conductivity",
+    "density",
+    "specific_heat",
+    "air_permeance",
+    "vapor_diffusion_resistance",
+    "vapor_sd",
+]
 
 
 @dataclass(frozen=True)

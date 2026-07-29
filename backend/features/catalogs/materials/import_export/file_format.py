@@ -43,6 +43,8 @@ class CatalogFileRow(BaseModel):
     conductivity_w_mk: float | str | None = None
     emissivity: float | str | None = None
     air_permeance_l_s_m2_at_75pa: float | str | None = None
+    vapor_diffusion_resistance_mu: float | str | None = None
+    vapor_sd_equivalent_m: float | str | None = None
     color: str | None = None
     source: str | None = None
     url: str | None = None

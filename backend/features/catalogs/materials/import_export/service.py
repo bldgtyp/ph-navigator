@@ -182,6 +182,8 @@ def commit_import(token: str, user: UserPublic, request: Request) -> CommitRespo
                     conductivity_w_mk=_optional_float(payload, "conductivity_w_mk"),
                     emissivity=_optional_float(payload, "emissivity"),
                     air_permeance_l_s_m2_at_75pa=_optional_float(payload, "air_permeance_l_s_m2_at_75pa"),
+                    vapor_diffusion_resistance_mu=_optional_float(payload, "vapor_diffusion_resistance_mu"),
+                    vapor_sd_equivalent_m=_optional_float(payload, "vapor_sd_equivalent_m"),
                     color=_optional_str(payload, "color"),
                     source=_optional_str(payload, "source"),
                     url=_optional_str(payload, "url"),

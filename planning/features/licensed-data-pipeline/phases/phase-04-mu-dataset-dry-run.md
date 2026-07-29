@@ -1,9 +1,9 @@
 ---
 DATE: 2026-07-28
-UPDATED: 2026-07-29 — Phase 0 roster and policy complete
+UPDATED: 2026-07-29 — local Phase 4 drill complete
 TIME: 12:05 EDT
-STATUS: Held — Phase 0 roster/policy are complete; Phase 1 catalog columns are
-  still required
+STATUS: Complete locally — private payload, applier, idempotency/change/rollback
+  drill, and unmatched reporting pass; production apply remains held
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
   dataset, locally.
@@ -32,22 +32,21 @@ the Phase 3 workflow.
 - Condensation Phase 0's coverage probe has settled which rows get seeded
   values (including the §D-12 composite-stud call).
 
-## Current prerequisite check — 2026-07-29
+## Result — 2026-07-29
 
-This phase was reached by the licensed-pipeline implementation loop, but it
-cannot start without taking ownership away from the condensation feature:
-
-- `assembly-condensation-risk/phases/phase-00-report.md` supplies a reproducible
-  201-row target roster and records the accepted go decision;
-- neither `vapor_diffusion_resistance_mu` nor `vapor_sd_equivalent_m` exists
-  anywhere under `backend/`;
-- the composite stud/cavity recommendation was explicitly accepted by Ed on
-  2026-07-29;
-- the real ISO 10456 payload is licensed and cannot be invented or transcribed
-  in this public repo.
-
-No Phase 4 code or private payload was authored. Resume here after the
-condensation Phase 1 columns.
+- The condensation feature supplied its accepted 201-row stable-id roster,
+  both catalog columns, and the composite cavity/base-family policy.
+- `ph-navigator-data` now holds the licensed payload, schema, provenance, and
+  manifest entry. Private validation and all 8 publisher tests pass. Licensed
+  values were not copied into PHN.
+- PHN registers `iso10456-vapor-mu` as `db_seed` with a typed parser and an
+  absolute-value applier reporting matched / updated / unchanged / unmatched.
+- The local MinIO/Postgres sequence passed: pending before apply; deliberately
+  unmatched before stable catalog seeding; 201/201 matched after seeding;
+  clean status; zero-write forced re-apply; one-row temporary v2 update; then
+  rollback to reviewed v1. Final `make datasets-status` reports no mismatches.
+- Production publish/apply was not run. It remains on Ed's schedule through
+  the Phase 3 production workflow.
 
 ## Work
 

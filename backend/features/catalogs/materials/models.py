@@ -85,6 +85,8 @@ class CatalogMaterialListItem(BaseModel):
     conductivity_w_mk: float | None
     emissivity: float | None
     air_permeance_l_s_m2_at_75pa: float | None
+    vapor_diffusion_resistance_mu: float | None
+    vapor_sd_equivalent_m: float | None
     color: str | None
     source: str | None
     url: str | None
@@ -128,6 +130,8 @@ class _CatalogMaterialFields(BaseModel):
     # ASTM E2178 air permeance, in the unit datasheets report it in:
     # L/(s*m2) at 75 Pa. The air-barrier material criterion is <= 0.02.
     air_permeance_l_s_m2_at_75pa: float | None = None
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
@@ -148,6 +152,7 @@ class _CatalogMaterialFields(BaseModel):
         "specific_heat_j_kgk",
         "conductivity_w_mk",
         "air_permeance_l_s_m2_at_75pa",
+        "vapor_sd_equivalent_m",
     )
     @classmethod
     def _non_negative(cls, value: float | None) -> float | None:

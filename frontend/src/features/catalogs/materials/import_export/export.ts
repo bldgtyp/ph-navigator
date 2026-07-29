@@ -25,6 +25,8 @@ const ROW_KEY_ORDER: (keyof CatalogFileRow)[] = [
   "conductivity_w_mk",
   "emissivity",
   "air_permeance_l_s_m2_at_75pa",
+  "vapor_diffusion_resistance_mu",
+  "vapor_sd_equivalent_m",
   "color",
   "source",
   "url",

@@ -289,6 +289,13 @@ class ProjectMaterial(BaseModel):
     # so documents written before it existed validate unchanged — no schema
     # version bump needed.
     air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    # Material vapor resistance factor, dimensionless. Nullable/defaulted for
+    # backwards compatibility with documents written before condensation risk.
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    # Equivalent air-layer thickness in metres. Membranes and coatings usually
+    # provide sd directly; sd wins over mu when both are present. Represent
+    # vapor-tight products with a finite sd >= 1500 m, never infinity.
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)

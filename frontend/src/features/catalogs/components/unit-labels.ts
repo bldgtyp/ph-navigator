@@ -28,3 +28,11 @@ export function specificHeatUnitLabel(unitSystem: UnitSystem): string {
 export function airPermeanceUnitLabel(unitSystem: UnitSystem): string {
   return unitSystem === "IP" ? "cfm/ft2 @ 1.57psf" : "L/(s-m2) @ 75Pa";
 }
+
+export function vaporMuUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "perm-in" : "mu";
+}
+
+export function vaporSdUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "perm" : "m";
+}

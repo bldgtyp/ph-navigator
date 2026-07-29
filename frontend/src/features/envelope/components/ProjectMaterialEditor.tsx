@@ -4,10 +4,14 @@ import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  formatVaporMu,
+  formatVaporSd,
   parseAirPermeanceToLSM2,
   parseConductivityToWmK,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
+  parseVaporMu,
+  parseVaporSd,
   useUnitPreference,
   type UnitFormatOptions,
   type UnitParseResult,
@@ -23,6 +27,8 @@ import {
   conductivityUnitLabel,
   densityUnitLabel,
   specificHeatUnitLabel,
+  vaporMuUnitLabel,
+  vaporSdUnitLabel,
 } from "../../catalogs/components/unit-labels";
 import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalUnitToggle } from "./ModalUnitToggle";
@@ -38,6 +44,8 @@ type MaterialFormState = {
   specific_heat_j_kgk: string;
   emissivity: string;
   air_permeance_l_s_m2_at_75pa: string;
+  vapor_diffusion_resistance_mu: string;
+  vapor_sd_equivalent_m: string;
   comments: string;
 };
 
@@ -56,6 +64,11 @@ function formFromMaterial(
       material.air_permeance_l_s_m2_at_75pa,
       unitOptions,
     ),
+    vapor_diffusion_resistance_mu: formatVaporMu(
+      material.vapor_diffusion_resistance_mu,
+      unitOptions,
+    ),
+    vapor_sd_equivalent_m: formatVaporSd(material.vapor_sd_equivalent_m, unitOptions),
     comments: material.comments ?? "",
   };
 }
@@ -71,6 +84,8 @@ function hasInvalidNumber(form: MaterialFormState, unitOptions: UnitFormatOption
       parseAirPermeanceToLSM2,
       unitOptions,
     ),
+    parseOptionalUnitNumber(form.vapor_diffusion_resistance_mu, parseVaporMu, unitOptions),
+    parseOptionalUnitNumber(form.vapor_sd_equivalent_m, parseVaporSd, unitOptions),
   ].some((field) => Number.isNaN(field));
 }
 
@@ -141,6 +156,24 @@ function convertFormUnitSystem(
       material.air_permeance_l_s_m2_at_75pa,
       parseAirPermeanceToLSM2,
       formatAirPermeanceFromLSM2,
+      fromOptions,
+      toOptions,
+    ),
+    vapor_diffusion_resistance_mu: convertUnitInput(
+      form.vapor_diffusion_resistance_mu,
+      initialForm.vapor_diffusion_resistance_mu,
+      material.vapor_diffusion_resistance_mu,
+      parseVaporMu,
+      formatVaporMu,
+      fromOptions,
+      toOptions,
+    ),
+    vapor_sd_equivalent_m: convertUnitInput(
+      form.vapor_sd_equivalent_m,
+      initialForm.vapor_sd_equivalent_m,
+      material.vapor_sd_equivalent_m,
+      parseVaporSd,
+      formatVaporSd,
       fromOptions,
       toOptions,
     ),
@@ -269,6 +302,20 @@ export function ProjectMaterialEditor({
       parseAirPermeanceToLSM2,
       unitOptions,
     );
+    const vaporMu = parseChangedUnitInput(
+      form.vapor_diffusion_resistance_mu,
+      initialForm.vapor_diffusion_resistance_mu,
+      material.vapor_diffusion_resistance_mu,
+      parseVaporMu,
+      unitOptions,
+    );
+    const vaporSdM = parseChangedUnitInput(
+      form.vapor_sd_equivalent_m,
+      initialForm.vapor_sd_equivalent_m,
+      material.vapor_sd_equivalent_m,
+      parseVaporSd,
+      unitOptions,
+    );
     onCommand({
       kind: "update_project_material",
       project_material_id: material.id,
@@ -279,6 +326,8 @@ export function ProjectMaterialEditor({
       specific_heat_j_kgk: specificHeatJKgK,
       emissivity,
       air_permeance_l_s_m2_at_75pa: airPermeanceLSM2,
+      vapor_diffusion_resistance_mu: vaporMu,
+      vapor_sd_equivalent_m: vaporSdM,
       ...(showNotes ? { comments: trimToNull(form.comments) } : {}),
     });
   }
@@ -309,6 +358,34 @@ export function ProjectMaterialEditor({
             <input
               value={form.category}
               onChange={(event) => updateForm("category", event.currentTarget.value)}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="project-material-editor__group">
+        <legend>Vapour</legend>
+        <div className="project-material-editor__grid">
+          <label className="project-material-editor__field">
+            <span>
+              Resistance
+              <small>{vaporMuUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.vapor_diffusion_resistance_mu}
+              onChange={(event) =>
+                updateForm("vapor_diffusion_resistance_mu", event.currentTarget.value)
+              }
+            />
+          </label>
+          <label className="project-material-editor__field">
+            <span>
+              Equivalent air layer, sd
+              <small>{vaporSdUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.vapor_sd_equivalent_m}
+              onChange={(event) => updateForm("vapor_sd_equivalent_m", event.currentTarget.value)}
             />
           </label>
         </div>

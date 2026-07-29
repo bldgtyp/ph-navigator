@@ -367,6 +367,17 @@ def test_thermal_input_hash_covers_physics_only() -> None:
     }
     assert thermal_input_hash(asm, renamed) == baseline
 
+    vapor_changed = {
+        **materials,
+        "pmat_wood": materials["pmat_wood"].model_copy(
+            update={
+                "vapor_diffusion_resistance_mu": 50.0,
+                "vapor_sd_equivalent_m": 2.5,
+            }
+        ),
+    }
+    assert thermal_input_hash(asm, vapor_changed) == baseline
+
 
 def _membrane_layer(*, layer_id: str = "lyr_wrb", order: int = 2) -> AssemblyLayer:
     """A 0.15 mm WRB — real thickness, single full-width segment."""

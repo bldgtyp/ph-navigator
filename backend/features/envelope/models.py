@@ -184,6 +184,8 @@ ProjectMaterialDriftFieldKey = Literal[
     "conductivity_w_mk",
     "emissivity",
     "air_permeance_l_s_m2_at_75pa",
+    "vapor_diffusion_resistance_mu",
+    "vapor_sd_equivalent_m",
     "color",
     "source",
     "url",
@@ -462,6 +464,8 @@ class HandEnterMaterialCommand(BaseModel):
     specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
 
     @field_validator("color", mode="before")
@@ -482,6 +486,8 @@ class UpdateProjectMaterialCommand(BaseModel):
     conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     air_permeance_l_s_m2_at_75pa: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    vapor_diffusion_resistance_mu: float | None = Field(default=None, ge=1, allow_inf_nan=False)
+    vapor_sd_equivalent_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)

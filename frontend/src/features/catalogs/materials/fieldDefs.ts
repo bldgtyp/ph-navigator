@@ -35,6 +35,8 @@ export const MATERIALS_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("conductivity_w_mk", "Conductivity", "number"),
   builtInFieldDef("emissivity", "Emissivity", "number"),
   builtInFieldDef("air_permeance_l_s_m2_at_75pa", "Air Permeance", "number"),
+  builtInFieldDef("vapor_diffusion_resistance_mu", "Vapor Resistance", "number"),
+  builtInFieldDef("vapor_sd_equivalent_m", "Vapor sd", "number"),
   builtInFieldDef("color", "Color", "color"),
   builtInFieldDef("source", "Source", "short_text"),
   builtInFieldDef("url", "URL", "url"),
@@ -133,6 +135,28 @@ export const MATERIALS_FIELD_OVERLAY: TableFieldRenderOverlays = {
       // criterion itself is 0.02 SI / 0.0039 IP.
       precision_si: 4,
       precision_ip: 4,
+    },
+  },
+  vapor_diffusion_resistance_mu: {
+    locked: DEFAULT_BUILT_IN_LOCKS,
+    numberUnits: {
+      mode: "fixed",
+      unit_type: "vapor_diffusion_resistance",
+      si_unit: "mu",
+      ip_unit: "perm_in",
+      precision_si: 1,
+      precision_ip: 2,
+    },
+  },
+  vapor_sd_equivalent_m: {
+    locked: DEFAULT_BUILT_IN_LOCKS,
+    numberUnits: {
+      mode: "fixed",
+      unit_type: "vapor_sd",
+      si_unit: "sd_m",
+      ip_unit: "perm",
+      precision_si: 2,
+      precision_ip: 3,
     },
   },
   color: { locked: DEFAULT_BUILT_IN_LOCKS },

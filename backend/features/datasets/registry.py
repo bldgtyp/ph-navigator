@@ -36,12 +36,30 @@ def _parse_ashrae_surface_films(payload: bytes) -> object:
     return parse_surface_film_payload(json.loads(payload), "ashrae")
 
 
+def _parse_material_vapor(payload: bytes) -> object:
+    from features.datasets.material_vapor import parse_material_vapor_payload
+
+    return parse_material_vapor_payload(payload)
+
+
+def _apply_material_vapor(conn: Connection[Any], payload: object) -> ApplyReport:
+    from features.datasets.material_vapor import apply_material_vapor_payload
+
+    return apply_material_vapor_payload(conn, payload)
+
+
 _REGISTRY: dict[str, DatasetSpec] = {
     "ashrae-surface-films": DatasetSpec(
         slug="ashrae-surface-films",
         kind="runtime_read",
         parse=_parse_ashrae_surface_films,
-    )
+    ),
+    "iso10456-vapor-mu": DatasetSpec(
+        slug="iso10456-vapor-mu",
+        kind="db_seed",
+        parse=_parse_material_vapor,
+        apply=_apply_material_vapor,
+    ),
 }
 
 

@@ -6,6 +6,11 @@ import {
   kgM3ToLbFt3,
   lbFt3ToKgM3,
   lSM2ToCfmFt2,
+  isPositiveInfinity,
+  muToPermIn,
+  permInToMu,
+  permToSdM,
+  sdMToPerm,
 } from "./material";
 import { cToF, fToC } from "./temperature";
 import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
@@ -141,6 +146,18 @@ export const NUMBER_UNIT_TYPES = [
     siUnits: [{ id: "l_s_m2_75pa", label: "L/(s-m2) @ 75Pa", system: "SI" }],
     ipUnits: [{ id: "cfm_ft2_75pa", label: "cfm/ft2 @ 1.57psf", system: "IP" }],
   },
+  {
+    id: "vapor_diffusion_resistance",
+    label: "Vapor Diffusion Resistance",
+    siUnits: [{ id: "mu", label: "mu", system: "SI" }],
+    ipUnits: [{ id: "perm_in", label: "perm-in", system: "IP" }],
+  },
+  {
+    id: "vapor_sd",
+    label: "Equivalent Air-Layer Thickness",
+    siUnits: [{ id: "sd_m", label: "m", system: "SI" }],
+    ipUnits: [{ id: "perm", label: "perm", system: "IP" }],
+  },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
 export type NumberUnitType = (typeof NUMBER_UNIT_TYPES)[number]["id"];
@@ -273,6 +290,10 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi * KW_TO_KBTU_PER_H;
     case "air_permeance":
       return lSM2ToCfmFt2(valueSi);
+    case "vapor_diffusion_resistance":
+      return muToPermIn(valueSi);
+    case "vapor_sd":
+      return sdMToPerm(valueSi);
   }
 }
 
@@ -312,6 +333,10 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp / KW_TO_KBTU_PER_H;
     case "air_permeance":
       return cfmFt2ToLSM2(valueIp);
+    case "vapor_diffusion_resistance":
+      return permInToMu(valueIp);
+    case "vapor_sd":
+      return permToSdM(valueIp);
   }
 }
 
@@ -326,6 +351,7 @@ export function formatNumberUnitsDisplay(
   if (valueSi === null || valueSi === undefined || valueSi === "") return "";
   const numeric = typeof valueSi === "number" ? valueSi : Number(valueSi);
   if (!Number.isFinite(numeric)) return "";
+  if (unitSystem === "IP" && config.unit_type === "vapor_sd" && numeric === 0) return "∞";
   const displayed = unitSystem === "IP" ? convertNumberUnitsToDisplay(numeric, config) : numeric;
   return displayed.toFixed(numberUnitPrecision(config, unitSystem));
 }
@@ -341,6 +367,9 @@ export function parseNumberUnitsInput(
 ): number | null | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+  if (unitSystem === "IP" && config.unit_type === "vapor_sd" && isPositiveInfinity(trimmed)) {
+    return 0;
+  }
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) return undefined;
   return unitSystem === "IP" ? convertNumberUnitsToSi(parsed, config) : parsed;

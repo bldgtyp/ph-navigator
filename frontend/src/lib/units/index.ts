@@ -45,13 +45,21 @@ export {
   formatAirPermeanceFromLSM2,
   formatDensityFromKgM3,
   formatSpecificHeatFromJKgK,
+  formatVaporMu,
+  formatVaporSd,
   jKgKToBtuLbF,
   kgM3ToLbFt3,
   lbFt3ToKgM3,
   lSM2ToCfmFt2,
+  muToPermIn,
+  permInToMu,
+  permToSdM,
   parseAirPermeanceToLSM2,
   parseDensityToKgM3,
   parseSpecificHeatToJKgK,
+  parseVaporMu,
+  parseVaporSd,
+  sdMToPerm,
 } from "./material";
 export { cToF, fToC, formatTemperatureFromC, parseTemperatureToC } from "./temperature";
 export {

@@ -5,6 +5,8 @@ import {
   formatDensityFromKgM3,
   formatRPerInFromConductivityWmK,
   formatSpecificHeatFromJKgK,
+  formatVaporMu,
+  formatVaporSd,
   type UnitSystem,
 } from "../../../../lib/units";
 import { colorToCss } from "../../../../shared/lib/color";
@@ -80,6 +82,26 @@ export function SegmentMaterialFacts({
           })
         : "No material",
       missing: material?.air_permeance_l_s_m2_at_75pa === null || material === null,
+    },
+    {
+      label: "Vapor resistance",
+      value: material
+        ? formatVaporMu(material.vapor_diffusion_resistance_mu, {
+            unitSystem,
+            empty: "Not set",
+          })
+        : "No material",
+      missing: material?.vapor_diffusion_resistance_mu === null || material === null,
+    },
+    {
+      label: "Vapor sd",
+      value: material
+        ? formatVaporSd(material.vapor_sd_equivalent_m, {
+            unitSystem,
+            empty: "Not set",
+          })
+        : "No material",
+      missing: material?.vapor_sd_equivalent_m === null || material === null,
     },
   ];
 
