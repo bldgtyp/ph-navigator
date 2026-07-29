@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Implemented on branch — code, migration, CLIs, Make targets, tests,
-  local operator drill, and docs pass complete 2026-07-28
+STATUS: Complete — code, migration, CLIs, Make targets, tests, local operator
+  drill, and docs pass delivered to PHN main 2026-07-28
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 2 — the PHN `datasets` backend feature and the film-loader
   migration onto manifest-pinned keys.

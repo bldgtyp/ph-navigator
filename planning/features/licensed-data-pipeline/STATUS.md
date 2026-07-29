@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 implemented on branches; Phase 3 live cutover is
-  held for Ed and Phase 4 is held at its documented prerequisite boundary
+STATUS: Active — Phases 1–3 delivered and films v1 published; Phase 3 live
+  cutover and Phase 4 remain at their documented hold points
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the licensed-data pipeline.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -12,10 +12,13 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 1–3 are implemented and locally verified on feature branches. Phase 1
-is on `ph-navigator-data:feat/licensed-data-pipeline` at `b0bd933`; Phase 2 is
-PHN commit `06064906`; Phase 3's production sequence is intentionally held for
-Ed.**
+**Phases 1–3 are delivered to their repositories' `main` branches. Private
+PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) squash-merged as
+`8d4baa1`, and its hosted production publish succeeded. PHN contains the
+dataset registry/apply machinery and Phase 3 workflow/runbook. Phase 3 is not
+live-complete: PHN Actions configuration, deployment, production verification,
+the no-op dispatch, and legacy-key deletion remain. Phase 4 stays held for the
+Assembly Condensation Risk Phases 0–1 contract and licensed µ payload.**
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -84,9 +87,10 @@ Local MinIO verification passed:
 - checksum:
   `90891d2bbab7008e049bc90067920a7d206e3a111640d2fd49ce4da190f5516a`.
 
-Pending outside the branch implementation: private-repo PR review/merge and
-its first hosted Actions run. Merge is the production publish event, so it is
-not performed as part of the local phase commit.
+Private PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1)
+squash-merged as `8d4baa1`. Hosted PR validation passed, followed by successful
+main-branch publish run `30418485049`; the films v1 immutable object and
+manifest-last swap are now published.
 
 ## Phase 2 result
 
@@ -98,9 +102,9 @@ Implemented in PHN:
 - guarded `datasets_apply` and payload-safe `datasets_status` CLIs plus all
   three Make targets;
 - ASHRAE films load and parse through the manifest-pinned registry entry;
-  absent manifest/slug may use the temporary legacy key, but a missing pinned
-  object, checksum failure, or malformed payload hard-fails as typed
-  unavailable;
+  the temporary Phase 2 legacy fallback was removed by Phase 3 before merge,
+  while a missing pinned object, checksum failure, or malformed payload
+  hard-fails as typed unavailable;
 - canonical storage/data-model docs now record the pipeline boundary.
 
 Verification so far:
@@ -115,7 +119,8 @@ Verification so far:
 - live local runtime load reports `ashrae-surface-films` v1 without printing
   licensed values.
 - `make format` passes;
-- full `PYTEST_WORKERS=0 make ci` passes: backend `1661 passed, 7 skipped`;
+- final full `PYTEST_WORKERS=0 make ci` passes: backend
+  `1663 passed, 7 skipped`;
   frontend `247` test files / `2312` tests passed; production build and
   version-marker check passed.
 
@@ -123,15 +128,15 @@ Verification so far:
 
 **Two independent resumptions remain:**
 
-1. Ed authorizes the Phase 3 production sequence below.
+1. Finish the remaining Phase 3 PHN-side live cutover below.
 2. `assembly-condensation-risk` completes Phase 0 (target roster/composite
    policy) and Phase 1 (µ/sd catalog columns), then Phase 4 resumes at
    `phases/phase-04-mu-dataset-dry-run.md`.
 
-Before Phase 3 can close live, Ed must authorize the ordered production
-sequence: merge/publish the private data branch; configure the workflow
-secret/variable; merge and explicitly deploy PHN; verify the manifest-only
-films path; dispatch the no-pending drill; delete the retired object.
+Before Phase 3 can close live: configure Actions secret `RENDER_API_KEY` and
+variable `RENDER_API_SERVICE_ID`; explicitly deploy PHN; verify the
+manifest-only films path; dispatch the no-pending drill; delete the retired
+legacy object. The private data merge/publish and PHN merge are complete.
 
 ## Blockers
 
@@ -140,7 +145,7 @@ films path; dispatch the no-pending drill; delete the retired object.
 | ~~Q-1 repo name + repo creation~~ | ✅ **Done 2026-07-28** — `bldgtyp/ph-navigator-data` created, infra committed (`4321620`). |
 | ~~R2 write token → repo Actions secrets~~ | ✅ **Done 2026-07-28** — token scoped to `ph-navigator-prod`, secrets + `R2_BUCKET` set, "Check R2 Credentials" workflow green. |
 | ~~Q-2 apply-trigger confirmation (§D-5)~~ | ✅ Resolved — Ed-dispatched GitHub Actions → Render one-off job. |
-| Phase 3 production cutover | Ed-operated merge/deploy/R2-delete/workflow-dispatch sequence; agents do not execute it implicitly. |
+| Phase 3 production cutover | Private publish and PHN merge are complete. Actions `RENDER_API_KEY` / `RENDER_API_SERVICE_ID` are absent; explicit deploy, manifest-only verification, no-op dispatch, and legacy R2-key deletion remain. |
 | Phase 4 condensation prerequisites | Phase 0 target roster/composite-stud decision and Phase 1 `vapor_diffusion_resistance_mu` / `vapor_sd_equivalent_m` columns are absent; real ISO values also cannot be fabricated in this public repo. |
 | ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Named risk for the Phase 4 µ applier (stable catalog row identity), not a blocker for Phases 1–3. |
 
@@ -148,11 +153,12 @@ films path; dispatch the no-pending drill; delete the retired object.
 
 Phase gates:
 - Phase 1: local validation, 8 synthetic tests, interrupted-publish drill
-  (AC 4), and rollback-by-revert drill (AC 5) passed 2026-07-28. Hosted
-  Actions remains pending until the private branch is opened/merged.
+  (AC 4), and rollback-by-revert drill (AC 5) passed 2026-07-28. Hosted PR
+  validation and main-branch publication also passed.
 - Phase 2: focused tests, local operator/runtime drills, `make format`, and
   full `PYTEST_WORKERS=0 make ci` passed 2026-07-28.
-- Phase 3: branch code/docs/focused tests complete; films production cutover,
-  legacy-key deletion, and no-pending workflow dispatch await Ed.
+- Phase 3: code/docs/focused tests are on `main`, and films v1 is published.
+  PHN configuration/deploy, manifest-only production verification,
+  legacy-key deletion, and no-pending workflow dispatch remain.
 - Phase 4: the µ dataset through the whole path locally, including the
   idempotent re-apply and the E-10 unmatched-row report.

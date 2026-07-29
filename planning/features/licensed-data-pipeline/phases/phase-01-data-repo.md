@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Implemented on branch — publisher, CI, films v1, synthetic tests,
-  and local MinIO drills complete 2026-07-28
+STATUS: Complete — private PR #1 squash-merged and films v1 published
+  successfully 2026-07-28
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 1 — bootstrap the private `ph-navigator-data` repo, publisher, and CI.
 RELATED: ../PRD.md §4–§5, ../decisions.md §D-3/§D-4, ../STATUS.md
@@ -35,8 +35,8 @@ a full drill against local MinIO with the ASHRAE surface-film dataset.
    (agent hard rules + credential-ops rule), `.gitignore`, empty
    `manifest.json`, `datasets/README.md` (the per-dataset contract), and the
    credential check (`tools/check_r2.py` + `.github/workflows/check-r2.yml`,
-   incl. paste-artifact screening). Still to create in this phase:
-   `tools/publish.py` and `.github/workflows/publish.yml` (items 2–3).
+   incl. paste-artifact screening). This phase then added `tools/publish.py`
+   and `.github/workflows/publish.yml` in private PR #1 (items 2–3).
 2. **`tools/publish.py`** — standalone (boto3 + jsonschema, no PHN imports):
    - `--validate` (default in PRs): every `dataset.json` parses against its
      sibling `schema.json`; every manifest entry's `sha256` matches its file;
@@ -69,7 +69,8 @@ PHN-side code (Phase 2); production R2 (Phase 3); any second dataset.
 ## Verification
 
 Passed 2026-07-28 on `ph-navigator-data:feat/licensed-data-pipeline`
-(`b0bd933`):
+(`b0bd933`), then squash-merged by private PR
+[#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) as `8d4baa1`:
 
 - `python tools/publish.py --validate --base-ref main` — films v1 schema,
   key, checksum, and base-version contract valid.
@@ -83,6 +84,7 @@ Passed 2026-07-28 on `ph-navigator-data:feat/licensed-data-pipeline`
 - Licensed payload bytes were never printed; verification logs contain only
   slug, version, object key, byte count, and SHA-256.
 
-Still pending: the first hosted `publish.yml` run after private-repo PR
-publication. Merge to that repo's `main` is the production publish event and
-is intentionally not part of this local branch commit.
+Hosted PR validation and the first `main` publication both passed. Actions run
+`30418485049` uploaded the immutable films object and swapped the production
+manifest last. The private feature branch was removed locally and remotely
+after tree-equivalence verification.

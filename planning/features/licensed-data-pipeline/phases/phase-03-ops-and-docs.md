@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Implemented on branch — workflow, fallback retirement, tests, and
-  runbook complete; production publish/deploy/delete and live dispatch held
-  for Ed
+STATUS: Code/docs delivered to PHN main; private production publish complete;
+  PHN configuration/deploy/verification/delete/live dispatch remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — production apply trigger, films cutover, runbook, and
   retirement of the manual path.
@@ -74,12 +73,18 @@ Implemented:
   frontend `247` test files / `2312` tests passed; production build and
   version-marker check passed.
 
+Completed operator steps:
+
+- private `ph-navigator-data` PR #1 squash-merged as `8d4baa1`;
+- its hosted main-branch publish completed successfully (Actions run
+  `30418485049`), publishing films v1 and swapping the manifest last;
+- this PHN implementation was squash-merged to `main`.
+
 Held operator steps:
 
-- merge the private `ph-navigator-data` feature branch, which is the production
-  films publish event;
-- add Actions `RENDER_API_KEY` and `RENDER_API_SERVICE_ID`;
-- merge/deploy this PHN branch;
+- add Actions secret `RENDER_API_KEY` and variable
+  `RENDER_API_SERVICE_ID` (both confirmed absent 2026-07-28);
+- explicitly deploy PHN;
 - verify the manifest-pinned production read, dispatch the no-op workflow
   drill, and delete the legacy R2 key.
 
@@ -91,5 +96,6 @@ before the private dataset publish succeeds.
 Films served from the manifest-pinned key in production with the legacy key
 deleted (AC 9); a dry-run dispatch of the workflow with nothing pending
 reports "nothing to apply" and writes nothing (AC 7/11); docs-pass run so the
-runbook and pointers land in the same change. These live checks remain pending
-until Ed authorizes the production sequence above.
+runbook and pointers land in the same change. The private publish passed; the
+PHN-side live checks remain pending until the Actions configuration and
+explicit deployment above.
