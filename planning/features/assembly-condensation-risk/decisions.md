@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 — both prerequisites shipped; §D-15 reconciles as-built;
-  §D-7 mechanized by the implemented licensed-data pipeline
-TIME: 10:14 EDT
-STATUS: Active — Q-1…Q-7 resolved, prerequisites cleared, Q-8 newly open
+UPDATED: 2026-07-29 — Phase 0 go; §D-12 and Q-8 explicitly accepted by Ed
+TIME: 07:17 EDT
+STATUS: Active — Q-1…Q-8 resolved; Phase 1 next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Interrogation of the feature from several angles, the design decisions it
   forces, edge cases, and the open questions that block a build.
@@ -359,12 +358,12 @@ moved for every project (IP R up, SI U down) and the
    disclosed in the selector's help text. Small, but the condensation screen
    inherits it and the Assumptions tier should not pretend otherwise.
 
-### D-12. Q-1 coverage — preliminary read, and a new problem ⚠️
+### D-12. Q-1 coverage — Phase 0 complete ✅
 
-Measured against `backend/seeds/catalogs/materials.v1.json` (408 rows). This is
-the *seed*, not the production catalog, and not weighted by what actually appears
-in real assemblies — the full probe still stands. But it is enough to change the
-plan:
+Phase 0 measured `backend/seeds/catalogs/materials.v1.json` (408 rows), produced
+the complete 201-row target roster, and recorded the named dev-seed assembly
+proxy in `phases/phase-00-report.md`. The category distribution that first
+surfaced the composite problem remains:
 
 | Category | Rows | Vapour-data outlook |
 | --- | --- | --- |
@@ -383,9 +382,11 @@ For vapour they are ambiguous in a way they are not for heat: a wood stud is
 the move §D-1 rejected. Options: (i) assign the cavity's µ, since the cavity is
 ~85 % of the area and is the through-path that matters, plus a caveat;
 (ii) block them and push users to model studs as real segments — which PHN can
-now do and V0 could not. **Recommendation: (i) for v1** so the feature isn't held
+now do and V0 could not. **Phase 0 accepted (i)**, so the feature is not held
 hostage to re-modelling legacy assemblies, with (ii) as the encouraged path.
-→ folded into the Phase 0 probe.
+The probe found 99 stud+cavity rows plus three rainscreen composites; the roster
+uses the named cavity/base family and requires an uncertainty caveat. Ed
+explicitly accepted this policy on 2026-07-29. See `phases/phase-00-report.md`.
 
 ### D-13. Q-4 — confirmed against the tool, with two corrections ✅
 
@@ -502,7 +503,7 @@ are folded into `PRD.md` and §§D-1, D-9, D-10, D-11.
 
 | # | Question | Resolution |
 | --- | --- | --- |
-| Q-1 | Catalog coverage after an ISO 10456 seed | ✅ **build it** — Ed leaning include; preliminary seed-file read in §D-12 supports it, with one new problem (composite stud materials) |
+| Q-1 | Catalog coverage after an ISO 10456 seed | ✅ **go** — Phase 0 finds 381/408 rows (93.4%) resolve before product entry; composite policy accepted |
 | Q-2 | Which 1-D path through a 2-D assembly? | ✅ worst of all paths, capped (§D-1) |
 | Q-3 | Licensed µ data in a public repo | ✅ **values live in the private DB**; repo carries the loader only |
 | Q-4 | Which interior-climate models in v1? | ✅ confirmed — matches 3 of the PHI tool's 4; see §D-13 for two corrections this surfaced |
@@ -510,20 +511,20 @@ are folded into `PRD.md` and §§D-1, D-9, D-10, D-11.
 | Q-6 | Ma limit per project or per material? | ✅ per project, default 200 g/m² |
 | Q-7 | Export path or screen-only? | ✅ **screen-only, internal to PHN, preview not compliance** (§D-14) |
 
-### Q-8 — new, opened 2026-07-28
+### Q-8 — resolved 2026-07-29
 
 **Does v1 screen `unconditioned_space` assemblies?** The value now exists and
 gets a surface film, but the far-side temperature (Ft) is modelled nowhere and
 both prerequisite packets deferred it here.
 
-- **Recommendation: no.** Report "not screened — adjacent space temperature not
+- **Decision: no.** Report "not screened — adjacent space temperature not
   modelled", exactly as `ground` is handled. Inventing a temperature for a space
   nobody has described is the same class of error as serving ISO numbers under
   an ASHRAE label.
 - **v1.1:** one nullable `Assembly.adjacent_temp_factor`, the PHI formula
   `θe,eff = θi − (θi − θe)·Ft`, and a provenance line in the Assumptions tier.
 
-→ Ed's call, but not blocking: (1) is the safe default and (2) is additive.
+Ed explicitly accepted (1) on 2026-07-29.
 
 ## Part 5 — Non-blocking questions
 

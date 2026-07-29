@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 (third pass — pipeline as-built folded in; phase plans drafted)
-TIME: 22:52 EDT
-STATUS: Ready — prerequisites shipped, pipeline mechanics implemented, phase
-  plans drafted under ./phases/; Phase 0 (coverage probe) is next
+UPDATED: 2026-07-29 (Phase 0 complete; both policy calls accepted)
+TIME: 07:17 EDT
+STATUS: Active — Phase 1 material vapour fields next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -13,7 +12,7 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Research and documentation phase complete. No code written.**
+**Phase 0 complete. No application code written yet.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -132,20 +131,24 @@ out). Five corrections applied directly to the docs:
 - **Six phase plans drafted** under `./phases/` (00–05), mapping 1:1 to
   `PRD.md` §8 and folding in the §D-15 as-built lessons, the E-15…E-18 edge
   cases, and the pipeline hand-off points.
+- **Phase 0 coverage probe complete** — deterministic catalog coverage is
+  381/408 rows (93.4%) before per-product entry; the proposed private dataset
+  roster has 201 stable ids; 26 proprietary rows remain product-entry and one
+  generic Stone row remains unmappable. The committed dev-seed assembly proxy
+  resolves 5/5 layers and 2/2 outdoor-air/ventilated assemblies.
+  Composite rows use their named cavity/base family with a caveat, and
+  `unconditioned_space` is not screened in v1. Ed explicitly accepted both
+  policies on 2026-07-29. Go. See `phases/phase-00-report.md`.
 
-Not done: nothing implemented here. No branch, no migration, no models.
+Not done: Phases 1–5; private dataset authoring/drill; production apply.
 
 ## Next step
 
-**Phase 0 — the catalog coverage probe (Q-1)** — plan at
-`phases/phase-00-coverage-probe.md`. Before any code, measure: across the
-production catalog and the assemblies in live projects, what fraction of
-layers would have a µ or sd value after an ISO 10456 category-level seed? This is
-the one number that decides whether the feature ships as a calculation or as a
-data-entry push. It requires no schema change — it is a read-only analysis of
-existing catalog rows against the ISO 10456 category list in `research.md` §7.
-Its deliverables include the seed target roster the pipeline's Phase 4
-consumes, plus the two Ed calls (§D-12 composite studs, Q-8).
+**Phase 1 — material vapour fields and local µ-seed drill** — plan at
+`phases/phase-01-material-vapor-fields.md`. Part A lands the two nullable fields
+end-to-end in this repo. Part B hands the 201-row roster to the private
+`ph-navigator-data` dataset and exercises the existing local `db_seed` path. No
+production publish/apply action is authorized by this phase.
 
 ## Blockers
 
@@ -156,16 +159,14 @@ remains is sequencing, not decisions:
 | --- | --- |
 | ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
-| ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
-| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data` (branch `b0bd933`), PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs) in `06064906`. The µ seed's `db_seed` path exists and is drilled on the films dataset. Pipeline Phase 3 (production cutover) is Ed-gated but does **not** block the local µ dry-run; pipeline Phase 4 resumes once our Phases 0–1 supply the roster and columns. Only the *production* µ apply waits on Phase 3 + Ed's dispatch. |
-| ⚠️ **Q-8 — screen `unconditioned_space`?** | *New 2026-07-28.* The value exists and gets a film, but Ft is modelled nowhere and both prerequisite packets deferred it here. Recommendation: **not screened in v1** (same treatment as `ground`); a nullable `adjacent_temp_factor` is an additive v1.1. Not blocking. |
+| ✅ Composite stud materials | Phase 0 accepted the named cavity/base family plus an uncertainty caveat; real segments remain the encouraged model. |
+| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data` (branch `b0bd933`), PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs) in `06064906`. The µ seed's `db_seed` path exists and is drilled on the films dataset. Phase 0 supplied the roster; pipeline Phase 4 resumes once Phase 1 supplies the columns and the private payload is authored. Only the *production* µ apply waits on Phase 3 + Ed's dispatch. |
+| ✅ **Q-8 — screen `unconditioned_space`?** | **No in v1.** Report not screened because Ft is not modelled; a nullable `adjacent_temp_factor` remains additive v1.1 scope. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
 **All external prerequisites are cleared, including the pipeline's mechanics.**
-Nothing external blocks Phases 0–2 at all; the only Ed-gated external event
-left is the pipeline's Phase 3 production sequence, which gates just the
-*production* µ apply (schedulable as late as our Phase 5 closeout). Phase 0
-carries the two remaining calls: the composite-stud policy and Q-8.
+The remaining Ed-gated external event is the pipeline's production sequence,
+which gates just the production µ apply.
 
 ### The vapour fields are this feature's own work, not a dependency
 
@@ -187,9 +188,11 @@ corpus snapshot.
 
 ## Verification
 
-Nothing to verify yet. When Phase 2 lands, the gate is acceptance criterion 3 in
-`PRD.md` §9: golden-file agreement with the PHI workbook's own outputs for a
-reference assembly, to within rounding.
+Phase 0 evidence is in `phases/phase-00-report.md`: 408 catalog rows accounted
+for, 201 stable target ids, no licensed values, and a committed dev-seed proxy
+resolving 5/5 layers and 2/2 screened assemblies. Phase 2's future gate
+remains acceptance criterion 3 in `PRD.md` §9: golden-file agreement with the
+PHI workbook's outputs for synthetic inputs, to within rounding.
 
 Both prerequisite packets ended up finding most of their real defects in review
 or in a browser rather than from a green suite (membranes: five defects, four

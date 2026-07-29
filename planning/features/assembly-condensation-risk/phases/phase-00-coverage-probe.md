@@ -1,10 +1,11 @@
 ---
 DATE: 2026-07-28
-TIME: 22:52 EDT
-STATUS: Ready — no prerequisites; this is the feature's next step
+UPDATED: 2026-07-29 — both policy recommendations explicitly accepted by Ed
+TIME: 07:17 EDT
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 0 — measure µ/sd coverage, produce the seed target roster, and
-  land the two open policy calls (composite studs §D-12, Q-8).
+  land the two policy calls (composite studs §D-12, Q-8).
 RELATED: ../PRD.md §8, ../decisions.md §D-12/Q-8, ../research.md §7,
   planning/features/licensed-data-pipeline/phases/phase-04-mu-dataset-dry-run.md
 ---
@@ -76,5 +77,8 @@ Writing any µ/sd value anywhere; schema or model changes; the dataset itself.
 The report's numbers are reproducible from the stated queries; the roster
 covers every non-exempt, non-membrane catalog row or names it unmappable; both
 policy calls carry Ed's explicit sign-off; **zero licensed values appear in
-this repo** (the report contains category names and row counts only — AC 7's
-rule applies to probe artifacts too).
+this repo** (the report contains category/entry names, stable row ids, and
+counts, but no licensed values — AC 7's rule applies to probe artifacts too).
+
+Evidence and the go recommendation were completed 2026-07-28 in
+`phase-00-report.md`; Ed explicitly accepted both policies on 2026-07-29.
