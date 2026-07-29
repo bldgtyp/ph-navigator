@@ -12,7 +12,7 @@ RELATED: ../PRD.md §7, ../decisions.md §D-5, ../STATUS.md
 
 ## Goal
 
-The manual shell path is gone: publishing is a `phn-data` merge, applying is
+The manual shell path is gone: publishing is a `ph-navigator-data` merge, applying is
 an Ed-dispatched workflow, and the runbook exists.
 
 ## Decisions taken here
@@ -29,7 +29,7 @@ Concurrency-grouped like `deploy.yml`.
 1. **The workflow** per the confirmed Q-2 answer. Job output surfaces the
    `ApplyReport` (slugs/versions/row counts — no values, AC 12).
 2. **Films production cutover** (first pipeline publish to prod R2):
-   - `phn-data` CI publishes `ashrae-surface-films` v1 to the production
+   - `ph-navigator-data` CI publishes `ashrae-surface-films` v1 to the production
      bucket (values identical to what's live, so this is a no-op for users);
    - verify by R2 round-trip + `datasets_status` against prod (Render shell
      one last time, or the workflow's status mode);

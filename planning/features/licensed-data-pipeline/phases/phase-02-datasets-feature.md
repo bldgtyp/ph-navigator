@@ -30,8 +30,9 @@ the first consumer migrated onto manifest-pinned versioned keys.
 3. **CLIs + make targets**: `scripts/datasets_status.py` (`make
    datasets-status`) covering all four mismatch classes (AC 6);
    `scripts/datasets_apply.py` with the `PHN_DATASETS_ALLOW_PRODUCTION=1`
-   guard (AC 11). `make datasets-publish-local` (thin wrapper shelling to a
-   `PHN_DATA_DIR` checkout's `tools/publish.py --target local`).
+   guard (AC 11). `make datasets-publish-local` (thin wrapper shelling to the
+   `PHN_DATA_DIR` checkout's `tools/publish.py --target local`; default
+   `~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-data`).
 4. **Film-loader migration**: `surface_film_store.py` resolves through the
    manifest to `datasets/ashrae-surface-films/<v>/dataset.json`; payload
    parsing, the typed 409, and `reset_surface_film_cache` unchanged. Keep a

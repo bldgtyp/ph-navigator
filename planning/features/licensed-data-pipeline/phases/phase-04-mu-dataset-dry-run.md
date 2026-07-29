@@ -32,7 +32,7 @@ the Phase 3 workflow.
 
 ## Work
 
-1. **Author `datasets/iso10456-vapor-mu/` in `phn-data`**: values keyed by
+1. **Author `datasets/iso10456-vapor-mu/` in `ph-navigator-data`**: values keyed by
    the catalog's stable row identity (§D-10 — coordinate with
    `archive/dated/2026-07-28/catalog-seed-idempotency`; the dataset's
    `PROVENANCE.md` states the match-key choice and the ISO 10456 edition).

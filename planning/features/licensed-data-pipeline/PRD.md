@@ -3,7 +3,7 @@ DATE: 2026-07-28
 TIME: 12:05 EDT
 STATUS: Active — drafted from the 2026-07-28 options discussion (Ed confirmed A)
 AUTHOR: Claude (Fable 5) with Ed May
-SCOPE: Contract for the licensed-data pipeline — the private `phn-data` source
+SCOPE: Contract for the licensed-data pipeline — the private `ph-navigator-data` source
   repo, its CI publish path to R2, and the PHN-side `datasets` feature
   (registry, applied-tracking, status/apply tooling).
 RELATED: ./README.md, ./decisions.md, ./STATUS.md,
@@ -20,7 +20,7 @@ RELATED: ./README.md, ./decisions.md, ./STATUS.md,
 Licensed reference data (ASHRAE surface films today; ISO 10456 µ values next;
 more to follow) currently reaches production by an operator running a seed
 script in a Render shell against files kept in Dropbox. Replace that with a
-pipeline: a **private GitHub repo (`phn-data`) holds the datasets as reviewed,
+pipeline: a **private GitHub repo (`ph-navigator-data`) holds the datasets as reviewed,
 versioned JSON**; its **CI validates against a schema and publishes to the
 existing private R2 bucket** under immutable versioned keys plus a manifest;
 and PHN gains a small **`datasets` backend feature** — a registry of known
@@ -36,7 +36,7 @@ runtime dependency.
 - **Every published dataset is reviewed, versioned, and diffable** — a µ-value
   transcription typo should be visible in a PR diff and recoverable from git
   history, not buried in a bucket.
-- **Publishing is automated** — merging to `phn-data` is the publish event; no
+- **Publishing is automated** — merging to `ph-navigator-data` is the publish event; no
   shells, no copy-paste, no "restart and hope".
 - **Applied state is auditable** — one command answers "what version of what
   is published, applied, and expected, here and in production?"
@@ -76,18 +76,20 @@ synthetic data** (§D-2).
 | **Heavy local-only fixtures** (Hillandale `.hbjson`) | local-only via env var | unchanged; Q-3 records the possibility of riding the pipeline later |
 
 End state after Phase 4: **every licensed data table an operator ever
-published by hand either flows through `phn-data` or is explicitly
+published by hand either flows through `ph-navigator-data` or is explicitly
 grandfathered with a named revisit trigger** (climate: next release). Nothing
 licensed remains that requires a shell to update.
 
-## 4. The `phn-data` repo (source of truth)
+## 4. The `ph-navigator-data` repo (source of truth)
 
-Private GitHub repo under `bldgtyp` (name = open question Q-1; working name
-`phn-data`). **Private forever** — it exists to hold data that must not be
-public; its README and description say so.
+Private GitHub repo **`bldgtyp/ph-navigator-data`**
+(<https://github.com/bldgtyp/ph-navigator-data>; local clone
+`~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-data`). Created by Ed
+2026-07-28 — Q-1 resolved. **Private forever** — it exists to hold data that
+must not be public; its README, `CLAUDE.md`, and description say so.
 
 ```text
-phn-data/
+ph-navigator-data/
   README.md                     # what this repo is, licensing posture, how to add a dataset
   manifest.json                 # THE source of truth: name → {version, sha256, key}
   datasets/
@@ -96,9 +98,11 @@ phn-data/
       schema.json               # JSON Schema; CI validates dataset.json against it
       PROVENANCE.md             # source, edition, license, transcription notes
   tools/
-    publish.py                  # standalone publisher (boto3 + jsonschema; no PHN dependency)
+    publish.py                  # standalone publisher (boto3 + jsonschema; no PHN dependency) — Phase 1
+    check_r2.py                 # ✅ exists — credential check behind check-r2.yml
   .github/workflows/
-    publish.yml                 # PR: validate; merge to main: publish to R2
+    check-r2.yml                # ✅ exists — "Check R2 Credentials": one-click, browser-only verification
+    publish.yml                 # PR: validate; merge to main: publish to R2 — Phase 1
 ```
 
 - **Dataset slugs** are kebab-case and stable: `ashrae-surface-films`,
@@ -120,8 +124,9 @@ phn-data/
 
 ## 5. The R2 layout and manifest
 
-Same private bucket the app already uses (`ph-navigator-prod` in production,
-MinIO locally), new prefix:
+Same private bucket the app already uses — **`ph-navigator-prod`** in
+production; locally, the MinIO bucket named by `backend/config.py`'s
+`r2_bucket` (default `ph-navigator-v2-dev`) — new prefix:
 
 ```text
 datasets/<slug>/<version>/dataset.json     # immutable once written
@@ -155,10 +160,17 @@ Invariants the publisher enforces:
    reverts a manifest entry to a prior version, merged, repoints every reader.
    No deletion tooling in v1.
 
-Credentials: the R2 write token lives **only** in `phn-data`'s Actions
-secrets, scoped to the bucket. The production app keeps its existing
-credentials; nothing new lands in Render or in this repo. CI logs print slugs,
-versions, and checksums — never payload values.
+Credentials — **wired and verified green 2026-07-28**: Cloudflare Account API
+token **`ph-navigator-data-publisher`** (Object Read & Write, scoped to
+`ph-navigator-prod` only), stored **only** in `ph-navigator-data`'s Actions
+settings as secrets `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` /
+`R2_ACCOUNT_ID` plus the variable `R2_BUCKET` = `ph-navigator-prod`. The
+**"Check R2 Credentials"** workflow (`check-r2.yml` → `tools/check_r2.py`)
+verifies the whole chain in one browser click with plain-language diagnoses —
+the same names are read verbatim by the publisher and CI, with boto3's
+`AWS_*` mapping done explicitly in code. The production app keeps its
+existing credentials; nothing new lands in Render or in this repo. CI logs
+print slugs, versions, and checksums — never payload values.
 
 ## 6. The PHN `datasets` feature
 
@@ -253,25 +265,26 @@ cache reset or API restart, and the runbook says which.
 
 ## 8. Local development and agents
 
-- **Ed / John:** clone `phn-data`, run `tools/publish.py --target local`
+- **Ed / John:** clone `ph-navigator-data`, run `tools/publish.py --target local`
   against MinIO — identical code path to CI. Documented as
-  `make datasets-publish-local` (thin wrapper that shells to a configured
-  `PHN_DATA_DIR` checkout).
+  `make datasets-publish-local` (thin wrapper that shells to the
+  `PHN_DATA_DIR` checkout; default
+  `~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-data`).
 - **Agents and tests:** unchanged — **synthetic fixtures only** (the
   film-store fixture precedent, commit `b869a8fc`) and graceful
   typed-unavailable states when nothing is published. No test may require
   licensed data; the skip-if-absent pattern (Hillandale precedent) covers
-  anything heavier. A fresh dev environment with no `phn-data` access must
+  anything heavier. A fresh dev environment with no `ph-navigator-data` access must
   boot, pass CI, and show honest "unavailable" states.
 
 ## 9. Phasing
 
 | Phase | Content | Ships |
 | --- | --- | --- |
-| **1** | Bootstrap `phn-data`: layout, `manifest.json` + invariant checks, standalone publisher, CI (PR validate / merge publish), first dataset = `ashrae-surface-films` (payload identical to what's live), full drill against local MinIO. | licensed data has a reviewed, versioned home |
+| **1** | Bootstrap `ph-navigator-data`: layout, `manifest.json` + invariant checks, standalone publisher, CI (PR validate / merge publish), first dataset = `ashrae-surface-films` (payload identical to what's live), full drill against local MinIO. | licensed data has a reviewed, versioned home |
 | **2** | PHN `datasets` feature: manifest store + integrity checks, registry, `applied_datasets` migration, `datasets_status` / `datasets_apply` CLIs + make targets, film loader migrated to manifest-pinned keys (legacy-key fallback kept). | PHN can read, apply, and audit pipeline datasets |
 | **3** | Production: "Apply Production Datasets" workflow → Render one-off job (D-5 confirmed by Ed here); films cutover published via pipeline to prod R2, verified, legacy key deleted; `seed_surface_films.py` deprecated; `context/DATASET_PIPELINE.md` runbook + pointers from `DATA_STORAGE.md` / `PRODUCTION_DEPLOYMENT.md` / `ENVIRONMENT.md`. | the manual shell path is gone |
-| **4** | First `db_seed` dataset end-to-end: `iso10456-vapor-mu` authored in `phn-data`, applied locally through the full path (publish → status → apply → idempotent re-apply). Joint milestone with `assembly-condensation-risk` Phase 1, which owns the µ *content* and the catalog columns it lands in. Production apply waits for that feature's own schedule. | the pattern is proven by its first real consumer |
+| **4** | First `db_seed` dataset end-to-end: `iso10456-vapor-mu` authored in `ph-navigator-data`, applied locally through the full path (publish → status → apply → idempotent re-apply). Joint milestone with `assembly-condensation-risk` Phase 1, which owns the µ *content* and the catalog columns it lands in. Production apply waits for that feature's own schedule. | the pattern is proven by its first real consumer |
 
 Phases 1–2 are independently valuable; the feature can pause after either.
 
@@ -280,7 +293,7 @@ Phases 1–2 are independently valuable; the feature can pause after either.
 1. No licensed values exist in this repository — including test fixtures —
    and the entire publish path (values, schemas, publisher, CI) lives outside
    it. This repo carries loaders, appliers, and synthetic fixtures only.
-2. A `phn-data` PR that changes a `dataset.json` without bumping its manifest
+2. A `ph-navigator-data` PR that changes a `dataset.json` without bumping its manifest
    version fails CI.
 3. A published `datasets/<slug>/<version>/…` object is never overwritten with
    different content; the publisher errors instead.
@@ -298,7 +311,7 @@ Phases 1–2 are independently valuable; the feature can pause after either.
 9. The surface-film table serves from the manifest-pinned versioned key with
    behaviour unchanged (including the typed 409 when unpublished); the legacy
    `standards/…` key is deleted after cutover.
-10. A fresh dev environment with no `phn-data` checkout boots, passes
+10. A fresh dev environment with no `ph-navigator-data` checkout boots, passes
     `make ci`, and shows typed-unavailable states — no test requires licensed
     data.
 11. Applying to a production database requires both the explicit env override
