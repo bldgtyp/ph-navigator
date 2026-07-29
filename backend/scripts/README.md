@@ -9,6 +9,18 @@ CLI tools that don't belong in the request/response surface. Examples
 
 Run any script with `cd backend && uv run python scripts/<name>.py`.
 
+Licensed dataset operator commands are exposed from the repo root:
+
+```bash
+make datasets-status
+make datasets-apply ARGS=--all-pending
+make datasets-publish-local
+```
+
+They print only slugs, versions, checksums, and row counts. Production apply
+requires both `PHN_DATASETS_ALLOW_PRODUCTION=1` and an explicit non-default
+`PHN_DATASETS_APPLIED_BY` identity.
+
 To refresh the bundled Census locality index used by Project Location town
 search, run:
 

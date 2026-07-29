@@ -8,11 +8,13 @@ something.
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
 from botocore.exceptions import ClientError
 
+from features.datasets.manifest import MANIFEST_KEY
 from features.envelope.boundary_conditions import (
     ISO_6946_TABLE,
     SurfaceFilmTable,
@@ -79,6 +81,111 @@ def test_round_trips_through_the_store() -> None:
 
 def test_missing_object_reads_as_unpublished_not_an_error() -> None:
     assert SurfaceFilmStore(_FakeStorage()).get("ashrae") is None
+
+
+def test_reads_the_manifest_pinned_dataset_and_tracks_its_version() -> None:
+    payload = json.dumps(_FIXTURE_PAYLOAD).encode()
+    key = "datasets/ashrae-surface-films/7/dataset.json"
+    manifest = {
+        "generated_at": "2026-07-28T21:00:00Z",
+        "datasets": {
+            "ashrae-surface-films": {
+                "version": "7",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "key": key,
+            }
+        },
+    }
+    store = SurfaceFilmStore(
+        _FakeStorage(
+            {
+                MANIFEST_KEY: json.dumps(manifest).encode(),
+                key: payload,
+            }
+        )
+    )
+
+    table = store.get("ashrae")
+
+    assert table == parse_surface_film_payload(_FIXTURE_PAYLOAD, "ashrae")
+    assert store.loaded_version("ashrae") == "7"
+
+
+def test_manifest_checksum_mismatch_never_falls_back_to_the_legacy_key() -> None:
+    payload = json.dumps(_FIXTURE_PAYLOAD).encode()
+    key = "datasets/ashrae-surface-films/1/dataset.json"
+    manifest = {
+        "generated_at": "2026-07-28T21:00:00Z",
+        "datasets": {
+            "ashrae-surface-films": {
+                "version": "1",
+                "sha256": "0" * 64,
+                "key": key,
+            }
+        },
+    }
+    storage = _FakeStorage(
+        {
+            MANIFEST_KEY: json.dumps(manifest).encode(),
+            key: payload,
+            surface_film_object_key("ashrae"): payload,
+        }
+    )
+
+    with pytest.raises(SurfaceFilmTableUnavailableError):
+        SurfaceFilmStore(storage).get("ashrae")
+
+    assert storage.read_count == 2
+
+
+def test_missing_manifest_pinned_object_never_falls_back_to_legacy() -> None:
+    payload = json.dumps(_FIXTURE_PAYLOAD).encode()
+    key = "datasets/ashrae-surface-films/1/dataset.json"
+    manifest = {
+        "generated_at": "2026-07-28T21:00:00Z",
+        "datasets": {
+            "ashrae-surface-films": {
+                "version": "1",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "key": key,
+            }
+        },
+    }
+    storage = _FakeStorage(
+        {
+            MANIFEST_KEY: json.dumps(manifest).encode(),
+            surface_film_object_key("ashrae"): payload,
+        }
+    )
+
+    with pytest.raises(SurfaceFilmTableUnavailableError):
+        SurfaceFilmStore(storage).get("ashrae")
+
+    assert storage.read_count == 2
+
+
+def test_checksum_valid_malformed_json_is_typed_unavailable() -> None:
+    payload = b"not-json"
+    key = "datasets/ashrae-surface-films/1/dataset.json"
+    manifest = {
+        "generated_at": "2026-07-28T21:00:00Z",
+        "datasets": {
+            "ashrae-surface-films": {
+                "version": "1",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "key": key,
+            }
+        },
+    }
+    storage = _FakeStorage(
+        {
+            MANIFEST_KEY: json.dumps(manifest).encode(),
+            key: payload,
+        }
+    )
+
+    with pytest.raises(SurfaceFilmTableUnavailableError):
+        SurfaceFilmStore(storage).get("ashrae")
 
 
 @pytest.mark.parametrize(
@@ -149,7 +256,7 @@ def test_published_table_is_cached_after_the_first_read(monkeypatch: pytest.Monk
     second = surface_film_table("ashrae")
 
     assert first == second
-    assert storage.read_count == 1
+    assert storage.read_count == 2
 
 
 def test_fixture_values_are_not_the_iso_values() -> None:

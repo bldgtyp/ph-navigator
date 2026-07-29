@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # render.prod.yaml; optional recreated staging also uses ph-navigator-v2-dev.
     r2_bucket: str = "ph-navigator-v2-dev"
     r2_endpoint_url: str = ""
+    # Explicit guard + audit identity for operator-only licensed dataset CLIs.
+    phn_datasets_allow_production: bool = False
+    phn_datasets_applied_by: str = "local-cli"
     asset_signed_url_ttl_preview_seconds: int = 15 * 60
     asset_signed_url_ttl_download_seconds: int = 60 * 60
     asset_thumbnail_render_timeout_seconds: int = 10

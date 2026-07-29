@@ -55,7 +55,7 @@ It complements, and does not replace:
    │  ② Versioned JSONB documents          │  object_ │                                       │
    │     project_versions.body (immutable) │  keys)  │  ④ climate/{provider}/{version}/…     │
    │     project_version_drafts.body (WIP) │  ◀──────│     (static, app-wide reference)      │
-   │                                       │         │     licensed climate bundles          │
+   │                                       │         │     climate/… + datasets/…             │
    └──────────────────────────────────────┘         └──────────────────────────────────────┘
 ```
 
@@ -76,14 +76,14 @@ It complements, and does not replace:
 3. **Dynamic per-project object files** — user uploads (datasheets, photos,
    HBJSON, EPW, export bundles). Bytes in the object store under
    `projects/…`; one `project_assets` row per file is the registry/pointer.
-4. **Static app-wide licensed reference data** — climate bundles (below) and
-   the ASHRAE surface-film table
-   (`standards/ashrae/surface_films.json`, loaded by
-   `features/envelope/surface_film_store.py`). Same rule in both cases: the
-   repo carries the loader, the private store carries the values. Climate
-   bundles are one
-   `dataset.json` per `(provider, version)` under `climate/…`, seeded into the
-   `climate_dataset*` tables.
+4. **Static app-wide licensed reference data** — reviewed licensed tables
+   publish from the private `ph-navigator-data` repo into immutable
+   `datasets/<slug>/<version>/dataset.json` objects plus a manifest pointer.
+   PHN's `features/datasets/` registry reads runtime tables or explicitly
+   applies DB-seed tables and records them in `applied_datasets`. Climate
+   bundles retain their grandfathered `climate/<provider>/<version>/…` path
+   until the next provider release. Same rule in both cases: this public repo
+   carries loaders/appliers; the private store carries licensed values.
 
 ### 1.1 The one rule that ties it together
 
@@ -167,6 +167,11 @@ built-in default by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`), not name
 |---|---|---|
 | `climate_dataset` | one row per `(provider, version)` release; `label`, `source` | `UNIQUE(provider, version)`. |
 | `climate_dataset_location` | one row per weather station; `data` JSONB = full standardized `ClimateRecord` | Geo + lat/long indexes for nearest-station search. |
+
+### Licensed dataset apply audit (class ④)
+| Table | Holds | Notes |
+|---|---|---|
+| `applied_datasets` | `(slug, version, sha256, applied_at, applied_by)` for every successful DB-seed apply | `UNIQUE(slug, version)`; per-slug transaction locks serialize cross-version target writes. Runtime-read datasets are loaded directly from the manifest and do not create rows. |
 
 ### Registries / pointers into the object store (classes ③/④)
 | Table | Holds | Notes |
@@ -332,14 +337,40 @@ Full contract: `attachments.md`. Backbone schema: `data-model.md` §6.5.
 
 ---
 
-## 5. Class ④ — Static app-wide climate bundles
+## 5. Class ④ — Static app-wide licensed reference data
+
+### 5.1 Versioned licensed dataset pipeline
+
+The default path for licensed reference tables is:
+
+```text
+PRIVATE GIT                       OBJECT STORE                    PHN / POSTGRES
+ph-navigator-data PR + main ──CI─▶ datasets/<slug>/<v>/… ──read─▶ runtime_read cache
+  manifest.json                   datasets/manifest.json ──apply▶ target table
+  schema + provenance             (uploaded last)                applied_datasets audit
+```
+
+- Immutable objects are checksum-pinned by `datasets/manifest.json`; checksum
+  mismatch or a missing pinned object is a hard error.
+- `runtime_read` datasets parse at read/status time. The ASHRAE film loader is
+  the first consumer; its old `standards/…` key is a temporary Phase 2 cutover
+  fallback only when the manifest/slug itself is not yet published.
+- `db_seed` datasets apply only through the guarded operator CLI. Each applier
+  is idempotent, serializes target writes per slug, and upserts
+  `applied_datasets`.
+- `make datasets-status`, `make datasets-apply ARGS=--all-pending`, and
+  `make datasets-publish-local` are the local operator surfaces. The full
+  production runbook lands in `context/DATASET_PIPELINE.md` during the
+  production-cutover phase.
+
+### 5.2 Grandfathered climate bundles
 
 Reference climate data (Phius, PHI) is **app-wide, immutable, and keyed by
 `(provider, version)`** — the opposite of per-project assets. It is the same
 object store and the **same bucket** as class ③ (one `R2Client` /
 `AssetStorage`), just a different key namespace.
 
-### 5.1 The two-tier shape
+#### 5.2.1 The two-tier shape
 
 ```
 OBJECT STORE                              POSTGRES
@@ -356,7 +387,7 @@ climate/{provider}/{version}/raw/…        (optional raw-source archive, proven
 - The bundle is **self-describing** (carries its own provider/version/label),
   so the seed step is provider-agnostic.
 
-### 5.2 Process vs Seed (deliberately separate)
+#### 5.2.2 Process vs Seed (deliberately separate)
 
 1. **Process** (rare, operator-only CLI, `features/climate/processing.py`) —
    parse raw provider source (Phius `-mon.txt` tree, PHI `.xlsx`) into a
@@ -372,7 +403,7 @@ climate/{provider}/{version}/raw/…        (optional raw-source archive, proven
 > `(provider, version)` ships. Rows persist across restarts. (Runbook:
 > `ENVIRONMENT.md` → "Climate reference-data seed".)
 
-### 5.3 Per-project climate sources (`project_climate_source`)
+#### 5.2.3 Per-project climate sources (`project_climate_source`)
 
 Distinct from the app-wide datasets: each project records the climate bases it
 uses for different workflows. `kind` dispatches the meaning of `ref` / `data`:
@@ -409,12 +440,15 @@ Every cross-store reference in the system, in one place:
 | `project_climate_source.ref` (weather) | `project_assets.id` | within Postgres | id string |
 | `project_climate_source.ref` (phius/phi) | `climate_dataset_location.id` | within Postgres | id string |
 | `climate_dataset (provider,version)` | `climate/{provider}/{version}/dataset.json` | Postgres → object store | derived object key |
+| `applied_datasets (slug,version)` | `datasets/<slug>/<version>/dataset.json` | Postgres audit → object store | manifest-pinned slug/version/checksum |
 | document catalog rows (`catalog_origin`) | `catalog_*` row id | document → catalog | **copied value** + origin id (no live join) |
 
-**Who controls keys:** the backend, always. Asset keys are
+**Who controls keys:** application asset/climate code or the private dataset
+publisher, never a user filename. Asset keys are
 `projects/{pid}/assets/{server-generated asset_id}/…`; climate keys are
-`climate/{provider}/{version}/…`. User filenames are stored for display only
-and never appear in a key.
+`climate/{provider}/{version}/…`; licensed dataset keys are
+`datasets/{slug}/{version}/…`. User filenames are stored for display only and
+never appear in a key.
 
 ---
 

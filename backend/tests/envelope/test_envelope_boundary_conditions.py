@@ -333,6 +333,10 @@ class _StubFilmStore:
             rse_outdoor_air_m2k_w=0.05,
         )
 
+    def loaded_version(self, standard: str) -> str | None:
+        del standard
+        return None
+
 
 def test_set_thermal_standard_switches_the_project_convention(
     clean_document_tables: None,

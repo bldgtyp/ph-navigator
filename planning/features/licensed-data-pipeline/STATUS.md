@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phase 1 implemented on branch; Phase 2 is next
+STATUS: Active — Phases 1–2 implemented on branches; Phase 3 is next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the licensed-data pipeline.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,9 +11,9 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phase 1 is implemented and locally verified on
-`ph-navigator-data:feat/licensed-data-pipeline` at `b0bd933`; Phase 2 is next
-in PHN.**
+**Phases 1–2 are implemented and locally verified. Phase 1 is on
+`ph-navigator-data:feat/licensed-data-pipeline` at `b0bd933`; Phase 2 is ready
+for its PHN feature-branch checkpoint.**
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -86,10 +86,41 @@ Pending outside the branch implementation: private-repo PR review/merge and
 its first hosted Actions run. Merge is the production publish event, so it is
 not performed as part of the local phase commit.
 
+## Phase 2 result
+
+Implemented in PHN:
+- `features/datasets/`: typed manifest/integrity reader, executable registry,
+  db-seed apply engine, per-slug transaction lock, applied-state repository,
+  and full mismatch reconciliation;
+- Alembic `20260728_0010`: `applied_datasets`;
+- guarded `datasets_apply` and payload-safe `datasets_status` CLIs plus all
+  three Make targets;
+- ASHRAE films load and parse through the manifest-pinned registry entry;
+  absent manifest/slug may use the temporary legacy key, but a missing pinned
+  object, checksum failure, or malformed payload hard-fails as typed
+  unavailable;
+- canonical storage/data-model docs now record the pipeline boundary.
+
+Verification so far:
+- focused Ruff + Ty clean;
+- 76 focused dataset/envelope tests pass;
+- backend feature-boundary check passes;
+- Alembic current/head both `20260728_0010`;
+- `make datasets-publish-local` idempotently republishes films v1;
+- `make datasets-status` reports published=1, loaded=1, checksum match, no
+  mismatches;
+- `make datasets-apply ARGS=--all-pending` reports no pending db-seed data;
+- live local runtime load reports `ashrae-surface-films` v1 without printing
+  licensed values.
+- `make format` passes;
+- full `PYTEST_WORKERS=0 make ci` passes: backend `1661 passed, 7 skipped`;
+  frontend `247` test files / `2312` tests passed; production build and
+  version-marker check passed.
+
 ## Next step
 
-**Phase 2 — implement PHN's `datasets` feature**
-(`phases/phase-02-datasets-feature.md`).
+**Phase 3 — production trigger, cutover, and runbook**
+(`phases/phase-03-ops-and-docs.md`).
 
 ## Blockers
 
@@ -106,9 +137,8 @@ Phase gates:
 - Phase 1: local validation, 8 synthetic tests, interrupted-publish drill
   (AC 4), and rollback-by-revert drill (AC 5) passed 2026-07-28. Hosted
   Actions remains pending until the private branch is opened/merged.
-- Phase 2: `make datasets-status` mismatch matrix (AC 6), apply idempotency
-  (AC 7), films served from the manifest-pinned key (AC 9), fresh-dev boot
-  with empty MinIO (AC 10).
+- Phase 2: focused tests, local operator/runtime drills, `make format`, and
+  full `PYTEST_WORKERS=0 make ci` passed 2026-07-28.
 - Phase 3: films production cutover verified by R2 round-trip, legacy key
   deleted, runbook in `context/DATASET_PIPELINE.md`.
 - Phase 4: the µ dataset through the whole path locally, including the

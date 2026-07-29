@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phase 1 implemented and drilled locally on branch;
-  Phase 2 PHN datasets feature next
+STATUS: Active — Phases 1–2 implemented and verified on feature branches;
+  Phase 3 production trigger/cutover next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the licensed-data pipeline feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -68,7 +68,7 @@ unrepeatable, and it does not scale past the person who did it last time.
 | Phase | Content |
 | --- | --- |
 | **1** | ✅ **Implemented on branch 2026-07-28** (`ph-navigator-data` commit `b0bd933`) — standalone publisher, schema/checksum/version gates, serialized publish CI, `ashrae-surface-films` v1, synthetic contract tests, and MinIO interruption + rollback drills. Production publish awaits review/merge of the private-repo branch. |
-| **2** | PHN `datasets` feature: manifest store, registry, `applied_datasets` migration, `datasets_status` / `datasets_apply` CLIs, film loader migrated to manifest-pinned keys |
+| **2** | ✅ **Implemented on branch 2026-07-28** — manifest/integrity store, registry, guarded/status/apply CLIs, `applied_datasets`, per-slug apply serialization, Make targets, and manifest-pinned film loading with temporary legacy fallback |
 | **3** | Production trigger ("Apply Datasets" workflow → Render one-off job, Ed-dispatched), `context/DATASET_PIPELINE.md` runbook, films production cutover, deprecate `seed_surface_films.py` |
 | **4** | First `db_seed` dataset end-to-end: the ISO 10456 µ values, jointly with `assembly-condensation-risk` Phase 1 |
 

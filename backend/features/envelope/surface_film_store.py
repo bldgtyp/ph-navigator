@@ -10,7 +10,7 @@ ISO 6946 is different and stays in code (``boundary_conditions.ISO_6946_TABLE``)
 it is the default, it is already published in this feature's PRD, and keeping
 it in-repo means a deployment with no private store still computes U-values.
 
-Key layout::
+Legacy cutover key (fallback only)::
 
     standards/<standard>/surface_films.json
 
@@ -23,8 +23,9 @@ Payload (SI, m²·K/W)::
       "source": "<citation the operator supplies>"
     }
 
-Seed it with ``python -m scripts.seed_surface_films`` (see that module for
-how the operator points it at their own copy of the handbook tables).
+The primary read resolves ``ashrae-surface-films`` through
+``datasets/manifest.json``. The legacy key remains only for the Phase 2
+production cutover window.
 """
 
 from __future__ import annotations
@@ -32,10 +33,19 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol, cast
 
+import structlog
 from botocore.exceptions import ClientError
 
 from config import settings
 from features.assets.storage_r2 import R2Client
+from features.datasets.manifest import (
+    DatasetIntegrityError,
+    DatasetManifestInvalidError,
+    DatasetManifestStore,
+    DatasetManifestUnavailableError,
+    DatasetObjectUnavailableError,
+)
+from features.datasets.registry import dataset_spec
 from features.envelope.boundary_conditions import (
     ISO_6946_TABLE,
     HeatFlowDirection,
@@ -45,6 +55,8 @@ from features.project_document.document import ThermalStandard
 
 _CONTENT_TYPE = "application/json"
 _DIRECTIONS: tuple[HeatFlowDirection, ...] = ("upward", "horizontal", "downward")
+_ASHRAE_DATASET_SLUG = "ashrae-surface-films"
+log = structlog.get_logger(__name__)
 
 
 class SurfaceFilmTableUnavailableError(RuntimeError):
@@ -75,6 +87,8 @@ class SurfaceFilmStore:
 
     def __init__(self, storage: SurfaceFilmObjectStore) -> None:
         self._storage = storage
+        self._datasets = DatasetManifestStore(storage)
+        self._loaded_versions: dict[ThermalStandard, str] = {}
 
     @classmethod
     def from_settings(cls) -> SurfaceFilmStore:
@@ -103,12 +117,52 @@ class SurfaceFilmStore:
         return key
 
     def get(self, standard: ThermalStandard) -> SurfaceFilmTable | None:
-        """Return the published table, or ``None`` when nothing is published."""
+        """Return the manifest-pinned table, with a temporary legacy fallback."""
+        if standard == "ashrae":
+            try:
+                fetched = self._datasets.fetch(_ASHRAE_DATASET_SLUG)
+            except DatasetManifestUnavailableError:
+                pass
+            except (
+                DatasetIntegrityError,
+                DatasetManifestInvalidError,
+                DatasetObjectUnavailableError,
+            ) as error:
+                raise SurfaceFilmTableUnavailableError(str(error)) from error
+            else:
+                spec = dataset_spec(_ASHRAE_DATASET_SLUG)
+                if spec is None:
+                    raise SurfaceFilmTableUnavailableError("the ASHRAE surface-film dataset is not registered")
+                try:
+                    parsed = spec.parse(fetched.payload)
+                except Exception as error:
+                    raise SurfaceFilmTableUnavailableError(
+                        "the ASHRAE surface-film dataset payload is invalid"
+                    ) from error
+                if not isinstance(parsed, SurfaceFilmTable):
+                    raise SurfaceFilmTableUnavailableError(
+                        "the ASHRAE surface-film dataset parser returned the wrong type"
+                    )
+                self._loaded_versions[standard] = fetched.entry.version
+                return parsed
+
         try:
             raw = self._storage.get_object(surface_film_object_key(standard))
         except ClientError:
             return None
-        return parse_surface_film_payload(json.loads(raw), standard)
+        log.warning(
+            "datasets.legacy_fallback",
+            slug=_ASHRAE_DATASET_SLUG,
+            object_key=surface_film_object_key(standard),
+        )
+        try:
+            return parse_surface_film_payload(json.loads(raw), standard)
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise SurfaceFilmTableUnavailableError(f"{standard} legacy surface-film payload is invalid") from error
+
+    def loaded_version(self, standard: ThermalStandard) -> str | None:
+        """Return the manifest version loaded by the most recent ``get``."""
+        return self._loaded_versions.get(standard)
 
 
 def parse_surface_film_payload(payload: object, standard: ThermalStandard) -> SurfaceFilmTable:
@@ -140,6 +194,7 @@ def parse_surface_film_payload(payload: object, standard: ThermalStandard) -> Su
 #: published, so one fetch per process is enough — and it keeps the object
 #: store off the per-request thermal path.
 _cache: dict[ThermalStandard, SurfaceFilmTable] = {}
+_loaded_versions: dict[str, str] = {}
 
 
 def surface_film_table(standard: ThermalStandard) -> SurfaceFilmTable:
@@ -160,15 +215,25 @@ def surface_film_table(standard: ThermalStandard) -> SurfaceFilmTable:
             f"the {standard} surface-film table is licensed and lives in the object store, "
             "which is not configured for this deployment"
         )
-    table = SurfaceFilmStore.from_settings().get(standard)
+    store = SurfaceFilmStore.from_settings()
+    table = store.get(standard)
     if table is None:
         raise SurfaceFilmTableUnavailableError(
-            f"no {standard} surface-film table is published; seed it with scripts.seed_surface_films"
+            f"no {standard} surface-film table is published through the licensed dataset pipeline"
         )
+    loaded_version = store.loaded_version(standard)
+    if loaded_version is not None:
+        _loaded_versions[_ASHRAE_DATASET_SLUG] = loaded_version
     _cache[standard] = table
     return table
 
 
+def loaded_surface_film_versions() -> dict[str, str]:
+    """Return runtime dataset versions already loaded in this process."""
+    return dict(_loaded_versions)
+
+
 def reset_surface_film_cache() -> None:
-    """Drop the process cache (tests, and after a re-seed)."""
+    """Drop process caches (tests and after a dataset publish)."""
     _cache.clear()
+    _loaded_versions.clear()
