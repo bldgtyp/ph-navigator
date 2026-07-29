@@ -123,6 +123,7 @@ export function DataTable<TRow>({
   sessionKey,
   focusRowId,
   readOnly = false,
+  showViewControls = true,
   canDownloadCsv = true,
   density = "compact",
   emptyMessage,
@@ -1644,6 +1645,7 @@ export function DataTable<TRow>({
       <div className={`data-table-shell data-table-shell-${density}`}>
         <GridToolbar
           tableName={tableName}
+          showViewControls={showViewControls}
           view={view}
           fieldDefByKey={fieldDefByKey}
           filterableFieldDefs={filterableFieldDefs}

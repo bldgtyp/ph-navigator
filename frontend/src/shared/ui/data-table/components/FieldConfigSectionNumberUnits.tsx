@@ -2,6 +2,7 @@ import { useId } from "react";
 import { AutocompleteSelect } from "../../AutocompleteSelect";
 import {
   NUMBER_UNIT_TYPES,
+  numberUnitsForType,
   type NumberUnitsConfig,
   type NumberIpUnit,
   type NumberSiUnit,
@@ -30,7 +31,7 @@ export type FieldConfigSectionNumberUnitsProps = {
 const DEFAULT_UNIT_TYPE = NUMBER_UNIT_TYPES[0]!;
 
 function defaultEditableNumberUnits(): NumberUnitsConfig {
-  return unitsForType(DEFAULT_UNIT_TYPE.id, {
+  return numberUnitsForType(DEFAULT_UNIT_TYPE.id, {
     mode: "editable",
     precision_si: DEFAULT_NUMBER_PRECISION,
     precision_ip: DEFAULT_NUMBER_PRECISION,
@@ -89,7 +90,7 @@ export function FieldConfigSectionNumberUnits({
         }))}
         onChange={(unitType) =>
           onUnitsChange(
-            unitsForType(unitType as NumberUnitType, {
+            numberUnitsForType(unitType as NumberUnitType, {
               mode: units.mode,
               precision_si: units.precision_si,
               precision_ip: units.precision_ip,
@@ -181,20 +182,4 @@ export function FieldConfigSectionNumberUnits({
       )}
     </div>
   );
-}
-
-function unitsForType(
-  unitType: NumberUnitType,
-  options: Pick<NumberUnitsConfig, "mode" | "precision_si" | "precision_ip">,
-): NumberUnitsConfig {
-  const definition = NUMBER_UNIT_TYPES.find((candidate) => candidate.id === unitType);
-  const selected = definition ?? DEFAULT_UNIT_TYPE;
-  return {
-    mode: options.mode,
-    unit_type: selected.id,
-    si_unit: selected.siUnits[0]!.id,
-    ip_unit: selected.ipUnits[0]!.id,
-    precision_si: options.precision_si,
-    precision_ip: options.precision_ip,
-  };
 }

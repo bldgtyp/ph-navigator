@@ -13,7 +13,14 @@ import {
   sdMToPerm,
 } from "./material";
 import { cToF, fToC } from "./temperature";
-import { btuHft2FToWm2K, btuHftFToWmK, wm2kToBtuHft2F, wmkToBtuHftF } from "./thermal";
+import {
+  btuHft2FToWm2K,
+  btuHftFToWmK,
+  hft2FBtuToM2kW,
+  m2kWToHft2FBtu,
+  wm2kToBtuHft2F,
+  wmkToBtuHftF,
+} from "./thermal";
 import { cfmToM3h, m3hToCfm } from "./airflow";
 import type { UnitSystem } from "./types";
 
@@ -25,6 +32,8 @@ const L_PER_GAL = 3.785411784;
 const KWH_TO_KBTU = 3.412141633;
 const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
 const KW_TO_KBTU_PER_H = 3.412141633;
+const GRAINS_FT2_PER_G_M2 = 1.433076;
+const GRAINS_FT2_PER_KG_M2 = GRAINS_FT2_PER_G_M2 * 1000;
 
 type UnitDefinitionInput = {
   id: string;
@@ -57,6 +66,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "U-value",
     siUnits: [{ id: "w_m2_k", label: "W/(m2-K)", system: "SI" }],
     ipUnits: [{ id: "btu_h_ft2_f", label: "Btu/(h-ft2-F)", system: "IP" }],
+  },
+  {
+    id: "thermal_resistance",
+    label: "Thermal Resistance",
+    siUnits: [{ id: "m2_k_w", label: "m2-K/W", system: "SI" }],
+    ipUnits: [{ id: "h_ft2_f_btu", label: "h-ft2-F/Btu", system: "IP" }],
   },
   {
     id: "specific_heat",
@@ -107,6 +122,30 @@ export const NUMBER_UNIT_TYPES = [
     label: "Temperature",
     siUnits: [{ id: "c", label: "deg C", system: "SI" }],
     ipUnits: [{ id: "f", label: "deg F", system: "IP" }],
+  },
+  {
+    id: "pressure",
+    label: "Pressure",
+    siUnits: [{ id: "pa", label: "Pa", system: "SI" }],
+    ipUnits: [{ id: "pa", label: "Pa", system: "IP" }],
+  },
+  {
+    id: "percentage",
+    label: "Percentage",
+    siUnits: [{ id: "percent", label: "%", system: "SI" }],
+    ipUnits: [{ id: "percent", label: "%", system: "IP" }],
+  },
+  {
+    id: "surface_mass",
+    label: "Surface Mass",
+    siUnits: [{ id: "g_m2", label: "g/m2", system: "SI" }],
+    ipUnits: [{ id: "gr_ft2", label: "gr/ft2", system: "IP" }],
+  },
+  {
+    id: "surface_mass_flux",
+    label: "Surface Mass Flux",
+    siUnits: [{ id: "kg_m2_s", label: "kg/(m2-s)", system: "SI" }],
+    ipUnits: [{ id: "gr_ft2_s", label: "gr/(ft2-s)", system: "IP" }],
   },
   {
     id: "airflow",
@@ -243,6 +282,21 @@ export function numberUnitRegistrySnapshot(): Record<string, { si: string[]; ip:
   );
 }
 
+export function numberUnitsForType(
+  unitType: NumberUnitType,
+  options: Pick<NumberUnitsConfig, "mode" | "precision_si" | "precision_ip">,
+): NumberUnitsConfig {
+  const definition = NUMBER_UNIT_TYPES_BY_ID.get(unitType) ?? NUMBER_UNIT_TYPES[0];
+  return {
+    mode: options.mode,
+    unit_type: definition.id,
+    si_unit: definition.siUnits[0].id,
+    ip_unit: definition.ipUnits[0].id,
+    precision_si: options.precision_si,
+    precision_ip: options.precision_ip,
+  };
+}
+
 export function numberUnitPrecision(config: NumberUnitsConfig, unitSystem: UnitSystem): number {
   return unitSystem === "IP" ? config.precision_ip : config.precision_si;
 }
@@ -262,6 +316,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return wmkToBtuHftF(valueSi);
     case "u_value":
       return wm2kToBtuHft2F(valueSi);
+    case "thermal_resistance":
+      return m2kWToHft2FBtu(valueSi);
     case "specific_heat":
       return jKgKToBtuLbF(valueSi);
     case "length":
@@ -278,6 +334,13 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi / L_PER_GAL;
     case "temperature":
       return cToF(valueSi);
+    case "pressure":
+    case "percentage":
+      return valueSi;
+    case "surface_mass":
+      return valueSi * GRAINS_FT2_PER_G_M2;
+    case "surface_mass_flux":
+      return valueSi * GRAINS_FT2_PER_KG_M2;
     case "airflow":
       return m3hToCfm(valueSi);
     case "electric_efficiency":
@@ -305,6 +368,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return btuHftFToWmK(valueIp);
     case "u_value":
       return btuHft2FToWm2K(valueIp);
+    case "thermal_resistance":
+      return hft2FBtuToM2kW(valueIp);
     case "specific_heat":
       return btuLbFToJKgK(valueIp);
     case "length":
@@ -321,6 +386,13 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp * L_PER_GAL;
     case "temperature":
       return fToC(valueIp);
+    case "pressure":
+    case "percentage":
+      return valueIp;
+    case "surface_mass":
+      return valueIp / GRAINS_FT2_PER_G_M2;
+    case "surface_mass_flux":
+      return valueIp / GRAINS_FT2_PER_KG_M2;
     case "airflow":
       return cfmToM3h(valueIp);
     case "electric_efficiency":

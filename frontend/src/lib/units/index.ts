@@ -13,6 +13,7 @@ export {
   numberUnitLabel,
   numberUnitPrecision,
   numberUnitRegistrySnapshot,
+  numberUnitsForType,
   parseNumberUnitsInput,
 } from "./numberUnits";
 export type {

@@ -1,15 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  formatConductivityFromWmK,
-  formatLengthFromMm,
-  formatRValueFromM2KPerW,
-  formatTemperatureFromC,
-  formatVaporMu,
-  formatVaporSd,
-  useUnitPreference,
-  type UnitSystem,
-} from "../../../lib/units";
-import { formatNumberWithUnit } from "../../../lib/units/format";
+import { numberUnitsForType, type NumberUnitsConfig } from "../../../lib/units";
 import {
   ALL_FIELD_LOCKS,
   DataTable,
@@ -31,12 +21,8 @@ import {
   type CondensationLayerRow,
   type CondensationMonthlyRow,
 } from "../condensation-number-data";
-import { formatCondensationPercent } from "../condensation-format";
 import type { AssemblyCondensationResponse } from "../condensation-types";
 import type { Assembly, ProjectMaterial } from "../types";
-
-const GRAINS_FT2_PER_G_M2 = 1.433076;
-const GRAINS_FT2_PER_KG_M2 = GRAINS_FT2_PER_G_M2 * 1000;
 
 export function CondensationNumbersPanel({
   assembly,
@@ -47,7 +33,6 @@ export function CondensationNumbersPanel({
   materials: ProjectMaterial[];
   result: AssemblyCondensationResponse;
 }) {
-  const { unitSystem } = useUnitPreference();
   const [selectedMonth, setSelectedMonth] = useState(() => defaultProfileMonth(result));
   const month = monthByNumber(result, selectedMonth) ?? result.monthly[0] ?? null;
   const layerRows = useMemo(
@@ -59,9 +44,6 @@ export function CondensationNumbersPanel({
     () => buildCondensationInterfaceRows(assembly, materials, result),
     [assembly, materials, result],
   );
-  const layerColumnDefs = useMemo(() => layerColumns(unitSystem), [unitSystem]);
-  const monthlyColumnDefs = useMemo(() => monthlyColumns(unitSystem), [unitSystem]);
-  const interfaceColumnDefs = useMemo(() => interfaceColumns(unitSystem), [unitSystem]);
 
   if (!month) {
     return <p className="condensation-risk-empty">No monthly intermediates were returned.</p>;
@@ -94,7 +76,7 @@ export function CondensationNumbersPanel({
           tableName={`Condensation layers ${month.month_name}`}
           rows={layerRows}
           fieldDefs={LAYER_FIELDS}
-          columnDefs={layerColumnDefs}
+          columnDefs={LAYER_COLUMNS}
           emptyMessage="No layer intermediates."
         />
       </section>
@@ -110,7 +92,7 @@ export function CondensationNumbersPanel({
           tableName="Condensation monthly cycle"
           rows={monthlyRows}
           fieldDefs={MONTHLY_FIELDS}
-          columnDefs={monthlyColumnDefs}
+          columnDefs={MONTHLY_COLUMNS}
           emptyMessage="No monthly cycle."
         />
       </section>
@@ -126,7 +108,7 @@ export function CondensationNumbersPanel({
           tableName="Condensation interfaces"
           rows={interfaceRows}
           fieldDefs={INTERFACE_FIELDS}
-          columnDefs={interfaceColumnDefs}
+          columnDefs={INTERFACE_COLUMNS}
           emptyMessage="No condensing interfaces."
         />
       </section>
@@ -159,6 +141,7 @@ function CondensationDataTable<TRow extends { id: string }>({
         view={view}
         onViewChange={setView}
         readOnly
+        showViewControls={false}
         canDownloadCsv={false}
         density="compact"
         emptyMessage={emptyMessage}
@@ -171,25 +154,38 @@ function condensationRowId(row: { id: string }): string {
   return row.id;
 }
 
+const UNITS = {
+  thickness: fixedUnits("length_mm", 1, 2),
+  conductivity: fixedUnits("conductivity", 3, 3),
+  resistance: fixedUnits("thermal_resistance", 2, 2),
+  vaporMu: fixedUnits("vapor_diffusion_resistance", 1, 2),
+  vaporSd: fixedUnits("vapor_sd", 2, 2),
+  temperature: fixedUnits("temperature", 1, 1),
+  pressure: fixedUnits("pressure", 0, 0),
+  percentage: fixedUnits("percentage", 1, 1),
+  surfaceMass: fixedUnits("surface_mass", 1, 1),
+  surfaceMassFlux: fixedUnits("surface_mass_flux", 10, 7),
+} satisfies Record<string, NumberUnitsConfig>;
+
 const LAYER_FIELDS = fields([
   ["layer", "Layer"],
   ["material", "Material"],
-  ["thickness", "d", "number"],
-  ["conductivity", "λ", "number"],
-  ["resistance", "R", "number"],
-  ["vapor_mu", "µ / permeability", "number"],
-  ["vapor_sd", "sd / permeance", "number"],
-  ["temperature", "θ", "number"],
-  ["psat", "psat", "number"],
-  ["pv", "pv", "number"],
-  ["rh", "RH", "number"],
+  ["thickness", "d", "number", UNITS.thickness],
+  ["conductivity", "λ", "number", UNITS.conductivity],
+  ["resistance", "R", "number", UNITS.resistance],
+  ["vapor_mu", "µ / permeability", "number", UNITS.vaporMu],
+  ["vapor_sd", "sd / permeance", "number", UNITS.vaporSd],
+  ["temperature", "θ", "number", UNITS.temperature],
+  ["psat", "psat", "number", UNITS.pressure],
+  ["pv", "pv", "number", UNITS.pressure],
+  ["rh", "RH", "number", UNITS.percentage],
 ]);
 
 const MONTHLY_FIELDS = fields([
   ["month", "Month", "number"],
-  ["gc", "gc", "number"],
-  ["delta_ma", "ΔMa", "number"],
-  ["ma", "Ma", "number"],
+  ["gc", "gc", "number", UNITS.surfaceMassFlux],
+  ["delta_ma", "ΔMa", "number", UNITS.surfaceMass],
+  ["ma", "Ma", "number", UNITS.surfaceMass],
   ["interface_count", "Interfaces", "number"],
   ["surface", "Surface"],
   ["mold", "Mould"],
@@ -200,172 +196,86 @@ const MONTHLY_FIELDS = fields([
 const INTERFACE_FIELDS = fields([
   ["month", "Month", "number"],
   ["interface", "Interface"],
-  ["gc", "gc", "number"],
-  ["delta_ma", "ΔMa", "number"],
-  ["ma", "Ma", "number"],
+  ["gc", "gc", "number", UNITS.surfaceMassFlux],
+  ["delta_ma", "ΔMa", "number", UNITS.surfaceMass],
+  ["ma", "Ma", "number", UNITS.surfaceMass],
 ]);
 
-function fields(items: [string, string, FieldDef["field_type"]?][]): FieldDef[] {
-  return items.map(([field_key, display_name, fieldType = "text"]) => ({
+function fields(
+  items: [string, string, FieldDef["field_type"]?, NumberUnitsConfig?][],
+): FieldDef[] {
+  return items.map(([field_key, display_name, fieldType = "text", numberUnits]) => ({
     field_key,
     field_type: fieldType,
     display_name,
+    ...(numberUnits ? { numberUnits } : {}),
     read_only: true,
     built_in: true,
     locked: ALL_FIELD_LOCKS,
   }));
 }
 
-function layerColumns(unitSystem: UnitSystem): DataTableColumnDef<CondensationLayerRow>[] {
-  const options = { unitSystem };
-  return [
-    column("layer", "Layer", (row) => row.layer, 100, true),
-    column("material", "Material", (row) => row.material, 180),
-    numericColumn(
-      "thickness",
-      "d",
-      (row) => row.thicknessMm,
-      (row) => formatLengthFromMm(row.thicknessMm, options),
-      105,
-    ),
-    numericColumn(
-      "conductivity",
-      "λ",
-      (row) => row.conductivityWmK,
-      (row) => formatConductivityFromWmK(row.conductivityWmK, options),
-      140,
-    ),
-    numericColumn(
-      "resistance",
-      "R",
-      (row) => row.resistanceM2KW,
-      (row) => formatRValueFromM2KPerW(row.resistanceM2KW, options),
-      130,
-    ),
-    numericColumn(
-      "vapor_mu",
-      "µ",
-      (row) => row.vaporMu,
-      (row) => formatVaporMu(row.vaporMu, options),
-      110,
-    ),
-    numericColumn(
-      "vapor_sd",
-      "sd",
-      (row) => row.vaporSdM,
-      (row) => formatVaporSd(row.vaporSdM, options),
-      110,
-    ),
-    numericColumn(
-      "temperature",
-      "θ",
-      (row) => row.temperatureC,
-      (row) => formatTemperatureFromC(row.temperatureC, options),
-      100,
-    ),
-    numericColumn(
-      "psat",
-      "psat",
-      (row) => row.saturationPressurePa,
-      (row) => formatPressure(row.saturationPressurePa),
-      105,
-    ),
-    numericColumn(
-      "pv",
-      "pv",
-      (row) => row.vaporPressurePa,
-      (row) => formatPressure(row.vaporPressurePa),
-      105,
-    ),
-    numericColumn(
-      "rh",
-      "RH",
-      (row) => row.relativeHumidity,
-      (row) => formatCondensationPercent(row.relativeHumidity),
-      90,
-    ),
-  ];
+function fixedUnits(
+  unit_type: NumberUnitsConfig["unit_type"],
+  precision_si: number,
+  precision_ip: number,
+): NumberUnitsConfig {
+  return numberUnitsForType(unit_type, { mode: "fixed", precision_si, precision_ip });
 }
 
-function monthlyColumns(unitSystem: UnitSystem): DataTableColumnDef<CondensationMonthlyRow>[] {
-  return [
-    numericColumn(
-      "month",
-      "Month",
-      (row) => row.month,
-      (row) => row.monthName,
-      110,
-      true,
-    ),
-    numericColumn(
-      "gc",
-      "gc",
-      (row) => row.condensationRateKgM2S,
-      (row) => formatRate(row.condensationRateKgM2S, unitSystem),
-      150,
-    ),
-    numericColumn(
-      "delta_ma",
-      "ΔMa",
-      (row) => row.moistureChangeGM2,
-      (row) => formatMass(row.moistureChangeGM2, unitSystem),
-      120,
-    ),
-    numericColumn(
-      "ma",
-      "Ma",
-      (row) => row.accumulatedMoistureGM2,
-      (row) => formatMass(row.accumulatedMoistureGM2, unitSystem),
-      120,
-    ),
-    numericColumn(
-      "interface_count",
-      "Interfaces",
-      (row) => row.interfaceCount,
-      (row) => String(row.interfaceCount),
-      95,
-    ),
-    column("surface", "Surface", (row) => row.surfaceState, 100),
-    column("mold", "Mould", (row) => row.moldState, 100),
-    column("frsi", "fRsi", (row) => row.frsiState, 100),
-    column("interstitial", "Interstitial", (row) => row.interstitialState, 115),
-  ];
-}
+const LAYER_COLUMNS: DataTableColumnDef<CondensationLayerRow>[] = [
+  column("layer", "Layer", (row) => row.layer, 100, true),
+  column("material", "Material", (row) => row.material, 180),
+  unitColumn("thickness", "d", (row) => row.thicknessMm, 105),
+  unitColumn("conductivity", "λ", (row) => row.conductivityWmK, 140),
+  unitColumn("resistance", "R", (row) => row.resistanceM2KW, 130),
+  unitColumn("vapor_mu", "µ", (row) => row.vaporMu, 110),
+  unitColumn("vapor_sd", "sd", (row) => row.vaporSdM, 110),
+  unitColumn("temperature", "θ", (row) => row.temperatureC, 100),
+  unitColumn("psat", "psat", (row) => row.saturationPressurePa, 105),
+  unitColumn("pv", "pv", (row) => row.vaporPressurePa, 105),
+  unitColumn("rh", "RH", (row) => row.relativeHumidity * 100, 90),
+];
 
-function interfaceColumns(unitSystem: UnitSystem): DataTableColumnDef<CondensationInterfaceRow>[] {
-  return [
-    numericColumn(
-      "month",
-      "Month",
-      (row) => row.month,
-      (row) => row.monthName,
-      110,
-      true,
-    ),
-    column("interface", "Interface", (row) => row.interface, 240),
-    numericColumn(
-      "gc",
-      "gc",
-      (row) => row.condensationRateKgM2S,
-      (row) => formatRate(row.condensationRateKgM2S, unitSystem),
-      150,
-    ),
-    numericColumn(
-      "delta_ma",
-      "ΔMa",
-      (row) => row.moistureChangeGM2,
-      (row) => formatMass(row.moistureChangeGM2, unitSystem),
-      120,
-    ),
-    numericColumn(
-      "ma",
-      "Ma",
-      (row) => row.accumulatedMoistureGM2,
-      (row) => formatMass(row.accumulatedMoistureGM2, unitSystem),
-      120,
-    ),
-  ];
-}
+const MONTHLY_COLUMNS: DataTableColumnDef<CondensationMonthlyRow>[] = [
+  numericColumn(
+    "month",
+    "Month",
+    (row) => row.month,
+    (row) => row.monthName,
+    110,
+    true,
+  ),
+  unitColumn("gc", "gc", (row) => row.condensationRateKgM2S, 150),
+  unitColumn("delta_ma", "ΔMa", (row) => row.moistureChangeGM2, 120),
+  unitColumn("ma", "Ma", (row) => row.accumulatedMoistureGM2, 120),
+  numericColumn(
+    "interface_count",
+    "Interfaces",
+    (row) => row.interfaceCount,
+    (row) => String(row.interfaceCount),
+    95,
+  ),
+  column("surface", "Surface", (row) => row.surfaceState, 100),
+  column("mold", "Mould", (row) => row.moldState, 100),
+  column("frsi", "fRsi", (row) => row.frsiState, 100),
+  column("interstitial", "Interstitial", (row) => row.interstitialState, 115),
+];
+
+const INTERFACE_COLUMNS: DataTableColumnDef<CondensationInterfaceRow>[] = [
+  numericColumn(
+    "month",
+    "Month",
+    (row) => row.month,
+    (row) => row.monthName,
+    110,
+    true,
+  ),
+  column("interface", "Interface", (row) => row.interface, 240),
+  unitColumn("gc", "gc", (row) => row.condensationRateKgM2S, 150),
+  unitColumn("delta_ma", "ΔMa", (row) => row.moistureChangeGM2, 120),
+  unitColumn("ma", "Ma", (row) => row.accumulatedMoistureGM2, 120),
+];
 
 function column<TRow>(
   id: string,
@@ -397,20 +307,11 @@ function numericColumn<TRow>(
   };
 }
 
-function formatPressure(value: number): string {
-  return formatNumberWithUnit(value, "Pa", { unitSystem: "SI", fractionDigits: 0 });
-}
-
-function formatMass(valueGM2: number, unitSystem: UnitSystem): string {
-  return unitSystem === "IP"
-    ? formatNumberWithUnit(valueGM2 * GRAINS_FT2_PER_G_M2, "gr/ft²", {
-        unitSystem,
-        fractionDigits: 1,
-      })
-    : formatNumberWithUnit(valueGM2, "g/m²", { unitSystem, fractionDigits: 1 });
-}
-
-function formatRate(valueKgM2S: number, unitSystem: UnitSystem): string {
-  const value = unitSystem === "IP" ? valueKgM2S * GRAINS_FT2_PER_KG_M2 : valueKgM2S;
-  return `${value.toExponential(3)} ${unitSystem === "IP" ? "gr/(ft²·s)" : "kg/(m²·s)"}`;
+function unitColumn<TRow>(
+  id: string,
+  header: string,
+  accessor: (row: TRow) => number | null,
+  defaultWidth: number,
+): DataTableColumnDef<TRow> {
+  return { id, fieldKey: id, header, accessor, defaultWidth };
 }

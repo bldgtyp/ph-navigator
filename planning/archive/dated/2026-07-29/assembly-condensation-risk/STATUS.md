@@ -177,8 +177,10 @@ Completed 2026-07-29:
   cover all verdict and caveat variants; the clear live route was browser-smoked
   through month/axis interactions with no horizontal overflow.
 - **Phase 5:** three shared read-only DataTables expose the selected-month layer
-  intermediates, 12-month cycle, and per-interface accumulation with numeric
-  sort/filter semantics and SI/IP display. The Assumptions tier shows monthly
+  intermediates, 12-month cycle, and per-interface accumulation. Quantitative
+  fields use the shared Unit-field header/bare-cell pipeline, follow SI/IP
+  display, and omit view controls on this fixed analytical screen. The
+  Assumptions tier shows monthly
   exterior climate, edits all three interior models and Ma limit through a
   complete versioned settings command, and discloses method facts plus
   per-material provenance. Live verification proved settings/hash/chip updates

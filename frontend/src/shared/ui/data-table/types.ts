@@ -462,6 +462,9 @@ export type DataTableProps<TRow> = {
   // viewport and applies the shared transient focus highlight once mounted.
   focusRowId?: string | null;
   readOnly?: boolean;
+  // Keep the table title while suppressing Filter / Sort / Group / Hide Fields
+  // and overflow controls on compact, fixed analytical presentations.
+  showViewControls?: boolean;
   // Whether the CSV/JSON overflow affordances are offered. A table export is
   // a bulk export → editor/certifier-only (CP-7), so viewer-reachable tables
   // pass `false` for `client` viewers. Defaults to `true`: the affordance is

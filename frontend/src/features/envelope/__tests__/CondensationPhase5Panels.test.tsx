@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
@@ -16,7 +16,7 @@ import {
 } from "./condensation-test-fixture";
 
 describe("condensation Phase 5 panels", () => {
-  test("renders all three shared number tables and IP moisture units", () => {
+  test("renders all three shared number tables with unit headers and no view controls", () => {
     renderWithUnits(
       <CondensationNumbersPanel
         assembly={condensationAssembly}
@@ -29,11 +29,15 @@ describe("condensation Phase 5 panels", () => {
     expect(screen.getByRole("heading", { name: "Layer intermediates" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Monthly cycle" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Per-interface breakdown" })).toBeInTheDocument();
-    expect(screen.getAllByText(/gr\/ft²/).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("menuitem", { name: /Download/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText("gr/ft2")).toHaveLength(4);
+    expect(screen.getAllByText("gr/(ft2-s)")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Filter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Group" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hide fields" })).not.toBeInTheDocument();
   });
 
-  test("exposes numeric filter semantics for numeric intermediates", async () => {
+  test("uses unit fields so layer cells stay bare while SI units live in headers", () => {
     renderWithUnits(
       <CondensationNumbersPanel
         assembly={condensationAssembly}
@@ -43,18 +47,27 @@ describe("condensation Phase 5 panels", () => {
       "SI",
     );
 
-    await userEvent.click(screen.getAllByRole("button", { name: "Filter" })[0]!);
-    const filterDialog = screen.getByRole("dialog", { name: "Filter rules" });
-    await userEvent.click(screen.getByText("+ Add filter rule"));
-    fireEvent.focus(within(filterDialog).getByRole("combobox", { name: "Filter field" }));
-    fireEvent.click(screen.getByRole("option", { name: "R" }));
-
-    expect(within(filterDialog).getByRole("combobox", { name: "Filter operator" })).toHaveValue(
-      "=",
-    );
+    const layerTable = screen
+      .getByRole("heading", { name: /Condensation layers/ })
+      .closest(".data-table-shell");
+    expect(layerTable).not.toBeNull();
+    const table = within(layerTable as HTMLElement);
+    expect(table.getByText("mm")).toBeInTheDocument();
+    expect(table.getByText("W/(m-K)")).toBeInTheDocument();
+    expect(table.getByText("m2-K/W")).toBeInTheDocument();
+    expect(table.getByText("deg C")).toBeInTheDocument();
     expect(
-      within(filterDialog).getByRole("spinbutton", { name: "Filter value" }),
-    ).toBeInTheDocument();
+      table
+        .getAllByTestId("data-table-field-type-icon")
+        .filter((icon) => icon.getAttribute("data-field-type-icon") === "unit"),
+    ).toHaveLength(9);
+    expect(
+      table
+        .getAllByRole("gridcell")
+        .some((cell) => /(mm|W\/\(m-K\)|m2-K\/W|deg C|Pa|%)/.test(cell.textContent ?? "")),
+    ).toBe(false);
+    expect(table.getByText("12.0")).toBeInTheDocument();
+    expect(table.getAllByText("0.100").length).toBeGreaterThan(0);
   });
 
   test("writes a complete fixed-setpoint settings block", async () => {

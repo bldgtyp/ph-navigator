@@ -598,6 +598,11 @@ Rules:
 
 - Persist or cache `ViewState`, never TanStack's `columnFilters`,
   `grouping`, or `sorting` objects.
+- Fixed read-only analytical presentations may pass
+  `showViewControls={false}` to retain the table title while suppressing the
+  Filter, Sort, Group, Hide Fields, and overflow button group. This is a
+  presentation-only exception: the shared grid, Unit-field header/cell
+  pipeline, selection/copy behavior, and `ViewState` model remain unchanged.
 - Toolbar-owned sort/filter/group state is the mutation authority.
   Header affordances must call the same `onViewChange` path.
 - Group direction requires a pre-sort derived from group rules.

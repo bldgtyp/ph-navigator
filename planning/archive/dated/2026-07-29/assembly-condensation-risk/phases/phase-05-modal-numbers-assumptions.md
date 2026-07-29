@@ -30,9 +30,10 @@ so a saved version carries the assumptions that produced its result.
    per-criterion verdict).
 3. **Per-interface breakdown**: gc and Ma per interface per month (the
    workbook's collapsed "+" table).
-4. All three on the standard `DataTable` — **uniformity is an iron-law**:
-   parent-owned affordances, built-in copy, no per-table opt-outs. Copy is
-   in; there is still no download/export affordance (§D-14).
+4. All three use the standard `DataTable` grid, header, Unit-field, and copy
+   paths. Because these are fixed read-only analytical presentations, their
+   Filter, Sort, Group, Hide Fields, and overflow controls are suppressed;
+   there is no download/export affordance (§D-14).
 5. IP/SI display follows the app toggle: perms / perm·in / gr/ft² (E-12).
 
 ### Tier 4 — Assumptions
@@ -84,8 +85,10 @@ curves; any export path.
 
 - The Numbers tier exposes selected-month layer intermediates, the 12-month
   cycle, and the per-interface breakdown through three shared read-only
-  `DataTable` instances. Numeric fields retain numeric sort/filter semantics;
-  CSV/download remains disabled for this screen-only result.
+  `DataTable` instances. Quantitative columns use the shared Unit-field
+  contract: the active unit appears once in the two-line header and cells
+  remain bare numeric values. View controls and CSV/download are hidden for
+  this fixed screen-only result.
 - SI/IP follows the project toggle, including µ ↔ perm-in, sd ↔ perm, and
   g/m² ↔ gr/ft² display. Month selection updates the layer table without
   altering the result.
@@ -99,8 +102,8 @@ curves; any export path.
   serialized as zero.
 - Browser verification covered the continental, humidity-class, and fixed
   models, settings/hash/chip updates without reload, restoration to defaults,
-  SI/IP values, month changes, absent download actions, Climate routing, and
-  zero horizontal overflow at 1280 px and 900 px widths.
+  SI/IP values and unit headers, month changes, absent view/download actions,
+  Climate routing, and zero horizontal overflow at 1280 px and 900 px widths.
 - Focused verification: backend condensation suites **47 passed**; frontend
   Phase 5 plus Envelope integration suites **67 passed**; TypeScript passed.
   Full-repository CI evidence is recorded in the phase commit.

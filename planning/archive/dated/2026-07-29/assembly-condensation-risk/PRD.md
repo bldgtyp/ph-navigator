@@ -315,8 +315,8 @@ Four tiers, opening on tier 1:
   verdict), 12 rows.
 - **Per-interface breakdown**: gc and Ma per interface per month — the
   workbook's collapsed "+" table.
-- Standard `DataTable` behaviour throughout (uniformity is an iron-law here) and
-  copy/export affordances.
+- Standard `DataTable` grid, Unit-field, and copy behaviour throughout.
+  Fixed read-only analysis tables suppress view and download/export controls.
 
 **Tier 4 — Assumptions** *(why these numbers?)*
 
