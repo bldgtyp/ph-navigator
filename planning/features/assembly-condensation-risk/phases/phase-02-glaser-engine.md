@@ -1,8 +1,9 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 22:52 EDT
-STATUS: Ready after Phase 1 Part A (needs the fields; does not need the seed —
-  golden fixtures are synthetic)
+STATUS: Complete — pure engine, synthetic PHI-workbook goldens, and edge-case
+  matrix pass; route, persistence, and UI remain Phase 3+
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 2 — the pure ISO 13788 engine and its golden tests against the
   PHI workbook. Backend only; no routes, no persistence, no UI.
@@ -105,3 +106,37 @@ Golden agreement (AC 3); the blocked/exempt behaviours (AC 4, 10, 11); purity
 (AC 13 — the backend-boundaries check passes with no storage import); AC 15/16
 engine-side; `make ci` green. Then stop and re-read hazard 1 once more against
 the diff before calling it done.
+
+## Result — 2026-07-29
+
+- Added the I/O-free typed engine in
+  `backend/features/envelope/condensation.py`. It resolves all three interior
+  climate models, the exact sd ladder, ISO surface films, the roof −2 K profile
+  adjustment, bounded path enumeration, Glaser tangent profiles, raw monthly
+  gc, zero-clamped Ma, d1–d4, caveats, diagnostics, and deterministic start
+  months.
+- Physical-layer and thermal-layer semantics remain separate: membranes retain
+  their thickness/sd nodes, contribute zero R, and require direct sd. The final
+  hazard review and independent quality review traced that distinction through
+  path construction, temperature nodes, vapour nodes, and interface labels.
+- Added 35 focused regressions plus the synthetic golden fixture at
+  `backend/tests/fixtures/condensation/phi_reference_wall.json`. A locally
+  recalculated PHI-workbook copy agrees on all 12 wall and roof gc/Ma values,
+  interface counts, surface criteria, verdict, and peak/final Ma to `1e-6`.
+  The workbook is not redistributed and no licensed material value entered the
+  fixture.
+- Explicit coverage pins direct-sd membranes, missing membrane sd, all-membrane
+  stacks, air-layer sd, zero total sd, ground/unconditioned exclusions,
+  impossible dew-point clamping, fixed/humidity settings, ventilated-stack
+  diagnostics, 81-path fallback, orientation, all four verdicts, d4 canonical
+  display month, summer reverse drive, and multiple active interfaces.
+- The workbook comparison caught two pre-review defects: gc now preserves raw
+  drying potential while only Ma clamps at zero, and fRsi no longer creates a
+  denominator-sign failure when exterior air is warmer than indoors.
+- Simplify review reused `membranes.assigned_materials()` and cached
+  path-invariant R/sd/thickness profiles. Focused Ruff, `ty`, pytest, and the
+  backend-boundary check pass. `PYTEST_WORKERS=0 make ci` passes: backend
+  1704 passed / 7 skipped; frontend 247 files / 2314 tests; production build
+  and version-marker checks pass.
+- No route, storage lookup, document setting, cache, or UI was added. Phase 3
+  owns that service-edge and product surface.

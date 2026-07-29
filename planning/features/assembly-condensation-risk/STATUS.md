@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 (Phases 0–1 complete)
-TIME: 07:17 EDT
-STATUS: Active — Phase 2 Glaser engine next
+UPDATED: 2026-07-29 (Phases 0–2 complete)
+TIME: 08:47 EDT
+STATUS: Active — Phase 3 route, chip, and blocked-state modal next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -12,8 +12,9 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Phases 0–1 complete. Material vapour data is available end-to-end and the
-licensed local seed drill is proven. No condensation calculation exists yet.**
+**Phases 0–2 complete. Material vapour data is available end-to-end, the
+licensed local seed drill is proven, and the pure ISO 13788 engine agrees with
+synthetic PHI-workbook goldens. No route, persisted settings, or UI exists yet.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -152,15 +153,22 @@ Completed 2026-07-29:
   catalog seeding, idempotent re-apply, a one-row v2 change, and rollback to
   reviewed v1. Final status is clean; no licensed value entered this repo.
 - **Production remains held:** no production publish/apply was run.
+- **Phase 2:** the pure typed condensation engine, bounded worst-path
+  enumeration, blocked/not-screened states, d1–d4 verdicts, caveats,
+  diagnostics, and all monthly profiles are implemented. Thirty-five focused
+  tests pass, including exact synthetic PHI-workbook agreement for wall and
+  roof gc/Ma/interface results, direct-sd membranes, summer reverse drive, d4
+  non-closure, and the 64-path cap. The backend boundary check confirms the
+  engine has no storage dependency.
 
-Not done: Phases 2–5; production apply.
+Not done: Phases 3–5; production apply.
 
 ## Next step
 
-**Phase 2 — Glaser engine** — plan at `phases/phase-02-glaser-engine.md`.
-Implement the pure typed monthly solver, bounded worst-path enumeration,
-blocked-state diagnostics, uncertainty caveats, and synthetic workbook-derived
-golden tests. No route or UI work belongs in this phase.
+**Phase 3 — route, chip, and blocked-state modal** — plan at
+`phases/phase-03-route-and-chip.md`. Resolve climate/films/settings at the
+service edge, expose the live-draft result, and add the clickable header chip
+plus the complete "what's missing" state.
 
 ## Blockers
 
@@ -202,9 +210,10 @@ corpus snapshot.
 
 Phase 0 evidence is in `phases/phase-00-report.md`: 408 catalog rows accounted
 for, 201 stable target ids, no licensed values, and a committed dev-seed proxy
-resolving 5/5 layers and 2/2 screened assemblies. Phase 2's future gate
-remains acceptance criterion 3 in `PRD.md` §9: golden-file agreement with the
-PHI workbook's outputs for synthetic inputs, to within rounding.
+resolving 5/5 layers and 2/2 screened assemblies. Phase 2 satisfies acceptance
+criterion 3 in `PRD.md` §9: the committed synthetic fixture agrees with a
+locally recalculated PHI workbook on the wall and roof monthly outputs to
+`1e-6`; the workbook and licensed material values are not redistributed.
 
 Both prerequisite packets ended up finding most of their real defects in review
 or in a browser rather than from a green suite (membranes: five defects, four
