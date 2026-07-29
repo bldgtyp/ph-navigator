@@ -353,15 +353,13 @@ ph-navigator-data PR + main ──CI─▶ datasets/<slug>/<v>/… ──read─
 - Immutable objects are checksum-pinned by `datasets/manifest.json`; checksum
   mismatch or a missing pinned object is a hard error.
 - `runtime_read` datasets parse at read/status time. The ASHRAE film loader is
-  the first consumer; its old `standards/…` key is a temporary Phase 2 cutover
-  fallback only when the manifest/slug itself is not yet published.
+  the first consumer and reads only its manifest-pinned versioned object.
 - `db_seed` datasets apply only through the guarded operator CLI. Each applier
   is idempotent, serializes target writes per slug, and upserts
   `applied_datasets`.
 - `make datasets-status`, `make datasets-apply ARGS=--all-pending`, and
   `make datasets-publish-local` are the local operator surfaces. The full
-  production runbook lands in `context/DATASET_PIPELINE.md` during the
-  production-cutover phase.
+  publish/apply/rollback contract is `context/DATASET_PIPELINE.md`.
 
 ### 5.2 Grandfathered climate bundles
 

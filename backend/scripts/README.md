@@ -19,7 +19,12 @@ make datasets-publish-local
 
 They print only slugs, versions, checksums, and row counts. Production apply
 requires both `PHN_DATASETS_ALLOW_PRODUCTION=1` and an explicit non-default
-`PHN_DATASETS_APPLIED_BY` identity.
+`PHN_DATASETS_APPLIED_BY` identity; use the Ed-dispatched **Apply Production
+Datasets** workflow, not a Render shell. Full runbook:
+`context/DATASET_PIPELINE.md`.
+
+`scripts.seed_surface_films` is retired and exits with that runbook pointer.
+Licensed publishing belongs exclusively to private `ph-navigator-data`.
 
 To refresh the bundled Census locality index used by Project Location town
 search, run:

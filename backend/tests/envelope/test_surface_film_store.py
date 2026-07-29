@@ -25,7 +25,6 @@ from features.envelope.surface_film_store import (
     SurfaceFilmTableUnavailableError,
     parse_surface_film_payload,
     reset_surface_film_cache,
-    surface_film_object_key,
     surface_film_table,
 )
 
@@ -44,10 +43,6 @@ class _FakeStorage:
         self.objects = dict(objects or {})
         self.read_count = 0
 
-    def put_object(self, object_key: str, body: bytes, content_type: str) -> str:
-        self.objects[object_key] = body
-        return "etag"
-
     def get_object(self, object_key: str) -> bytes:
         self.read_count += 1
         try:
@@ -59,24 +54,6 @@ class _FakeStorage:
 @pytest.fixture(autouse=True)
 def _clear_cache() -> None:
     reset_surface_film_cache()
-
-
-def test_object_key_is_namespaced_by_standard() -> None:
-    assert surface_film_object_key("ashrae") == "standards/ashrae/surface_films.json"
-
-
-def test_round_trips_through_the_store() -> None:
-    storage = _FakeStorage()
-    store = SurfaceFilmStore(storage)
-    table = parse_surface_film_payload(_FIXTURE_PAYLOAD, "ashrae")
-
-    store.put(table, source="invented test fixture, not ASHRAE")
-    restored = store.get("ashrae")
-
-    assert restored == table
-    # The citation rides along, so a later reader knows the provenance.
-    stored = json.loads(storage.objects[surface_film_object_key("ashrae")])
-    assert stored["source"] == "invented test fixture, not ASHRAE"
 
 
 def test_missing_object_reads_as_unpublished_not_an_error() -> None:
@@ -111,7 +88,7 @@ def test_reads_the_manifest_pinned_dataset_and_tracks_its_version() -> None:
     assert store.loaded_version("ashrae") == "7"
 
 
-def test_manifest_checksum_mismatch_never_falls_back_to_the_legacy_key() -> None:
+def test_manifest_checksum_mismatch_is_typed_unavailable() -> None:
     payload = json.dumps(_FIXTURE_PAYLOAD).encode()
     key = "datasets/ashrae-surface-films/1/dataset.json"
     manifest = {
@@ -128,7 +105,6 @@ def test_manifest_checksum_mismatch_never_falls_back_to_the_legacy_key() -> None
         {
             MANIFEST_KEY: json.dumps(manifest).encode(),
             key: payload,
-            surface_film_object_key("ashrae"): payload,
         }
     )
 
@@ -138,7 +114,7 @@ def test_manifest_checksum_mismatch_never_falls_back_to_the_legacy_key() -> None
     assert storage.read_count == 2
 
 
-def test_missing_manifest_pinned_object_never_falls_back_to_legacy() -> None:
+def test_missing_manifest_pinned_object_is_typed_unavailable() -> None:
     payload = json.dumps(_FIXTURE_PAYLOAD).encode()
     key = "datasets/ashrae-surface-films/1/dataset.json"
     manifest = {
@@ -154,7 +130,6 @@ def test_missing_manifest_pinned_object_never_falls_back_to_legacy() -> None:
     storage = _FakeStorage(
         {
             MANIFEST_KEY: json.dumps(manifest).encode(),
-            surface_film_object_key("ashrae"): payload,
         }
     )
 
@@ -244,7 +219,24 @@ def test_ventilated_and_ground_rules_apply_to_any_table() -> None:
 
 def test_published_table_is_cached_after_the_first_read(monkeypatch: pytest.MonkeyPatch) -> None:
     """The store must stay off the per-request thermal path."""
-    storage = _FakeStorage({surface_film_object_key("ashrae"): json.dumps(_FIXTURE_PAYLOAD).encode()})
+    payload = json.dumps(_FIXTURE_PAYLOAD).encode()
+    key = "datasets/ashrae-surface-films/1/dataset.json"
+    manifest = {
+        "generated_at": "2026-07-28T21:00:00Z",
+        "datasets": {
+            "ashrae-surface-films": {
+                "version": "1",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "key": key,
+            }
+        },
+    }
+    storage = _FakeStorage(
+        {
+            MANIFEST_KEY: json.dumps(manifest).encode(),
+            key: payload,
+        }
+    )
     monkeypatch.setattr("features.envelope.surface_film_store.settings.r2_endpoint_url", "http://minio.test")
     monkeypatch.setattr(
         SurfaceFilmStore,

@@ -64,6 +64,9 @@ Load these only when the task touches the relevant surface:
   per-project assets, static climate bundles), the pointer/boundary table,
   and the dev-vs-prod matrix. Load when deciding where new data should live
   or debugging a store/registry mismatch.
+- `DATASET_PIPELINE.md` — licensed dataset runbook: private-repo authoring,
+  immutable manifest-last publishing, local MinIO, production Render applies,
+  runtime cache activation, mismatch diagnosis, and rollback.
 - `CODING_STANDARDS.md` — backend Python and frontend TypeScript
   engineering standards: layer/feature boundaries, typing, module-size,
   documentation, state ownership, and quality gates.

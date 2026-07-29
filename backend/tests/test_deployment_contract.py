@@ -20,3 +20,17 @@ def test_web_marker_is_cache_safe_and_polled_before_smoke() -> None:
     assert deploy_workflow.index("name: Verify API and web deploys") < deploy_workflow.index(
         "name: Smoke-check public surfaces"
     )
+
+
+def test_production_dataset_workflow_keeps_ref_gate_and_logs_safe() -> None:
+    deploy_workflow = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")
+    dataset_workflow = (ROOT / ".github/workflows/apply-production-datasets.yml").read_text(encoding="utf-8")
+    ref_gate = (ROOT / ".github/scripts/require-main-tip.sh").read_text(encoding="utf-8")
+
+    assert ".github/scripts/require-main-tip.sh" in deploy_workflow
+    assert ".github/scripts/require-main-tip.sh" in dataset_workflow
+    assert "refs/heads/main" in ref_gate
+    assert "--fail-with-body -f" not in dataset_workflow
+    assert "/jobs/$JOB_ID/cancel" in dataset_workflow
+    assert "text=PHN_DATASET_APPLY_RESULT*" in dataset_workflow
+    assert 'startswith("PHN_DATASET_APPLY_RESULT ")' in dataset_workflow

@@ -193,8 +193,8 @@ production. Do not bypass those guards.
 
 ## Object Storage
 
-Production assets and climate bundles live in the private Cloudflare R2 bucket
-`ph-navigator-prod`.
+Production assets, climate bundles, and licensed pipeline datasets live in the
+private Cloudflare R2 bucket `ph-navigator-prod`.
 
 Production R2 settings:
 
@@ -214,6 +214,8 @@ projects/{project_id}/assets/{asset_id}/file.{ext}
 projects/{project_id}/assets/{asset_id}/thumb.png
 projects/_orphaned/{project_id}/{asset_id}/{filename}
 climate/{provider}/{version}/dataset.json
+datasets/{slug}/{version}/dataset.json
+datasets/manifest.json
 derived/{...}
 ```
 
@@ -322,6 +324,25 @@ dashboard (Settings → Deploy Hook). Deploy-hook URLs let anyone who has them
 trigger a deploy: store them in Apple Passwords alongside the other Render
 secrets, set them with `gh secret set`, and never commit or print them. If a
 service is rebuilt, its hook URL changes — update the secret.
+
+### Licensed dataset apply workflow
+
+DB-seed licensed datasets use the separate, explicit **Apply Production
+Datasets** workflow (`.github/workflows/apply-production-datasets.yml`). It
+creates a Render one-off job over `ph-navigator-api`, inherits that service's
+production DB/R2 environment, and copies the sanitized apply report into the
+Actions log. It refuses to run unless the live API SHA is the tip of `main`;
+deploy reviewed dataset code before applying its data.
+
+Required Actions configuration:
+
+- secret `RENDER_API_KEY`;
+- variable `RENDER_API_SERVICE_ID` = the production API service ID in the
+  Active Render Stack table above.
+
+Only Ed dispatches it, from `main`. Runtime-read datasets do not use it; their
+published manifest version becomes active after an API restart/cache reset.
+Full publish/apply/rollback procedure: `context/DATASET_PIPELINE.md`.
 
 For `render.prod.yaml` changes, validate before merge:
 

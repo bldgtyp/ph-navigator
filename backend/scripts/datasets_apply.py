@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from urllib.parse import urlparse
 
 from config import settings
@@ -10,6 +11,8 @@ from database import transaction
 from features.datasets.apply import apply_all_pending, apply_dataset
 from features.datasets.manifest import DatasetManifestStore
 from scripts._seed_paths import LOCAL_ENVIRONMENTS
+
+_RESULT_PREFIX = "PHN_DATASET_APPLY_RESULT "
 
 
 def _guard_environment() -> None:
@@ -45,6 +48,28 @@ def _report(
         f"{slug} v{version} sha256={sha256} "
         f"matched={matched} updated={updated} unchanged={unchanged} unmatched={unmatched}"
     )
+    print(
+        _RESULT_PREFIX
+        + json.dumps(
+            {
+                "status": "applied",
+                "slug": slug,
+                "version": version,
+                "sha256": sha256,
+                "matched": matched,
+                "updated": updated,
+                "unchanged": unchanged,
+                "unmatched": unmatched,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+
+
+def _report_no_pending() -> None:
+    print("No pending db-seed datasets.")
+    print(_RESULT_PREFIX + '{"datasets":[],"status":"no_pending"}')
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -76,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     if not results:
-        print("No pending db-seed datasets.")
+        _report_no_pending()
         return 0
     for result in results:
         _report(

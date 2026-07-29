@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–2 implemented and verified on feature branches;
-  Phase 3 production trigger/cutover next
+STATUS: Active — Phases 1–3 implemented on feature branches; production
+  cutover held for Ed; Phase 4 local proof remains
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the licensed-data pipeline feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -68,9 +68,9 @@ unrepeatable, and it does not scale past the person who did it last time.
 | Phase | Content |
 | --- | --- |
 | **1** | ✅ **Implemented on branch 2026-07-28** (`ph-navigator-data` commit `b0bd933`) — standalone publisher, schema/checksum/version gates, serialized publish CI, `ashrae-surface-films` v1, synthetic contract tests, and MinIO interruption + rollback drills. Production publish awaits review/merge of the private-repo branch. |
-| **2** | ✅ **Implemented on branch 2026-07-28** — manifest/integrity store, registry, guarded/status/apply CLIs, `applied_datasets`, per-slug apply serialization, Make targets, and manifest-pinned film loading with temporary legacy fallback |
-| **3** | Production trigger ("Apply Datasets" workflow → Render one-off job, Ed-dispatched), `context/DATASET_PIPELINE.md` runbook, films production cutover, deprecate `seed_surface_films.py` |
-| **4** | First `db_seed` dataset end-to-end: the ISO 10456 µ values, jointly with `assembly-condensation-risk` Phase 1 |
+| **2** | ✅ **Implemented on branch 2026-07-28** (`06064906`) — manifest/integrity store, registry, guarded/status/apply CLIs, `applied_datasets`, per-slug apply serialization, Make targets, and manifest-pinned film loading with temporary legacy fallback |
+| **3** | 🟡 **Branch implementation complete 2026-07-28** — Ed-dispatched Render one-off workflow, canonical runbook, manifest-only film loader, retired `seed_surface_films.py`; production publish/deploy/status/delete/no-op-dispatch sequence is intentionally held for Ed |
+| **4** | ⏸ **Held at prerequisite boundary 2026-07-28** — first `db_seed` end-to-end proof waits for condensation Phase 0's target-roster/composite policy and Phase 1's µ/sd catalog columns; no licensed payload or placeholder applier authored |
 
 Phases 1–2 are independently valuable (versioned source + auditability);
 Phase 3 removes the last manual step; Phase 4 is the proof by first consumer.

@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–2 implemented on branches; Phase 3 is next
+STATUS: Active — Phases 1–3 implemented on branches; Phase 3 live cutover is
+  held for Ed and Phase 4 is held at its documented prerequisite boundary
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the licensed-data pipeline.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,9 +12,10 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 1–2 are implemented and locally verified. Phase 1 is on
-`ph-navigator-data:feat/licensed-data-pipeline` at `b0bd933`; Phase 2 is ready
-for its PHN feature-branch checkpoint.**
+**Phases 1–3 are implemented and locally verified on feature branches. Phase 1
+is on `ph-navigator-data:feat/licensed-data-pipeline` at `b0bd933`; Phase 2 is
+PHN commit `06064906`; Phase 3's production sequence is intentionally held for
+Ed.**
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -119,8 +121,17 @@ Verification so far:
 
 ## Next step
 
-**Phase 3 — production trigger, cutover, and runbook**
-(`phases/phase-03-ops-and-docs.md`).
+**Two independent resumptions remain:**
+
+1. Ed authorizes the Phase 3 production sequence below.
+2. `assembly-condensation-risk` completes Phase 0 (target roster/composite
+   policy) and Phase 1 (µ/sd catalog columns), then Phase 4 resumes at
+   `phases/phase-04-mu-dataset-dry-run.md`.
+
+Before Phase 3 can close live, Ed must authorize the ordered production
+sequence: merge/publish the private data branch; configure the workflow
+secret/variable; merge and explicitly deploy PHN; verify the manifest-only
+films path; dispatch the no-pending drill; delete the retired object.
 
 ## Blockers
 
@@ -128,7 +139,9 @@ Verification so far:
 | --- | --- |
 | ~~Q-1 repo name + repo creation~~ | ✅ **Done 2026-07-28** — `bldgtyp/ph-navigator-data` created, infra committed (`4321620`). |
 | ~~R2 write token → repo Actions secrets~~ | ✅ **Done 2026-07-28** — token scoped to `ph-navigator-prod`, secrets + `R2_BUCKET` set, "Check R2 Credentials" workflow green. |
-| Q-2 apply-trigger confirmation (§D-5) | Ed, in Phase 3. Does not gate Phases 1–2. |
+| ~~Q-2 apply-trigger confirmation (§D-5)~~ | ✅ Resolved — Ed-dispatched GitHub Actions → Render one-off job. |
+| Phase 3 production cutover | Ed-operated merge/deploy/R2-delete/workflow-dispatch sequence; agents do not execute it implicitly. |
+| Phase 4 condensation prerequisites | Phase 0 target roster/composite-stud decision and Phase 1 `vapor_diffusion_resistance_mu` / `vapor_sd_equivalent_m` columns are absent; real ISO values also cannot be fabricated in this public repo. |
 | ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Named risk for the Phase 4 µ applier (stable catalog row identity), not a blocker for Phases 1–3. |
 
 ## Verification
@@ -139,7 +152,7 @@ Phase gates:
   Actions remains pending until the private branch is opened/merged.
 - Phase 2: focused tests, local operator/runtime drills, `make format`, and
   full `PYTEST_WORKERS=0 make ci` passed 2026-07-28.
-- Phase 3: films production cutover verified by R2 round-trip, legacy key
-  deleted, runbook in `context/DATASET_PIPELINE.md`.
+- Phase 3: branch code/docs/focused tests complete; films production cutover,
+  legacy-key deletion, and no-pending workflow dispatch await Ed.
 - Phase 4: the µ dataset through the whole path locally, including the
   idempotent re-apply and the E-10 unmatched-row report.

@@ -1,0 +1,187 @@
+# Apply Production Datasets — explicit licensed db-seed apply in Render.
+#
+# Runtime-read datasets (such as ASHRAE surface films) do not use this job.
+# They follow the published manifest after the API is restarted. This workflow
+# is only for registry entries whose kind is `db_seed`.
+#
+# Required Actions configuration:
+#   secret RENDER_API_KEY          — Render account API key
+#   variable RENDER_API_SERVICE_ID — production ph-navigator-api service id
+#
+# The Render one-off job inherits the production API service's build artifact,
+# DATABASE_URL, and existing R2 credentials. The start command supplies the two
+# explicit production guards without persisting them on the web service.
+#
+# API contracts:
+#   https://render.com/docs/one-off-jobs
+#   https://api-docs.render.com/reference/post-job
+#   https://api-docs.render.com/reference/list-logs
+#
+# Runbook: context/DATASET_PIPELINE.md → "Apply in production".
+
+name: Apply Production Datasets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One production data apply at a time. A queued apply waits rather than
+# canceling a database mutation already in progress.
+concurrency:
+  group: production-datasets-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ vars.RENDER_API_SERVICE_ID }}
+    steps:
+      - name: Check out the shared production ref gate
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts/require-main-tip.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Require main and the currently deployed API build
+        run: |
+          set -euo pipefail
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "::error::RENDER_API_KEY secret and RENDER_API_SERVICE_ID variable are required." && exit 1
+          fi
+          case "$RENDER_SERVICE_ID" in
+            srv-*) ;;
+            *) echo "::error::RENDER_API_SERVICE_ID must be a Render service id beginning with srv-." && exit 1 ;;
+          esac
+
+          MAIN_SHA=$(.github/scripts/require-main-tip.sh)
+          if [ "$GITHUB_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Dispatch the tip of main; workflow=$GITHUB_SHA main=${MAIN_SHA:-unknown}." && exit 1
+          fi
+          LIVE_SHA=$(curl -fsS https://api.ph-nav.com/api/v1/version | jq -r '.git_sha // empty')
+          if [ "$LIVE_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Production API is $LIVE_SHA but main is $MAIN_SHA. Deploy Production first so the one-off job uses the reviewed dataset code." && exit 1
+          fi
+
+          SERVICE=$(curl --fail-with-body -sS \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID")
+          OWNER_ID=$(echo "$SERVICE" | jq -r '.ownerId // empty')
+          DASHBOARD_URL=$(echo "$SERVICE" | jq -r '.dashboardUrl // empty')
+          if [ -z "$OWNER_ID" ] || [ -z "$DASHBOARD_URL" ]; then
+            echo "::error::Render service lookup did not return ownerId/dashboardUrl." && exit 1
+          fi
+          echo "OWNER_ID=$OWNER_ID" >> "$GITHUB_ENV"
+          echo "DASHBOARD_URL=$DASHBOARD_URL" >> "$GITHUB_ENV"
+          echo "Production API build verified at $LIVE_SHA."
+
+      - name: Run and report the Render one-off job
+        run: |
+          set -euo pipefail
+          APPLIED_BY="github-actions:${GITHUB_ACTOR}:${GITHUB_RUN_ID}"
+          START_COMMAND="PHN_DATASETS_ALLOW_PRODUCTION=1 PHN_DATASETS_APPLIED_BY=$APPLIED_BY uv run python -m scripts.datasets_apply --all-pending"
+          PAYLOAD=$(jq -cn --arg command "$START_COMMAND" '{startCommand: $command}')
+          JOB=$(curl --fail-with-body -sS \
+            -X POST \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            --data "$PAYLOAD" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/jobs")
+          JOB_ID=$(echo "$JOB" | jq -r '.id // empty')
+          if [ -z "$JOB_ID" ]; then
+            echo "::error::Render did not return a one-off job id." && exit 1
+          fi
+          JOB_TERMINAL=false
+          cancel_unfinished_job() {
+            exit_status=$?
+            trap - EXIT INT TERM
+            if [ "$JOB_TERMINAL" != true ]; then
+              echo "Canceling unfinished Render job $JOB_ID..."
+              if curl --fail-with-body -sS \
+                -X POST \
+                -H "Accept: application/json" \
+                -H "Authorization: Bearer $RENDER_API_KEY" \
+                "https://api.render.com/v1/services/$RENDER_SERVICE_ID/jobs/$JOB_ID/cancel" \
+                > /dev/null; then
+                for i in $(seq 1 12); do
+                  CANCELED_JOB=$(curl --fail-with-body -sS \
+                    -H "Accept: application/json" \
+                    -H "Authorization: Bearer $RENDER_API_KEY" \
+                    "https://api.render.com/v1/services/$RENDER_SERVICE_ID/jobs/$JOB_ID" \
+                    || true)
+                  CANCELED_STATUS=$(echo "$CANCELED_JOB" | jq -r '.status // empty' 2>/dev/null || true)
+                  case "$CANCELED_STATUS" in
+                    succeeded|failed|canceled)
+                      echo "Render job $JOB_ID is terminal: $CANCELED_STATUS."
+                      break
+                      ;;
+                  esac
+                  sleep 5
+                done
+              else
+                echo "::warning::Could not request cancellation of Render job $JOB_ID."
+              fi
+            fi
+            exit "$exit_status"
+          }
+          trap cancel_unfinished_job EXIT INT TERM
+          echo "Started Render one-off job $JOB_ID."
+          echo "### Licensed dataset apply — \`$JOB_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "$DASHBOARD_URL/jobs/$JOB_ID" >> "$GITHUB_STEP_SUMMARY"
+
+          STATUS=pending
+          for i in $(seq 1 120); do
+            JOB=$(curl --fail-with-body -sS \
+              -H "Accept: application/json" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$RENDER_SERVICE_ID/jobs/$JOB_ID")
+            STATUS=$(echo "$JOB" | jq -r '.status // empty')
+            case "$STATUS" in
+              succeeded|failed|canceled) break ;;
+              pending|running) echo "Job $JOB_ID: $STATUS..." ;;
+              *) echo "::error::Unexpected Render job status '$STATUS'." && exit 1 ;;
+            esac
+            sleep 10
+          done
+
+          if [ "$STATUS" = pending ] || [ "$STATUS" = running ]; then
+            echo "::error::Timed out waiting for Render job $JOB_ID." && exit 1
+          fi
+          JOB_TERMINAL=true
+          echo "- status: \`$STATUS\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STATUS" != succeeded ]; then
+            echo "::error::Render dataset job $JOB_ID finished with status '$STATUS'. Inspect its Render job page; production logs are not copied to this public repository." && exit 1
+          fi
+
+          # Render's job response has status but not stdout. Fetch the
+          # job-scoped, machine-prefixed result records so the Actions run
+          # preserves the sanitized ApplyReport. Never copy the job's raw
+          # production logs into this public repository.
+          LOG_COUNT=0
+          for i in $(seq 1 12); do
+            LOGS=$(curl --fail-with-body -sS --get \
+              -H "Accept: application/json" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              --data-urlencode "ownerId=$OWNER_ID" \
+              --data-urlencode "resource=$JOB_ID" \
+              --data-urlencode "direction=backward" \
+              --data-urlencode "limit=100" \
+              --data-urlencode "text=PHN_DATASET_APPLY_RESULT*" \
+              "https://api.render.com/v1/logs")
+            LOG_COUNT=$(echo "$LOGS" | jq '.logs | length')
+            [ "$LOG_COUNT" -gt 0 ] && break
+            sleep 5
+          done
+          if [ "$LOG_COUNT" -eq 0 ]; then
+            echo "::error::Render returned no logs for completed job $JOB_ID; inspect $DASHBOARD_URL/jobs/$JOB_ID." && exit 1
+          fi
+
+          echo "Sanitized dataset apply report:"
+          echo "$LOGS" \
+            | jq -r '.logs | reverse | .[].message | select(startswith("PHN_DATASET_APPLY_RESULT "))'

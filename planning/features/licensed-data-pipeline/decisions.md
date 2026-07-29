@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — D-1 confirmed by Ed; Q-1 resolved (repo created); Q-2 open (Phase 3)
+STATUS: Active — D-1 confirmed by Ed; Q-1/Q-2 resolved
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Options analysis, design decisions, edge cases, and open questions for
   the licensed-data pipeline.
@@ -72,13 +72,13 @@ remain), and content can never drift under a version label (CI compares
 `sha256` against the committed manifest). The committed `manifest.json` — not
 the bucket — is the source of truth; the published copy mirrors it.
 
-### D-5. Production apply trigger — recommend workflow → Render one-off job ⚠️ Ed confirms in Phase 3
+### D-5. Production apply trigger — workflow → Render one-off job ✅
 
 For `db_seed` datasets. Candidates:
 
 | Option | Assessment |
 | --- | --- |
-| **Manual-dispatch GH workflow → Render API one-off job** | ✅ **recommended.** Runs `datasets_apply` in the API service's own environment — right DB URL, right R2 creds, no config duplication. One new secret (`RENDER_API_KEY`). Same explicit-human-event doctrine as "Deploy Production". |
+| **Manual-dispatch GH workflow → Render API one-off job** | ✅ **selected for implementation in Phase 3 (2026-07-28).** Runs `datasets_apply` in the API service's own environment — right DB URL, right R2 creds, no config duplication. One new secret (`RENDER_API_KEY`). Same explicit-human-event doctrine as "Deploy Production". |
 | GH Actions → direct prod Postgres (scoped writer role) | Viable — `backup-db.yml` proves the connectivity pattern — but duplicates app config outside the app and parks DB *write* credentials in a second system. Fallback if Render jobs prove awkward. |
 | Authenticated admin endpoint | ❌ A web endpoint that mutates the catalog is auth surface and blast radius for a task with zero interactivity requirements. |
 | Auto-apply at startup | ❌ Slow, surprising, couples deploys to data changes, violates "deploys are explicit" in spirit. |
@@ -180,6 +180,6 @@ still needs to report unmatched rows explicitly.
 | # | Question | State |
 | --- | --- | --- |
 | Q-1 | **Repo name.** | ✅ **Resolved 2026-07-28** — `bldgtyp/ph-navigator-data`, created by Ed; local clone `~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-data`. Bootstrap commit (README, CLAUDE.md, .gitignore, empty manifest, `datasets/` contract) landed the same day. |
-| Q-2 | **Apply trigger** — confirm D-5's Render-one-off-job recommendation. | Ed's call in Phase 3; Phases 1–2 are identical under either answer. |
+| Q-2 | **Apply trigger** — confirm D-5's Render-one-off-job recommendation. | ✅ **Resolved 2026-07-28** — the packet implementation uses manual-dispatch GitHub Actions → Render one-off job, with deployed-SHA and production guards. |
 | Q-3 | Should heavy *non-licensed* artifacts (e.g. the local-only Hillandale fixture, census locality builds) ride the same pipeline later? | Non-blocking; v1.1 discussion. Nothing in v1 precludes it. |
 | Q-4 | Version format — integers vs dates? | Recommend plain monotonic integers (`"1"`); dates encode nothing the manifest's `generated_at` and git history don't already carry. Non-blocking. |

@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Planned
+STATUS: Implemented on branch — workflow, fallback retirement, tests, and
+  runbook complete; production publish/deploy/delete and live dispatch held
+  for Ed
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — production apply trigger, films cutover, runbook, and
   retirement of the manual path.
@@ -17,7 +19,7 @@ an Ed-dispatched workflow, and the runbook exists.
 
 ## Decisions taken here
 
-**Q-2 (§D-5):** Ed confirms the apply trigger. Recommended: manual-dispatch
+**Q-2 (§D-5):** Resolved by this implementation: manual-dispatch
 GitHub Actions workflow **"Apply Production Datasets"** in this repo → Render
 API one-off job on the API service running
 `uv run python -m scripts.datasets_apply --all-pending` with the production
@@ -50,9 +52,44 @@ Concurrency-grouped like `deploy.yml`.
 
 The µ dataset (Phase 4); climate-bundle migration (deferred, §D-8).
 
+## Branch result
+
+Implemented:
+
+- `.github/workflows/apply-production-datasets.yml`: `main` and deployed-SHA
+  preflight, required config checks, Render one-off job creation/polling,
+  job-scoped sanitized log retrieval, and serialized production concurrency;
+- the ASHRAE loader is read-only and manifest-only; the unversioned fallback
+  and its write API are removed;
+- `scripts.seed_surface_films` is a pointer-only retired command;
+- `context/DATASET_PIPELINE.md` is the canonical add/publish/apply/activate/
+  rollback/failure runbook, linked from storage, environment, production,
+  scripts, thermal, context-router, and root-router docs;
+- focused Ruff/Ty clean; 79 focused dataset/envelope/deployment-contract tests
+  pass; workflow YAML and every embedded shell block parse; the shared ref
+  gate passes ShellCheck;
+- required simplify review complete: reuse and quality findings fixed,
+  efficiency clean;
+- full `PYTEST_WORKERS=0 make ci` passes: backend `1663 passed, 7 skipped`;
+  frontend `247` test files / `2312` tests passed; production build and
+  version-marker check passed.
+
+Held operator steps:
+
+- merge the private `ph-navigator-data` feature branch, which is the production
+  films publish event;
+- add Actions `RENDER_API_KEY` and `RENDER_API_SERVICE_ID`;
+- merge/deploy this PHN branch;
+- verify the manifest-pinned production read, dispatch the no-op workflow
+  drill, and delete the legacy R2 key.
+
+The ordering is load-bearing: do not deploy the manifest-only film loader
+before the private dataset publish succeeds.
+
 ## Verification
 
 Films served from the manifest-pinned key in production with the legacy key
 deleted (AC 9); a dry-run dispatch of the workflow with nothing pending
 reports "nothing to apply" and writes nothing (AC 7/11); docs-pass run so the
-runbook and pointers land in the same change.
+runbook and pointers land in the same change. These live checks remain pending
+until Ed authorizes the production sequence above.
