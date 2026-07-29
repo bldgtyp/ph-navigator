@@ -73,7 +73,7 @@ describe("condensation result panels", () => {
     expect(container.textContent).not.toMatch(/\b(pass|fail)\b/i);
   });
 
-  test("defaults to the worst month and toggles both profiles to physical thickness", () => {
+  test("defaults to the worst month and physical thickness, then toggles both profiles to sd", () => {
     render(
       <CondensationWherePanel
         assembly={condensationAssembly}
@@ -83,18 +83,19 @@ describe("condensation result panels", () => {
     );
 
     expect(screen.getByRole("combobox", { name: "Profile month" })).toHaveValue("3");
-    expect(screen.getByRole("button", { name: "Vapour resistance (sd)" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Real thickness" }));
-
     expect(screen.getByRole("button", { name: "Real thickness" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(screen.getAllByText(/Horizontal axis: thickness/)).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Vapour resistance (sd)" }));
+
+    expect(screen.getByRole("button", { name: "Vapour resistance (sd)" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getAllByText(/Horizontal axis: sd/)).toHaveLength(2);
     fireEvent.change(screen.getByRole("combobox", { name: "Profile month" }), {
       target: { value: "1" },
     });

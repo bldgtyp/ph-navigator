@@ -180,7 +180,7 @@
 
 .condensation-profile-charts {
   display: grid;
-  gap: var(--space-20);
+  gap: var(--space-32);
 }
 
 .condensation-numbers,

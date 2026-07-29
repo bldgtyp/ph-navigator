@@ -22,6 +22,7 @@ import type { AssemblyCondensationResponse, CondensationMonth } from "../condens
 
 const CHART_MARGIN = { top: 24, right: 28, bottom: 8, left: 2 };
 const INITIAL_CHART_DIMENSION = { width: 800, height: 280 };
+const PROFILE_LEGEND_STYLE = { bottom: 0 };
 
 export function AccumulatedMoistureChart({ result }: { result: AssemblyCondensationResponse }) {
   const rows = buildMoistureChartRows(result);
@@ -104,7 +105,7 @@ export function PressureProfileChart({
               label={{
                 value: axisLabel(axis),
                 position: "insideBottom",
-                offset: -4,
+                offset: 10,
                 fill: "var(--chart-axis)",
               }}
             />
@@ -114,7 +115,7 @@ export function PressureProfileChart({
               labelFormatter={(value) => `${axisLabel(axis)}: ${formatAxisNumber(value)}`}
               contentStyle={TOOLTIP_STYLE}
             />
-            <Legend />
+            <Legend wrapperStyle={PROFILE_LEGEND_STYLE} />
             {interfaces.map((row) => (
               <ReferenceLine
                 key={`${row.nodeIndex}-${row.position}`}
@@ -189,7 +190,7 @@ export function TemperatureProfileChart({
               label={{
                 value: axisLabel(axis),
                 position: "insideBottom",
-                offset: -4,
+                offset: 10,
                 fill: "var(--chart-axis)",
               }}
             />
@@ -199,7 +200,7 @@ export function TemperatureProfileChart({
               labelFormatter={(value) => `${axisLabel(axis)}: ${formatAxisNumber(value)}`}
               contentStyle={TOOLTIP_STYLE}
             />
-            <Legend />
+            <Legend wrapperStyle={PROFILE_LEGEND_STYLE} />
             <Line
               type="linear"
               dataKey="temperature"

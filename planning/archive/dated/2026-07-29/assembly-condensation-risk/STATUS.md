@@ -172,8 +172,10 @@ Completed 2026-07-29:
 - **Phase 4:** the screened modal now carries risk-framed d1–d4 verdicts,
   worst-path and caveat disclosure, four criterion tiles, a 12-month
   accumulated-Ma plot with the selected limit, and month-selectable
-  vapour-pressure/temperature profiles on sd or physical-thickness axes.
-  Chart thresholds extend their domains rather than clipping. Component tests
+  vapour-pressure/temperature profiles defaulting to physical thickness with
+  the sd axis available by toggle. Profile legends clear their x-axis labels,
+  and the two figures use a 32 px gap. Chart thresholds extend their domains
+  rather than clipping. Component tests
   cover all verdict and caveat variants; the clear live route was browser-smoked
   through month/axis interactions with no horizontal overflow.
 - **Phase 5:** three shared read-only DataTables expose the selected-month layer

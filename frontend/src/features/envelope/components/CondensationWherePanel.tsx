@@ -20,7 +20,7 @@ export function CondensationWherePanel({
   result: AssemblyCondensationResponse;
 }) {
   const [selectedMonth, setSelectedMonth] = useState(() => defaultProfileMonth(result));
-  const [axis, setAxis] = useState<ProfileAxis>("sd");
+  const [axis, setAxis] = useState<ProfileAxis>("thickness");
   const layerLabels = useMemo(
     () => buildLayerLabelMap(assembly, materials, result.worst_path_id),
     [assembly, materials, result.worst_path_id],
