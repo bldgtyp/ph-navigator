@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 — Phase 0 go; §D-12 and Q-8 explicitly accepted by Ed
+UPDATED: 2026-07-29 — implementation complete; follow-ons resolved for v1
 TIME: 07:17 EDT
-STATUS: Active — Q-1…Q-8 resolved; Phase 1 next
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Interrogation of the feature from several angles, the design decisions it
   forces, edge cases, and the open questions that block a build.

@@ -10,7 +10,7 @@ RELATED: ./README.md, ./decisions.md, ./STATUS.md,
   context/DATA_STORAGE.md, context/PRODUCTION_DEPLOYMENT.md,
   backend/features/envelope/surface_film_store.py,
   backend/features/climate/object_store.py,
-  planning/features/assembly-condensation-risk/PRD.md
+  planning/archive/dated/2026-07-29/assembly-condensation-risk/PRD.md
 ---
 
 # PRD — Licensed-data pipeline

@@ -8,7 +8,7 @@ SCOPE: A real boundary-condition model for assemblies — exterior condition
   resistances, heat-flow direction, and a graphic interior/exterior indication
   on the section.
 RELATED: ./README.md, ./STATUS.md,
-  ../../../../features/assembly-condensation-risk/PRD.md (depends on this),
+  ../../2026-07-29/assembly-condensation-risk/PRD.md (depends on this),
   ../../2026-07-26/assembly-membrane-layers/PRD.md (complete),
   backend/features/envelope/thermal.py, context/ui/pages/envelope-tab.md
 ---

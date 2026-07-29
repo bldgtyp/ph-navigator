@@ -4,7 +4,7 @@ TIME: 12:15 EDT
 STATUS: All four phases complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
-RELATED: ./README.md, ./PRD.md, ../../../../features/assembly-condensation-risk/STATUS.md
+RELATED: ./README.md, ./PRD.md, ../../2026-07-29/assembly-condensation-risk/STATUS.md
 ---
 
 # Status
@@ -307,7 +307,7 @@ committed to:
   the condensation engine.** (Its other prerequisite,
   `assembly-boundary-conditions` Phase 1, is separate and still open.)
 - **Shares:** the `vapor_sd_equivalent_m` material field defined in
-  `../../../../features/assembly-condensation-risk/PRD.md` §4. Whichever feature ships first
+  `../../2026-07-29/assembly-condensation-risk/PRD.md` §4. Whichever feature ships first
   should land that field; the other consumes it. **This feature deliberately did
   not** — its phase table scoped Phase 1 to `air_permeance_l_s_m2_at_75pa` only.
   **Resolved 2026-07-26:** with membranes complete, the vapour pair

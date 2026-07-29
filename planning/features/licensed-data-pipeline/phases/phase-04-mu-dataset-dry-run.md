@@ -8,7 +8,7 @@ AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
   dataset, locally.
 RELATED: ../PRD.md §9, ../decisions.md §D-10,
-  planning/features/assembly-condensation-risk/PRD.md §4/§8
+  planning/archive/dated/2026-07-29/assembly-condensation-risk/PRD.md §4/§8
 ---
 
 # Phase 4 — First `db_seed` dataset: `iso10456-vapor-mu`

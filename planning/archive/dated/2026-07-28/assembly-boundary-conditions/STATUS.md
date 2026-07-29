@@ -4,7 +4,7 @@ TIME: 11:05 EDT
 STATUS: Complete — all four phases implemented, merged, and deployed (2026-07-28)
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers.
-RELATED: ./README.md, ./PRD.md, ../../../../features/assembly-condensation-risk/STATUS.md
+RELATED: ./README.md, ./PRD.md, ../../2026-07-29/assembly-condensation-risk/STATUS.md
 ---
 
 # Status

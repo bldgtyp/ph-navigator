@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 — Phase 0 complete; §D-12 and Q-8 accepted
+UPDATED: 2026-07-29 — implementation complete
 TIME: 07:17 EDT
-STATUS: Active — Phase 1 next
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Product and behaviour contract for an ISO 13788 interstitial-condensation
   risk screen on the Envelope ▸ Assemblies page, plus the material vapour-data

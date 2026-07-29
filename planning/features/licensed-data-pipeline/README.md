@@ -6,7 +6,7 @@ STATUS: Active — Phases 1–3 delivered to main and films v1 published;
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the licensed-data pipeline feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
-  context/DATA_STORAGE.md, planning/features/assembly-condensation-risk/
+  context/DATA_STORAGE.md, planning/archive/dated/2026-07-29/assembly-condensation-risk/
 ---
 
 # Licensed-data pipeline (`ph-navigator-data` → R2 → PHN)

@@ -4,7 +4,7 @@ TIME: 11:05 EDT
 STATUS: Complete — all four phases implemented, merged, and deployed; ASHRAE data published to both object stores and the standard selector shipped 2026-07-28
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for assembly boundary conditions and surface films.
-RELATED: ./PRD.md, ./STATUS.md, ../../../../features/assembly-condensation-risk/,
+RELATED: ./PRD.md, ./STATUS.md, ../../2026-07-29/assembly-condensation-risk/,
   ../2026-07-26/assembly-membrane-layers/ (complete),
 ---
 
