@@ -8,7 +8,9 @@ audit-log entry — mirroring the ``project_location`` service.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
 from fastapi import Request
@@ -61,10 +63,78 @@ from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
 
+@dataclass(frozen=True)
+class ResolvedCondensationClimate:
+    """One normalized climate record selected for the condensation workflow."""
+
+    source_id: UUID
+    kind: Literal["custom", "phi", "phius"]
+    label: str | None
+    record: ClimateRecord
+    identity: dict[str, str | None]
+
+
 def list_project_climate_sources(project_id: UUID) -> ProjectClimateSourceListResponse:
     with connection() as conn:
         rows = repository.list_sources(conn, project_id)
     return ProjectClimateSourceListResponse(items=[ProjectClimateSourcePublic.model_validate(row) for row in rows])
+
+
+def resolve_condensation_climate_record(
+    project_id: UUID,
+    certification_programs: Sequence[Literal["phi", "phius"]],
+) -> ResolvedCondensationClimate | None:
+    """Resolve the climate basis for the ISO 13788 assembly screen.
+
+    Climate has no project-wide default because each source kind serves a
+    different workflow. Condensation therefore uses the newest custom record
+    when present, then the project's ordered certification programs, then any
+    attached PH record. Weather sources do not yet carry the normalized monthly
+    dew-point record this calculation requires.
+    """
+
+    with connection() as conn:
+        sources = repository.list_sources(conn, project_id)
+        priority = _condensation_source_priority(certification_programs)
+        for kind in priority:
+            source = next((item for item in sources if item["kind"] == kind), None)
+            if source is None:
+                continue
+            if kind == "custom":
+                record = ClimateRecord.model_validate(source["data"])
+            else:
+                try:
+                    location_id = UUID(str(source["ref"]))
+                except (TypeError, ValueError):
+                    continue
+                location = climate_repository.get_location(conn, location_id)
+                if location is None:
+                    continue
+                record = ClimateRecord.model_validate(location["data"])
+            source_id = UUID(str(source["id"]))
+            return ResolvedCondensationClimate(
+                source_id=source_id,
+                kind=kind,
+                label=cast(str | None, source["label"]),
+                record=record,
+                identity={
+                    "id": str(source_id),
+                    "kind": kind,
+                    "ref": str(source["ref"]) if source["ref"] is not None else None,
+                    "updated_at": source["updated_at"].isoformat(),
+                },
+            )
+    return None
+
+
+def _condensation_source_priority(
+    certification_programs: Sequence[Literal["phi", "phius"]],
+) -> tuple[Literal["custom", "phi", "phius"], ...]:
+    ordered: list[Literal["custom", "phi", "phius"]] = ["custom"]
+    for kind in (*certification_programs, "phi", "phius"):
+        if kind not in ordered:
+            ordered.append(kind)
+    return tuple(ordered)
 
 
 def get_attached_climate_record(project_id: UUID, source_id: UUID) -> ClimateLocationDetail:

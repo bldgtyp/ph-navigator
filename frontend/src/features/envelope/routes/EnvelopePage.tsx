@@ -7,13 +7,14 @@
 import "../envelope.css";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { useMaterialsQuery } from "../../catalogs/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import {
+  useAssemblyCondensationQuery,
   useAssemblyThermalQuery,
   useEnvelopeAttachmentMutation,
   useEnvelopeCommandMutation,
@@ -47,6 +48,9 @@ import {
 } from "../components/EnvelopeStates";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { MaterialsPanel } from "../components/MaterialsPanel";
+import { CondensationRiskModal } from "../components/CondensationRiskModal";
+import { ProjectMaterialEditorModal } from "../components/ProjectMaterialEditorModal";
+import type { ProjectMaterialEditorInitialFocus } from "../components/ProjectMaterialEditor";
 import { nextZoomStep, previousZoomStep } from "../canvas-constants";
 import type {
   ConstructionResolution,
@@ -66,6 +70,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [condensationOpen, setCondensationOpen] = useState(false);
+  const [condensationMaterialTarget, setCondensationMaterialTarget] = useState<{
+    id: string;
+    focus: ProjectMaterialEditorInitialFocus;
+  } | null>(null);
   const isViewer = project.access_mode === "viewer";
   const isLocked = project.active_version?.locked ?? false;
   const canEdit = !isViewer && !isLocked;
@@ -134,6 +143,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     source,
     isAssembliesRoute && activeAssembly !== null,
   );
+  const condensationQuery = useAssemblyCondensationQuery(
+    project.id,
+    project.active_version_id,
+    activeAssembly?.id ?? null,
+    source,
+    isAssembliesRoute && activeAssembly !== null,
+  );
   const driftByMaterialId = useMemo(
     () =>
       new Map(
@@ -149,6 +165,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     : null;
   const refreshDriftItem = refreshMaterialId
     ? (driftByMaterialId.get(refreshMaterialId) ?? null)
+    : null;
+  const condensationMaterial = condensationMaterialTarget
+    ? (query.data?.project_materials.find(
+        (material) => material.id === condensationMaterialTarget.id,
+      ) ?? null)
     : null;
 
   const paintController = usePaintMode({
@@ -416,6 +437,9 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             canEdit={canEdit}
             thermal={thermalQuery.data ?? null}
             thermalLoading={thermalQuery.isFetching}
+            condensation={condensationQuery.data ?? null}
+            condensationLoading={condensationQuery.isFetching}
+            condensationUnavailable={condensationQuery.isError}
             commandBusy={commandMutation.isPending}
             paint={paintController}
             actions={assemblyActions}
@@ -427,6 +451,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
                 name,
               })
             }
+            onOpenCondensation={() => setCondensationOpen(true)}
             onZoomIn={() => setZoom(nextZoomStep)}
             onZoomOut={() => setZoom(previousZoomStep)}
             onFitZoom={fitZoom}
@@ -509,6 +534,45 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         onReplaceDialog={setDialog}
         onCommand={(command) => void applyCommand(command)}
       />
+      {condensationOpen && activeAssembly ? (
+        <CondensationRiskModal
+          projectId={project.id}
+          assembly={activeAssembly}
+          materials={query.data.project_materials}
+          result={condensationQuery.data ?? null}
+          loading={condensationQuery.isFetching}
+          error={
+            condensationQuery.isError
+              ? errorMessage(
+                  condensationQuery.error,
+                  "Could not load the condensation risk screen.",
+                )
+              : null
+          }
+          canEdit={canEdit}
+          onClose={() => setCondensationOpen(false)}
+          onEditMaterial={(materialId, focus) => {
+            setCondensationOpen(false);
+            setCondensationMaterialTarget({ id: materialId, focus });
+          }}
+        />
+      ) : null}
+      {condensationMaterial ? (
+        <ProjectMaterialEditorModal
+          material={condensationMaterial}
+          busy={commandMutation.isPending}
+          error={commandError}
+          initialFocus={condensationMaterialTarget?.focus}
+          onClose={() => setCondensationMaterialTarget(null)}
+          onCommand={(command) => {
+            void applyCommand(command).then((applied) => {
+              if (!applied) return;
+              setCondensationMaterialTarget(null);
+              setCondensationOpen(true);
+            });
+          }}
+        />
+      ) : null}
       {refreshMaterial && refreshDriftItem ? (
         <MaterialDriftDialog
           material={refreshMaterial}

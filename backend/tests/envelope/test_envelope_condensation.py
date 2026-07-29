@@ -36,6 +36,7 @@ from features.project_document.document import (
     AssemblySegment,
     AssemblyType,
     ExteriorCondition,
+    ProjectAssumptions,
     ProjectMaterial,
 )
 
@@ -251,10 +252,13 @@ def test_saturation_temperature_rejects_invalid_pressure(pressure_pa: float) -> 
 
 def test_settings_zero_config_defaults_are_versioned_method_defaults() -> None:
     settings = CondensationSettings()
+    assumptions = ProjectAssumptions()
 
     assert settings.interior_climate_model == "iso13788_continental"
     assert settings.occupancy_class == "normal"
     assert settings.ma_limit_g_m2 == 200
+    assert assumptions.condensation_settings is None
+    assert assumptions.resolved_condensation_settings() == settings
 
 
 def test_reference_wall_returns_complete_monthly_profiles_and_masonry_caveat() -> None:
@@ -330,6 +334,63 @@ def test_input_hash_covers_material_vapor_data_and_ignores_unreferenced_material
         )
         == baseline
     )
+
+
+def test_input_hash_covers_climate_source_identity_and_all_settings() -> None:
+    assembly = _assembly()
+    materials = _reference_materials()
+    baseline = condensation_input_hash(
+        assembly,
+        materials,
+        _climate(),
+        ISO_6946_TABLE,
+        CondensationSettings(),
+        {"id": "source-a", "kind": "phi"},
+    )
+
+    assert (
+        condensation_input_hash(
+            assembly,
+            materials,
+            _climate(),
+            ISO_6946_TABLE,
+            CondensationSettings(),
+            {"id": "source-b", "kind": "phi"},
+        )
+        != baseline
+    )
+    for field, value in {
+        "occupancy_class": "high",
+        "humidity_class": 4,
+        "setpoint_temp_c": 21.0,
+        "setpoint_rh": 0.5,
+        "ma_limit_g_m2": 500.0,
+    }.items():
+        changed = CondensationSettings().model_copy(update={field: value})
+        assert (
+            condensation_input_hash(
+                assembly,
+                materials,
+                _climate(),
+                ISO_6946_TABLE,
+                changed,
+                {"id": "source-a", "kind": "phi"},
+            )
+            != baseline
+        )
+
+
+def test_missing_climate_source_returns_blocked_payload() -> None:
+    result = calculate_assembly_condensation(
+        _assembly(),
+        _reference_materials(),
+        None,
+        ISO_6946_TABLE,
+    )
+
+    assert result.status.state == "blocked"
+    assert result.status.flags == ["missing_climate_source"]
+    assert result.monthly == []
 
 
 def test_direct_sd_wins_over_mu_times_thickness() -> None:

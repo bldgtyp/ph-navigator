@@ -23,6 +23,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from itertools import product
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -39,15 +40,10 @@ from features.project_document.document import (
     Assembly,
     AssemblyLayer,
     AssemblySegment,
+    CondensationSettings,
     ProjectMaterial,
 )
 
-InteriorClimateModel = Literal[
-    "iso13788_continental",
-    "iso13788_humidity_class",
-    "fixed_setpoint",
-]
-OccupancyClass = Literal["low", "normal", "high"]
 CondensationState = Literal["screened", "blocked", "not_screened"]
 CondensationVerdict = Literal["d1", "d2", "d3", "d4"]
 CriterionCode = Literal["surface_condensation", "mold_growth", "frsi", "interstitial"]
@@ -59,6 +55,7 @@ CondensationStatusFlag = Literal[
     "no_thermal_layers",
     "missing_vapor_data",
     "missing_membrane_sd",
+    "missing_climate_source",
     "zero_total_sd",
     "invalid_climate_data",
     "invalid_settings",
@@ -112,17 +109,6 @@ _SD_TOLERANCE_M = 1.0e-12
 
 class _ContractModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-
-class CondensationSettings(_ContractModel):
-    """Versionable assumptions consumed by the pure engine."""
-
-    interior_climate_model: InteriorClimateModel = "iso13788_continental"
-    occupancy_class: OccupancyClass = "normal"
-    humidity_class: int = Field(default=2, ge=1, le=5)
-    setpoint_temp_c: float | None = Field(default=None, allow_inf_nan=False)
-    setpoint_rh: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    ma_limit_g_m2: float = Field(default=200, gt=0, allow_inf_nan=False)
 
 
 class CondensationIssue(_ContractModel):
@@ -260,6 +246,22 @@ class CondensationResult(_ContractModel):
     monthly: list[CondensationMonth] = Field(default_factory=list)
 
 
+class CondensationClimateSource(_ContractModel):
+    id: UUID
+    kind: Literal["custom", "phi", "phius"]
+    label: str | None = None
+
+
+class AssemblyCondensationResponse(CondensationResult):
+    """Route read model: pure result plus document and climate-source identity."""
+
+    project_id: UUID
+    version_id: UUID
+    source: Literal["version", "draft"]
+    assembly_id: str
+    climate_source: CondensationClimateSource | None = None
+
+
 @dataclass(frozen=True)
 class _PathLayer:
     layer: AssemblyLayer
@@ -334,9 +336,10 @@ def saturation_temperature_c(pressure_pa: float) -> float:
 def condensation_input_hash(
     assembly: Assembly,
     materials_by_id: Mapping[str, ProjectMaterial],
-    climate_record: ClimateRecord,
+    climate_record: ClimateRecord | None,
     film_table: SurfaceFilmTable,
     settings: CondensationSettings,
+    climate_source_identity: Mapping[str, str | None] | None = None,
 ) -> str:
     """Hash every pure input that can change a condensation result."""
 
@@ -357,7 +360,8 @@ def condensation_input_hash(
     payload = {
         "assembly": assembly.model_dump(mode="json"),
         "materials": referenced_materials,
-        "climate": climate_record.model_dump(mode="json"),
+        "climate": climate_record.model_dump(mode="json") if climate_record is not None else None,
+        "climate_source": dict(climate_source_identity) if climate_source_identity is not None else None,
         "film_table": {
             "standard": film_table.standard,
             "rsi_by_direction": dict(film_table.rsi_by_direction),
@@ -372,9 +376,11 @@ def condensation_input_hash(
 def calculate_assembly_condensation(
     assembly: Assembly,
     materials_by_id: Mapping[str, ProjectMaterial],
-    climate_record: ClimateRecord,
+    climate_record: ClimateRecord | None,
     film_table: SurfaceFilmTable,
     settings: CondensationSettings | None = None,
+    *,
+    climate_source_identity: Mapping[str, str | None] | None = None,
 ) -> CondensationResult:
     """Calculate the worst bounded 1-D path through an assembly.
 
@@ -391,6 +397,7 @@ def calculate_assembly_condensation(
         climate_record,
         film_table,
         resolved_settings,
+        climate_source_identity,
     )
     diagnostics = _diagnostics(assembly, materials_by_id, film_table)
     caveats = _material_caveats(assembly, materials_by_id)
@@ -438,6 +445,7 @@ def calculate_assembly_condensation(
             issues=issues,
         )
 
+    assert climate_record is not None
     flags: list[CondensationStatusFlag] = []
     if used_fallback:
         flags.append("path_limit_fallback")
@@ -537,7 +545,7 @@ def _empty_result(
 def _condensation_issues(
     assembly: Assembly,
     materials_by_id: Mapping[str, ProjectMaterial],
-    climate_record: ClimateRecord,
+    climate_record: ClimateRecord | None,
     settings: CondensationSettings,
 ) -> list[CondensationIssue]:
     issues: list[CondensationIssue] = []
@@ -589,7 +597,16 @@ def _condensation_issues(
                 assembly_name=assembly.name,
             )
         )
-    if not _climate_values_are_finite(climate_record):
+    if climate_record is None:
+        issues.append(
+            CondensationIssue(
+                code="missing_climate_source",
+                message=_issue_message("missing_climate_source"),
+                assembly_id=assembly.id,
+                assembly_name=assembly.name,
+            )
+        )
+    elif not _climate_values_are_finite(climate_record):
         issues.append(
             CondensationIssue(
                 code="invalid_climate_data",
@@ -611,6 +628,7 @@ def _issue_message(code: CondensationStatusFlag) -> str:
         "no_thermal_layers": "Every layer is a membrane, so no temperature profile can be calculated.",
         "missing_vapor_data": "One or more materials need a direct sd or vapor resistance value.",
         "missing_membrane_sd": "A membrane requires a direct sd value.",
+        "missing_climate_source": "Attach a PHI, Phius, or custom climate record to screen this assembly.",
         "zero_total_sd": "The selected material path has no total vapor resistance.",
         "invalid_climate_data": "Monthly climate temperatures must be finite.",
         "invalid_settings": "The selected interior climate model is missing a required setpoint.",

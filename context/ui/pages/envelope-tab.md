@@ -123,6 +123,15 @@ the Apertures list — see the design-system component inventory). Styled to the
 > ISO 6946 surface films; its `ⓘ` tooltip names the standard, the Rsi/Rse in
 > force, the derived heat-flow direction, and the construction-only value.
 
+> The header also carries a **Moisture** fact with a clickable eight-state
+> condensation chip. It reads the live draft from the version-scoped ISO 13788
+> route. Clicking opens the wide four-tab risk modal. Blocked results group
+> missing µ/sd by material and layer; ordinary layers focus µ, membranes focus
+> direct sd, missing climate links to the Climate tab, and ground /
+> unconditioned-space assemblies explain why v1 does not screen them. Copy uses
+> design-screen language (`none predicted`, `predicted — review`, `exceeds
+> limit`) rather than pass/fail.
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │  Assembly Details   [WALL-C3 ▾]    Total Thickness: 304.8 mm  ⓘ      │

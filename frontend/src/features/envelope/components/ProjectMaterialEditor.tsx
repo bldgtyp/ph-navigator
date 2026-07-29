@@ -35,6 +35,7 @@ import { ModalUnitToggle } from "./ModalUnitToggle";
 import type { EnvelopeCommand, ProjectMaterial } from "../types";
 
 type UpdateProjectMaterialCommand = Extract<EnvelopeCommand, { kind: "update_project_material" }>;
+export type ProjectMaterialEditorInitialFocus = "vapour_mu" | "vapour_sd";
 
 type MaterialFormState = {
   name: string;
@@ -205,6 +206,7 @@ export function ProjectMaterialEditor({
   busy,
   error,
   showNotes = true,
+  initialFocus,
   onCancel,
   onCommand,
 }: {
@@ -212,12 +214,15 @@ export function ProjectMaterialEditor({
   busy: boolean;
   error: string | null;
   showNotes?: boolean;
+  initialFocus?: ProjectMaterialEditorInitialFocus;
   onCancel: () => void;
   onCommand: (command: UpdateProjectMaterialCommand) => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
   const [editorUnitSystem, setEditorUnitSystem] = useState(unitSystem);
   const editorUnitSystemRef = useRef(editorUnitSystem);
+  const vaporResistanceInputRef = useRef<HTMLInputElement>(null);
+  const vaporSdInputRef = useRef<HTMLInputElement>(null);
   const unitOptions = useMemo<UnitFormatOptions>(
     () => unitOptionsFor(editorUnitSystem),
     [editorUnitSystem],
@@ -245,6 +250,11 @@ export function ProjectMaterialEditor({
   useEffect(() => {
     editorUnitSystemRef.current = editorUnitSystem;
   }, [editorUnitSystem]);
+
+  useEffect(() => {
+    if (initialFocus === "vapour_mu") vaporResistanceInputRef.current?.focus();
+    if (initialFocus === "vapour_sd") vaporSdInputRef.current?.focus();
+  }, [initialFocus, material.id]);
 
   useEffect(() => {
     if (unitSystem === editorUnitSystem) return;
@@ -372,6 +382,7 @@ export function ProjectMaterialEditor({
               <small>{vaporMuUnitLabel(editorUnitSystem)}</small>
             </span>
             <input
+              ref={vaporResistanceInputRef}
               value={form.vapor_diffusion_resistance_mu}
               onChange={(event) =>
                 updateForm("vapor_diffusion_resistance_mu", event.currentTarget.value)
@@ -384,6 +395,7 @@ export function ProjectMaterialEditor({
               <small>{vaporSdUnitLabel(editorUnitSystem)}</small>
             </span>
             <input
+              ref={vaporSdInputRef}
               value={form.vapor_sd_equivalent_m}
               onChange={(event) => updateForm("vapor_sd_equivalent_m", event.currentTarget.value)}
             />

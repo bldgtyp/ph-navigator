@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
+import type { AssemblyCondensationResponse } from "../condensation-types";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type {
@@ -223,6 +224,53 @@ const thermalPayload: AssemblyThermalResponse = {
   heat_flow_direction: "horizontal",
   thermal_standard: "iso_6946",
   warnings: ["One or more segments do not have a material assignment."],
+};
+
+const condensationPayload: AssemblyCondensationResponse = {
+  project_id: PROJECT_ID,
+  version_id: VERSION_ID,
+  source: "draft",
+  assembly_id: "asm_wall_c3",
+  climate_source: null,
+  status: {
+    state: "blocked",
+    is_complete: false,
+    flags: ["missing_material", "missing_vapor_data", "missing_climate_source"],
+  },
+  input_hash: "c".repeat(64),
+  issues: [
+    {
+      code: "missing_vapor_data",
+      message: "One or more materials need a direct sd or vapor resistance value.",
+      assembly_id: "asm_wall_c3",
+      assembly_name: "WALL-C3",
+      layer_id: "lyr_sheathing",
+      layer_order: 0,
+      segment_id: "seg_insul",
+      segment_order: 0,
+      project_material_id: "pmat_insul",
+      project_material_name: "Wood fiber board",
+    },
+  ],
+  caveats: [],
+  diagnostics: [],
+  rsi_m2k_w: 0.13,
+  rse_m2k_w: 0.04,
+  thermal_standard: "iso_6946",
+  roof_temperature_offset_k: 0,
+  path_count: 0,
+  paths_evaluated: 0,
+  worst_path_id: null,
+  path_summaries: [],
+  verdict: null,
+  criteria: null,
+  interface_count: 0,
+  interfaces: [],
+  start_month: null,
+  start_month_name: null,
+  peak_accumulated_moisture_g_m2: null,
+  final_accumulated_moisture_g_m2: null,
+  monthly: [],
 };
 
 const driftPayload = {
@@ -468,6 +516,73 @@ describe("EnvelopePage", () => {
       "Construction only, without surface films",
     );
     expect(document.body).not.toHaveTextContent("are NOT included");
+  });
+
+  test("condensation chip opens the missing-input workflow and focuses Vapour editing", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const chip = await screen.findByRole("button", {
+      name: "Condensation: needs vapour data (1)",
+    });
+    await userEvent.click(chip);
+
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    expect(within(riskDialog).getByText("Layer 1 · µ or sd required")).toBeInTheDocument();
+    const verdictTab = within(riskDialog).getByRole("tab", { name: "Verdict" });
+    verdictTab.focus();
+    fireEvent.keyDown(verdictTab, { key: "ArrowRight" });
+    expect(within(riskDialog).getByRole("tab", { name: "Where & when" })).toHaveFocus();
+    expect(within(riskDialog).getByRole("tab", { name: "Where & when" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Enter vapour data" }));
+
+    const materialDialog = await screen.findByRole("dialog", {
+      name: "Edit material — Wood fiber board",
+    });
+    expect(within(materialDialog).getByLabelText(/Resistance/)).toHaveFocus();
+  });
+
+  test("membrane correction focuses direct sd instead of mu", async () => {
+    const membranePayload: AssemblyCondensationResponse = {
+      ...condensationPayload,
+      status: {
+        state: "blocked",
+        is_complete: false,
+        flags: ["missing_membrane_sd", "missing_climate_source"],
+      },
+      issues: [
+        {
+          ...condensationPayload.issues[0]!,
+          code: "missing_membrane_sd",
+          message: "Membrane layers require direct sd.",
+        },
+      ],
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/condensation?")) {
+        return Promise.resolve(jsonResponse(membranePayload));
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Condensation: needs vapour data (1)" }),
+    );
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    expect(within(riskDialog).getByText("Layer 1 · sd required")).toBeInTheDocument();
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Enter vapour data" }));
+
+    const materialDialog = await screen.findByRole("dialog", {
+      name: "Edit material — Wood fiber board",
+    });
+    expect(within(materialDialog).getByLabelText(/Equivalent air layer/)).toHaveFocus();
   });
 
   test("unit toggle changes labels without changing canvas dimensions", async () => {
@@ -2007,6 +2122,7 @@ function defaultFetchImplementation(url: string): Promise<Response> {
   }
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
+  if (url.includes("/condensation?")) return Promise.resolve(jsonResponse(condensationPayload));
   if (url.includes("/envelope/material-catalog-drift?")) {
     return Promise.resolve(jsonResponse(driftPayload));
   }

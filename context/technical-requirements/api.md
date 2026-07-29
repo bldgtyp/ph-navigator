@@ -554,6 +554,7 @@ export.
 ```
 GET  /api/v1/projects/{pid}/versions/{vid}/envelope?source=draft|version
 GET  /api/v1/projects/{pid}/versions/{vid}/envelope/assemblies/{aid}/thermal?source=draft|version
+GET  /api/v1/projects/{pid}/versions/{vid}/envelope/assemblies/{aid}/condensation?source=draft|version
 GET  /api/v1/projects/{pid}/versions/{vid}/envelope/material-catalog-drift?source=draft|version
 GET  /api/v1/projects/{pid}/versions/{vid}/envelope/export/hbjson
 POST /api/v1/projects/{pid}/versions/{vid}/draft/envelope/commands
@@ -562,7 +563,11 @@ POST /api/v1/projects/{pid}/versions/{vid}/draft/envelope/commands
 The `envelope` slice composes assemblies, project materials, and per-
 segment use-site notes / photo refs for the Assembly Builder UI. All
 edits flow through the semantic-command POST; there is no per-field
-PATCH endpoint. See:
+PATCH endpoint. The condensation read is a preview-only ISO 13788 design
+screen: screened, blocked, and not-screened states all return 200 with a typed
+status; only unavailable deployment inputs such as a requested unpublished
+film table use the typed 409 path. Results are process-cached by a complete
+pure-input hash, while route identity is added after the cache read. See:
 
 - `context/technical-requirements/envelope-commands.md` — the 29
   command kinds, request shapes, and conflict codes shared by the

@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 (Phases 0–2 complete)
+UPDATED: 2026-07-29 (Phases 0–3 complete)
 TIME: 08:47 EDT
-STATUS: Active — Phase 3 route, chip, and blocked-state modal next
+STATUS: Active — Phase 4 verdict and diagram tiers next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -12,9 +12,10 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Phases 0–2 complete. Material vapour data is available end-to-end, the
-licensed local seed drill is proven, and the pure ISO 13788 engine agrees with
-synthetic PHI-workbook goldens. No route, persisted settings, or UI exists yet.**
+**Phases 0–3 complete. Material vapour data is available end-to-end, the
+licensed local seed drill is proven, the pure ISO 13788 engine agrees with
+synthetic PHI-workbook goldens, and every assembly now has a live route, chip,
+and complete blocked/not-screened correction workflow.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -160,15 +161,22 @@ Completed 2026-07-29:
   roof gc/Ma/interface results, direct-sd membranes, summer reverse drive, d4
   non-closure, and the 64-path cap. The backend boundary check confirms the
   engine has no storage dependency.
+- **Phase 3:** persisted zero-config assumptions, project climate resolution,
+  a bounded input-hash cache, and the version-scoped condensation route now
+  serve live draft or saved results. The header exposes all eight chip states;
+  the wide modal's blocked state groups missing materials/layers, focuses µ or
+  membrane sd correctly, links to Climate, explains excluded boundaries, and
+  refreshes after envelope or climate writes. Focused backend/frontend suites
+  and the live edit roundtrip are green.
 
-Not done: Phases 3–5; production apply.
+Not done: Phases 4–5; production apply.
 
 ## Next step
 
-**Phase 3 — route, chip, and blocked-state modal** — plan at
-`phases/phase-03-route-and-chip.md`. Resolve climate/films/settings at the
-service edge, expose the live-draft result, and add the clickable header chip
-plus the complete "what's missing" state.
+**Phase 4 — verdict and diagram tiers** — plan at
+`phases/phase-04-modal-verdict-diagrams.md`. Replace the screened-result
+placeholders with the decision hierarchy, assembly risk diagram, and annual
+moisture-cycle view.
 
 ## Blockers
 
