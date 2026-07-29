@@ -208,6 +208,19 @@ smoke test:
   `ph-navigator-prod` for production
 - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
 
+Licensed dataset local development uses the same MinIO settings and the
+private `ph-navigator-data` checkout:
+
+```bash
+make datasets-publish-local
+make datasets-status
+make datasets-apply ARGS=--all-pending
+```
+
+`PHN_DATA_DIR` may override the default sibling checkout
+`../ph-navigator-data`. Tests never require that checkout or real licensed
+values. The full operator contract is `context/DATASET_PIPELINE.md`.
+
 Credential note: PHN uses boto3's S3-compatible client, so Render needs
 the R2 token's S3-style credentials, not the Cloudflare account API
 bearer token alone. In the Cloudflare dashboard, the R2 credential panel

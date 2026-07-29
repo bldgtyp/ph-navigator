@@ -5,7 +5,7 @@
 # the caller's working directory. See context/environment-setup.md §6.
 
 .PHONY: help setup sync dev backend frontend agent-browser-ready agent-browser-check agent-shot agent-browser-cleanup typography-eval db db-up db-down db-wait db-reset db-reset-dev \
-        object-store-up object-store-init object-store-down \
+        object-store-up object-store-init object-store-down datasets-status datasets-apply datasets-publish-local \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
@@ -58,6 +58,7 @@ LOCAL_R2_ENDPOINT_URL ?= http://localhost:9000
 LOCAL_R2_ACCESS_KEY_ID ?= phn_minio
 LOCAL_R2_SECRET_ACCESS_KEY ?= phn_minio_local_only
 LOCAL_R2_BUCKET ?= ph-navigator-v2-dev
+PHN_DATA_DIR ?= $(abspath ../ph-navigator-data)
 
 dev: db-up object-store-up object-store-init ## Start local services + remind user how to launch backend + frontend
 	@echo ""
@@ -141,6 +142,30 @@ object-store-init: object-store-up ## Create the local attachment bucket + brows
 
 object-store-down: ## Stop local object storage
 	docker compose stop object-store
+
+datasets-status: db-wait object-store-init migrate ## Compare licensed dataset published/applied/loaded versions
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.datasets_status
+
+datasets-apply: db-wait object-store-init migrate ## Apply db-seed datasets (ARGS="--slug x" or "--all-pending")
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.datasets_apply $(ARGS)
+
+datasets-publish-local: object-store-init ## Publish the private data checkout to local MinIO
+	cd "$(PHN_DATA_DIR)" && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run --with boto3 --with jsonschema python tools/publish.py --publish --target local
 
 db-reset: ## Destroy and recreate the Postgres volume (DANGER — wipes BOTH dev and test DBs)
 	docker compose stop db

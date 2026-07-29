@@ -1,19 +1,23 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — packet drafted, Phase 1 next
+STATUS: Active — Phases 1–3 delivered to main and films v1 published;
+  Phase 3 live cutover and Phase 4 local proof remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the licensed-data pipeline feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
   context/DATA_STORAGE.md, planning/features/assembly-condensation-risk/
 ---
 
-# Licensed-data pipeline (`phn-data` → R2 → PHN)
+# Licensed-data pipeline (`ph-navigator-data` → R2 → PHN)
 
 Replace the manual Render-shell publishing of licensed reference data with an
 automated, versioned pipeline: a **private GitHub repo is the source of
-truth**, its CI **publishes to the private R2 bucket**, and PHN gains a small
-**`datasets` feature** that reads, applies, and audits what's published.
+truth** — **`bldgtyp/ph-navigator-data`**
+(<https://github.com/bldgtyp/ph-navigator-data>, local clone
+`~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-data`) — its CI **publishes to
+the private R2 bucket**, and PHN gains a small **`datasets` feature** that
+reads, applies, and audits what's published.
 
 This is infrastructure built *first*, then *used* by
 `assembly-condensation-risk` (the ISO 10456 µ dataset is its Phase 1 seed) and
@@ -30,7 +34,7 @@ unrepeatable, and it does not scale past the person who did it last time.
 
 ## Read order
 
-1. **`PRD.md`** — the contract: the `phn-data` repo layout, the R2 key/manifest
+1. **`PRD.md`** — the contract: the `ph-navigator-data` repo layout, the R2 key/manifest
    scheme, the PHN `datasets` feature (registry, `applied_datasets`, CLIs),
    publish/apply/rollback flows, phasing, acceptance criteria.
 2. **`decisions.md`** — options A/B/C and why A won, the ten design decisions,
@@ -56,17 +60,17 @@ unrepeatable, and it does not scale past the person who did it last time.
 
 3. **Open seed data stays in this repo.** The split is by *license*, not by
    kind: `backend/seeds/*` (synthetic/own data) keeps its zero-credential
-   local-dev and test story. Only licensed data routes through `phn-data`.
+   local-dev and test story. Only licensed data routes through `ph-navigator-data`.
    (`decisions.md` §D-2.)
 
 ## Phase map
 
 | Phase | Content |
 | --- | --- |
-| **1** | Bootstrap `phn-data`: repo layout, standalone publisher, CI (validate + publish), first dataset = ASHRAE surface films, MinIO drill |
-| **2** | PHN `datasets` feature: manifest store, registry, `applied_datasets` migration, `datasets_status` / `datasets_apply` CLIs, film loader migrated to manifest-pinned keys |
-| **3** | Production trigger ("Apply Datasets" workflow → Render one-off job, Ed-dispatched), `context/DATASET_PIPELINE.md` runbook, films production cutover, deprecate `seed_surface_films.py` |
-| **4** | First `db_seed` dataset end-to-end: the ISO 10456 µ values, jointly with `assembly-condensation-risk` Phase 1 |
+| **1** | ✅ **Complete 2026-07-28** — private PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) squash-merged as `8d4baa1`; standalone publisher, schema/checksum/version gates, serialized CI, `ashrae-surface-films` v1, synthetic tests, and MinIO interruption + rollback drills. The first hosted main-branch publish completed successfully (Actions run `30418485049`). |
+| **2** | ✅ **Delivered to PHN main 2026-07-28** — manifest/integrity store, registry, guarded status/apply CLIs, `applied_datasets`, per-slug apply serialization, Make targets, and manifest-pinned film loading. Phase 3 removed the temporary legacy fallback before merge. |
+| **3** | 🟡 **Code/docs delivered to PHN main 2026-07-28; live cutover remains** — Ed-dispatched Render one-off workflow, canonical runbook, manifest-only film loader, and retired `seed_surface_films.py` are merged. The private films publish succeeded; PHN Actions configuration, explicit deploy, production verification, no-op dispatch, and legacy-key deletion remain. |
+| **4** | ⏸ **Held at prerequisite boundary 2026-07-28** — first `db_seed` end-to-end proof waits for condensation Phase 0's target-roster/composite policy and Phase 1's µ/sd catalog columns; no licensed payload or placeholder applier authored |
 
 Phases 1–2 are independently valuable (versioned source + auditability);
 Phase 3 removes the last manual step; Phase 4 is the proof by first consumer.

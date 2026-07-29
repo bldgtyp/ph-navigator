@@ -434,7 +434,7 @@ risk (A-4) is retired first.
 | Phase | Content | Ships |
 | --- | --- | --- |
 | **0** | **Coverage probe** (Q-1) — measure µ availability across the production catalog and live-project assemblies. No code. | a number, and a go/no-go |
-| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. **The µ seed path itself** (Q-3/D-7) is now owned by `planning/features/licensed-data-pipeline/` (split out 2026-07-28, Ed): the ISO 10456 dataset is authored in the private `phn-data` repo and applied through that pipeline's `db_seed` machinery — its Phase 4 is this seed's local dry-run. This feature keeps ownership of the µ *content* (which rows get which values, the §D-12 composite-stud call); the pipeline owns the publish/apply mechanics. | materials can be specified; data entry can begin |
+| **1** | Material vapour fields end-to-end: models, migration, catalog columns, drift keys, editor UI, IP/SI conversion. No calculation. **The µ seed path itself** (Q-3/D-7) is owned by `planning/features/licensed-data-pipeline/` (split out 2026-07-28, Ed) — **whose mechanics are now implemented** (Phases 1–2: publisher + CI, PHN `datasets` registry, `applied_datasets`, guarded apply CLIs, all drilled on the films dataset). The ISO 10456 dataset is authored in the private `ph-navigator-data` repo and applied through the `db_seed` machinery — pipeline Phase 4 is this seed's local dry-run, resumed once this phase lands the columns and Phase 0 lands the roster. This feature keeps ownership of the µ *content* (which rows get which values, the §D-12 composite-stud call); the pipeline owns the publish/apply mechanics. Production apply is Ed-dispatched, on this feature's schedule. | materials can be specified; data entry can begin |
 | ~~**1½**~~ | ✅ **Both external dependencies cleared.** `assembly-membrane-layers` — all four phases, shipped 2026-07-26 (rendering reworked 2026-07-27). `assembly-boundary-conditions` — all four phases, 2026-07-26 → ASHRAE set + selector 2026-07-28. | assemblies hold the layers that dominate the answer, and have surface films at all |
 | **2** | Engine (incl. worst-of-all-paths per `decisions.md` §D-1, and the category-derived caveats per §D-9) + golden tests against the PHI workbook's own outputs. Backend only. | correctness, provable |
 | **3** | Route + chip (tier 0) + the "what's missing" state (§6.2). | the feature is usable |
@@ -442,6 +442,8 @@ risk (A-4) is retired first.
 | **5** | Modal tiers 3–4 (numbers + assumptions, incl. settings editing). | the feature is complete |
 
 Phases 1–3 are independently valuable; the feature can pause after any of them.
+
+Per-phase implementation plans live in `./phases/` (drafted 2026-07-28).
 
 ## 9. Acceptance criteria
 

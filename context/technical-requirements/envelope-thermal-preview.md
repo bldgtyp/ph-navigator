@@ -141,13 +141,13 @@ editable. The **exterior** side is the one user-selectable axis.
 | Standard | Values live | Why |
 |----------|-------------|-----|
 | `iso_6946` (default) | **in code** (`boundary_conditions.ISO_6946_TABLE`) | the default, already published in this feature's PRD, and it means a deployment with no private object store still computes U-values |
-| `ashrae` | **private object store only** (`standards/ashrae/surface_films.json`) | ASHRAE Fundamentals is licensed and this repo is public — the repo carries the loader (`features/envelope/surface_film_store.py`, `scripts/seed_surface_films.py`), never the numbers. Same route as the licensed climate bundles (`DATA_STORAGE.md` class ④) |
+| `ashrae` | **private object store only** (`datasets/ashrae-surface-films/<version>/dataset.json`, pinned by `datasets/manifest.json`) | ASHRAE Fundamentals is licensed and this repo is public — the repo carries the loader, never the numbers. Publishing is owned by private `ph-navigator-data`; see `DATASET_PIPELINE.md`. |
 
 Asking for a standard with no published table raises rather than falling
 back to ISO values — reporting one convention under another's name would
 be a wrong answer confidently presented. The thermal route surfaces that
-as a typed **409 `surface_film_table_unavailable`**, which an operator
-fixes by seeding the table.
+as a typed **409 `surface_film_table_unavailable`**, which an operator fixes by
+publishing/repairing the private dataset pipeline.
 
 The table is resolved at the **service edge**, not inside `thermal.py`, and
 passed in as a `SurfaceFilmTable`. That keeps the calculation pure and

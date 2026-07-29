@@ -338,6 +338,13 @@ catalog_field_options                   -- per-(catalog_table, field_key)
 > (0015/0016/0017) — catalogs are now flat identity rows. There is no
 > `catalog_audit_log` table; catalog audit writes go to `user_action_log`.
 
+App-wide licensed dataset audit:
+```text
+applied_datasets (slug, version, sha256, applied_at, applied_by)
+                 -- one row per successfully applied immutable db-seed version
+                 -- UNIQUE (slug, version); runtime-read datasets create no row
+```
+
 Object-storage pointers:
 ```
 project_assets (id, project_id, asset_kind, object_key, content_hash_sha256,

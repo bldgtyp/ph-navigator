@@ -1,8 +1,9 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-28 (second pass — independent review, corrections applied)
-TIME: 10:14 EDT
-STATUS: Ready — both prerequisites shipped; Phase 0 (coverage probe) is next
+UPDATED: 2026-07-28 (third pass — pipeline as-built folded in; phase plans drafted)
+TIME: 22:52 EDT
+STATUS: Ready — prerequisites shipped, pipeline mechanics implemented, phase
+  plans drafted under ./phases/; Phase 0 (coverage probe) is next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -116,16 +117,35 @@ out). Five corrections applied directly to the docs:
   reverse drive (direction-agnostic UI), and E-8 extended to cover
   `dewpoint_c > air_c` records (φe > 100 %).
 
+### Phase planning pass, 2026-07-28 (Fable 5)
+
+- **The licensed-data pipeline went from decision to machinery.** Its Phases
+  1–3 are implemented (pipeline STATUS 2026-07-28): the private
+  `bldgtyp/ph-navigator-data` repo publishes schema-validated, versioned
+  datasets to R2 via CI (immutable keys, manifest-last), and PHN's
+  `backend/features/datasets/` feature (registry, `applied_datasets` audit
+  table, guarded `datasets_status`/`datasets_apply` CLIs) is merged on the
+  `feat/licensed-data-pipeline` branch. **The D-7/Q-3 "data issue" is
+  resolved in mechanism, not just in principle** — what remains for the µ
+  seed is content (Phase 0's roster) and columns (Phase 1), exactly the split
+  recorded in the pipeline's `phases/phase-04-mu-dataset-dry-run.md`.
+- **Six phase plans drafted** under `./phases/` (00–05), mapping 1:1 to
+  `PRD.md` §8 and folding in the §D-15 as-built lessons, the E-15…E-18 edge
+  cases, and the pipeline hand-off points.
+
 Not done: nothing implemented here. No branch, no migration, no models.
 
 ## Next step
 
-**Phase 0 — the catalog coverage probe (Q-1).** Before any code, measure: across
-the production catalog and the assemblies in live projects, what fraction of
+**Phase 0 — the catalog coverage probe (Q-1)** — plan at
+`phases/phase-00-coverage-probe.md`. Before any code, measure: across the
+production catalog and the assemblies in live projects, what fraction of
 layers would have a µ or sd value after an ISO 10456 category-level seed? This is
 the one number that decides whether the feature ships as a calculation or as a
 data-entry push. It requires no schema change — it is a read-only analysis of
 existing catalog rows against the ISO 10456 category list in `research.md` §7.
+Its deliverables include the seed target roster the pipeline's Phase 4
+consumes, plus the two Ed calls (§D-12 composite studs, Q-8).
 
 ## Blockers
 
@@ -137,15 +157,15 @@ remains is sequencing, not decisions:
 | ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
 | ⚠️ Composite stud materials | `decisions.md` §D-12 — 24 % of the seeded catalog is stud+cavity pseudo-materials with no single defensible µ. Recommendation (i): use the cavity's µ plus a caveat. Needs Ed's nod during Phase 0. |
-| ⚠️ `planning/features/licensed-data-pipeline/` | *New 2026-07-28 (Ed): infra-first prerequisite for the µ **seeding run** only.* The Q-3 "private DB" decision left publish/apply manual (Render shell); the pipeline packet automates it (private `phn-data` repo → CI → R2 → `db_seed` apply). Phases 0–1 here do **not** wait on it; the seed itself (pipeline Phase 4) does. |
+| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data` (branch `b0bd933`), PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs) in `06064906`. The µ seed's `db_seed` path exists and is drilled on the films dataset. Pipeline Phase 3 (production cutover) is Ed-gated but does **not** block the local µ dry-run; pipeline Phase 4 resumes once our Phases 0–1 supply the roster and columns. Only the *production* µ apply waits on Phase 3 + Ed's dispatch. |
 | ⚠️ **Q-8 — screen `unconditioned_space`?** | *New 2026-07-28.* The value exists and gets a film, but Ft is modelled nowhere and both prerequisite packets deferred it here. Recommendation: **not screened in v1** (same treatment as `ground`); a nullable `adjacent_temp_factor` is an additive v1.1. Not blocking. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-**Both original external prerequisites are cleared.** One new external
-sequencing item exists (the licensed-data pipeline, above) but it gates only
-the µ seeding run — Phase 0 (the coverage probe) and Phase 1 (the fields) are
-free to start now, along with the two calls that can be made during Phase 0:
-the composite-stud policy and Q-8.
+**All external prerequisites are cleared, including the pipeline's mechanics.**
+Nothing external blocks Phases 0–2 at all; the only Ed-gated external event
+left is the pipeline's Phase 3 production sequence, which gates just the
+*production* µ apply (schedulable as late as our Phase 5 closeout). Phase 0
+carries the two remaining calls: the composite-stud policy and Q-8.
 
 ### The vapour fields are this feature's own work, not a dependency
 

@@ -40,21 +40,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out the shared production ref gate
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts/require-main-tip.sh
+          sparse-checkout-cone-mode: false
+
       - name: Require the trigger to be the tip of main
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
-            echo "::error::Dispatch this workflow from main (got $GITHUB_REF)." && exit 1
-          fi
-          REFS=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/main "$GITHUB_REF" "$GITHUB_REF^{}")
-          MAIN_SHA=$(echo "$REFS" | awk '$2 == "refs/heads/main" {print $1}')
-          # For annotated tags the peeled (^{}) line has the commit; otherwise
-          # the plain ref line already does.
-          REF_SHA=$(echo "$REFS" | awk -v r="$GITHUB_REF" '$2 == r "^{}" {p = $1} $2 == r {t = $1} END {print (p != "" ? p : t)}')
-          if [ -z "$MAIN_SHA" ] || [ "$REF_SHA" != "$MAIN_SHA" ]; then
-            echo "::error::$GITHUB_REF ($REF_SHA) is not the tip of main ($MAIN_SHA). Production deploys ship only the tip of main — retag after updating main." && exit 1
-          fi
-          echo "DEPLOY_SHA=$MAIN_SHA" >> "$GITHUB_ENV"
-          echo "Deploying main @ $MAIN_SHA"
+          DEPLOY_SHA=$(.github/scripts/require-main-tip.sh)
+          echo "DEPLOY_SHA=$DEPLOY_SHA" >> "$GITHUB_ENV"
+          echo "Deploying main @ $DEPLOY_SHA"
 
       - name: Wait for required CI checks on the deploy commit
         env:

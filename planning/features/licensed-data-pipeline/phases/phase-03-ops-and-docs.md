@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Planned
+STATUS: Code/docs delivered to PHN main; private production publish complete;
+  PHN configuration/deploy/verification/delete/live dispatch remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — production apply trigger, films cutover, runbook, and
   retirement of the manual path.
@@ -12,12 +13,12 @@ RELATED: ../PRD.md §7, ../decisions.md §D-5, ../STATUS.md
 
 ## Goal
 
-The manual shell path is gone: publishing is a `phn-data` merge, applying is
+The manual shell path is gone: publishing is a `ph-navigator-data` merge, applying is
 an Ed-dispatched workflow, and the runbook exists.
 
 ## Decisions taken here
 
-**Q-2 (§D-5):** Ed confirms the apply trigger. Recommended: manual-dispatch
+**Q-2 (§D-5):** Resolved by this implementation: manual-dispatch
 GitHub Actions workflow **"Apply Production Datasets"** in this repo → Render
 API one-off job on the API service running
 `uv run python -m scripts.datasets_apply --all-pending` with the production
@@ -29,7 +30,7 @@ Concurrency-grouped like `deploy.yml`.
 1. **The workflow** per the confirmed Q-2 answer. Job output surfaces the
    `ApplyReport` (slugs/versions/row counts — no values, AC 12).
 2. **Films production cutover** (first pipeline publish to prod R2):
-   - `phn-data` CI publishes `ashrae-surface-films` v1 to the production
+   - `ph-navigator-data` CI publishes `ashrae-surface-films` v1 to the production
      bucket (values identical to what's live, so this is a no-op for users);
    - verify by R2 round-trip + `datasets_status` against prod (Render shell
      one last time, or the workflow's status mode);
@@ -50,9 +51,51 @@ Concurrency-grouped like `deploy.yml`.
 
 The µ dataset (Phase 4); climate-bundle migration (deferred, §D-8).
 
+## Branch result
+
+Implemented:
+
+- `.github/workflows/apply-production-datasets.yml`: `main` and deployed-SHA
+  preflight, required config checks, Render one-off job creation/polling,
+  job-scoped sanitized log retrieval, and serialized production concurrency;
+- the ASHRAE loader is read-only and manifest-only; the unversioned fallback
+  and its write API are removed;
+- `scripts.seed_surface_films` is a pointer-only retired command;
+- `context/DATASET_PIPELINE.md` is the canonical add/publish/apply/activate/
+  rollback/failure runbook, linked from storage, environment, production,
+  scripts, thermal, context-router, and root-router docs;
+- focused Ruff/Ty clean; 79 focused dataset/envelope/deployment-contract tests
+  pass; workflow YAML and every embedded shell block parse; the shared ref
+  gate passes ShellCheck;
+- required simplify review complete: reuse and quality findings fixed,
+  efficiency clean;
+- full `PYTEST_WORKERS=0 make ci` passes: backend `1663 passed, 7 skipped`;
+  frontend `247` test files / `2312` tests passed; production build and
+  version-marker check passed.
+
+Completed operator steps:
+
+- private `ph-navigator-data` PR #1 squash-merged as `8d4baa1`;
+- its hosted main-branch publish completed successfully (Actions run
+  `30418485049`), publishing films v1 and swapping the manifest last;
+- this PHN implementation was squash-merged to `main`.
+
+Held operator steps:
+
+- add Actions secret `RENDER_API_KEY` and variable
+  `RENDER_API_SERVICE_ID` (both confirmed absent 2026-07-28);
+- explicitly deploy PHN;
+- verify the manifest-pinned production read, dispatch the no-op workflow
+  drill, and delete the legacy R2 key.
+
+The ordering is load-bearing: do not deploy the manifest-only film loader
+before the private dataset publish succeeds.
+
 ## Verification
 
 Films served from the manifest-pinned key in production with the legacy key
 deleted (AC 9); a dry-run dispatch of the workflow with nothing pending
 reports "nothing to apply" and writes nothing (AC 7/11); docs-pass run so the
-runbook and pointers land in the same change.
+runbook and pointers land in the same change. The private publish passed; the
+PHN-side live checks remain pending until the Actions configuration and
+explicit deployment above.

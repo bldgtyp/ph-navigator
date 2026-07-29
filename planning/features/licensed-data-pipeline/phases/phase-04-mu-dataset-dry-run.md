@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Planned — joint milestone with assembly-condensation-risk Phase 1
+STATUS: Held — required assembly-condensation-risk Phase 0 coverage decision
+  and Phase 1 catalog columns do not exist yet
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
   dataset, locally.
@@ -30,9 +31,25 @@ the Phase 3 workflow.
 - Condensation Phase 0's coverage probe has settled which rows get seeded
   values (including the §D-12 composite-stud call).
 
+## Current prerequisite check — 2026-07-28
+
+This phase was reached by the licensed-pipeline implementation loop, but it
+cannot start without taking ownership away from the condensation feature:
+
+- `assembly-condensation-risk/STATUS.md` says no code has been written and
+  names Phase 0 as its next step;
+- neither `vapor_diffusion_resistance_mu` nor `vapor_sd_equivalent_m` exists
+  anywhere under `backend/`;
+- the composite stud/cavity policy is still a Phase 0 Ed decision;
+- the real ISO 10456 payload is licensed and cannot be invented or transcribed
+  in this public repo.
+
+No Phase 4 code or private payload was authored. Resume here after
+condensation Phases 0–1 establish the stable target roster and columns.
+
 ## Work
 
-1. **Author `datasets/iso10456-vapor-mu/` in `phn-data`**: values keyed by
+1. **Author `datasets/iso10456-vapor-mu/` in `ph-navigator-data`**: values keyed by
    the catalog's stable row identity (§D-10 — coordinate with
    `archive/dated/2026-07-28/catalog-seed-idempotency`; the dataset's
    `PROVENANCE.md` states the match-key choice and the ISO 10456 edition).
