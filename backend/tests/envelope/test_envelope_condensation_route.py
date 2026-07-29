@@ -97,6 +97,14 @@ def test_route_returns_full_screened_payload_with_source_identity(
         "kind": "custom",
         "label": "Condensation basis",
     }
+    assert payload["settings"] == {
+        "interior_climate_model": "iso13788_continental",
+        "occupancy_class": "normal",
+        "humidity_class": 2,
+        "setpoint_temp_c": None,
+        "setpoint_rh": None,
+        "ma_limit_g_m2": 200.0,
+    }
     assert len(payload["monthly"]) == 12
     assert len(payload["input_hash"]) == 64
 

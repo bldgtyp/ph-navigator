@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 — Phases 0–3 complete
+UPDATED: 2026-07-29 — Phases 0–4 complete
 TIME: 07:17 EDT
-STATUS: Active — Phase 4 verdict and diagram tiers next
+STATUS: Active — Phase 5 numbers, assumptions, and closeout next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the assembly condensation-risk feature.
 RELATED: ./research.md, ./PRD.md, ./decisions.md, ./STATUS.md
@@ -104,7 +104,7 @@ Contract in `PRD.md` §8; implementation plans in `./phases/`:
 | 1 | ✅ `phases/phase-01-material-vapor-fields.md` | Complete: µ/sd fields end-to-end + the private `iso10456-vapor-mu` seed drilled locally |
 | 2 | ✅ `phases/phase-02-glaser-engine.md` | Complete: pure engine, synthetic-golden-tested against the PHI workbook |
 | 3 | ✅ `phases/phase-03-route-and-chip.md` | Complete: cached live route + eight-state chip + corrective blocked/not-screened modal |
-| 4 | `phases/phase-04-modal-verdict-diagrams.md` | modal tiers 1–2 — legible |
+| 4 | ✅ `phases/phase-04-modal-verdict-diagrams.md` | Complete: risk verdict, criteria, Ma and layer-profile diagrams |
 | 5 | `phases/phase-05-modal-numbers-assumptions.md` | modal tiers 3–4 + closeout — complete |
 
-Phases 1–3 are independently valuable; work can stop after any.
+Phases 1–4 are independently valuable; work can stop after any.

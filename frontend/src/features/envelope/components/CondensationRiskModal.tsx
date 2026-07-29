@@ -6,6 +6,8 @@ import { condensationChipPresentation, isMissingVapourIssue } from "../condensat
 import type { ProjectMaterialEditorInitialFocus } from "./ProjectMaterialEditor";
 import type { AssemblyCondensationResponse, CondensationIssue } from "../condensation-types";
 import type { Assembly, ProjectMaterial } from "../types";
+import { CondensationVerdictPanel } from "./CondensationVerdictPanel";
+import { CondensationWherePanel } from "./CondensationWherePanel";
 
 type RiskTab = "verdict" | "where" | "numbers" | "assumptions";
 
@@ -90,6 +92,8 @@ export function CondensationRiskModal({
           {renderPanel({
             activeTab,
             projectId,
+            assembly,
+            materials,
             result,
             loading,
             error,
@@ -121,6 +125,8 @@ type MissingMaterial = {
 function renderPanel({
   activeTab,
   projectId,
+  assembly,
+  materials,
   result,
   loading,
   error,
@@ -130,6 +136,8 @@ function renderPanel({
 }: {
   activeTab: RiskTab;
   projectId: string;
+  assembly: Assembly;
+  materials: ProjectMaterial[];
   result: AssemblyCondensationResponse | null;
   loading: boolean;
   error: string | null;
@@ -209,17 +217,16 @@ function renderPanel({
     );
   }
   if (activeTab === "verdict") {
+    return <CondensationVerdictPanel result={result} />;
+  }
+  if (activeTab === "where") {
     return (
-      <div className="condensation-verdict">
-        <h3>{verdictHeading(result)}</h3>
-        <p>
-          Worst path: {result.worst_path_id ?? "—"} · Peak accumulation:{" "}
-          {formatMass(result.peak_accumulated_moisture_g_m2)}
-        </p>
-        {result.caveats.length > 0 ? (
-          <p>{result.caveats.length} model caveat(s) need review.</p>
-        ) : null}
-      </div>
+      <CondensationWherePanel
+        key={result.input_hash}
+        assembly={assembly}
+        materials={materials}
+        result={result}
+      />
     );
   }
   return (
@@ -296,15 +303,4 @@ function selectTabFromKeyboard(
   if (!next) return;
   select(next.id);
   document.getElementById(`condensation-${next.id}-tab`)?.focus();
-}
-
-function verdictHeading(result: AssemblyCondensationResponse): string {
-  if (result.verdict === "d1") return "No interstitial condensation predicted";
-  if (result.verdict === "d2") return "Condensation predicted; annual dry-out indicated";
-  if (result.verdict === "d3") return "Accumulated moisture exceeds the selected limit";
-  return "Annual dry-out was not demonstrated";
-}
-
-function formatMass(value: number | null): string {
-  return value === null ? "—" : `${value.toFixed(1)} g/m²`;
 }

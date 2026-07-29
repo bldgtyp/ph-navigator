@@ -131,6 +131,14 @@ the Apertures list — see the design-system component inventory). Styled to the
 > unconditioned-space assemblies explain why v1 does not screen them. Copy uses
 > design-screen language (`none predicted`, `predicted — review`, `exceeds
 > limit`) rather than pass/fail.
+>
+> Screened results open on a Verdict tier: a d1–d4 risk sentence, worst path,
+> caveats before conclusions, four worst-month criteria, and the annual
+> accumulated-Ma curve against the selected limit. The Where tier defaults to
+> the worst month and plots `psat`/`pv` plus temperature through the layers;
+> users can switch the common horizontal axis between cumulative sd and real
+> thickness. The ISO 13788 limitations statement remains visible under the
+> verdict rather than hiding behind disclosure.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐

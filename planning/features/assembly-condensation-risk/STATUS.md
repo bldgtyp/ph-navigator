@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 (Phases 0–3 complete)
+UPDATED: 2026-07-29 (Phases 0–4 complete)
 TIME: 08:47 EDT
-STATUS: Active — Phase 4 verdict and diagram tiers next
+STATUS: Active — Phase 5 numbers, assumptions, and closeout next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -12,10 +12,11 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Phases 0–3 complete. Material vapour data is available end-to-end, the
+**Phases 0–4 complete. Material vapour data is available end-to-end, the
 licensed local seed drill is proven, the pure ISO 13788 engine agrees with
 synthetic PHI-workbook goldens, and every assembly now has a live route, chip,
-and complete blocked/not-screened correction workflow.**
+complete blocked/not-screened correction workflow, and actionable verdict and
+profile diagrams.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -168,15 +169,21 @@ Completed 2026-07-29:
   membrane sd correctly, links to Climate, explains excluded boundaries, and
   refreshes after envelope or climate writes. Focused backend/frontend suites
   and the live edit roundtrip are green.
+- **Phase 4:** the screened modal now carries risk-framed d1–d4 verdicts,
+  worst-path and caveat disclosure, four criterion tiles, a 12-month
+  accumulated-Ma plot with the selected limit, and month-selectable
+  vapour-pressure/temperature profiles on sd or physical-thickness axes.
+  Chart thresholds extend their domains rather than clipping. Component tests
+  cover all verdict and caveat variants; the clear live route was browser-smoked
+  through month/axis interactions with no horizontal overflow.
 
-Not done: Phases 4–5; production apply.
+Not done: Phase 5; production apply.
 
 ## Next step
 
-**Phase 4 — verdict and diagram tiers** — plan at
-`phases/phase-04-modal-verdict-diagrams.md`. Replace the screened-result
-placeholders with the decision hierarchy, assembly risk diagram, and annual
-moisture-cycle view.
+**Phase 5 — numbers, assumptions, and closeout** — plan at
+`phases/phase-05-modal-numbers-assumptions.md`. Complete modal tiers 3–4,
+settings editing, acceptance verification, and packet closeout.
 
 ## Blockers
 

@@ -5,6 +5,7 @@
 // hooks; canvas/sidebar/specification layout details stay in feature
 // components so browser and MCP mutations share the semantic command boundary.
 import "../envelope.css";
+import "../condensation.css";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useMemo, useRef, useState } from "react";

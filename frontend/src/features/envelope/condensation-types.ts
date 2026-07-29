@@ -36,6 +36,15 @@ export type CondensationCaveat = {
   material_ids: string[];
 };
 
+export type CondensationSettings = {
+  interior_climate_model: "iso13788_continental" | "iso13788_humidity_class" | "fixed_setpoint";
+  occupancy_class: "low" | "normal" | "high";
+  humidity_class: number;
+  setpoint_temp_c: number | null;
+  setpoint_rh: number | null;
+  ma_limit_g_m2: number;
+};
+
 export type CondensationDiagnostic = {
   code:
     | "ventilated_stack_convention"
@@ -146,6 +155,7 @@ export type AssemblyCondensationResponse = {
   rsi_m2k_w: number;
   rse_m2k_w: number;
   thermal_standard: ThermalStandard;
+  settings: CondensationSettings;
   roof_temperature_offset_k: number;
   path_count: number;
   paths_evaluated: number;

@@ -567,7 +567,13 @@ PATCH endpoint. The condensation read is a preview-only ISO 13788 design
 screen: screened, blocked, and not-screened states all return 200 with a typed
 status; only unavailable deployment inputs such as a requested unpublished
 film table use the typed 409 path. Results are process-cached by a complete
-pure-input hash, while route identity is added after the cache read. See:
+pure-input hash, while route identity is added after the cache read. Every
+response echoes the resolved `settings` (`interior_climate_model`,
+`occupancy_class`, humidity inputs, and `ma_limit_g_m2`), including blocked and
+not-screened states, so result-detail UI never reconstructs an effective
+assumption or limit from defaults. Screened responses additionally carry the
+d1–d4 verdict, four criteria, path summaries, caveats, annual accumulation,
+and monthly node/interface profiles used by the Verdict and Where tiers. See:
 
 - `context/technical-requirements/envelope-commands.md` — the 29
   command kinds, request shapes, and conflict codes shared by the

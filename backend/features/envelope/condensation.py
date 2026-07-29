@@ -230,6 +230,7 @@ class CondensationResult(_ContractModel):
     rsi_m2k_w: float
     rse_m2k_w: float
     thermal_standard: str
+    settings: CondensationSettings
     roof_temperature_offset_k: float
     path_count: int
     paths_evaluated: int
@@ -413,6 +414,7 @@ def calculate_assembly_condensation(
             input_hash=input_hash,
             films=films,
             roof_offset=roof_offset,
+            settings=resolved_settings,
             diagnostics=diagnostics,
             caveats=caveats,
         )
@@ -440,6 +442,7 @@ def calculate_assembly_condensation(
             input_hash=input_hash,
             films=films,
             roof_offset=roof_offset,
+            settings=resolved_settings,
             diagnostics=diagnostics,
             caveats=caveats,
             issues=issues,
@@ -499,6 +502,7 @@ def calculate_assembly_condensation(
         rsi_m2k_w=films.rsi_m2k_w,
         rse_m2k_w=films.rse_m2k_w,
         thermal_standard=films.standard,
+        settings=resolved_settings,
         roof_temperature_offset_k=roof_offset,
         path_count=path_count,
         paths_evaluated=len(path_runs),
@@ -523,6 +527,7 @@ def _empty_result(
     input_hash: str,
     films: SurfaceResistances,
     roof_offset: float,
+    settings: CondensationSettings,
     diagnostics: list[CondensationDiagnostic],
     caveats: list[CondensationCaveat],
     issues: list[CondensationIssue] | None = None,
@@ -536,6 +541,7 @@ def _empty_result(
         rsi_m2k_w=films.rsi_m2k_w,
         rse_m2k_w=films.rse_m2k_w,
         thermal_standard=films.standard,
+        settings=settings,
         roof_temperature_offset_k=roof_offset,
         path_count=0,
         paths_evaluated=0,
