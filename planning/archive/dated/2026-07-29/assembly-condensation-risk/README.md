@@ -101,7 +101,7 @@ Contract in `PRD.md` §8; implementation plans in `./phases/`:
 | Phase | Plan | Ships |
 | --- | --- | --- |
 | 0 | ✅ `phases/phase-00-coverage-probe.md` + `phase-00-report.md` | Complete: 93.4% catalog coverage, 201-row roster, go; both policies accepted |
-| 1 | ✅ `phases/phase-01-material-vapor-fields.md` | Complete: µ/sd fields end-to-end + the private `iso10456-vapor-mu` seed drilled locally |
+| 1 | ✅ `phases/phase-01-material-vapor-fields.md` | Complete: µ/sd fields end-to-end + the private `iso10456-vapor-mu` seed drilled locally and published through private PR #2; production DB apply remains Ed-dispatched |
 | 2 | ✅ `phases/phase-02-glaser-engine.md` | Complete: pure engine, synthetic-golden-tested against the PHI workbook |
 | 3 | ✅ `phases/phase-03-route-and-chip.md` | Complete: cached live route + eight-state chip + corrective blocked/not-screened modal |
 | 4 | ✅ `phases/phase-04-modal-verdict-diagrams.md` | Complete: risk verdict, criteria, Ma and layer-profile diagrams |

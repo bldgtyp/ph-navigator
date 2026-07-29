@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 delivered; Phase 3 live cutover and Phase 4 remain
+STATUS: Active — Phases 1–3 delivered; Phase 4 published; production apply
+  and remaining Phase 3 live cutover remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Contract for the licensed-data pipeline — the private `ph-navigator-data` source
   repo, its CI publish path to R2, and the PHN-side `datasets` feature

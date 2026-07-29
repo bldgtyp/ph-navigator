@@ -1,9 +1,10 @@
 ---
 DATE: 2026-07-28
-UPDATED: 2026-07-29 — local Phase 4 drill complete
+UPDATED: 2026-07-29 — local drill and private production publish complete
 TIME: 12:05 EDT
-STATUS: Complete locally — private payload, applier, idempotency/change/rollback
-  drill, and unmatched reporting pass; production apply remains held
+STATUS: Complete through publish — private payload, applier,
+  idempotency/change/rollback drill, unmatched reporting, and manifest-last
+  production publish pass; production DB apply remains held
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
   dataset, locally.
@@ -45,8 +46,10 @@ the Phase 3 workflow.
   unmatched before stable catalog seeding; 201/201 matched after seeding;
   clean status; zero-write forced re-apply; one-row temporary v2 update; then
   rollback to reviewed v1. Final `make datasets-status` reports no mismatches.
-- Production publish/apply was not run. It remains on Ed's schedule through
-  the Phase 3 production workflow.
+- Private PR [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2)
+  squash-merged as `3a171f6`; production publish run `30480924508` passed and
+  swapped the manifest last. The production DB apply remains on Ed's manual
+  schedule through the Phase 3 workflow after the PHN deploy.
 
 ## Work
 

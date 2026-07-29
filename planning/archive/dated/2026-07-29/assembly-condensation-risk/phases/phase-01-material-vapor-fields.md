@@ -119,4 +119,6 @@ enum (v1.1, §D-9); production apply.
 - Final `PYTEST_WORKERS=0 make ci` passes: backend 1669 passed / 7 skipped;
   frontend 247 test files / 2314 tests passed; production build and version
   marker passed.
-- Production publish/apply was not run and remains outside this phase.
+- At phase closeout, production publish/apply remained outside this phase.
+  Private PR #2 subsequently published the reviewed dataset successfully;
+  production DB apply remains Ed-dispatched after the PHN deploy.

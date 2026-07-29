@@ -154,7 +154,10 @@ Completed 2026-07-29:
   The drill proved loud unmatched reporting, 201/201 matching after stable
   catalog seeding, idempotent re-apply, a one-row v2 change, and rollback to
   reviewed v1. Final status is clean; no licensed value entered this repo.
-- **Production remains held:** no production publish/apply was run.
+- **Private production publish complete:** private PR
+  [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2) squash-merged as
+  `3a171f6`; manifest-last publish run `30480924508` passed. Production DB
+  apply remains Ed-dispatched after the PHN deploy.
 - **Phase 2:** the pure typed condensation engine, bounded worst-path
   enumeration, blocked/not-screened states, d1–d4 verdicts, caveats,
   diagnostics, and all monthly profiles are implemented. Thirty-five focused
@@ -189,15 +192,18 @@ Completed 2026-07-29:
   for humidity-class and fixed models without reload, then restored the default
   continental/normal block. Invalid persisted settings remain repairable.
 
-Feature implementation is complete. No production licensed-data publish/apply
-was run.
+Feature implementation is complete. The licensed payload is published; the
+production DB apply remains operator-held. Additional visual polish is
+non-blocking and can continue as small follow-up changes without reopening
+this completed packet.
 
 ## Next step
 
-**Operator-held production data sequence only:** Ed dispatches the existing
-licensed-data pipeline after its production secrets/deploy/manifest checks.
-That action is not part of this implementation branch and remains intentionally
-held.
+**Operator-held production data sequence only:** after this branch is merged,
+Ed runs **Deploy Production**, then **Apply Production Datasets**. The repo
+still lacks Actions secret `RENDER_API_KEY` and variable
+`RENDER_API_SERVICE_ID`; merge alone does not update production. Those manual
+actions are not part of this implementation branch.
 
 ## Blockers
 
@@ -209,13 +215,13 @@ remains is sequencing, not decisions:
 | ✅ `assembly-boundary-conditions` | **cleared — all four phases, 2026-07-26 → 2026-07-28.** `boundary_conditions.py` exposes `resolve_surface_resistances()` → `(Rsi, Rse, heat_flow_direction)` and `ISO_13788_SURFACE_CHECK_RSI = 0.25`. Films are now in the thermal metric; `Assembly.exterior_condition` has four values; `thermal_standard` carries both ISO 6946 (in code) and ASHRAE (private object store), with a typed 409 rather than a fallback when a table is unpublished. Archived to `planning/archive/dated/2026-07-28/assembly-boundary-conditions/`. |
 | ✅ `assembly-membrane-layers` **Phases 1–2** | **cleared 2026-07-26** — in fact all four phases shipped. Assemblies hold membrane layers, which are excluded from the R calculation and carry the `air_permeance_l_s_m2_at_75pa` datum. Archived to `planning/archive/dated/2026-07-26/assembly-membrane-layers/`. It deliberately did **not** land the vapour fields (its Phase 1 was scoped to air permeance), so `vapor_diffusion_resistance_mu` + `vapor_sd_equivalent_m` are **this feature's Phase 1**, exactly as `PRD.md` §4 and §8 already specify. Not a shared or unowned field — see the note below. |
 | ✅ Composite stud materials | Phase 0 accepted the named cavity/base family plus an uncertainty caveat; real segments remain the encouraged model. |
-| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data` (branch `b0bd933`), PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs) in `06064906`. Phase 4's private µ payload and local db-seed drill completed 2026-07-29. Only the *production* publish/apply waits on Phase 3 + Ed's dispatch. |
+| ✅ `planning/features/licensed-data-pipeline/` **Phases 1–2** | **Mechanics implemented 2026-07-28** — publisher + CI in `ph-navigator-data`, PHN `datasets` feature (registry, `applied_datasets`, guarded CLIs). Phase 4's private µ payload and local db-seed drill completed 2026-07-29; private PR #2 then published it successfully. Only the production DB apply waits on the PHN deploy, missing Actions configuration, and Ed's dispatch. |
 | ✅ **Q-8 — screen `unconditioned_space`?** | **No in v1.** Report not screened because Ft is not modelled; a nullable `adjacent_temp_factor` remains additive v1.1 scope. |
 | ✅ Occupancy-class default | `decisions.md` §D-13b — `normal`, a knowing departure from PHI's `low`/EN 15026 suggestion. Signed off by Ed 2026-07-26. |
 
-**All external prerequisites are cleared, including the pipeline's mechanics.**
-The remaining Ed-gated external event is the pipeline's production sequence,
-which gates just the production µ apply.
+**All external prerequisites are cleared, including the pipeline's mechanics
+and private publication.** The remaining Ed-gated external event is the
+production deploy/apply sequence, which gates just the production µ apply.
 
 ### The vapour fields are this feature's own work, not a dependency
 

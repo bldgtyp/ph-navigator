@@ -107,5 +107,6 @@ curves; any export path.
 - Focused verification: backend condensation suites **47 passed**; frontend
   Phase 5 plus Envelope integration suites **67 passed**; TypeScript passed.
   Full-repository CI evidence is recorded in the phase commit.
-- Production licensed-data publish/apply remains explicitly operator-held; no
-  production data action was run.
+- At phase closeout, production licensed-data publish/apply remained
+  operator-held. Private PR #2 subsequently published the dataset; production
+  DB apply remains Ed-dispatched after the PHN deploy.
