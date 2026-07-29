@@ -294,6 +294,7 @@ function invalidateThermalQueries(
   versionId: string,
   command: EnvelopeCommand,
 ): void {
+  if (command.kind === "set_condensation_settings") return;
   if ("assembly_id" in command && !broadThermalInvalidationCommands.has(command.kind)) {
     queryClient.invalidateQueries({
       queryKey: envelopeQueryKeys.thermal(projectId, versionId, command.assembly_id, "draft"),
@@ -344,7 +345,10 @@ const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "remove_project_material",
 ]);
 
-const broadCondensationInvalidationCommands = broadThermalInvalidationCommands;
+const broadCondensationInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+  ...broadThermalInvalidationCommands,
+  "set_condensation_settings",
+]);
 
 const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "pick_catalog_material",

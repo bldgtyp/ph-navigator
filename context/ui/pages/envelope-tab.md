@@ -139,6 +139,23 @@ the Apertures list — see the design-system component inventory). Styled to the
 > users can switch the common horizontal axis between cumulative sd and real
 > thickness. The ISO 13788 limitations statement remains visible under the
 > verdict rather than hiding behind disclosure.
+>
+> The Numbers tier uses three shared read-only DataTables: selected-month layer
+> intermediates, the 12-month gc/Ma/criterion cycle, and per-interface monthly
+> accumulation. Numeric columns keep numeric sort/filter behavior; displayed
+> values follow SI/IP (`µ`/`perm-in`, `sd`/`perm`, `g/m²`/`gr/ft²`). Copy is
+> retained, while CSV/download is deliberately unavailable because this is a
+> design screen rather than a compliance export.
+>
+> The Assumptions tier shows the active exterior-climate source and its 12
+> monthly temperature/RH pairs, then edits the versioned interior-climate model
+> (continental + occupancy, humidity class + temperature, or fixed temperature
+> + RH) and the accumulated-Ma limit. Applying writes the complete
+> `tables.assumptions.condensation_settings` block and refreshes every assembly's
+> condensation result without affecting thermal queries. Invalid persisted
+> settings remain repairable here. The same tier discloses the exact films,
+> standard, roof offset, start month, ventilated-boundary conventions, and each
+> assigned material's µ/sd provenance.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐

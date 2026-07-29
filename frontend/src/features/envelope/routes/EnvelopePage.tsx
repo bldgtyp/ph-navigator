@@ -551,11 +551,16 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               : null
           }
           canEdit={canEdit}
+          commandBusy={commandMutation.isPending}
+          commandError={commandError}
           onClose={() => setCondensationOpen(false)}
           onEditMaterial={(materialId, focus) => {
             setCondensationOpen(false);
             setCondensationMaterialTarget({ id: materialId, focus });
           }}
+          onUpdateSettings={(settings) =>
+            applyCommand({ kind: "set_condensation_settings", settings })
+          }
         />
       ) : null}
       {condensationMaterial ? (

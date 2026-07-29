@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-26
-UPDATED: 2026-07-29 (Phases 0–4 complete)
+UPDATED: 2026-07-29 (implementation complete)
 TIME: 08:47 EDT
-STATUS: Active — Phase 5 numbers, assumptions, and closeout next
+STATUS: Complete — verified; production data apply remains operator-held
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the condensation-risk feature.
 RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
@@ -12,11 +12,11 @@ RELATED: ./README.md, ./research.md, ./PRD.md, ./decisions.md
 
 ## State
 
-**Phases 0–4 complete. Material vapour data is available end-to-end, the
+**Phases 0–5 complete. Material vapour data is available end-to-end, the
 licensed local seed drill is proven, the pure ISO 13788 engine agrees with
 synthetic PHI-workbook goldens, and every assembly now has a live route, chip,
 complete blocked/not-screened correction workflow, and actionable verdict and
-profile diagrams.**
+profile diagrams, number tables, and versioned assumptions editor.**
 
 Done:
 - Full teardown of `PHI_CondenstationTool_March_v1.7.5.xlsx` — all six sheets,
@@ -176,14 +176,24 @@ Completed 2026-07-29:
   Chart thresholds extend their domains rather than clipping. Component tests
   cover all verdict and caveat variants; the clear live route was browser-smoked
   through month/axis interactions with no horizontal overflow.
+- **Phase 5:** three shared read-only DataTables expose the selected-month layer
+  intermediates, 12-month cycle, and per-interface accumulation with numeric
+  sort/filter semantics and SI/IP display. The Assumptions tier shows monthly
+  exterior climate, edits all three interior models and Ma limit through a
+  complete versioned settings command, and discloses method facts plus
+  per-material provenance. Live verification proved settings/hash/chip updates
+  for humidity-class and fixed models without reload, then restored the default
+  continental/normal block. Invalid persisted settings remain repairable.
 
-Not done: Phase 5; production apply.
+Feature implementation is complete. No production licensed-data publish/apply
+was run.
 
 ## Next step
 
-**Phase 5 — numbers, assumptions, and closeout** — plan at
-`phases/phase-05-modal-numbers-assumptions.md`. Complete modal tiers 3–4,
-settings editing, acceptance verification, and packet closeout.
+**Operator-held production data sequence only:** Ed dispatches the existing
+licensed-data pipeline after its production secrets/deploy/manifest checks.
+That action is not part of this implementation branch and remains intentionally
+held.
 
 ## Blockers
 
@@ -235,3 +245,31 @@ or in a browser rather than from a green suite (membranes: five defects, four
 found in review; boundary conditions: two rendering defects only a real browser
 caught). Budget for that here — a passing `pytest` will not tell you the Glaser
 engine is iterating the wrong set of layers.
+
+### Acceptance evidence
+
+| AC | Evidence |
+| --- | --- |
+| 1 | Phase 1 threaded nullable µ/sd through catalog/project models, drift, HBJSON and PHPP regressions; full `make ci` remains green. |
+| 2 | `test_missing_climate_and_vapor_are_200_blocked_states` loads the additive document shape and returns a typed blocked payload rather than an error. |
+| 3 | `test_reference_wall_matches_locally_recalculated_phi_workbook_golden`, `test_roof_profile_offset_matches_locally_recalculated_phi_workbook_golden`, and the membrane golden agree to the committed tolerance using synthetic inputs. |
+| 4 | `test_air_layer_uses_iso_sd_exemption` proves air cavities do not block. |
+| 5 | `test_layer_thickness_command_invalidates_the_live_result` proves the input hash changes; the frontend's assembly-scoped invalidation refreshes the open chip/result without reload. |
+| 6 | `test_settings_zero_config_defaults_are_versioned_method_defaults` plus the fresh-project route/browser flow proves tier 4 is not required to compute. |
+| 7 | Golden inputs are synthetic; repo/source scans and full CI confirm no PHI/ISO/ASHRAE licensed table is committed here. The 201-row µ payload remains private. |
+| 8 | Verdict/component tests and the user-facing source scan contain no pass/fail verdict copy. |
+| 9 | `test_reference_wall_returns_complete_monthly_profiles_and_masonry_caveat` plus chip/panel tests prove masonry always caveats and a caveated clear is muted. |
+| 10 | `test_direct_sd_wins_over_mu_times_thickness` and `test_membrane_uses_direct_sd_and_contributes_zero_thermal_resistance` prove nominal membrane thickness cannot move the result. |
+| 11 | `test_membrane_without_direct_sd_blocks_even_when_mu_exists` proves the missing membrane and corrective path. |
+| 12 | Engine and route parameterized boundary tests return not-screened for `ground` and `unconditioned_space`. |
+| 13 | The engine takes climate/film/settings arguments; `scripts.check_backend_boundaries` passes in `make ci`. |
+| 14 | Input-hash tests cover material category/vapour data, climate identity, thermal standard, exterior condition, all settings fields, thickness, and the live settings command. Browser verification observed distinct hashes for continental, humidity-class, and fixed models. |
+| 15 | `test_ventilated_outer_air_layer_reports_stack_diagnostic` proves the named convention diagnostic. |
+| 16 | `test_verdict_ladder_distinguishes_d1_d2_d3_and_d4` proves non-closing cycles return d4 and the canonical month after the last annual minimum. |
+
+Phase 5 focused verification: backend condensation suites **47 passed**;
+frontend Phase 5 plus Envelope integration suites **67 passed**; TypeScript
+passed. Browser smoke covered the three tables, July month selection, absent
+download actions, SI/IP conversions, all interior-model controls,
+settings/hash/chip refresh, Climate routing, and zero horizontal overflow at
+1280 px and 900 px widths. Full `make ci` is the final phase gate.

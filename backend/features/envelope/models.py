@@ -17,6 +17,7 @@ from features.project_document.document import (
     AssemblyFace,
     AssemblyOrientation,
     AssemblyType,
+    CondensationSettings,
     EvidenceStatus,
     ExteriorCondition,
     ProjectMaterial,
@@ -305,6 +306,15 @@ class SetThermalStandardCommand(BaseModel):
 
     kind: Literal["set_thermal_standard"]
     thermal_standard: ThermalStandard
+
+
+class SetCondensationSettingsCommand(BaseModel):
+    """Persist the ISO 13788 assumptions that produced the versioned result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["set_condensation_settings"]
+    settings: CondensationSettings
 
 
 class DuplicateAssemblyCommand(BaseModel):
@@ -638,6 +648,7 @@ EnvelopeCommand = Annotated[
     | UpdateAssemblyTypeCommand
     | UpdateAssemblyExteriorConditionCommand
     | SetThermalStandardCommand
+    | SetCondensationSettingsCommand
     | DuplicateAssemblyCommand
     | DeleteAssemblyCommand
     | AddLayerCommand

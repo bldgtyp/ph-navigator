@@ -528,12 +528,14 @@ Ed explicitly accepted (1) on 2026-07-29.
 
 ## Part 5 — Non-blocking questions
 
-- Should the condensation result appear on the **Status tab** as a project-wide
-  roll-up ("3 assemblies with predicted condensation")? Attractive, but a v1.1
-  item.
-- Should MCP expose a `get_assembly_condensation` tool? Cheap once the service
-  layer exists, and it would let an agent screen a whole project. Probably yes,
-  as a follow-on phase.
+- **Status-tab roll-up:** explicitly dropped from v1 closeout. A project-wide
+  count is attractive, but no separate v1.1 packet is created without a
+  demonstrated reporting workflow and a decision about how blocked/not-screened
+  assemblies aggregate.
+- **MCP `get_assembly_condensation`:** explicitly dropped from v1 closeout.
+  The version-scoped service makes it feasible, but it needs its own MCP
+  read-contract review before becoming an agent-facing tool; no speculative
+  follow-on packet is created here.
 - Variable-sd membranes (Intello) are common in our details and materially change
   the answer. Deferred from v1, but the data model should not preclude a
   humidity-dependent sd curve later — keep `vapor_sd_equivalent_m` scalar for

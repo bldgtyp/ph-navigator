@@ -237,6 +237,87 @@ def test_live_draft_material_edit_refreshes_condensation_state(
     assert after.json()["input_hash"] != before.json()["input_hash"]
 
 
+def test_settings_command_persists_and_invalidates_the_live_result(
+    clean_condensation_route_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    body = _body_with_vapor()
+    write_saved_body(version_id, body)
+    _attach_custom_climate(client, project_id)
+
+    before = client.get(_url(project_id, version_id, source="draft"), headers={"Origin": ORIGIN})
+    assert before.status_code == 200
+
+    edited = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(body)},
+        json={
+            "command": {
+                "kind": "set_condensation_settings",
+                "settings": {
+                    "interior_climate_model": "fixed_setpoint",
+                    "occupancy_class": "normal",
+                    "humidity_class": 2,
+                    "setpoint_temp_c": 21.0,
+                    "setpoint_rh": 0.55,
+                    "ma_limit_g_m2": 150.0,
+                },
+            }
+        },
+    )
+    assert edited.status_code == 200, edited.text
+
+    after = client.get(_url(project_id, version_id, source="draft"), headers={"Origin": ORIGIN})
+    assert after.status_code == 200
+    assert after.json()["settings"] == {
+        "interior_climate_model": "fixed_setpoint",
+        "occupancy_class": "normal",
+        "humidity_class": 2,
+        "setpoint_temp_c": 21.0,
+        "setpoint_rh": 0.55,
+        "ma_limit_g_m2": 150.0,
+    }
+    assert after.json()["input_hash"] != before.json()["input_hash"]
+
+
+def test_layer_thickness_command_invalidates_the_live_result(
+    clean_condensation_route_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    body = _body_with_vapor()
+    assembly = body.tables.assemblies[0]
+    layer = assembly.layers[0]
+    write_saved_body(version_id, body)
+    _attach_custom_climate(client, project_id)
+
+    before = client.get(_url(project_id, version_id, source="draft"), headers={"Origin": ORIGIN})
+    assert before.status_code == 200
+
+    edited = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(body)},
+        json={
+            "command": {
+                "kind": "update_layer_thickness",
+                "assembly_id": assembly.id,
+                "layer_id": layer.id,
+                "thickness_mm": layer.thickness_mm + 1.0,
+            }
+        },
+    )
+    assert edited.status_code == 200, edited.text
+
+    after = client.get(_url(project_id, version_id, source="draft"), headers={"Origin": ORIGIN})
+    assert after.status_code == 200
+    assert after.json()["input_hash"] != before.json()["input_hash"]
+
+
 def test_unavailable_surface_film_table_is_typed_409(
     clean_condensation_route_tables: None,
     monkeypatch: pytest.MonkeyPatch,

@@ -44,6 +44,7 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "update_assembly_type": _body_only(assemblies.update_assembly_type),
     "update_assembly_exterior_condition": _body_only(assemblies.update_assembly_exterior_condition),
     "set_thermal_standard": _body_only(assumptions.set_thermal_standard),
+    "set_condensation_settings": _body_only(assumptions.set_condensation_settings),
     "duplicate_assembly": _body_only(assemblies.duplicate_assembly),
     "delete_assembly": _body_only(assemblies.delete_assembly),
     "add_layer": _body_only(layers.add_layer),

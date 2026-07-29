@@ -8,6 +8,9 @@ import type { AssemblyCondensationResponse, CondensationIssue } from "../condens
 import type { Assembly, ProjectMaterial } from "../types";
 import { CondensationVerdictPanel } from "./CondensationVerdictPanel";
 import { CondensationWherePanel } from "./CondensationWherePanel";
+import { CondensationNumbersPanel } from "./CondensationNumbersPanel";
+import { CondensationAssumptionsPanel } from "./CondensationAssumptionsPanel";
+import type { CondensationSettings } from "../condensation-types";
 
 type RiskTab = "verdict" | "where" | "numbers" | "assumptions";
 
@@ -26,8 +29,11 @@ export function CondensationRiskModal({
   loading,
   error,
   canEdit,
+  commandBusy,
+  commandError,
   onClose,
   onEditMaterial,
+  onUpdateSettings,
 }: {
   projectId: string;
   assembly: Assembly;
@@ -36,8 +42,11 @@ export function CondensationRiskModal({
   loading: boolean;
   error: string | null;
   canEdit: boolean;
+  commandBusy: boolean;
+  commandError: string | null;
   onClose: () => void;
   onEditMaterial: (materialId: string, focus: ProjectMaterialEditorInitialFocus) => void;
+  onUpdateSettings: (settings: CondensationSettings) => Promise<boolean>;
 }) {
   const [activeTab, setActiveTab] = useState<RiskTab>("verdict");
   const presentation = condensationChipPresentation(result, loading, error !== null);
@@ -99,7 +108,10 @@ export function CondensationRiskModal({
             error,
             missingMaterials,
             canEdit,
+            commandBusy,
+            commandError,
             onEditMaterial,
+            onUpdateSettings,
           })}
         </section>
         <DialogActions
@@ -132,7 +144,10 @@ function renderPanel({
   error,
   missingMaterials,
   canEdit,
+  commandBusy,
+  commandError,
   onEditMaterial,
+  onUpdateSettings,
 }: {
   activeTab: RiskTab;
   projectId: string;
@@ -143,7 +158,10 @@ function renderPanel({
   error: string | null;
   missingMaterials: MissingMaterial[];
   canEdit: boolean;
+  commandBusy: boolean;
+  commandError: string | null;
   onEditMaterial: (materialId: string, focus: ProjectMaterialEditorInitialFocus) => void;
+  onUpdateSettings: (settings: CondensationSettings) => Promise<boolean>;
 }) {
   if (loading) return <p className="condensation-risk-empty">Calculating the live draft…</p>;
   if (error || !result) {
@@ -165,6 +183,20 @@ function renderPanel({
             : "Ground-contact assemblies are outside the scope of this air-facing ISO 13788 screen."}
         </p>
       </div>
+    );
+  }
+  if (activeTab === "assumptions" && result.status.flags.includes("invalid_settings")) {
+    return (
+      <CondensationAssumptionsPanel
+        projectId={projectId}
+        assembly={assembly}
+        materials={materials}
+        result={result}
+        canEdit={canEdit}
+        busy={commandBusy}
+        commandError={commandError}
+        onApply={onUpdateSettings}
+      />
     );
   }
   if (result.status.state === "blocked") {
@@ -226,6 +258,30 @@ function renderPanel({
         assembly={assembly}
         materials={materials}
         result={result}
+      />
+    );
+  }
+  if (activeTab === "numbers") {
+    return (
+      <CondensationNumbersPanel
+        key={result.input_hash}
+        assembly={assembly}
+        materials={materials}
+        result={result}
+      />
+    );
+  }
+  if (activeTab === "assumptions") {
+    return (
+      <CondensationAssumptionsPanel
+        projectId={projectId}
+        assembly={assembly}
+        materials={materials}
+        result={result}
+        canEdit={canEdit}
+        busy={commandBusy}
+        commandError={commandError}
+        onApply={onUpdateSettings}
       />
     );
   }

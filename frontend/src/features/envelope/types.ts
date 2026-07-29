@@ -4,6 +4,7 @@ import type {
   SpecificationStatus,
   WireSpecificationStatusRecord,
 } from "../project_document/specification-status";
+import type { CondensationSettings } from "./condensation-types";
 
 export type { SpecificationStatus } from "../project_document/specification-status";
 
@@ -231,6 +232,7 @@ export type EnvelopeCommand =
       exterior_condition: ExteriorCondition;
     }
   | { kind: "set_thermal_standard"; thermal_standard: ThermalStandard }
+  | { kind: "set_condensation_settings"; settings: CondensationSettings }
   | { kind: "duplicate_assembly"; assembly_id: string; name?: string | null }
   | { kind: "delete_assembly"; assembly_id: string }
   | {

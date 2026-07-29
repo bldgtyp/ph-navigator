@@ -25,6 +25,7 @@ import {
   phase16DriftFixture,
   phase16EnvelopeFixture,
 } from "./phase16-fixtures";
+import { screenedCondensationResult } from "./condensation-test-fixture";
 
 const PROJECT_ID = "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5";
 const VERSION_ID = "61561caa-44d0-401d-9daa-0fa113df8340";
@@ -591,6 +592,57 @@ describe("EnvelopePage", () => {
       name: "Edit material — Wood fiber board",
     });
     expect(within(materialDialog).getByLabelText(/Equivalent air layer/)).toHaveFocus();
+  });
+
+  test("assumptions tier writes versioned condensation settings through the envelope command", async () => {
+    const screenedPayload: AssemblyCondensationResponse = {
+      ...screenedCondensationResult(),
+      project_id: PROJECT_ID,
+      version_id: VERSION_ID,
+      assembly_id: "asm_wall_c3",
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/condensation?")) {
+        return Promise.resolve(jsonResponse(screenedPayload));
+      }
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({ ...envelopePayload, draft_etag: "draft-settings-etag" }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Condensation: predicted — review" }),
+    );
+    const riskDialog = await screen.findByRole("dialog", {
+      name: "Condensation risk — WALL-C3",
+    });
+    await userEvent.click(within(riskDialog).getByRole("tab", { name: "Assumptions" }));
+    const limit = within(riskDialog).getByRole("spinbutton", {
+      name: "Accumulated moisture limit",
+    });
+    await userEvent.clear(limit);
+    await userEvent.type(limit, "150");
+    await userEvent.click(within(riskDialog).getByRole("button", { name: "Apply assumptions" }));
+
+    await waitFor(() =>
+      expect(commandRequestBodies()).toContainEqual({
+        command: {
+          kind: "set_condensation_settings",
+          settings: {
+            interior_climate_model: "iso13788_continental",
+            occupancy_class: "normal",
+            humidity_class: 2,
+            setpoint_temp_c: null,
+            setpoint_rh: null,
+            ma_limit_g_m2: 150,
+          },
+        },
+      }),
+    );
   });
 
   test("unit toggle changes labels without changing canvas dimensions", async () => {

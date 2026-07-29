@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-28
+UPDATED: 2026-07-29
 TIME: 22:52 EDT
-STATUS: Ready after Phase 4
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 5 — modal tiers 3–4: every intermediate number, and the
   assumptions surface that edits `condensation_settings`. Feature-complete,
@@ -78,3 +79,30 @@ curves; any export path.
   diff shows the settings block.
 - Full `make ci`; browser smoke of both editing models and the IP toggle;
   the 16-AC evidence table recorded in `STATUS.md` before archiving.
+
+## Result — 2026-07-29
+
+- The Numbers tier exposes selected-month layer intermediates, the 12-month
+  cycle, and the per-interface breakdown through three shared read-only
+  `DataTable` instances. Numeric fields retain numeric sort/filter semantics;
+  CSV/download remains disabled for this screen-only result.
+- SI/IP follows the project toggle, including µ ↔ perm-in, sd ↔ perm, and
+  g/m² ↔ gr/ft² display. Month selection updates the layer table without
+  altering the result.
+- The Assumptions tier shows the exterior climate source and 12 monthly
+  conditions, edits all three interior-climate models plus Ma limit through
+  `set_condensation_settings`, and discloses derived films, roof correction,
+  start month, boundary seams, and per-material vapour provenance.
+- Settings writes persist the complete effective block, invalidate all
+  condensation results but no thermal results, and can repair an invalid
+  persisted settings block. Empty required setpoints are rejected rather than
+  serialized as zero.
+- Browser verification covered the continental, humidity-class, and fixed
+  models, settings/hash/chip updates without reload, restoration to defaults,
+  SI/IP values, month changes, absent download actions, Climate routing, and
+  zero horizontal overflow at 1280 px and 900 px widths.
+- Focused verification: backend condensation suites **47 passed**; frontend
+  Phase 5 plus Envelope integration suites **67 passed**; TypeScript passed.
+  Full-repository CI evidence is recorded in the phase commit.
+- Production licensed-data publish/apply remains explicitly operator-held; no
+  production data action was run.
