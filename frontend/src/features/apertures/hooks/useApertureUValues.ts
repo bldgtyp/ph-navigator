@@ -14,6 +14,7 @@ import { fetchJson } from "../../../shared/api/client";
 export type ApertureUValueWarning = {
   kind:
     | "missing_frame"
+    | "incomplete_frame_data"
     | "missing_glazing"
     | "missing_dimension"
     | "non_positive_glazing_area"

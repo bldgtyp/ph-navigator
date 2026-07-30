@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-29 — Ed resolved all open decisions; ready for Phase 01
-TIME: 14:17 EDT
-STATUS: Active — planning complete, all decisions resolved; Phase 01 kickoff next
+UPDATED: 2026-07-29 — Phase 01 complete and verified; Phase 02 next
+TIME: 21:29 EDT
+STATUS: Active — Phase 01 complete; Phase 02 report endpoint next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -13,16 +13,18 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 ## Current state (2026-07-29)
 
-Planning package written (this session): PRD, decisions, research, PLAN.
-No code changes. No branch yet.
+Phase 01 is implemented on `feature/aperture-u-value-report`.
 
-- Research complete: backend calc code map, Phius example spreadsheet fully
-  decoded (formulas extracted), frontend page + export precedents,
-  edge-case inventory. See `research.md`.
-- Behavior contract drafted in `PRD.md`, including the two hazards most
-  likely to bite: unfinished elements currently weight into U-w as zeros,
-  and the legacy sheet's corner convention differs from the code's 45°
-  split.
+- Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
+  unassigned and incomplete frames, missing glazing, non-positive glazing
+  geometry, mixed void coverage, and all-void apertures.
+- Added the detailed calculation DTO and single-source calculation path with
+  per-edge lengths, frame-area terms, Q-frame/Q-spacer terms, ψ-install
+  passthrough, and incomplete-input nulls.
+- The legacy endpoint still projects to the original response/cache shape;
+  exact U-values, areas, content hashes, and cache identity are pinned.
+- Assigned-but-incomplete frames now emit `incomplete_frame_data`; truly
+  unassigned/deleted references remain `missing_frame`.
 
 ## Decisions — resolved 2026-07-29
 
@@ -35,10 +37,7 @@ updated to match.
 
 ## Next step
 
-Detailed phase plans written 2026-07-29 (`phases/phase-01..06`). Start
-Phase 01 (`phases/phase-01-breakdown-refactor.md` — pin tests first, then
-the backend per-side breakdown refactor) on branch
-`feature/aperture-u-value-report`.
+Commit Phase 01, then implement `phases/phase-02-report-endpoint.md`.
 
 ## Blockers
 
@@ -49,4 +48,11 @@ the backend per-side breakdown refactor) on branch
 - 2026-07-29 — Example artifact decoded programmatically (openpyxl) from
   `_260701 Window Unit Detailed U-Values.xlsx`; formulas quoted in
   `research.md` §2 were read from the file, not inferred.
-- No code verification yet (planning only).
+- 2026-07-29 — Pre-refactor parity snapshot: `uv run pytest
+  tests/test_aperture_u_value_parity.py -q` → `7 passed`.
+- 2026-07-29 — Post-refactor focused backend suite: parity + existing
+  service + MCP tests → `34 passed`.
+- 2026-07-29 — Phase 01 `make check-backend` passed: Ruff, backend
+  boundaries, Ty, Alembic, `1726 passed, 7 skipped`.
+- 2026-07-29 — Phase 01 `make ci` passed: backend results above; frontend
+  `253` files / `2346` tests, structural guards, and production build.

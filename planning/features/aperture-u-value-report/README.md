@@ -50,7 +50,7 @@ with live formulas** so Phius reviewers can audit the math cell by cell.
 
 | Phase | File | What | State |
 | --- | --- | --- | --- |
-| 01 | `phases/phase-01-breakdown-refactor.md` | Backend: per-side breakdown, parity-locked refactor | Ready |
+| 01 | `phases/phase-01-breakdown-refactor.md` | Backend: per-side breakdown, parity-locked refactor | Complete |
 | 02 | `phases/phase-02-report-endpoint.md` | Backend: report JSON endpoint (names, SHGC rollup, provenance, MCP) | After 01 |
 | 03 | `phases/phase-03-exporters.md` | Backend: CSV + formula XLSX, `units` param, capability gate | After 02 |
 | 04 | `phases/phase-04-report-page.md` | Frontend: U-Values sub-tab page (grouped ReportTable, expansions) | After 02 |
