@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
+UPDATED: 2026-07-30 — implementation and verification complete
 TIME: 14:31 EDT
-STATUS: Ready after Phase 2 (Phase 3 not required for the page)
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — the U-Values sub-tab page: route, query hook, grouped
   ReportTable with per-edge expansions, warnings, units, empty state.
@@ -89,3 +90,32 @@ Download actions (Phase 5); any backend change; `apertures-tab.md` §2.6.4
 viewer/version view, unfinished-project view, empty state, IP and SI.
 Visually reconcile one element row against the builder canvas U for the
 AGENT-BROWSER fixture. `make ci` before hand-off.
+
+## Implementation ledger
+
+- Added the route-addressable fourth **U-Values** sub-tab, centralized report
+  and chip query keys, draft/version source selection, and invalidation for
+  every U-value-affecting mutation and catalog refresh.
+- Added grouped summary and per-aperture `ReportTable` views with four-edge
+  expansion, provenance legend, unfinished annotations, row/edge warnings,
+  void exclusions, and an editor-aware empty state.
+- Added SI/IP formatting for dimensions, areas, U-values, linear
+  transmittances, and heat-flow terms. Shared the canonical W/K conversion
+  and existing unit-label helpers rather than adding report-local constants.
+- Unfinished calculated cells always render em-dashes, even when the backend
+  preserves a numeric zero for rollup accounting; valid input geometry
+  remains visible.
+- Simplify review fixed missing report/chip invalidations, duplicate unit
+  contracts, suppressed warnings, and unfinished-zero presentation.
+- Focused TypeScript/RTL verification: `3` files / `13` tests passed.
+  `make frontend-dev-check` passed with the repository's existing Fast
+  Refresh warnings only.
+- Live editor draft verification used the task-isolated `AGENT-BROWSER`
+  fixture: the section footer matched the builder chip at `0.78 W/m²K`;
+  SI/IP switching, summary/section tables, and all four expanded edge rows
+  were exercised. The empty state was also verified before restoring the
+  representative draft. Viewer source selection and unfinished rendering
+  are covered by RTL rather than separate live fixtures.
+- `make ci` passed: backend `1741 passed, 7 skipped`; frontend `254` files /
+  `2351` tests, structural guards, and production build. `graphify update .`
+  rebuilt the code graph successfully.

@@ -12,4 +12,8 @@ export const apertureQueryKeys = {
     ] as const,
   specReport: (projectId: string, versionId: string, source: ApertureReadSource) =>
     [...apertureQueryKeys.all(projectId), "spec-report", versionId, source] as const,
+  uValues: (projectId: string, versionId: string, source: ApertureReadSource) =>
+    [...apertureQueryKeys.all(projectId), "u-values", versionId, source] as const,
+  uValueReport: (projectId: string, versionId: string, source: ApertureReadSource) =>
+    [...apertureQueryKeys.all(projectId), "u-value-report", versionId, source] as const,
 };

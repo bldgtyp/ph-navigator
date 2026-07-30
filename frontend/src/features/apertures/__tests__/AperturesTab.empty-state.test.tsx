@@ -10,13 +10,15 @@ import {
   type UnitPreferenceContextValue,
 } from "../../../lib/units/preference-context";
 import type { ProjectDetail, ProjectVersion } from "../../projects/types";
-import { aperturesBuilderPath } from "../paths";
+import type { ApertureUValueReport } from "../hooks/useApertureUValueReport";
+import { aperturesBuilderPath, aperturesUValuesPath } from "../paths";
 import { AperturesTab } from "../routes/AperturesTab";
 import type { ApertureTypeEntry, AperturesSlice } from "../types";
 
 const mocks = vi.hoisted(() => ({
   slice: null as unknown,
   applyMutateAsync: vi.fn(),
+  uValueReportHook: vi.fn(),
 }));
 
 vi.mock("../hooks", () => ({
@@ -70,6 +72,10 @@ vi.mock("../hooks/useApertureUValues", () => ({
     data: { apertures: [] },
     isLoading: false,
   })),
+}));
+
+vi.mock("../hooks/useApertureUValueReport", () => ({
+  useApertureUValueReport: mocks.uValueReportHook,
 }));
 
 vi.mock("../hooks/useFramePickerFilterPreferences", () => ({
@@ -154,12 +160,15 @@ function createSlice(apertures: ApertureTypeEntry[]): AperturesSlice {
   };
 }
 
-function renderAperturesTab(project: ProjectDetail = PROJECT) {
+function renderAperturesTab(
+  project: ProjectDetail = PROJECT,
+  initialPath = aperturesBuilderPath(project.id),
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <UnitStub>
-        <MemoryRouter initialEntries={[aperturesBuilderPath(project.id)]}>
+        <MemoryRouter initialEntries={[initialPath]}>
           <Routes>
             <Route
               path="/projects/:projectId/apertures/*"
@@ -194,6 +203,12 @@ describe("AperturesTab zero-type state", () => {
     vi.clearAllMocks();
     mocks.slice = createSlice([]);
     mocks.applyMutateAsync.mockResolvedValue(createSlice([CREATED_APERTURE]));
+    mocks.uValueReportHook.mockReturnValue({
+      data: U_VALUE_REPORT,
+      error: null,
+      isError: false,
+      isLoading: false,
+    });
   });
 
   test("renders one primary main-panel add action for editors", async () => {
@@ -243,3 +258,62 @@ describe("AperturesTab zero-type state", () => {
     });
   });
 });
+
+describe("AperturesTab U-Values route", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.slice = createSlice([]);
+    mocks.uValueReportHook.mockReturnValue({
+      data: U_VALUE_REPORT,
+      error: null,
+      isError: false,
+      isLoading: false,
+    });
+  });
+
+  test("renders the fourth report sub-tab from the editor draft", () => {
+    renderAperturesTab(PROJECT, aperturesUValuesPath(PROJECT.id));
+
+    expect(screen.getByText("U-Value Detail Report")).toBeVisible();
+    expect(screen.getAllByText("Route Test Window").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "U-Values" })).toHaveLength(1);
+    expect(mocks.uValueReportHook).toHaveBeenCalledWith(PROJECT.id, VERSION.id, "draft", true);
+  });
+
+  test("reads the saved version for viewers", () => {
+    const viewerProject = { ...PROJECT, access_mode: "viewer" as const };
+    renderAperturesTab(viewerProject, aperturesUValuesPath(PROJECT.id));
+
+    expect(mocks.uValueReportHook).toHaveBeenCalledWith(PROJECT.id, VERSION.id, "version", true);
+  });
+});
+
+const U_VALUE_REPORT: ApertureUValueReport = {
+  project_id: PROJECT.id,
+  version_id: VERSION.id,
+  source: "draft",
+  provenance: {
+    project_name: PROJECT.name,
+    bt_number: PROJECT.bt_number,
+    version_label: VERSION.name,
+    source: "draft",
+    generated_note:
+      "ISO 10077-1:2006 · uninstalled U-w (excludes ψ-install) · edges as seen from outside",
+  },
+  apertures: [
+    {
+      aperture_type_id: "aperture-route-test",
+      name: "Route Test Window",
+      overall_width_m: 1,
+      overall_height_m: 1,
+      element_count: 0,
+      void_count: 0,
+      unfinished_count: 0,
+      total_area_m2: 1,
+      window_u_value_w_m2k: 0.8,
+      shgc_glazing_area_weighted: null,
+      warnings: [],
+      elements: [],
+    },
+  ],
+};

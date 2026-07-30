@@ -1,0 +1,101 @@
+.u-value-report {
+  display: grid;
+  gap: var(--space-20);
+  min-width: 0;
+  padding: var(--space-20);
+}
+
+.u-value-report__header,
+.u-value-report__section-header,
+.u-value-report__section-footer {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-16);
+  justify-content: space-between;
+}
+
+.u-value-report__header h2,
+.u-value-report__section-header h3,
+.u-value-report__empty h2 {
+  margin: 0;
+}
+
+.u-value-report__header p,
+.u-value-report__section-header span,
+.u-value-report__section-header p,
+.u-value-report__empty p {
+  color: var(--text-secondary);
+  margin: var(--space-4) 0 0;
+}
+
+.u-value-report__header > span {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.u-value-report__sections,
+.u-value-report__section {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.u-value-report__table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.u-value-report__table-scroll > .report-table {
+  min-width: 980px;
+}
+
+.u-value-report__section-header p {
+  color: var(--warning-text, var(--text-secondary));
+  font-size: var(--fs-sm);
+}
+
+.u-value-report__section-footer {
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--fs-sm);
+  padding: var(--space-8) var(--space-12) 0;
+}
+
+.u-value-report__warning,
+.u-value-report__unfinished {
+  color: var(--warning-text, var(--text-secondary));
+  font-weight: var(--fw-semibold);
+}
+
+.u-value-report__unfinished,
+.u-value-report__row-warning {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.u-value-report__row-warning {
+  color: var(--warning-text, var(--text-secondary));
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-ui);
+  white-space: normal;
+}
+
+.u-value-report__complete {
+  color: var(--text-secondary);
+}
+
+.u-value-report__edge-table {
+  overflow-x: auto;
+  padding: var(--space-12);
+}
+
+.u-value-report__edge-table > .report-table {
+  min-width: 1150px;
+}
+
+.u-value-report__empty {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin: var(--space-20);
+  padding: var(--space-24);
+}

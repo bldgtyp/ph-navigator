@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-30 — Phase 03 complete and verified; Phase 04 next
-TIME: 08:25 EDT
-STATUS: Active — Phases 01–03 complete; Phase 04 report page next
+UPDATED: 2026-07-30 — Phase 04 complete and verified; Phase 05 next
+TIME: 08:55 EDT
+STATUS: Active — Phases 01–04 complete; Phase 05 downloads next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -13,7 +13,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 ## Current state (2026-07-30)
 
-Phases 01–03 are implemented and verified on
+Phases 01–04 are implemented and verified on
 `feature/aperture-u-value-report`.
 
 - Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
@@ -41,6 +41,11 @@ Phases 01–03 are implemented and verified on
   failures that structural openpyxl checks could not detect. The formulas
   now use text-tolerant `SUMPRODUCT` arguments without blanket error
   masking; zero-denominator SHGC is handled explicitly.
+- Added the fourth, route-addressable **U-Values** sub-tab with draft/version
+  source selection, summary and per-aperture tables, four-edge expansions,
+  warnings, unfinished treatment, provenance, empty state, and SI/IP display.
+- Centralized report/chip query keys and invalidation, canonical W/K
+  conversion, unit labels, and warning contracts.
 
 ## Decisions — resolved 2026-07-29
 
@@ -53,7 +58,7 @@ updated to match.
 
 ## Next step
 
-Commit Phase 03, then implement `phases/phase-04-report-page.md`.
+Commit Phase 04, then implement `phases/phase-05-downloads.md`.
 
 ## Blockers
 
@@ -101,3 +106,12 @@ Commit Phase 03, then implement `phases/phase-04-report-page.md`.
 - 2026-07-30 — Final simplify pass also localized each aperture's rollup
   ranges (removing cross-aperture O(N²) scans) and consolidated HTTP header
   filename sanitization.
+- 2026-07-30 — Phase 04 focused TypeScript/RTL suite: `3` files / `13`
+  tests. `make frontend-dev-check` passed with existing warnings only.
+- 2026-07-30 — Live editor draft verification exercised SI/IP units and all
+  four expanded edge rows; the report footer matched the builder chip at
+  `0.78 W/m²K`. Empty state was verified live; viewer source selection and
+  unfinished rendering were verified in RTL.
+- 2026-07-30 — Phase 04 `make ci` passed: backend `1741 passed, 7 skipped`;
+  frontend `254` files / `2351` tests, structural guards, and production
+  build. `graphify update .` passed.

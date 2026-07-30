@@ -10,9 +10,13 @@ export function aperturesFramesPath(projectId: string): string {
   return `/projects/${projectId}/apertures/frames`;
 }
 
+export function aperturesUValuesPath(projectId: string): string {
+  return `/projects/${projectId}/apertures/u-values`;
+}
+
 export function isApertureSubroute(
   subpath: string,
-  route: "builder" | "glazings" | "frames",
+  route: "builder" | "glazings" | "frames" | "u-values",
 ): boolean {
   return subpath === `/${route}` || subpath.startsWith(`/${route}/`);
 }

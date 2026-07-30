@@ -2,6 +2,7 @@ import { formatNumberWithUnit, parseDecimalInput } from "./format";
 import type { UnitFormatOptions, UnitParseResult } from "./types";
 
 export const BTU_H_FT2_F_PER_W_M2K = 0.1761101838;
+export const BTU_H_F_PER_W_K = 3.412141633 / 1.8;
 const IP_R_PER_SI_R = 5.678263337;
 const BTU_H_FT_F_PER_W_MK = 0.577789317;
 const R_PER_IN_PER_W_MK = 1 / (BTU_H_FT_F_PER_W_MK * 12);
@@ -24,6 +25,27 @@ export function hft2FBtuToM2kW(valueHft2FBtu: number): number {
 
 export function wmkToBtuHftF(valueWmK: number): number {
   return valueWmK * BTU_H_FT_F_PER_W_MK;
+}
+
+export function wkToBtuHF(valueWK: number): number {
+  return valueWK * BTU_H_F_PER_W_K;
+}
+
+export function btuHFToWK(valueBtuHF: number): number {
+  return valueBtuHF / BTU_H_F_PER_W_K;
+}
+
+export function formatHeatFlowFromWK(
+  valueWK: number | null | undefined,
+  options: UnitFormatOptions,
+): string {
+  return options.unitSystem === "IP"
+    ? formatNumberWithUnit(
+        valueWK === null || valueWK === undefined ? valueWK : wkToBtuHF(valueWK),
+        "Btu/(h-F)",
+        { fractionDigits: 3, ...options },
+      )
+    : formatNumberWithUnit(valueWK, "W/K", { fractionDigits: 3, ...options });
 }
 
 export function btuHftFToWmK(valueBtuHftF: number): number {
