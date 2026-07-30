@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-30 — Phase 04 complete; Phase 05 next
-TIME: 08:55 EDT
-STATUS: Active — Phases 01–04 complete; Phase 05 downloads next
+UPDATED: 2026-07-30 — Phase 05 complete; Phase 06 docs closeout next
+TIME: 09:09 EDT
+STATUS: Active — Phases 01–05 complete; Phase 06 docs closeout next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the Aperture U-Value Detail Report feature — a fourth
   Apertures sub-tab showing the line-by-line ISO 10077-1 U-value calculation
@@ -54,5 +54,5 @@ with live formulas** so Phius reviewers can audit the math cell by cell.
 | 02 | `phases/phase-02-report-endpoint.md` | Backend: report JSON endpoint (names, SHGC rollup, provenance, MCP) | Complete |
 | 03 | `phases/phase-03-exporters.md` | Backend: CSV + formula XLSX, `units` param, capability gate | Complete |
 | 04 | `phases/phase-04-report-page.md` | Frontend: U-Values sub-tab page (grouped ReportTable, expansions) | Complete |
-| 05 | `phases/phase-05-downloads.md` | Frontend: download actions + draft/unfinished guards | Next |
-| 06 | `phases/phase-06-docs-pass.md` | Docs pass, glossary, graphify, archive | After 05 |
+| 05 | `phases/phase-05-downloads.md` | Frontend: download actions + draft/unfinished guards | Complete |
+| 06 | `phases/phase-06-docs-pass.md` | Docs pass, glossary, graphify, archive | Next |

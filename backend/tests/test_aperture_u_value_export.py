@@ -360,10 +360,15 @@ def test_export_route_is_gated_defaults_ip_and_validates_query_values(
     _seed_aperture(version_id)
     url = f"/api/v1/projects/{project_id}/versions/{version_id}/apertures/u-values/report/export"
 
-    csv_response = editor.get(url, params={"format": "csv"})
+    csv_response = editor.get(
+        url,
+        params={"format": "csv"},
+        headers={"Origin": "http://localhost:5173"},
+    )
     assert csv_response.status_code == 200
     assert csv_response.headers["content-type"].startswith("text/csv")
     assert "aperture-u-values-IP-" in csv_response.headers["content-disposition"]
+    assert "Content-Disposition" in csv_response.headers["access-control-expose-headers"]
     assert csv_response.content.startswith(b"\xef\xbb\xbf")
 
     xlsx_response = editor.get(

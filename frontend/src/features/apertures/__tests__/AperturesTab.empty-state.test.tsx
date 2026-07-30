@@ -11,6 +11,7 @@ import {
 } from "../../../lib/units/preference-context";
 import type { ProjectDetail, ProjectVersion } from "../../projects/types";
 import type { ApertureUValueReport } from "../hooks/useApertureUValueReport";
+import { APERTURE_EXPORT_U_VALUE_REPORT } from "../lib";
 import { aperturesBuilderPath, aperturesUValuesPath } from "../paths";
 import { AperturesTab } from "../routes/AperturesTab";
 import type { ApertureTypeEntry, AperturesSlice } from "../types";
@@ -19,6 +20,23 @@ const mocks = vi.hoisted(() => ({
   slice: null as unknown,
   applyMutateAsync: vi.fn(),
   uValueReportHook: vi.fn(),
+  capabilities: [] as string[],
+  draftSummary: {
+    source: "draft",
+    draft_etag: "draft-etag",
+  } as { source: "draft" | "version"; draft_etag: string | null },
+}));
+
+vi.mock("../../auth/hooks", () => ({
+  useSessionQuery: vi.fn(() => ({
+    data: { capabilities: mocks.capabilities },
+  })),
+}));
+
+vi.mock("../../project_document/hooks", () => ({
+  useDraftSummaryQuery: vi.fn(() => ({
+    data: mocks.draftSummary,
+  })),
 }));
 
 vi.mock("../hooks", () => ({
@@ -202,6 +220,8 @@ describe("AperturesTab zero-type state", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.slice = createSlice([]);
+    mocks.capabilities = [APERTURE_EXPORT_U_VALUE_REPORT];
+    mocks.draftSummary = { source: "draft", draft_etag: "draft-etag" };
     mocks.applyMutateAsync.mockResolvedValue(createSlice([CREATED_APERTURE]));
     mocks.uValueReportHook.mockReturnValue({
       data: U_VALUE_REPORT,
@@ -263,6 +283,8 @@ describe("AperturesTab U-Values route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.slice = createSlice([]);
+    mocks.capabilities = [APERTURE_EXPORT_U_VALUE_REPORT];
+    mocks.draftSummary = { source: "draft", draft_etag: "draft-etag" };
     mocks.uValueReportHook.mockReturnValue({
       data: U_VALUE_REPORT,
       error: null,
@@ -277,14 +299,35 @@ describe("AperturesTab U-Values route", () => {
     expect(screen.getByText("U-Value Detail Report")).toBeVisible();
     expect(screen.getAllByText("Route Test Window").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "U-Values" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "U-value report actions" })).toBeVisible();
     expect(mocks.uValueReportHook).toHaveBeenCalledWith(PROJECT.id, VERSION.id, "draft", true);
   });
 
-  test("reads the saved version for viewers", () => {
+  test("reads the saved version and hides export actions without the capability", () => {
+    mocks.capabilities = [];
     const viewerProject = { ...PROJECT, access_mode: "viewer" as const };
     renderAperturesTab(viewerProject, aperturesUValuesPath(PROJECT.id));
 
     expect(mocks.uValueReportHook).toHaveBeenCalledWith(PROJECT.id, VERSION.id, "version", true);
+    expect(
+      screen.queryByRole("button", { name: "U-value report actions" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("waits for the draft guard before exposing editor export actions", () => {
+    mocks.draftSummary = undefined as unknown as typeof mocks.draftSummary;
+    renderAperturesTab(PROJECT, aperturesUValuesPath(PROJECT.id));
+
+    expect(
+      screen.queryByRole("button", { name: "U-value report actions" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("allows a saved-version viewer with the export capability", () => {
+    const viewerProject = { ...PROJECT, access_mode: "viewer" as const };
+    renderAperturesTab(viewerProject, aperturesUValuesPath(PROJECT.id));
+
+    expect(screen.getByRole("button", { name: "U-value report actions" })).toBeVisible();
   });
 });
 

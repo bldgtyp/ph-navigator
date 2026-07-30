@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-30 — Phase 04 complete and verified; Phase 05 next
-TIME: 08:55 EDT
-STATUS: Active — Phases 01–04 complete; Phase 05 downloads next
+UPDATED: 2026-07-30 — Phase 05 complete and verified; Phase 06 next
+TIME: 09:09 EDT
+STATUS: Active — Phases 01–05 complete; Phase 06 docs closeout next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -13,7 +13,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 ## Current state (2026-07-30)
 
-Phases 01–04 are implemented and verified on
+Phases 01–05 are implemented and verified on
 `feature/aperture-u-value-report`.
 
 - Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
@@ -46,6 +46,12 @@ Phases 01–04 are implemented and verified on
   warnings, unfinished treatment, provenance, empty state, and SI/IP display.
 - Centralized report/chip query keys and invalidation, canonical W/K
   conversion, unit labels, and warning contracts.
+- Added capability-gated CSV/XLSX actions that export the saved version in the
+  current SI/IP preference, with canonical response filenames and page-level
+  error reporting.
+- Editors get an explicit saved-version warning when a draft exists; unfinished
+  counts come from the saved report being exported. Actions remain hidden until
+  both guard inputs are ready.
 
 ## Decisions — resolved 2026-07-29
 
@@ -58,7 +64,8 @@ updated to match.
 
 ## Next step
 
-Commit Phase 04, then implement `phases/phase-05-downloads.md`.
+Implement `phases/phase-06-docs-pass.md`, run the final closeout gate, and
+archive the completed feature packet.
 
 ## Blockers
 
@@ -115,3 +122,16 @@ Commit Phase 04, then implement `phases/phase-05-downloads.md`.
 - 2026-07-30 — Phase 04 `make ci` passed: backend `1741 passed, 7 skipped`;
   frontend `254` files / `2351` tests, structural guards, and production
   build. `graphify update .` passed.
+- 2026-07-30 — Phase 05 focused exporter route suite: `8 passed`; focused
+  TypeScript/RTL suite: `4` files / `24` tests. `make frontend-dev-check`
+  passed with existing warnings only.
+- 2026-07-30 — Live browser verification exercised the dirty-draft consent
+  path and downloaded BOM/CRLF CSV plus a valid two-sheet XLSX in IP units.
+  The saved version was empty while the draft held the representative
+  aperture, directly confirming that downloads exclude unsaved changes.
+- 2026-07-30 — The Phase 05 simplify pass centralized capability and
+  download-header contracts, aligned unfinished warnings with the saved report,
+  gated pending guard queries, exposed `Content-Disposition` through CORS, and
+  added request cancellation on unmount.
+- 2026-07-30 — Phase 05 `make ci` passed: backend `1741 passed, 7 skipped`;
+  frontend `256` files / `2365` tests, structural guards, and production build.
