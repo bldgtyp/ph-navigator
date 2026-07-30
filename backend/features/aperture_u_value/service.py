@@ -8,6 +8,10 @@ existing API behavior unchanged.
 Void elements are excluded. Missing assignments, incomplete products,
 all-void types, invalid glazing geometry, and mullion frames beside voids are
 reported through typed warnings rather than raising.
+
+Whole-unit U-w is the uninstalled value: frame Ψ-install is retained for
+display but excluded from heat-flow terms. Frame areas use PHN's 45-degree
+corner split, assigning half of each shared corner to each adjacent edge.
 """
 
 from __future__ import annotations

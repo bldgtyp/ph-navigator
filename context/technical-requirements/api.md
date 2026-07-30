@@ -549,6 +549,31 @@ gated (`APERTURES_EXPORT_HBJSON` capability); see
 `context/technical-requirements/hbjson-export.md` for the sibling model-wide
 export.
 
+### 9.10a-2 Aperture U-value audit report
+
+```
+GET /api/v1/projects/{pid}/versions/{vid}/apertures/u-values/report?source=draft|version
+GET /api/v1/projects/{pid}/versions/{vid}/apertures/u-values/report/export?format=csv|xlsx&units=SI|IP
+```
+
+The report route returns fresh, name-bearing ISO 10077-1 detail for every
+aperture type: per-element glazing/frame areas and heat-flow terms, four
+exterior-view edge records, whole-aperture U-w, glazing-area-weighted SHGC,
+warnings, and provenance. Draft reads require edit access; saved-version reads
+require view access. MCP exposes the same read contract through
+`get_aperture_u_value_report`.
+
+The export route always reads the saved version and requires
+`APERTURE_EXPORT_U_VALUE_REPORT`
+(`apertures.export.u_value_report`). CSV is raw BOM/CRLF tabular data; XLSX
+contains live formulas in `Window Units` and `Summary`. Both honor the explicit
+SI/IP query value. U-w excludes Ψ-install, frame corners use PHN's 45° split,
+and unfinished elements remain annotated while contributing U = 0 to the
+aperture rollup. Missing glazing g-values warn without making the element
+unfinished and are excluded from both SHGC numerator and denominator. Empty
+panels produce no detail rows or U-w/SHGC contribution; only their excluded
+count is retained for reconciliation.
+
 ### 9.10b Envelope (Assembly Builder)
 
 ```
@@ -661,6 +686,8 @@ DELETE /api/v1/projects/{project_id}/sidebar-views/{view_key}
 
 # aperture_u_value — backend/features/aperture_u_value/routes.py
 GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/u-values
+GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/u-values/report
+GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/u-values/report/export
 
 # apertures — backend/features/apertures/routes.py
 GET    /api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report

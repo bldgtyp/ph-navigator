@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-30 — Phase 05 complete and verified; Phase 06 next
-TIME: 09:09 EDT
-STATUS: Active — Phases 01–05 complete; Phase 06 docs closeout next
+UPDATED: 2026-07-30 — all phases complete and verified
+TIME: 09:20 EDT
+STATUS: Complete on `feature/aperture-u-value-report`; ready to archive
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -13,7 +13,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 ## Current state (2026-07-30)
 
-Phases 01–05 are implemented and verified on
+Phases 01–06 are implemented and verified on
 `feature/aperture-u-value-report`.
 
 - Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
@@ -52,6 +52,10 @@ Phases 01–05 are implemented and verified on
 - Editors get an explicit saved-version warning when a draft exists; unfinished
   counts come from the saved report being exported. Actions remain hidden until
   both guard inputs are ready.
+- Durable contracts now cover the four Apertures sub-tabs, report columns,
+  source behavior, incomplete/void/missing-SHGC treatment, exterior-view and
+  45° corner conventions, export capability, REST routes, MCP scope, and
+  glossary terms.
 
 ## Decisions — resolved 2026-07-29
 
@@ -64,8 +68,8 @@ updated to match.
 
 ## Next step
 
-Implement `phases/phase-06-docs-pass.md`, run the final closeout gate, and
-archive the completed feature packet.
+Archive this packet under `planning/archive/dated/2026-07-30/`. Review/merge
+and deployment remain Ed's call.
 
 ## Blockers
 
@@ -135,3 +139,9 @@ archive the completed feature packet.
   added request cancellation on unmount.
 - 2026-07-30 — Phase 05 `make ci` passed: backend `1741 passed, 7 skipped`;
   frontend `256` files / `2365` tests, structural guards, and production build.
+- 2026-07-30 — Phase 06 folded the shipped UI, terminology, capability, REST,
+  and MCP contracts into `context/`; simplify review reconciled source
+  fallback, void metadata, missing-SHGC weighting, and route/capability wording.
+- 2026-07-30 — Final `make format`, Graphify update/query, and `make ci`
+  passed: backend `1741 passed, 7 skipped`; frontend `256` files / `2365`
+  tests, structural guards, and production build.
