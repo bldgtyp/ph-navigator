@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { W_M2K_TO_BTU_HRFT2F, formatElementUValue, formatWindowUValue } from "../format-u-value";
+import { BTU_H_FT2_F_PER_W_M2K } from "../../../lib/units/thermal";
+import { formatElementUValue, formatWindowUValue } from "../format-u-value";
 
 describe("formatWindowUValue", () => {
   it("renders SI to two decimal places with the canonical label", () => {
@@ -7,7 +8,7 @@ describe("formatWindowUValue", () => {
   });
 
   it("converts SI → IP using the standard factor", () => {
-    const ip = 1.2 * W_M2K_TO_BTU_HRFT2F;
+    const ip = 1.2 * BTU_H_FT2_F_PER_W_M2K;
     expect(formatWindowUValue(1.2, "ip")).toBe(`Window U-Value: ${ip.toFixed(2)} BTU/(hr·ft²·°F)`);
   });
 

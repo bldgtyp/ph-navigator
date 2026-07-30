@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-UnitSystem = Literal["SI", "IP"]
+from features.shared.units import UnitSystem
 
 
 class UserPublic(BaseModel):

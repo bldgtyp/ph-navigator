@@ -112,6 +112,7 @@ def test_anonymous_cannot_reach_bulk_exports(clean_tables: None) -> None:
 
     get_routes = [
         f"{base}/apertures/hbjson",
+        f"{base}/apertures/u-values/report/export?format=csv",
         f"{base}/envelope/export/hbjson",
         f"{base}/envelope/export/phpp",
         f"{base}/envelope/export/phpp/preflight",

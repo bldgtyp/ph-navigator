@@ -65,6 +65,7 @@ from features.project_document.write_spine import load_draft_context
 from features.project_location.epw import epw_header_looks_valid
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
+from features.shared.responses import safe_header_filename
 
 ATTACHMENT_STATUS_FIELD_BY_ASSET_FIELD = {
     DATASHEET_FIELD_KEY: "datasheet_status",
@@ -444,7 +445,7 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
         now = datetime.now(tz=UTC)
         download_ttl = settings.asset_signed_url_ttl_download_seconds
         preview_ttl = settings.asset_signed_url_ttl_preview_seconds
-        disposition = f'attachment; filename="{_safe_header_filename(asset.original_filename)}"'
+        disposition = f'attachment; filename="{safe_header_filename(asset.original_filename)}"'
         thumbnail_key = asset.metadata.thumbnail_object_key
         return AssetUrlsResponse(
             asset_id=asset.id,
@@ -577,7 +578,3 @@ def _extension_from_content_type(content_type: str) -> str:
         "application/zip": "zip",
         "application/json": "hbjson",
     }.get(content_type, "bin")
-
-
-def _safe_header_filename(filename: str) -> str:
-    return filename.replace('"', "'").replace("\r", "").replace("\n", "")

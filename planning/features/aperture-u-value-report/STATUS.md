@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-29 — Phase 02 complete and verified; Phase 03 next
-TIME: 21:52 EDT
-STATUS: Active — Phases 01–02 complete; Phase 03 exporters next
+UPDATED: 2026-07-30 — Phase 03 complete and verified; Phase 04 next
+TIME: 08:25 EDT
+STATUS: Active — Phases 01–03 complete; Phase 04 report page next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -11,9 +11,9 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 # STATUS — Aperture U-Value Detail Report
 
-## Current state (2026-07-29)
+## Current state (2026-07-30)
 
-Phases 01–02 are implemented and verified on
+Phases 01–03 are implemented and verified on
 `feature/aperture-u-value-report`.
 
 - Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
@@ -31,6 +31,16 @@ Phases 01–02 are implemented and verified on
   counts, provenance, and bounded aperture filtering.
 - Report assembly reuses the Phase 01 calculation terms without computing a
   cache hash, and reads only the requested version's public metadata.
+- Added capability-gated, saved-version CSV/XLSX exports with canonical
+  SI/IP conversions, formula-neutralized user text, explicit unfinished
+  rows, per-edge 45° split formulas, and summary references.
+- XLSX rollups calculate once per aperture over aperture-local ranges and
+  sibling rows reference the first result; multi-aperture ranges are
+  regression-tested.
+- Live Excel recalculation exposed `IFERROR`-masked U-w and SHGC rollup
+  failures that structural openpyxl checks could not detect. The formulas
+  now use text-tolerant `SUMPRODUCT` arguments without blanket error
+  masking; zero-denominator SHGC is handled explicitly.
 
 ## Decisions — resolved 2026-07-29
 
@@ -43,7 +53,7 @@ updated to match.
 
 ## Next step
 
-Commit Phase 02, then implement `phases/phase-03-exporters.md`.
+Commit Phase 03, then implement `phases/phase-04-report-page.md`.
 
 ## Blockers
 
@@ -72,3 +82,22 @@ Commit Phase 02, then implement `phases/phase-03-exporters.md`.
 - 2026-07-29 — Phase 02 `make ci` passed: backend results above; frontend
   `253` files / `2346` tests, structural guards, and production build.
 - 2026-07-29 — `graphify update .` rebuilt the code graph successfully.
+- 2026-07-29 — Phase 03 exporter/access/auth/envelope focused backend suite:
+  `93 passed`; focused frontend unit suite: `27 passed`.
+- 2026-07-29 — Phase 03 simplify review fixed formula injection, hidden
+  valid inputs on unfinished rows, duplicated contracts/helpers, and
+  O(N²) repeated rollup formulas. Exporter regression suite: `8 passed`.
+- 2026-07-29 — Phase 03 `make check-backend` and `make ci` passed:
+  `1741 passed, 7 skipped`; frontend `253` files / `2346` tests,
+  structural guards, and production build. `graphify update .` passed.
+- 2026-07-29 — Recalculation artifact generated at
+  `working/aperture-u-value-report/synthetic-aperture-u-values-IP.xlsx`.
+- 2026-07-30 — An isolated `xlwings` run opened a copy in Microsoft Excel
+  and exposed U-w `0` / blank SHGC results hidden by blanket `IFERROR`.
+  Regressions now pin text-tolerant rollups without blanket masking.
+- 2026-07-30 — Final Excel recalc after the fix: `44` formulas, zero formula
+  errors; Element U `0.17367986326355997`, Aperture U-w and Summary U-w
+  `0.09472966786602`, SHGC `0.45000000000000007`, one unfinished element.
+- 2026-07-30 — Final simplify pass also localized each aperture's rollup
+  ranges (removing cross-aperture O(N²) scans) and consolidated HTTP header
+  filename sanitization.

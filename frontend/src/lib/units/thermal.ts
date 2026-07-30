@@ -1,7 +1,7 @@
 import { formatNumberWithUnit, parseDecimalInput } from "./format";
 import type { UnitFormatOptions, UnitParseResult } from "./types";
 
-const BTU_H_FT2_F_PER_W_M2K = 0.1761101838;
+export const BTU_H_FT2_F_PER_W_M2K = 0.1761101838;
 const IP_R_PER_SI_R = 5.678263337;
 const BTU_H_FT_F_PER_W_MK = 0.577789317;
 const R_PER_IN_PER_W_MK = 1 / (BTU_H_FT_F_PER_W_MK * 12);

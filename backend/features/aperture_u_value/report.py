@@ -205,3 +205,21 @@ def _select_apertures(
             {"aperture_type_ids": missing_ids},
         )
     return tuple(by_id[aperture_id] for aperture_id in unique_ids)
+
+
+def report_element_warning_text(
+    element: ApertureReportElement,
+    section: ApertureReportSection,
+) -> str:
+    """Serialize row warnings consistently across CSV and XLSX exports."""
+    messages = [warning.message for warning in element.warnings]
+    if section.unfinished_count:
+        messages.append(f"Aperture U-w includes {section.unfinished_count} unfinished element(s) as U = 0.")
+    return " | ".join(dict.fromkeys(messages))
+
+
+def neutralize_spreadsheet_text(value: str) -> str:
+    """Keep user-authored text from being interpreted as a spreadsheet formula."""
+    if value and value.lstrip().startswith(("=", "+", "-", "@")):
+        return f"'{value}"
+    return value
