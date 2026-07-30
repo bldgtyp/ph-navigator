@@ -22,6 +22,7 @@ from features.apertures_mcp.tools import (
     tool_apply_aperture_command,
     tool_calculate_aperture_u_values,
     tool_get_aperture_type,
+    tool_get_aperture_u_value_report,
     tool_list_aperture_types,
     tool_report_aperture_catalog_drift,
 )
@@ -90,7 +91,12 @@ from features.mcp.tools import (
     tool_start_bulk_download,
     tool_update_project,
 )
-from features.project_document.models import DiscardDraftResponse, ProjectDiffResponse, SaveDraftResponse
+from features.project_document.models import (
+    DiscardDraftResponse,
+    ProjectDiffResponse,
+    ProjectDocumentSource,
+    SaveDraftResponse,
+)
 from features.project_document.tables.contracts import TableReplacePreviewResponse
 from features.projects.models import ProjectDetail, VersionKind
 
@@ -941,6 +947,24 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
             allow_env_token=allow_env_token,
             aperture_type_ids=aperture_type_ids,
             source="version" if source == "version" else "draft",
+        )
+
+    @mcp.tool()
+    def get_aperture_u_value_report(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        aperture_type_ids: list[str] | None = None,
+        source: ProjectDocumentSource = "draft",
+    ) -> dict[str, object]:
+        """Return line-by-line aperture U-value audit detail with names and edge terms."""
+        return tool_get_aperture_u_value_report(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            aperture_type_ids=aperture_type_ids,
+            source=source,
         )
 
     @mcp.tool()

@@ -21,6 +21,22 @@ PROJECT_VERSION_PUBLIC_COLUMNS = """
 """
 
 
+def get_project_version_public(
+    conn: Connection[Any],
+    project_id: UUID,
+    version_id: UUID,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        SELECT {PROJECT_VERSION_PUBLIC_COLUMNS}
+        FROM project_versions
+        WHERE project_id = %(project_id)s
+          AND id = %(version_id)s
+        """,
+        {"project_id": project_id, "version_id": version_id},
+    ).fetchone()
+
+
 def get_project_version(conn: Connection[Any], project_id: UUID, version_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         f"""

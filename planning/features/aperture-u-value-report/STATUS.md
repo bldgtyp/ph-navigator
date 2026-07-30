@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-29 — Phase 01 complete and verified; Phase 02 next
-TIME: 21:29 EDT
-STATUS: Active — Phase 01 complete; Phase 02 report endpoint next
+UPDATED: 2026-07-29 — Phase 02 complete and verified; Phase 03 next
+TIME: 21:52 EDT
+STATUS: Active — Phases 01–02 complete; Phase 03 exporters next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -13,7 +13,8 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./PLAN.md
 
 ## Current state (2026-07-29)
 
-Phase 01 is implemented on `feature/aperture-u-value-report`.
+Phases 01–02 are implemented and verified on
+`feature/aperture-u-value-report`.
 
 - Added parity fixtures covering asymmetric edges, a mixed 2×2 grid,
   unassigned and incomplete frames, missing glazing, non-positive glazing
@@ -25,6 +26,11 @@ Phase 01 is implemented on `feature/aperture-u-value-report`.
   exact U-values, areas, content hashes, and cache identity are pinned.
 - Assigned-but-incomplete frames now emit `incomplete_frame_data`; truly
   unassigned/deleted references remain `missing_frame`.
+- Added an uncached REST/MCP report contract with name-bearing per-edge
+  detail, exact chip-parity U-w, glazing-area-weighted SHGC, unfinished/void
+  counts, provenance, and bounded aperture filtering.
+- Report assembly reuses the Phase 01 calculation terms without computing a
+  cache hash, and reads only the requested version's public metadata.
 
 ## Decisions — resolved 2026-07-29
 
@@ -37,7 +43,7 @@ updated to match.
 
 ## Next step
 
-Commit Phase 01, then implement `phases/phase-02-report-endpoint.md`.
+Commit Phase 02, then implement `phases/phase-03-exporters.md`.
 
 ## Blockers
 
@@ -56,3 +62,13 @@ Commit Phase 01, then implement `phases/phase-02-report-endpoint.md`.
   boundaries, Ty, Alembic, `1726 passed, 7 skipped`.
 - 2026-07-29 — Phase 01 `make ci` passed: backend results above; frontend
   `253` files / `2346` tests, structural guards, and production build.
+- 2026-07-29 — Phase 02 focused report/parity/service/MCP suite: `41 passed`;
+  Ty passed for all touched backend slices; MCP schema/source regression:
+  `1 passed`.
+- 2026-07-29 — Phase 02 `make check-backend` passed: Ruff, backend
+  boundaries, Ty, Alembic, `1733 passed, 7 skipped`.
+- 2026-07-29 — Registered `phn-local` stdio smoke returned the report
+  provenance from the `AGENT-BROWSER` fixture with `source=draft`.
+- 2026-07-29 — Phase 02 `make ci` passed: backend results above; frontend
+  `253` files / `2346` tests, structural guards, and production build.
+- 2026-07-29 — `graphify update .` rebuilt the code graph successfully.

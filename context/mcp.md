@@ -90,6 +90,7 @@ once, and every name here must be registered by `build_mcp_server`.
 - `duplicate_custom_field`
 - `edit_custom_field_options`
 - `get_aperture_type`
+- `get_aperture_u_value_report`
 - `get_aperture_window_constructions`
 - `get_asset_url`
 - `get_climate_location`

@@ -37,6 +37,7 @@ from features.project_document.validation import (
     validate_document_with_errors,
 )
 from features.projects.access import ProjectAccess, require_editor_user
+from features.projects.models import ProjectVersionPublic
 from features.shared.errors import api_error
 
 if TYPE_CHECKING:
@@ -67,6 +68,22 @@ def get_saved_document(version_id: UUID, access: ProjectAccess) -> ProjectDocume
     body = validate_document(version["body"])
     _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
     return body
+
+
+def get_project_version_public(
+    version_id: UUID,
+    access: ProjectAccess,
+) -> ProjectVersionPublic:
+    """Return metadata for one project version without loading its siblings."""
+    with connection() as conn:
+        version = repository.get_project_version_public(
+            conn,
+            access.project_id,
+            version_id,
+        )
+        if version is None:
+            raise_project_version_not_found()
+    return ProjectVersionPublic.model_validate({field: version[field] for field in ProjectVersionPublic.model_fields})
 
 
 def load_document_body(

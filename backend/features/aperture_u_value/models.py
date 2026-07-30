@@ -19,6 +19,7 @@ UValueWarningKind = Literal[
     "missing_frame",
     "incomplete_frame_data",
     "missing_glazing",
+    "missing_glazing_g_value",
     "missing_dimension",
     "non_positive_glazing_area",
     "no_glazed_elements",
@@ -93,7 +94,7 @@ class ApertureElementDetail(BaseModel):
     q_glazing_w_k: float | None
     q_frame_total_w_k: float | None
     q_spacer_total_w_k: float | None
-    edges: list[ApertureEdgeBreakdown]
+    edges: tuple[ApertureEdgeBreakdown, ...]
     warnings: list[ApertureUValueWarning]
 
 
@@ -108,8 +109,8 @@ class ApertureUValueResult(BaseModel):
     content_hash: str
 
 
-class ApertureUValueDetailResult(BaseModel):
-    """Uncached detailed calculation used by report and export surfaces."""
+class ApertureUValueCalculation(BaseModel):
+    """Detailed calculation terms before any cache identity is attached."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -118,7 +119,65 @@ class ApertureUValueDetailResult(BaseModel):
     total_area_m2: float
     elements: list[ApertureElementDetail]
     warnings: list[ApertureUValueWarning]
+
+
+class ApertureUValueDetailResult(ApertureUValueCalculation):
+    """Detailed calculation plus the legacy result-affecting content hash."""
+
     content_hash: str
+
+
+class ApertureReportEdge(ApertureEdgeBreakdown):
+    """Detailed edge term joined to its current project-frame name."""
+
+    frame_name: str | None
+
+
+class ApertureReportElement(ApertureElementDetail):
+    """Detailed element term joined to report-facing names and position."""
+
+    element_name: str
+    grid_label: str
+    glazing_name: str | None
+    unfinished: bool
+    edges: tuple[ApertureReportEdge, ...]
+
+
+class ApertureReportSection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    aperture_type_id: str
+    name: str
+    overall_width_m: float
+    overall_height_m: float
+    element_count: int
+    void_count: int
+    unfinished_count: int
+    total_area_m2: float
+    window_u_value_w_m2k: float
+    shgc_glazing_area_weighted: float | None
+    warnings: list[ApertureUValueWarning]
+    elements: list[ApertureReportElement]
+
+
+class ApertureReportProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_name: str
+    bt_number: str
+    version_label: str
+    source: Literal["draft", "version"]
+    generated_note: str
+
+
+class ApertureUValueReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: Literal["draft", "version"]
+    provenance: ApertureReportProvenance
+    apertures: list[ApertureReportSection]
 
 
 class AperturesUValueListResponse(BaseModel):

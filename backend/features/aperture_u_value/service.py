@@ -19,6 +19,7 @@ from features.aperture_u_value.models import (
     ApertureEdgeBreakdown,
     ApertureElementDetail,
     ApertureElementUValue,
+    ApertureUValueCalculation,
     ApertureUValueDetailResult,
     ApertureUValueResult,
     ApertureUValueWarning,
@@ -56,14 +57,14 @@ def calculate_aperture_u_values(
     if isinstance(cached, ApertureUValueResult):
         return cached
 
-    detailed = _calculate_aperture_u_values_detailed(entry, tables, cache_key)
+    detailed = calculate_aperture_u_value_terms(entry, tables)
     result = ApertureUValueResult(
         aperture_type_id=detailed.aperture_type_id,
         window_u_value_w_m2k=detailed.window_u_value_w_m2k,
         total_area_m2=detailed.total_area_m2,
         elements=[_legacy_element(element) for element in detailed.elements],
         warnings=detailed.warnings,
-        content_hash=detailed.content_hash,
+        content_hash=cache_key,
     )
     cache_put(cache_key, result)
     return result
@@ -74,18 +75,18 @@ def calculate_aperture_u_values_detailed(
     tables: ProjectDocumentTables,
 ) -> ApertureUValueDetailResult:
     """Calculate fresh detail without using the name-blind legacy cache."""
-    return _calculate_aperture_u_values_detailed(
-        entry,
-        tables,
-        content_hash_for_aperture(entry, tables),
+    calculation = calculate_aperture_u_value_terms(entry, tables)
+    return ApertureUValueDetailResult(
+        **calculation.model_dump(),
+        content_hash=content_hash_for_aperture(entry, tables),
     )
 
 
-def _calculate_aperture_u_values_detailed(
+def calculate_aperture_u_value_terms(
     entry: ApertureTypeEntry,
     tables: ProjectDocumentTables,
-    content_hash: str,
-) -> ApertureUValueDetailResult:
+) -> ApertureUValueCalculation:
+    """Calculate report-ready terms without cache lookup or hash generation."""
     element_results: list[ApertureElementDetail] = []
     aggregate_warnings: list[ApertureUValueWarning] = []
     total_q = 0.0
@@ -113,13 +114,12 @@ def _calculate_aperture_u_values_detailed(
         total_q += detail.u_value_w_m2k * detail.area_m2
         total_area += detail.area_m2
 
-    return ApertureUValueDetailResult(
+    return ApertureUValueCalculation(
         aperture_type_id=entry.id,
         window_u_value_w_m2k=round(total_q / total_area, 4) if total_area > 0 else 0.0,
         total_area_m2=round(total_area, 6),
         elements=element_results,
         warnings=aggregate_warnings,
-        content_hash=content_hash,
     )
 
 
@@ -253,12 +253,12 @@ def _calculate_element_detail(
             frame_area_m2=round(total_area, 6),
         )
 
-    edges = [
+    edges = (
         _edge_breakdown("top", f_top, f_left, f_right, width_m, interior_width),
         _edge_breakdown("right", f_right, f_top, f_bottom, height_m, interior_height),
         _edge_breakdown("bottom", f_bottom, f_left, f_right, width_m, interior_width),
         _edge_breakdown("left", f_left, f_top, f_bottom, height_m, interior_height),
-    ]
+    )
     glazing_area = interior_width * interior_height
     frame_area = total_area - glazing_area
     q_glazing = glazing_area * glazing_u
@@ -321,7 +321,7 @@ def _uncomputed_detail(
         q_glazing_w_k=None,
         q_frame_total_w_k=None,
         q_spacer_total_w_k=None,
-        edges=[
+        edges=tuple(
             _edge_input(
                 side,
                 frame_ids[side],
@@ -329,7 +329,7 @@ def _uncomputed_detail(
                 width_m if side in ("top", "bottom") else height_m,
             )
             for side in APERTURE_SIDES
-        ],
+        ),
         warnings=warnings,
     )
 

@@ -1,11 +1,12 @@
 """MCP tools for the Apertures feature.
 
-Five tools, each a thin wrapper over an existing service:
+Six tools, each a thin wrapper over an existing service:
 
   - ``list_aperture_types`` / ``get_aperture_type`` — read the apertures
     slice from the current draft (or saved) document.
   - ``report_aperture_catalog_drift`` — Phase 12 detector.
   - ``calculate_aperture_u_values`` — Phase 09 service.
+  - ``get_aperture_u_value_report`` — name-bearing audit detail.
   - ``apply_aperture_command`` — wraps the Phase 01 dispatcher through
     the same ``apply_aperture_command_to_draft`` editor-only service the
     browser uses (``updated_via="mcp"``). ETag preflight, locked-version
@@ -17,6 +18,7 @@ lives behind the dispatcher; this module is wiring.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -26,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from features.aperture_drift.detector import detect_aperture_drift
 from features.aperture_drift.models import ApertureDriftReport
 from features.aperture_drift.reader import LiveCatalogReader
+from features.aperture_u_value.report import get_aperture_u_value_report
 from features.aperture_u_value.service import calculate_aperture_u_values as _calc_u_values
 from features.mcp.helpers import (
     current_token,
@@ -127,6 +130,42 @@ def tool_calculate_aperture_u_values(
     }
 
 
+def tool_get_aperture_u_value_report(
+    project_id: str,
+    version_id: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+    aperture_type_ids: list[str] | None = None,
+    source: ProjectDocumentSource = "draft",
+) -> dict[str, object]:
+    """Return the full U-value audit report for requested aperture types."""
+    read_context = _load_context(
+        project_id,
+        version_id,
+        ctx,
+        allow_env_token,
+        source,
+    )
+    try:
+        return get_aperture_u_value_report(
+            version_id=read_context.version_id,
+            access=read_context.access,
+            source=source,
+            aperture_type_ids=aperture_type_ids,
+            body=read_context.body,
+        ).model_dump(mode="json")
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="aperture_u_value_report_failed",
+            default_message="Aperture U-value report could not be loaded.",
+            default_recoverability="fatal",
+            recoverability_by_code={"aperture_type_not_found": "refresh"},
+        )
+
+
 def tool_report_aperture_catalog_drift(
     project_id: str,
     version_id: str,
@@ -202,11 +241,41 @@ def _load_body(
     allow_env_token: bool,
     source: ProjectDocumentSource,
 ) -> ProjectDocumentV1:
+    return _load_context(
+        project_id,
+        version_id,
+        ctx,
+        allow_env_token,
+        source,
+    ).body
+
+
+@dataclass(frozen=True)
+class _ReadContext:
+    project_id: UUID
+    version_id: UUID
+    access: ProjectAccess
+    body: ProjectDocumentV1
+
+
+def _load_context(
+    project_id: str,
+    version_id: str,
+    ctx: Context,
+    allow_env_token: bool,
+    source: ProjectDocumentSource,
+) -> _ReadContext:
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     parsed_version_id = parse_uuid(version_id, "version_id", ctx)
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
-    return _read_body(parsed_version_id, access, source, ctx)
+    body = _read_body(parsed_version_id, access, source, ctx)
+    return _ReadContext(
+        project_id=parsed_project_id,
+        version_id=parsed_version_id,
+        access=access,
+        body=body,
+    )
 
 
 def _read_body(

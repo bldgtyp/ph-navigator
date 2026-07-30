@@ -16,7 +16,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from features.aperture_u_value.models import AperturesUValueListResponse
+from features.aperture_u_value.models import (
+    AperturesUValueListResponse,
+    ApertureUValueReport,
+)
+from features.aperture_u_value.report import get_aperture_u_value_report as get_report
 from features.aperture_u_value.service import calculate_aperture_u_values
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.store import load_document_body
@@ -48,4 +52,20 @@ def get_aperture_u_values(
         version_id=version_id,
         source=source,
         apertures=results,
+    )
+
+
+@router.get("/apertures/u-values/report", response_model=ApertureUValueReport)
+def get_aperture_u_value_report(
+    project_id: UUID,
+    version_id: UUID,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query(pattern=r"^(draft|version)$")] = "draft",
+) -> ApertureUValueReport:
+    """Return fresh, name-bearing audit detail for every aperture type."""
+    del project_id  # Path arg only — access carries the project id.
+    return get_report(
+        version_id=version_id,
+        access=access,
+        source=source,
     )

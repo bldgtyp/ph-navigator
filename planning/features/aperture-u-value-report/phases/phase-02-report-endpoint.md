@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
-TIME: 14:31 EDT
-STATUS: Ready after Phase 1
+UPDATED: 2026-07-29 — implementation and verification complete
+TIME: 21:52 EDT
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 2 — the report JSON endpoint: names joined, grid-position
   labels, glazing-area-weighted SHGC rollup, provenance block, MCP sibling.
@@ -88,3 +89,18 @@ New test module green; existing u-values endpoint tests untouched;
 `make check-backend`; MCP smoke via the project-registered `phn-local`
 stdio server (`get_aperture_u_value_report` against the AGENT-BROWSER
 fixture); `make ci`.
+
+## Implementation ledger
+
+- Added fresh, uncached REST and MCP report paths with one shared orchestration
+  function.
+- Added name-bearing report DTOs, exact legacy-rollup reuse, SHGC weighting,
+  warning/unfinished counts, provenance, and bounded/deduplicated MCP filters.
+- Added a one-row, metadata-only project-version lookup so report assembly
+  does not reload the saved document body.
+- Focused report/parity/service/MCP suite: `41 passed`; touched-slice Ty:
+  passed; MCP schema/source regression: `1 passed`.
+- `make check-backend`: `1733 passed, 7 skipped`; registered `phn-local`
+  stdio report smoke passed against `AGENT-BROWSER`; `make ci`: backend
+  results above plus frontend `253` files / `2346` tests and production
+  build; `graphify update .`: passed.
