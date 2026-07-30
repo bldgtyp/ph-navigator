@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-29
-UPDATED: 2026-07-30 — all phases complete and verified
-TIME: 09:20 EDT
-STATUS: Complete on `feature/aperture-u-value-report`; ready to archive
+UPDATED: 2026-07-30 — all phases complete, verified, and archived
+TIME: 09:28 EDT
+STATUS: Complete / archived from `feature/aperture-u-value-report`
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and verification ledger for the Aperture
   U-Value Detail Report feature.
@@ -68,8 +68,7 @@ updated to match.
 
 ## Next step
 
-Archive this packet under `planning/archive/dated/2026-07-30/`. Review/merge
-and deployment remain Ed's call.
+Review/merge and deployment remain Ed's call.
 
 ## Blockers
 
