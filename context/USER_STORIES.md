@@ -34,9 +34,9 @@ two aperture items (verify against code before acting on either):
   + Save-time validation (explicit pick required); not re-verified against the
   shipped builder.
 - **Q-APT-5 — Per-aperture-type deep-link URL.** Still open / not shipped.
-  Routes are `/projects/{id}/apertures/{builder|glazings|frames}` only; the
-  active aperture type is component/store state (`AperturesTab.tsx`), not a URL
-  param.
+  Routes are
+  `/projects/{id}/apertures/{builder|glazings|frames|u-values}`; the active
+  aperture type is component/store state (`AperturesTab.tsx`), not a URL param.
 
 The original **vertical-slice phasing plan** (Phases 0–7) is preserved in the
 archived bodies and in the `planning/archive/README.md` index; it is historical

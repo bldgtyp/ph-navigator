@@ -11,7 +11,6 @@ import {
   fetchApertureSpecReport,
 } from "./api";
 import { apertureDriftReportQueryKey } from "./hooks/useApertureDriftReport";
-import { apertureUValuesQueryKey } from "./hooks/useApertureUValues";
 import { apertureQueryKeys } from "./query-keys";
 import type {
   ApertureAttachmentChangeArgs,
@@ -43,6 +42,7 @@ const U_VALUE_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
   "splitElement",
   "pasteAssignment",
   "flipLeftRight",
+  "refreshRefFromCatalog",
 ]);
 
 /** Wire kinds that change a catalog-aware ref shape (origin / fields)
@@ -252,7 +252,10 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       });
       if (U_VALUE_AFFECTING_KINDS.has(variables.command.kind)) {
         queryClient.invalidateQueries({
-          queryKey: apertureUValuesQueryKey(projectId, slice.version_id, slice.source),
+          queryKey: apertureQueryKeys.uValues(projectId, slice.version_id, slice.source),
+        });
+        queryClient.invalidateQueries({
+          queryKey: apertureQueryKeys.uValueReport(projectId, slice.version_id, slice.source),
         });
       }
       if (DRIFT_AFFECTING_KINDS.has(variables.command.kind)) {
@@ -278,6 +281,12 @@ async function invalidateApertureReportQueries(
     }),
     queryClient.invalidateQueries({
       queryKey: apertureDriftReportQueryKey(projectId, versionId, "draft"),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: apertureQueryKeys.uValueReport(projectId, versionId, "draft"),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: apertureQueryKeys.uValues(projectId, versionId, "draft"),
     }),
   ]);
 }

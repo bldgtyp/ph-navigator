@@ -127,8 +127,9 @@ that maps to a **Capability** set (`features/access/principals.py`,
   "Viewer" — read-only, redacted project metadata
   (`project.view.private_metadata` gated out), no bulk exports/downloads.
   `MEMBER_CAPS` (any signed-in User) ≈ old "Editor" — read + write +
-  private metadata + every export. `catalog.edit` and
-  `admin.users.manage` are separately grantable via `user_grants` (Admin
+  private metadata + every export, including the aperture audit export key
+  `apertures.export.u_value_report`; members also hold `catalog.edit`.
+  `admin.users.manage` is separately grantable via `user_grants` (Admin
   preset, or `is_staff`) rather than being implicit in "signed in."
 - **Project ownership** is still a *dashboard-organization* concept, not
   an ACL. Each project has exactly one `owner_id`; the owner sees the

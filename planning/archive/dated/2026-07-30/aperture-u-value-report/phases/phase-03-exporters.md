@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
-TIME: 14:31 EDT
-STATUS: Ready after Phase 2
+UPDATED: 2026-07-30 — implementation and live Excel verification complete
+TIME: 08:25 EDT
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — CSV and formula-bearing XLSX serializers, the export
   endpoint with units param and capability gate, canonical IP constants.
@@ -110,3 +111,32 @@ XLSX for the AGENT-BROWSER fixture, open in LibreOffice/Excel, force
 recalculate, confirm zero result-cell drift vs the app and that element
 U's match the builder chip at 4dp. Record the check in STATUS.md.
 `make ci` before hand-off.
+
+## Implementation ledger
+
+- Added canonical shared `UnitSystem` plus precise aperture length, area,
+  U-value, linear-psi, and heat-flow conversions.
+- Added safe shared download responses/filename parts and the
+  `APERTURE_EXPORT_U_VALUE_REPORT` member capability.
+- Added SI/IP BOM+CRLF CSV goldens and a formula-bearing two-sheet XLSX with
+  provenance, full-precision present inputs, `UNFINISHED` calculated cells,
+  per-edge 45° split formulas, one aperture-local rollup calculation per
+  aperture, and formula-linked summaries.
+- Neutralized user-authored spreadsheet-formula prefixes in both formats;
+  preserved valid inputs for non-positive glazing geometry; documented the
+  shared-mullion convention.
+- Focused exporter/access/auth/envelope backend suite: `93 passed`; focused
+  frontend conversion tests: `27 passed`; exporter regressions: `8 passed`.
+- `make check-backend` and `make ci`: `1741 passed, 7 skipped`; frontend
+  `253` files / `2346` tests, structural guards, and production build;
+  `graphify update .`: passed.
+- An isolated `xlwings` run opened the generated workbook in Microsoft
+  Excel. The first recalculation exposed U-w `0` and blank SHGC results
+  hidden by blanket `IFERROR`; the rollups were corrected to use
+  text-tolerant `SUMPRODUCT` arguments without blanket masking.
+- Final Excel recalc: `44` formulas, zero formula errors; Element U
+  `0.17367986326355997`, Aperture U-w and Summary U-w
+  `0.09472966786602`, SHGC `0.45000000000000007`, one unfinished element.
+- Final simplify pass localized rollup ranges to each contiguous aperture
+  section, removed cross-aperture O(N²) recalculation, and consolidated
+  HTTP header filename sanitization.

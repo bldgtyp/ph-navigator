@@ -10,11 +10,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchJson } from "../../../shared/api/client";
+import { apertureQueryKeys } from "../query-keys";
 
 export type ApertureUValueWarning = {
   kind:
     | "missing_frame"
+    | "incomplete_frame_data"
     | "missing_glazing"
+    | "missing_glazing_g_value"
     | "missing_dimension"
     | "non_positive_glazing_area"
     | "no_glazed_elements"
@@ -50,23 +53,13 @@ export type AperturesUValueListResponse = {
   apertures: ApertureUValueResult[];
 };
 
-export const APERTURE_U_VALUES_QUERY_KEY = "apertures-u-values" as const;
-
-export function apertureUValuesQueryKey(
-  projectId: string,
-  versionId: string,
-  source: "draft" | "version",
-) {
-  return [APERTURE_U_VALUES_QUERY_KEY, projectId, versionId, source] as const;
-}
-
 export function useApertureUValues(
   projectId: string | null | undefined,
   versionId: string | null | undefined,
   source: "draft" | "version",
 ) {
   return useQuery({
-    queryKey: apertureUValuesQueryKey(projectId ?? "", versionId ?? "", source),
+    queryKey: apertureQueryKeys.uValues(projectId ?? "", versionId ?? "", source),
     queryFn: ({ signal }) =>
       fetchJson<AperturesUValueListResponse>(
         `/api/v1/projects/${projectId}/versions/${versionId}/apertures/u-values?source=${source}`,

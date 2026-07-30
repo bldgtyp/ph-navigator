@@ -72,6 +72,17 @@ export async function fetchBlob(
   return response.blob();
 }
 
+export async function fetchDownload(
+  path: string,
+  options: RequestInit & { signal?: AbortSignal } = {},
+): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await fetchApiResponse(path, options);
+  return {
+    blob: await response.blob(),
+    filename: filenameFromContentDisposition(response.headers.get("Content-Disposition")),
+  };
+}
+
 async function fetchApiResponse(
   path: string,
   options: RequestInit & { signal?: AbortSignal } = {},
@@ -107,4 +118,19 @@ async function fetchApiResponse(
     throw error;
   }
   return response;
+}
+
+function filenameFromContentDisposition(value: string | null): string | null {
+  if (!value) return null;
+  const encoded = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded.replace(/^"|"$/g, ""));
+    } catch {
+      return encoded.replace(/^"|"$/g, "");
+    }
+  }
+  return (
+    value.match(/filename="([^"]+)"/i)?.[1] ?? value.match(/filename=([^;]+)/i)?.[1]?.trim() ?? null
+  );
 }

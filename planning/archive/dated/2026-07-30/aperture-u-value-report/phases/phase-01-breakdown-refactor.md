@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
-TIME: 14:31 EDT
-STATUS: Ready — no prerequisites; first phase on the feature branch
+UPDATED: 2026-07-29 — implementation and all Phase 01 gates complete
+TIME: 21:29 EDT
+STATUS: Complete — parity locked, detailed breakdown shipped, all gates green
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 1 — parity-locked refactor of the aperture U-value service so
   the per-side intermediates (areas, lengths, heat-loss terms) are emitted
@@ -94,3 +95,16 @@ Pin tests green before and after the refactor with unchanged expected
 values (except the named warning-kind delta); invariant tests green;
 `make check-backend`; existing aperture/MCP test suites untouched and
 green; `make ci` before hand-off.
+
+### Evidence
+
+- Pre-refactor parity snapshot: `uv run pytest
+  tests/test_aperture_u_value_parity.py -q` → `7 passed`.
+- Post-refactor parity + existing service + MCP tests: `34 passed`.
+- Focused `ruff check` and `ty check` passed.
+- `simplify`: reused the legacy cache key, made completed-edge nulls fail
+  loudly, and consolidated uncomputed-detail construction.
+- `make check-backend`: Ruff, boundary checks, Ty, Alembic, `1726 passed,
+  7 skipped`.
+- `make ci`: backend green; frontend `253` files / `2346` tests,
+  structural guards, and production build green.

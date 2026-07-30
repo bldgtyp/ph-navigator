@@ -6,6 +6,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
+import { useSessionQuery } from "../../auth/hooks";
+import { useDraftSummaryQuery } from "../../project_document/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
 import { ApertureEmptyState } from "../components/ApertureEmptyState";
@@ -20,6 +22,8 @@ import { FramesPanel } from "../components/FramesPanel";
 import { GlazingsPanel } from "../components/GlazingsPanel";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { RefreshDialog } from "../components/RefreshDialog";
+import { UValueReportPanel } from "../components/UValueReportPanel";
+import { UValueReportActions } from "../components/UValueReportActions";
 import type { ApertureDriftEntry } from "../drift-types";
 import {
   useApplyApertureCommandMutation,
@@ -32,16 +36,18 @@ import {
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureUValues } from "../hooks/useApertureUValues";
+import { useApertureUValueReport } from "../hooks/useApertureUValueReport";
 import { DriftProvider } from "../hooks/useDriftContext";
 import { FramePickerFilterProvider } from "../hooks/useFramePickerFilters";
 import { useFramePickerFilterPreferences } from "../hooks/useFramePickerFilterPreferences";
 import { ManufacturerFilterProvider } from "../hooks/useManufacturerFilter";
-import { naturalSortApertures } from "../lib";
+import { canExportApertureUValueReport, naturalSortApertures } from "../lib";
 import {
   apertureSubpath,
   aperturesBuilderPath,
   aperturesFramesPath,
   aperturesGlazingsPath,
+  aperturesUValuesPath,
   isApertureSubroute,
 } from "../paths";
 import type {
@@ -58,6 +64,7 @@ type DialogState = { kind: "none" } | { kind: "delete"; aperture: ApertureTypeEn
 
 export function AperturesTab({ project }: { project: ProjectDetail }) {
   const location = useLocation();
+  const sessionQuery = useSessionQuery();
   const isViewer = project.access_mode === "viewer";
   const isLocked = project.active_version?.locked ?? false;
   const canEdit = !isViewer && !isLocked && Boolean(project.active_version_id);
@@ -66,7 +73,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const isBuilderRoute = isApertureSubroute(subpath, "builder");
   const isGlazingsRoute = isApertureSubroute(subpath, "glazings");
   const isFramesRoute = isApertureSubroute(subpath, "frames");
-  const isReportRoute = isGlazingsRoute || isFramesRoute;
+  const isUValuesRoute = isApertureSubroute(subpath, "u-values");
+  const isProductReportRoute = isGlazingsRoute || isFramesRoute;
+  const canExportUValueReport = canExportApertureUValueReport(sessionQuery.data);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
@@ -97,7 +106,24 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     project.id,
     project.active_version_id,
     reportSource,
-    isGlazingsRoute || isFramesRoute,
+    isProductReportRoute,
+  );
+  const uValueReportQuery = useApertureUValueReport(
+    project.id,
+    project.active_version_id,
+    reportSource,
+    isUValuesRoute,
+  );
+  const savedUValueReportQuery = useApertureUValueReport(
+    project.id,
+    project.active_version_id,
+    "version",
+    isUValuesRoute && reportSource === "draft" && canExportUValueReport,
+  );
+  const draftSummaryQuery = useDraftSummaryQuery(
+    project.id,
+    project.active_version_id,
+    isUValuesRoute && !isViewer && canExportUValueReport,
   );
   const mutation = useApplyApertureCommandMutation(project.id, project.active_version_id);
   const productCommandMutation = useApertureProductCommandMutation(
@@ -129,9 +155,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const uValueQuery = useApertureUValues(project.id, builderVersionId, uValueSource);
   const driftQuery = useApertureDriftReport(
     project.id,
-    isBuilderRoute || isReportRoute ? project.active_version_id : null,
+    isBuilderRoute || isProductReportRoute ? project.active_version_id : null,
     isBuilderRoute ? uValueSource : reportSource,
-    isBuilderRoute || isReportRoute,
+    isBuilderRoute || isProductReportRoute,
   );
   const driftEntries = driftQuery.data?.entries ?? [];
   const activeUValue =
@@ -246,7 +272,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     );
   }
 
-  if (!isBuilderRoute && !isGlazingsRoute && !isFramesRoute) {
+  if (!isBuilderRoute && !isGlazingsRoute && !isFramesRoute && !isUValuesRoute) {
     return (
       <Navigate
         to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
@@ -310,6 +336,25 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     productCommandMutation.isPending ||
     reportAttachmentMutation.isPending ||
     reportRefreshMutation.isPending;
+  const exportReport =
+    reportSource === "version" ? uValueReportQuery.data : savedUValueReportQuery.data;
+  const draftGuardReady =
+    isViewer || Boolean(draftSummaryQuery.data && "draft_etag" in draftSummaryQuery.data);
+  const uValueReportActions =
+    isUValuesRoute && exportReport && canExportUValueReport && draftGuardReady ? (
+      <UValueReportActions
+        projectId={project.id}
+        versionId={project.active_version_id}
+        report={exportReport}
+        hasUnsavedDraft={
+          draftSummaryQuery.data?.source === "draft" &&
+          "draft_etag" in draftSummaryQuery.data &&
+          Boolean(draftSummaryQuery.data.draft_etag)
+        }
+        canExport
+        onError={setActionError}
+      />
+    ) : null;
 
   return (
     <ManufacturerFilterProvider
@@ -321,7 +366,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
       <FramePickerFilterProvider value={framePickerFilterContext}>
         <DriftProvider value={{ entries: driftEntries, onOpenRefresh: setRefreshEntry }}>
           <section className="tab-panel apertures-page" aria-label="Apertures">
-            <AppSubTabs id="aperture-subtabs" ariaLabel="Aperture views">
+            <AppSubTabs
+              id="aperture-subtabs"
+              ariaLabel="Aperture views"
+              actions={uValueReportActions}
+            >
               <AppSubTabLink
                 to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
               >
@@ -336,6 +385,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 to={{ pathname: aperturesFramesPath(project.id), search: location.search }}
               >
                 Frames
+              </AppSubTabLink>
+              <AppSubTabLink
+                to={{ pathname: aperturesUValuesPath(project.id), search: location.search }}
+              >
+                U-Values
               </AppSubTabLink>
             </AppSubTabs>
             <RefreshDialog
@@ -366,7 +420,26 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   {actionError}
                 </p>
               ) : null}
-              {isReportRoute ? (
+              {isUValuesRoute ? (
+                uValueReportQuery.isLoading ? (
+                  <section className="apertures-placeholder-panel">
+                    <p>Loading U-Value report...</p>
+                  </section>
+                ) : uValueReportQuery.isError || !uValueReportQuery.data ? (
+                  <section className="apertures-placeholder-panel">
+                    <p role="alert">
+                      {errorMessage(uValueReportQuery.error, "Could not load the U-Value report.")}
+                    </p>
+                  </section>
+                ) : (
+                  <UValueReportPanel
+                    report={uValueReportQuery.data}
+                    builderPath={aperturesBuilderPath(project.id)}
+                    canEdit={canEdit}
+                  />
+                )
+              ) : null}
+              {isProductReportRoute ? (
                 <section
                   className="apertures-placeholder-panel"
                   aria-label={isGlazingsRoute ? "Glazings" : "Frames"}

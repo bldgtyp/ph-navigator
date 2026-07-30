@@ -68,6 +68,7 @@ export {
   btuHftFToWmK,
   conductivityWmKToRPerIn,
   formatConductivityFromWmK,
+  formatHeatFlowFromWK,
   formatLinearPsiFromWmK,
   formatRPerInFromConductivityWmK,
   formatRValueFromM2KPerW,

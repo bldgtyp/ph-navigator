@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
+UPDATED: 2026-07-30 — documentation closeout complete
 TIME: 14:31 EDT
-STATUS: Ready after Phase 5
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 6 — documentation closeout: page docs, glossary, decision
   fold-back, graphify, and feature archive.
@@ -59,3 +60,35 @@ a silent fix inside the docs pass.
 Docs guards green in `make ci`; `apertures-tab.md` §2.6.4 readable
 standalone; graphify query for "aperture u-value report" resolves to the
 new modules; archive checklist from `planning/.instructions.md` satisfied.
+
+## Implementation ledger
+
+- Added `context/ui/pages/apertures-tab.md` §2.6.4 and updated both UI indexes
+  for the fourth route-addressable sub-tab. The page contract covers all
+  summary/element/edge columns, source fallback, warnings, Empty-panel count
+  metadata, downloads, capability hiding, and saved-version consent.
+- Added **Uninstalled U-w**, **45° corner split**, and
+  **Glazing-area-weighted SHGC** to `context/GLOSSARY.md`, including the
+  missing-g-value denominator rule.
+- Added the report/export routes and capability contract to
+  `context/technical-requirements/api.md`; corrected the active
+  `context/USER_STORIES.md` route set and the pre-existing `catalog.edit`
+  capability wording in `context/PRD.md`.
+- `context/mcp.md` already contained `get_aperture_u_value_report` in the
+  CI-guarded inventory; the scope matrix now names the aperture read tools.
+- The calculation service header now states the uninstalled U-w and 45° frame
+  corner invariants next to the shipped implementation.
+- Simplify review corrected editor source fallback, void-count reconciliation,
+  unfinished-row wording, missing-SHGC treatment, route inventory, and
+  capability-bundle wording. The reuse and efficiency reviews found no other
+  contract-placement or maintainability issues.
+- The collaborative browser's final 1280×800 IP snapshot captured the
+  expanded Top/Right/Bottom/Left edge table. No screenshot binary was copied
+  into `assets/`: Phase 4 had not produced a local file, and
+  `context/ui/pages/.instructions.md` requires the durable page doc to remain
+  narrative-only. The thread snapshot and the Phase 04/05 ledgers retain the
+  browser evidence.
+- `graphify update .` completed and a query for the aperture U-value report
+  resolved the saved-version exporter and `AperturesTab.tsx`.
+- Final `make format` and `make ci` passed: backend `1741 passed, 7 skipped`;
+  frontend `256` files / `2365` tests, structural guards, and production build.

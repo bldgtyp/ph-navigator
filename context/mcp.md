@@ -59,6 +59,7 @@ Recoverability values:
 | `list_projects`, `get_project`, `list_versions`, `list_status_items`, `diff_versions` | `project:read` |
 | `get_document`, `get_table` | `project:read` |
 | `list_envelope_assemblies`, `list_project_materials`, `query_unfinished_envelope_work`, `report_material_catalog_drift`, `report_missing_envelope_evidence` | `project:read` |
+| `list_aperture_types`, `get_aperture_type`, `calculate_aperture_u_values`, `get_aperture_u_value_report`, `get_aperture_window_constructions`, `report_aperture_catalog_drift` | `project:read` |
 | `list_project_climate_sources`, `get_project_location`, `get_project_sun_path` | `project:read` |
 | `list_climate_datasets`, `search_climate_locations`, `get_climate_location` | valid MCP token |
 | `list_assets`, `resolve_asset_urls`, `get_asset_url`, `start_bulk_download`, `get_job` | `asset:read` plus project access |
@@ -90,6 +91,7 @@ once, and every name here must be registered by `build_mcp_server`.
 - `duplicate_custom_field`
 - `edit_custom_field_options`
 - `get_aperture_type`
+- `get_aperture_u_value_report`
 - `get_aperture_window_constructions`
 - `get_asset_url`
 - `get_climate_location`

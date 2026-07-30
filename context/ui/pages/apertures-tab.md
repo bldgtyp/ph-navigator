@@ -5,7 +5,7 @@
 
 # 2.6 Apertures tab (`/projects/{id}/apertures`)
 
-The Apertures tab has three route-addressable sub-tabs:
+The Apertures tab has four route-addressable sub-tabs:
 
 - **Builder** (`/projects/{id}/apertures/builder`) — the visual aperture-type
   editor.
@@ -13,6 +13,8 @@ The Apertures tab has three route-addressable sub-tabs:
   specification page for project glazing products.
 - **Frames** (`/projects/{id}/apertures/frames`) — a report-table
   specification page for project frame products.
+- **U-Values** (`/projects/{id}/apertures/u-values`) — an auditable
+  line-by-line aperture U-value report with CSV and formula-XLSX downloads.
 
 Bare `/projects/{id}/apertures` redirects to Builder.
 
@@ -43,22 +45,30 @@ Use the shared builder shell: object browser/list on the left, visual
 aperture editor in the center, computed U-w / dimension summary near
 the top, and inspector/details or editable breakdown table adjacent to
 the selected visual object. Catalog origins and custom overrides should
-be visible without forcing the user into a separate audit page.
+be visible without forcing the user into a separate audit page. The Builder
+keeps its inline U-values for design work; the separate U-Values report adds
+the full calculation depth and compliance-export path without replacing that
+immediate feedback.
 
 ### Empty panels
 
 An aperture element may be **Glazed** or **Empty**. Empty panels preserve the
 rectangular grid layout but are not part of the window unit: their area is
-wall, and they are excluded from aperture U-value calculations, specification
-reports, and exports. The canvas shows them as a near-transparent cell with a
-dashed outline; selection, hover, element name, grid dimensions, merge, and
-split affordances remain available.
+wall, and they produce no calculation/specification element row or U-w/SHGC
+contribution. Reports and exports may retain only the excluded Empty-panel
+count for reconciliation. The canvas shows them as a near-transparent cell
+with a dashed outline; selection, hover, element name, grid dimensions, merge,
+and split affordances remain available.
 
 The element card hides glazing, frame, operation, and U-value controls for an
 Empty panel and shows the standard explanation:
 
 > Empty panel: occupies the layout but is not part of the window unit. The area
 > is wall; it is excluded from U-value, spec report, and all exports.
+
+In that compact UI copy, "excluded from all exports" means no Empty-panel
+calculation row or thermal contribution; aggregate exports may still carry the
+excluded count for reconciliation.
 
 Changing an assigned Glazed panel to Empty requires confirmation because the
 command clears its glazing, operation, and four frame assignments. The dialog
@@ -109,3 +119,49 @@ Frames uses the same report-table/status/evidence behavior as Glazings and
 Envelope → Materials. Editors can update status, attach/detach datasheets,
 refresh catalog drift, and remove unused project frames. Viewer and locked
 version behavior is read-only with N/A/unused rows hidden in viewer mode.
+
+## 2.6.4 U-Values Report
+
+U-Values is a display-only audit page for the ISO 10077-1 composite aperture
+calculation. Editors see the current document view—their draft when one exists,
+otherwise the saved version; viewers and locked versions read the saved
+version. The page follows the global SI/IP preference and performs no
+calculation beyond unit conversion and formatting.
+
+The summary table lists Aperture, Overall W × H, Elements, Area, U-w,
+SHGC (glazing-area-weighted), and Status. Each aperture then has an element
+table with Element, Grid, W × H, Area, Glazing / U / SHGC, A-glazing,
+A-frame, Q-glazing, Q-frame, Q-spacer, and U-element. Expanding an element
+shows exactly four exterior-view edge rows in Top / Right / Bottom / Left
+order with Frame, Width, U-f, Ψ-g, Ψ-install (explicitly excluded from U-w),
+edge and interior lengths, center/corner/frame areas, and Q-frame/Q-spacer.
+
+The report convention is explicit above the tables:
+
+- U-w is the **uninstalled** whole-unit value; Ψ-install is displayed for
+  reference but excluded.
+- Frame corners use a **45° corner split**: each adjacent edge receives half
+  of the shared corner area.
+- Edge names are read **as seen from outside**.
+- Aperture SHGC is glazing-area-weighted.
+
+Empty panels produce no element rows and do not enter U-w or SHGC; their
+excluded count remains visible for reconciliation. An incomplete glazed
+element remains visible with warning styling/text and renders unavailable
+calculated cells as em dashes. The aperture rollup includes each unfinished
+element as U = 0 and presents a warning stating that treatment. A missing
+glazing g-value is a non-unfinished warning: that element is excluded from both
+the SHGC numerator and denominator. A project with no aperture types shows a
+quiet empty state; editors get a link back to the Builder, while viewers get
+explanatory copy only.
+
+The U-value report action menu is hidden without
+`apertures.export.u_value_report`. Authorized users can download:
+
+- **CSV (raw data)** — UTF-8 BOM/CRLF tabular values in the active unit system.
+- **XLSX (with formulas)** — `Window Units` and `Summary` sheets with live
+  formulas that mirror PHN's calculation.
+
+Both downloads always use the saved version. If an editor has a draft, the
+confirmation dialog states that unsaved changes are excluded. The same dialog
+reports any unfinished elements from the saved report being exported.

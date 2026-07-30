@@ -14,10 +14,12 @@ import {
 } from "./material";
 import { cToF, fToC } from "./temperature";
 import {
+  btuHFToWK,
   btuHft2FToWm2K,
   btuHftFToWmK,
   hft2FBtuToM2kW,
   m2kWToHft2FBtu,
+  wkToBtuHF,
   wm2kToBtuHft2F,
   wmkToBtuHftF,
 } from "./thermal";
@@ -30,7 +32,6 @@ const MIN_NUMBER_PRECISION = 0;
 const MAX_NUMBER_PRECISION = 10;
 const L_PER_GAL = 3.785411784;
 const KWH_TO_KBTU = 3.412141633;
-const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
 const KW_TO_KBTU_PER_H = 3.412141633;
 const GRAINS_FT2_PER_G_M2 = 1.433076;
 const GRAINS_FT2_PER_KG_M2 = GRAINS_FT2_PER_G_M2 * 1000;
@@ -346,7 +347,7 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
     case "electric_efficiency":
       return valueSi / m3hToCfm(1);
     case "heat_loss_rate":
-      return valueSi * W_PER_K_TO_BTU_PER_H_F;
+      return wkToBtuHF(valueSi);
     case "energy":
       return valueSi * KWH_TO_KBTU;
     case "power":
@@ -398,7 +399,7 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
     case "electric_efficiency":
       return valueIp * m3hToCfm(1);
     case "heat_loss_rate":
-      return valueIp / W_PER_K_TO_BTU_PER_H_F;
+      return btuHFToWK(valueIp);
     case "energy":
       return valueIp / KWH_TO_KBTU;
     case "power":

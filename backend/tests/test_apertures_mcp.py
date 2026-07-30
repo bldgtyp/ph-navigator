@@ -21,6 +21,7 @@ from features.apertures_mcp.tools import (
     tool_apply_aperture_command,
     tool_calculate_aperture_u_values,
     tool_get_aperture_type,
+    tool_get_aperture_u_value_report,
     tool_list_aperture_types,
     tool_report_aperture_catalog_drift,
 )
@@ -187,6 +188,52 @@ def test_calculate_aperture_u_values_returns_results_per_id(
     apertures = cast(list[dict[str, object]], result["apertures"])
     assert len(apertures) == 1
     assert apertures[0]["aperture_type_id"] == "apt_A"
+
+
+def test_get_aperture_u_value_report_returns_named_audit_detail(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    _seed_aperture(version_id)
+    _issue_token(client, project_id, monkeypatch, ["project:read"])
+
+    result = tool_get_aperture_u_value_report(
+        project_id,
+        version_id,
+        cast(Context, None),
+        allow_env_token=True,
+        aperture_type_ids=["apt_A"],
+        source="version",
+    )
+    apertures = cast(list[dict[str, object]], result["apertures"])
+    assert len(apertures) == 1
+    assert apertures[0]["name"] == "Type A"
+    assert apertures[0]["unfinished_count"] == 1
+    assert result["source"] == "version"
+
+    deduplicated = tool_get_aperture_u_value_report(
+        project_id,
+        version_id,
+        cast(Context, None),
+        allow_env_token=True,
+        aperture_type_ids=["apt_A", "apt_A"],
+        source="version",
+    )
+    assert len(cast(list[object], deduplicated["apertures"])) == 1
+
+    with pytest.raises(ToolError, match="aperture_type_filter_too_large"):
+        tool_get_aperture_u_value_report(
+            project_id,
+            version_id,
+            cast(Context, None),
+            allow_env_token=True,
+            aperture_type_ids=[f"apt_{index}" for index in range(101)],
+            source="version",
+        )
 
 
 def test_report_aperture_catalog_drift_returns_empty_entries_when_clean(

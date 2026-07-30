@@ -72,7 +72,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Mcp-Session-Id", "X-Request-ID"],
+    expose_headers=["Content-Disposition", "Mcp-Session-Id", "X-Request-ID"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 

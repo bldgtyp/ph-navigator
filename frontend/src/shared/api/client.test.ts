@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTH_REQUIRED_EVENT, CSRF_HEADER_NAME, fetchJson, resolveApiBaseUrl } from "./client";
+import {
+  AUTH_REQUIRED_EVENT,
+  CSRF_HEADER_NAME,
+  fetchDownload,
+  fetchJson,
+  resolveApiBaseUrl,
+} from "./client";
 
 describe("api client", () => {
   beforeEach(() => {
@@ -44,6 +50,27 @@ describe("api client", () => {
 
   it("preserves a configured API origin in production", () => {
     expect(resolveApiBaseUrl(false, "https://api.ph-nav.com")).toBe("https://api.ph-nav.com");
+  });
+
+  it("returns a server-named download and decodes RFC 5987 filenames", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response("file", {
+            status: 200,
+            headers: {
+              "Content-Disposition":
+                "attachment; filename*=UTF-8''BT-01-aperture-u-values-IP-Working%20Copy.xlsx",
+            },
+          }),
+      ),
+    );
+
+    const download = await fetchDownload("/api/v1/download");
+
+    expect(await download.blob.text()).toBe("file");
+    expect(download.filename).toBe("BT-01-aperture-u-values-IP-Working Copy.xlsx");
   });
 
   it("announces a 401 so the auth route boundary can redirect an expired session", async () => {

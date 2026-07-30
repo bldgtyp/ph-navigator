@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-29
+UPDATED: 2026-07-30 — implementation and verification complete
 TIME: 14:31 EDT
-STATUS: Ready after Phases 3 + 4
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 5 — the two download actions on the U-Values page, with the
   saved-version/draft-skew guard. Frontend only.
@@ -71,3 +72,36 @@ download both files against the AGENT-BROWSER fixture, confirm the CSV
 opens in a spreadsheet app without mangled units (BOM working) and the
 XLSX opens with formulas live; exercise the draft-dirty dialog by editing
 without saving first. `make ci` before hand-off.
+
+## Implementation ledger
+
+- Added capability-gated CSV and XLSX actions in the U-Values sub-tab action
+  slot. Downloads use the current SI/IP preference, the backend filename when
+  exposed, and the existing blob-save utility.
+- Added a shared API download response helper for
+  `Content-Disposition` parsing. The backend now exposes that header through
+  CORS so production cross-origin clients can read the canonical filename.
+- The editor action loads the saved-version report independently of the draft
+  page. The action remains hidden until both the saved report and draft guard
+  are ready, preventing a pending-query bypass.
+- The confirmation dialog states that unsaved draft changes are excluded and
+  separately reports saved-version unfinished elements. Both notices can
+  appear together.
+- The controller is single-flight, reports errors to the page alert, and
+  aborts in-flight requests on unmount.
+- Focused verification passed: backend exporter route `8 passed`; frontend
+  TypeScript plus `4` files / `24` tests; `make frontend-dev-check` passed
+  with the repository's existing Fast Refresh warnings only.
+- Full `make ci` passed: backend `1741 passed, 7 skipped`; frontend `256`
+  files / `2365` tests, structural guards, and production build.
+- Live task-isolated browser verification exercised the dirty-draft consent
+  flow and downloaded both formats in IP units. The CSV had UTF-8 BOM/CRLF
+  output and IP headers; the XLSX was a valid workbook with `Window Units`
+  and `Summary` sheets.
+- The saved browser fixture version intentionally contained no apertures while
+  its draft contained the representative aperture, so both downloads were
+  empty by design and directly proved the saved-version guard. Formula-bearing
+  XLSX recalculation remains covered by the Phase 03 desktop-Excel check.
+- Attempting to save that fixture draft returned the unrelated fixture error
+  `Asset does not exist for this project.` The export behavior itself has no
+  blocker.

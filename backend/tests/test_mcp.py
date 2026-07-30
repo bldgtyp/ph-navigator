@@ -1147,8 +1147,23 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
             ):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
-                    tool_names = {tool.name for tool in (await session.list_tools()).tools}
+                    registered_tools = (await session.list_tools()).tools
+                    tool_names = {tool.name for tool in registered_tools}
                     assert tool_names == documented_mcp_tool_names()
+                    report_tool = next(tool for tool in registered_tools if tool.name == "get_aperture_u_value_report")
+                    assert set(report_tool.inputSchema["properties"]["source"]["enum"]) == {
+                        "draft",
+                        "version",
+                    }
+                    invalid_source = await session.call_tool(
+                        "get_aperture_u_value_report",
+                        {
+                            "project_id": project_id,
+                            "version_id": version_id,
+                            "source": "bogus",
+                        },
+                    )
+                    assert invalid_source.isError is True
 
                     listed = await session.call_tool("list_projects", {})
                     assert listed.isError is False

@@ -40,6 +40,7 @@ PROJECT_VIEW_PRIVATE = "project.view.private_metadata"
 # split buys no behavioral difference in beta (members hold all, clients none);
 # it is intentional forward investment for the certifier bundle (Phase 5).
 APERTURES_EXPORT_HBJSON = "apertures.export.hbjson"
+APERTURE_EXPORT_U_VALUE_REPORT = "apertures.export.u_value_report"
 ENVELOPE_EXPORT_HBJSON = "envelope.export.hbjson"
 ENVELOPE_EXPORT_PHPP = "envelope.export.phpp"
 EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
@@ -65,6 +66,7 @@ CLIENT_CAPS: frozenset[str] = frozenset({PROJECT_VIEW})
 EXPORT_CAPS: frozenset[str] = frozenset(
     {
         APERTURES_EXPORT_HBJSON,
+        APERTURE_EXPORT_U_VALUE_REPORT,
         ENVELOPE_EXPORT_HBJSON,
         ENVELOPE_EXPORT_PHPP,
         EQUIPMENT_EXPORT_PHIUS,

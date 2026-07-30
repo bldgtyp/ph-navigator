@@ -3,6 +3,20 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-30
+
+- `aperture-u-value-report` - Added a route-addressable SI/IP U-Values audit
+  page under Apertures plus saved-version CSV and formula-XLSX downloads.
+  The backend retains parity-locked per-edge ISO 10077-1 terms, exposes REST
+  and MCP report contracts, uses PHN's 45-degree frame-corner split, excludes
+  Ψ-install from uninstalled U-w, and reports glazing-area-weighted SHGC.
+  Empty and unfinished treatment is explicit; export actions are
+  capability-gated and warn when drafts are excluded. Desktop Excel
+  recalculated all 44 representative workbook formulas with zero errors.
+  Final `make ci` passed (backend 1741 passed / 7 skipped; frontend 256 files /
+  2365 tests), with live browser verification, simplify review, docs-pass, and
+  Graphify complete.
+
 ## 2026-07-28
 
 - `catalog-seed-idempotency` - All 638 canonical material, glazing, and frame
