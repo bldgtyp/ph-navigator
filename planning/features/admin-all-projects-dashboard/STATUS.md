@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:58 EDT
-STATUS: Ready — ownership dependency implemented and verified
+TIME: 10:41 EDT
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the admin all-projects dashboard.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
@@ -12,7 +12,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
 
 ## State
 
-**Planned and ready. No feature code written.**
+**Phase 1 backend implementation is complete and verified.**
 
 Done 2026-08-01:
 - Surveyed the existing auth plumbing; confirmed `ADMIN_USERS_MANAGE`, the
@@ -23,6 +23,11 @@ Done 2026-08-01:
 - Confirmed `ProjectList` is hand-rolled CSS grid, not the shared `DataTable`,
   so grouping does not collide with the DataTable-uniformity rule.
 - D-1..D-4 accepted by Ed.
+- Added required `ProjectSummary.owner_id`, optional
+  `owner_display_name`, and `ProjectListResponse.grouped` contracts.
+- Added the capability-gated all-project listing with own-group-first ordering.
+- Kept the existing owner-filter regression untouched and green; added admin
+  ordering/grouping coverage and an explicit non-admin `grouped: false` check.
 
 ## Dependency status
 
@@ -35,9 +40,9 @@ non-owners receive `404 project_not_found` at the project seam.
 
 ## Next step
 
-Start `phases/phase-01-backend.md` with §1.3 — enumerate
-every `ProjectSummary` construction site before touching the model. That is the
-one step in this feature with real breakage potential.
+Start `phases/phase-02-frontend.md`: reconcile the frontend response types,
+render owner headings only for grouped responses, and restrict selection to
+projects owned by the signed-in user.
 
 ## Verification
 
@@ -49,6 +54,13 @@ Per PRD §7. The two worth not rushing:
 - Criterion 4 — disabled checkboxes on non-owned rows. Easy to skip, and its
   absence produces a confusing wall of 404s the first time an admin tries a
   bulk delete.
+
+Phase 1 focused verification:
+
+- `uv run pytest tests/test_projects.py tests/test_access_resolver.py -q` —
+  **30 passed**.
+- `uv run ty check` — **passed**.
+- Focused Ruff format/lint checks — **passed**.
 
 ## Estimate
 

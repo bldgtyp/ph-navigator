@@ -13,22 +13,28 @@ from features.project_document.validation import SerializedProjectDocument, seri
 from features.projects.models import CreateProjectRequest, UpdateProjectRequest
 
 PROJECT_COLUMNS = """
-    id, name, public_alias, bt_number, client, cert_programs, phius_number,
+    id, owner_id, name, public_alias, bt_number, client, cert_programs, phius_number,
     phius_dropbox_url, active_version_id, last_saved_at,
     created_at, updated_at
 """
 
+PROJECT_COLUMNS_QUALIFIED = """
+    projects.id, projects.owner_id, projects.name, projects.public_alias,
+    projects.bt_number, projects.client, projects.cert_programs,
+    projects.phius_number, projects.phius_dropbox_url,
+    projects.active_version_id, projects.last_saved_at,
+    projects.created_at, projects.updated_at
+"""
+
 PROJECT_LIFECYCLE_COLUMNS = f"""
-    {PROJECT_COLUMNS}, owner_id, deleted_at, deleted_by, hard_delete_after
+    {PROJECT_COLUMNS}, deleted_at, deleted_by, hard_delete_after
 """
 
 
 def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
     rows = conn.execute(
-        """
-        SELECT id, name, public_alias, bt_number, client, cert_programs, phius_number,
-               phius_dropbox_url, active_version_id, last_saved_at,
-               created_at, updated_at
+        f"""
+        SELECT {PROJECT_COLUMNS}
         FROM projects
         WHERE owner_id = %(owner_id)s
           AND deleted_at IS NULL
@@ -39,12 +45,23 @@ def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[
     return list(rows)
 
 
+def list_all_projects(conn: Connection[Any]) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        f"""
+        SELECT {PROJECT_COLUMNS_QUALIFIED}, users.display_name AS owner_display_name
+        FROM projects
+        JOIN users ON users.id = projects.owner_id
+        WHERE projects.deleted_at IS NULL
+        ORDER BY users.display_name ASC, projects.bt_number DESC
+        """
+    ).fetchall()
+    return list(rows)
+
+
 def get_project_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
-        """
-        SELECT id, name, public_alias, bt_number, client, cert_programs, phius_number,
-               phius_dropbox_url, active_version_id, last_saved_at,
-               created_at, updated_at
+        f"""
+        SELECT {PROJECT_COLUMNS}
         FROM projects
         WHERE id = %(project_id)s
           AND deleted_at IS NULL
@@ -66,12 +83,8 @@ def get_project_by_id_including_deleted(conn: Connection[Any], project_id: UUID)
 
 def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
-        """
-        SELECT projects.id, projects.name, projects.public_alias, projects.bt_number, projects.client,
-               projects.cert_programs, projects.phius_number, projects.phius_dropbox_url,
-               projects.active_version_id, projects.last_saved_at,
-               projects.created_at, projects.updated_at,
-               users.display_name AS owner_display_name
+        f"""
+        SELECT {PROJECT_COLUMNS_QUALIFIED}, users.display_name AS owner_display_name
         FROM projects
         JOIN users ON users.id = projects.owner_id
         WHERE projects.id = %(project_id)s
@@ -280,7 +293,7 @@ def insert_project_with_initial_version(
 ) -> dict[str, Any]:
     serialized = serialized_body or serialize_document(body)
     project = conn.execute(
-        """
+        f"""
         INSERT INTO projects (
             name, bt_number, client, cert_programs, phius_number,
             phius_dropbox_url, owner_id
@@ -289,9 +302,7 @@ def insert_project_with_initial_version(
             %(name)s, %(bt_number)s, %(client)s, %(cert_programs)s,
             %(phius_number)s, %(phius_dropbox_url)s, %(owner_id)s
         )
-        RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
-                  phius_dropbox_url, active_version_id, last_saved_at,
-                  created_at, updated_at
+        RETURNING {PROJECT_COLUMNS}
         """,
         {
             "name": payload.name,
@@ -330,15 +341,13 @@ def insert_project_with_initial_version(
         raise RuntimeError("Initial project version insert did not return a row.")
 
     updated_project = conn.execute(
-        """
+        f"""
         UPDATE projects
         SET active_version_id = %(active_version_id)s,
             last_saved_at = now(),
             updated_at = now()
         WHERE id = %(project_id)s
-        RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
-                  phius_dropbox_url, active_version_id, last_saved_at,
-                  created_at, updated_at
+        RETURNING {PROJECT_COLUMNS}
         """,
         {"project_id": project["id"], "active_version_id": version["id"]},
     ).fetchone()
@@ -366,15 +375,13 @@ def update_project_metadata(
                 updated_at = now()
             WHERE id = %(project_id)s
               AND deleted_at IS NULL
-            RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
-                      phius_dropbox_url, active_version_id, last_saved_at,
-                      created_at, updated_at,
+            RETURNING {project_columns},
                       (
                           SELECT users.display_name
                           FROM users
                           WHERE users.id = projects.owner_id
                       ) AS owner_display_name
             """
-        ).format(assignments=assignments),
+        ).format(assignments=assignments, project_columns=sql.SQL(PROJECT_COLUMNS)),
         params,
     ).fetchone()
