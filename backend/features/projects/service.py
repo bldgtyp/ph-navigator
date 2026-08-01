@@ -12,6 +12,8 @@ from starlette import status
 
 from config import settings
 from database import connection, transaction
+from features.access.capabilities import PROJECT_ACCESS_ALL
+from features.access.user_capabilities import global_capabilities_for_user
 from features.assets.storage_r2 import R2Client
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
@@ -83,9 +85,14 @@ def version_public(row: dict[str, object]) -> ProjectVersionPublic:
 
 
 def list_dashboard_projects(user: UserPublic) -> ProjectListResponse:
+    capabilities = global_capabilities_for_user(user)
     with connection() as conn:
+        if PROJECT_ACCESS_ALL in capabilities:
+            rows = repository.list_all_projects(conn)
+            rows.sort(key=lambda row: row["owner_id"] != user.id)
+            return ProjectListResponse(projects=[project_summary(row) for row in rows], grouped=True)
         rows = repository.list_projects_for_owner(conn, user.id)
-    return ProjectListResponse(projects=[project_summary(row) for row in rows])
+    return ProjectListResponse(projects=[project_summary(row) for row in rows], grouped=False)
 
 
 def list_deleted_dashboard_projects(user: UserPublic) -> ProjectDeletedListResponse:
@@ -222,7 +229,6 @@ def update_project_metadata(
         project_id,
         access_mode="editor",
         project=project_summary(project),
-        owner_display_name=project["owner_display_name"] if isinstance(project["owner_display_name"], str) else None,
     )
 
 
@@ -368,13 +374,13 @@ def restore_project(project_id: UUID, user: UserPublic, request_meta: Request | 
             raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
         _ensure_project_owner(current, user)
         if current["deleted_at"] is None:
-            project = project_summary(current)
-            owner_display_name = repository.get_owner_display_name(conn, project_id)
+            project = project_summary(current).model_copy(
+                update={"owner_display_name": repository.get_owner_display_name(conn, project_id)}
+            )
             return get_project_detail(
                 project_id,
                 access_mode="editor",
                 project=project,
-                owner_display_name=owner_display_name,
             )
         restored = repository.restore_project(conn, project_id)
         if restored is None:
@@ -394,12 +400,13 @@ def restore_project(project_id: UUID, user: UserPublic, request_meta: Request | 
             user_agent=_user_agent(request_meta),
             details={"project_id": str(project_id), "bt_number": restored["bt_number"], "name": restored["name"]},
         )
-        owner_display_name = repository.get_owner_display_name(conn, project_id)
+        project = project_summary(restored).model_copy(
+            update={"owner_display_name": repository.get_owner_display_name(conn, project_id)}
+        )
     return get_project_detail(
         project_id,
         access_mode="editor",
-        project=project_summary(restored),
-        owner_display_name=owner_display_name,
+        project=project,
     )
 
 
@@ -422,7 +429,6 @@ def get_project_detail(
     project_id: UUID,
     access_mode: AccessMode,
     project: ProjectSummary | None = None,
-    owner_display_name: str | None = None,
     can_view_private_metadata: bool | None = None,
 ) -> ProjectDetail:
     # Default the private-metadata gate to the editor/viewer binary; the project
@@ -439,9 +445,6 @@ def get_project_detail(
                     raise project_deleted_error(deleted_row)
                 raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
             project = project_summary(project_row)
-            owner_display_name = (
-                project_row["owner_display_name"] if isinstance(project_row["owner_display_name"], str) else None
-            )
         versions = [version_public(row) for row in repository.list_versions_for_project(conn, project_id)]
 
     active_version = next((version for version in versions if version.id == project.active_version_id), None)
@@ -458,12 +461,12 @@ def get_project_detail(
         # (opt-in privacy). See planning/features/project-public-alias/PRD.md.
         if fields["public_alias"]:
             fields["name"] = fields["public_alias"]
+    fields["owner_display_name"] = project.owner_display_name if access_mode == "editor" else None
     return ProjectDetail(
         **fields,
         versions=versions,
         active_version=active_version,
         access_mode=access_mode,
-        owner_display_name=owner_display_name if access_mode == "editor" else None,
     )
 
 

@@ -40,7 +40,7 @@ the RBC partnership idea.
 
 The archived `project-ownership-enforcement` refactor completed **part of R1**,
 ahead of and independent of the RBC trigger. It was driven by
-`planning/features/admin-all-projects-dashboard/`, which needs a real privilege
+`planning/archive/dated/2026-08-01/admin-all-projects-dashboard/`, which needed a real privilege
 boundary to mean anything.
 
 It closes the §2 hurdle **for individual ownership only** — the seam now uses

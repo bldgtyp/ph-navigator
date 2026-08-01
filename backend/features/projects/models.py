@@ -129,6 +129,8 @@ class ProjectSummary(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: UUID
+    owner_id: UUID
+    owner_display_name: str | None = None
     name: str
     public_alias: str | None
     bt_number: str
@@ -160,13 +162,13 @@ class ProjectDetail(ProjectSummary):
     versions: list[ProjectVersionPublic]
     active_version: ProjectVersionPublic | None
     access_mode: AccessMode
-    owner_display_name: str | None = None
 
 
 class ProjectListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     projects: list[ProjectSummary]
+    grouped: bool = False
 
 
 ProjectDeleteMode = Literal["soft"]

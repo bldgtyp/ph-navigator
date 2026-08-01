@@ -26,6 +26,7 @@ const userPayload = {
 
 const projectPayload = {
   id: "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5",
+  owner_id: userPayload.id,
   name: "West Stockbridge House",
   public_alias: null,
   display_name: "West Stockbridge House",

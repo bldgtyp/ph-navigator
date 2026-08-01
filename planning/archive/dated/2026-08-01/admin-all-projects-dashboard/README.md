@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Ready — ownership dependency implemented and verified
+TIME: 11:12 EDT
+STATUS: Archived — complete and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the admin all-projects dashboard feature.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -11,8 +11,8 @@ RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
 
 # Admin all-projects dashboard
 
-On the dashboard, a user holding the Admin preset sees **every** project,
-grouped by owner. Everyone else sees exactly what they see today: their own.
+On the dashboard, a user holding `projects.access.all` sees every non-deleted
+project, grouped by owner. Everyone else sees their own projects.
 
 ## Read order
 
@@ -23,19 +23,18 @@ grouped by owner. Everyone else sees exactly what they see today: their own.
 
 ## Dependency
 
-[`project-ownership-enforcement`](../../archive/dated/2026-08-01/project-ownership-enforcement/README.md)
-Phase 2 is implemented and verified on the branch that introduces this packet.
-Merge them together before starting this feature from `main`. This feature
-gates on the refactor's `PROJECT_ACCESS_ALL` capability.
+[`project-ownership-enforcement`](../project-ownership-enforcement/README.md)
+is complete and archived beside this packet. This feature uses its
+`PROJECT_ACCESS_ALL` capability.
 
-The ordering is not just technical. Today *any* signed-in user can read and edit
-*any* project by ID — so an admin-only listing would be decoration over an open
-door. Enforcement first makes this a real privilege grant. See that plan's
-`decisions.md` §D-1.
+The ordering was not just technical. Before the enforcement dependency, any
+signed-in user could read and edit any project by ID, so an admin-only listing
+would have been decoration over an open door. Enforcement first made this a
+real privilege grant. See that plan's `decisions.md` §D-1.
 
-## What already exists
+## Starting point
 
-Most of the auth plumbing is done:
+Most of the auth plumbing already existed:
 
 - `ADMIN_USERS_MANAGE` (`admin.users.manage`) is a real grantable capability
   with a `user_grants` row and an admin UI that manages it.
@@ -46,12 +45,11 @@ Most of the auth plumbing is done:
 - `ProjectList` is a hand-rolled CSS-grid list, **not** the shared `DataTable`,
   so inserting group headers does not run into the DataTable-uniformity rule.
 
-## What is actually missing
+## Implementation result
 
-1. `repository.list_projects_for_owner` hard-filters `WHERE owner_id`
-   (`backend/features/projects/repository.py:33`) — the single line that scopes
-   the dashboard.
-2. `ProjectSummary` carries no owner fields, so the client cannot group.
-3. `ProjectList` renders one flat list with no group affordance.
-
-Three small changes. The whole feature is roughly a day.
+- The backend returns a capability-gated, server-ordered all-project list with
+  owner fields and `grouped: true`; ordinary responses remain owner-filtered.
+- The frontend inserts owner headings/counts without client-side reordering.
+- Selection and every destructive dashboard action remain owner-only.
+- Backend/frontend suites, live browser acceptance, Graphify, simplify,
+  docs-pass, and the full repository CI gate all passed.

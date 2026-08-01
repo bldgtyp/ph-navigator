@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Active — D-1..D-4 accepted by Ed 2026-08-01
+TIME: 11:12 EDT
+STATUS: Complete — D-1..D-5 accepted and implemented
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Accepted and rejected decisions for the admin all-projects dashboard.
 RELATED: ./README.md, ./PRD.md, ./phases/,

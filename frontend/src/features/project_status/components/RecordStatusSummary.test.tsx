@@ -9,6 +9,7 @@ import { RecordStatusSummary } from "./RecordStatusSummary";
 
 const PROJECT: ProjectDetail = {
   id: "proj_1",
+  owner_id: "owner-ed",
   name: "Linde Home",
   public_alias: null,
   display_name: "Linde Home",

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Ready — enforcement dependency implemented and verified
+TIME: 10:41 EDT
+STATUS: Complete — backend contract implemented and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Phase 1 — backend listing, owner fields, ordering.
 RELATED: ../PRD.md, ../decisions.md, ./phase-02-frontend.md
@@ -104,3 +104,27 @@ Admin fixture: create the user then `ensure_global_grant` for
 - `uv run ty` clean.
 - `make ci` green.
 - Existing owner-filter test untouched and passing.
+
+## Implementation result
+
+- `ProjectSummary.owner_id` is required. Every repository row that constructs
+  a summary now carries `owner_id`; no nullable fallback was needed.
+- Admin listing uses one `projects`/`users` join, returns
+  `owner_display_name`, and preserves server-owned ordering. A stable service
+  sort moves the requesting owner's group first.
+- Non-admin listing remains owner-filtered and returns `grouped: false`.
+- Viewer-mode project detail continues to serialize
+  `owner_display_name: null`.
+
+## Verification — 2026-08-01
+
+- `uv run pytest tests/test_projects.py tests/test_access_resolver.py -q` —
+  **30 passed**.
+- `uv run ty check` — **passed**.
+- `uv run ruff format --check features/projects tests/test_projects.py tests/test_access_resolver.py`
+  — **passed**.
+- `uv run ruff check features/projects tests/test_projects.py tests/test_access_resolver.py`
+  — **passed**.
+- `make format` — **passed; no files changed**.
+- `make ci` — **passed**: backend **1,756 passed / 7 skipped**; frontend
+  **2,365 passed**; production build and all structural guards green.

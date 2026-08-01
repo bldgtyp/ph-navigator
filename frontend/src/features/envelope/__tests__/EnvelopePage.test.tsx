@@ -33,6 +33,7 @@ const fetchMock = vi.fn();
 
 const project: ProjectDetail = {
   id: PROJECT_ID,
+  owner_id: "owner-ed",
   name: "West Stockbridge House",
   public_alias: null,
   display_name: "West Stockbridge House",

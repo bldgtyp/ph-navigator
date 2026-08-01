@@ -20,7 +20,6 @@ import { projectQueryKeys } from "./query-keys";
 import type {
   CreateProjectPayload,
   ElevationLookupPayload,
-  ProjectListResponse,
   UpdateProjectLocationPayload,
   UpdateProjectPayload,
 } from "./types";
@@ -42,7 +41,6 @@ export function useProjectsQuery() {
   return useQuery({
     queryKey: projectQueryKeys.list(),
     queryFn: ({ signal }) => listProjects(signal),
-    select: (payload) => payload.projects,
   });
 }
 
@@ -85,16 +83,8 @@ export function useCreateProjectMutation() {
   return useMutation({
     mutationFn: (payload: CreateProjectPayload) => createProject(payload),
     onSuccess: (project) => {
-      queryClient.setQueryData(
-        projectQueryKeys.list(),
-        (current: Awaited<ReturnType<typeof listProjects>> | undefined) => ({
-          projects: [
-            project,
-            ...(current?.projects.filter((item) => item.id !== project.id) ?? []),
-          ],
-        }),
-      );
       queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() });
     },
   });
 }
@@ -128,15 +118,7 @@ export function useUpdateProjectMutation(projectId: string) {
     mutationFn: (payload: UpdateProjectPayload) => updateProject(projectId, payload),
     onSuccess: (project) => {
       queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
-      queryClient.setQueryData(
-        projectQueryKeys.list(),
-        (current: ProjectListResponse | undefined): ProjectListResponse | undefined => {
-          if (!current) return current;
-          return {
-            projects: current.projects.map((item) => (item.id === project.id ? project : item)),
-          };
-        },
-      );
+      queryClient.invalidateQueries({ queryKey: projectQueryKeys.list() });
     },
   });
 }

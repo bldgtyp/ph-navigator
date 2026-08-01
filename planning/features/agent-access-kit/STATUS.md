@@ -65,6 +65,6 @@ Per PRD §7. The two easiest to skip and most important:
 ## Dependents / dependencies
 
 - Depends on: `planning/archive/dated/2026-08-01/project-ownership-enforcement/`
-  (Phase 2, implemented and verified on its branch).
-- Related: `planning/features/admin-all-projects-dashboard/` (same
+  (complete, verified, and archived).
+- Related: `planning/archive/dated/2026-08-01/admin-all-projects-dashboard/` (same
   enforcement dependency; no direct coupling).

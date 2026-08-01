@@ -12,6 +12,8 @@ from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
 from database import connection, transaction
+from features.access import repository as access_repository
+from features.access.capabilities import ADMIN_USERS_MANAGE
 from features.auth.service import create_or_update_user
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
 from features.projects.models import ProjectHardDeleteRequest
@@ -147,6 +149,63 @@ def test_dashboard_list_is_ordered_by_bt_number_desc(clean_project_tables: None)
     assert response.status_code == 200
     projects = response.json()["projects"]
     assert [project["bt_number"] for project in projects] == ["2427", "2426", "2425"]
+
+
+def test_dashboard_list_is_not_grouped_for_non_admin(clean_project_tables: None) -> None:
+    client = signed_in_client()
+    create_project(client)
+
+    response = client.get("/api/v1/projects")
+
+    assert response.status_code == 200
+    assert response.json()["grouped"] is False
+
+
+def test_admin_dashboard_lists_all_projects_grouped_and_ordered(clean_project_tables: None) -> None:
+    admin = create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    client = signed_in_client()
+    john = create_or_update_user(email="john@example.com", display_name="John Mitchell", password="password")
+    alice = create_or_update_user(email="alice@example.com", display_name="Alice Architect", password="password")
+    with transaction() as conn:
+        access_repository.ensure_global_grant(
+            conn,
+            user_id=admin.id,
+            capability=ADMIN_USERS_MANAGE,
+            granted_by=None,
+        )
+        conn.execute(
+            """
+            INSERT INTO projects (name, bt_number, owner_id)
+            VALUES
+                ('Admin older', '2401', %(admin_id)s),
+                ('Admin newer', '2402', %(admin_id)s),
+                ('John older', '2501', %(john_id)s),
+                ('John newer', '2502', %(john_id)s),
+                ('Alice project', '2601', %(alice_id)s)
+            """,
+            {"admin_id": admin.id, "john_id": john.id, "alice_id": alice.id},
+        )
+
+    response = client.get("/api/v1/projects")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["grouped"] is True
+    assert [project["bt_number"] for project in body["projects"]] == ["2402", "2401", "2601", "2502", "2501"]
+    assert [project["owner_display_name"] for project in body["projects"]] == [
+        "Ed May",
+        "Ed May",
+        "Alice Architect",
+        "John Mitchell",
+        "John Mitchell",
+    ]
+    assert [project["owner_id"] for project in body["projects"]] == [
+        str(admin.id),
+        str(admin.id),
+        str(alice.id),
+        str(john.id),
+        str(john.id),
+    ]
 
 
 def test_bt_number_uniqueness_and_check_endpoint(clean_project_tables: None) -> None:

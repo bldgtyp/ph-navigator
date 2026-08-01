@@ -5,8 +5,9 @@
 
 # 2.2 Dashboard (`/dashboard`)
 
-**Purpose:** A signed-in user's home — list of their projects, primary
-entry point to all work.
+**Purpose:** A signed-in user's home and primary entry point to project work.
+Ordinary users see their projects; users with `projects.access.all` see the
+admin all-project view described below.
 
 **Layout:** Single column, full-width minus comfortable side margins.
 Top header (§1.1) on top.
@@ -31,8 +32,14 @@ Top header (§1.1) on top.
      per-user order, visually distinct from unpinned rows.
 4. **All projects section** (`ProjectList`).
    - Section heading: "All projects" with the count ("12 projects").
-   - Sorted by `bt_number` **descending** (largest number first;
-     newest projects at the top).
+   - Ordinary responses are sorted by `bt_number` **descending** (largest
+     number first; newest projects at the top).
+   - Responses for users with `projects.access.all` carry `grouped: true` and
+     contain every non-deleted project, grouped by `owner_id`. The signed-in
+     user's group comes first; remaining owner groups sort by owner display
+     name ascending, with `bt_number` descending inside each group.
+     `ProjectList` renders that server order directly and adds one owner
+     heading with a project count per contiguous group.
    - Uses the row layout below, plus per-row selection checkboxes, a
      select-all control, and a delete-selected action (see "Bulk delete"
      below).
@@ -51,8 +58,7 @@ Top header (§1.1) on top.
 | Last modified | "2 hours ago" (hover for exact timestamp) | narrow |
 | Select | selection checkbox (feeds bulk delete) | narrow |
 
-Row click opens the project. Clicks on the selection checkbox do not
-open the row.
+The project-name link opens the project. Selection checkboxes do not navigate.
 
 **Bulk delete (shipped, US-1.4).** Project deletion shipped as a
 **multi-select bulk** flow, not a per-row `⋯` menu:
@@ -61,6 +67,11 @@ open the row.
   select-all toggle (`onToggleAllProjects`). Selection state
   (`selectedProjectIds`) lives on the Dashboard and auto-prunes ids that
   leave the visible list.
+- Selection remains owner-only even in the admin all-project view. A
+  non-owned row checkbox is disabled with the explanation "Only the owner can
+  delete this project"; select-all selects only projects whose `owner_id`
+  matches the signed-in user. If no visible projects are owned, select-all is
+  disabled.
 - With one or more projects selected, a **delete-selected** action
   appears (`onDeleteSelected`). It opens `DeleteProjectsModal`, a
   confirmation listing the chosen projects; confirming calls
@@ -72,8 +83,8 @@ open the row.
 
 Pin / Unpin and Copy-URL row actions remain deferred.
 
-**Empty state:** if user owns no projects, `ProjectList` shows a
-centered empty state whose call-to-action re-opens the new-project
+**Empty state:** if the list response contains no projects, `ProjectList`
+shows a centered empty state whose call-to-action re-opens the new-project
 modal. No pinned section appears at all.
 
 **New-project modal** (opened by the "Add New Project +" button):
@@ -95,4 +106,3 @@ modal. No pinned section appears at all.
 - On race-condition 409 (`error_code='bt_number_taken'`), inline
   error appears on the BT number field; user picks a different one
   and retries.
-

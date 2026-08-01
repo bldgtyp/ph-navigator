@@ -119,6 +119,7 @@ const VERSION: ProjectVersion = {
 
 const PROJECT: ProjectDetail = {
   id: "project-1",
+  owner_id: "owner-1",
   name: "Apertures Fixture",
   public_alias: null,
   display_name: "Apertures Fixture",

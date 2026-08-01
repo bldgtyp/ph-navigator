@@ -5,6 +5,15 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-01
 
+- `admin-all-projects-dashboard` - Added a capability-gated all-project
+  dashboard for `projects.access.all` holders, grouped by owner with the
+  current user's projects first and BT number descending inside each group.
+  Ordinary users retain the owner-only list; disabled foreign-project controls
+  and owned-only select-all preserve the destructive boundary. Backend and
+  frontend coverage, live browser acceptance, Graphify, three-way simplify,
+  docs-pass, and green CI completed the packet (backend 1,756 passed / 7
+  skipped; frontend 2,369 passed). Deployment remains an explicit operator
+  decision.
 - `project-ownership-enforcement` - Signed-in project reach now requires the
   caller to own the project or hold `projects.access.all`; ordinary strangers
   receive `404 project_not_found` across REST and MCP. Anonymous read-only

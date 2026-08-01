@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Layers3, SquareStack, type LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
@@ -43,17 +43,28 @@ export function Dashboard({ session }: { session: AuthSession }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(() => new Set());
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const projects = projectsQuery.data ?? EMPTY_PROJECTS;
+  const projects = projectsQuery.data?.projects ?? EMPTY_PROJECTS;
+  const grouped = projectsQuery.data?.grouped ?? false;
+  const selectableProjectIds = useMemo(
+    () =>
+      new Set(
+        projects
+          .filter((project) => project.owner_id === session.user.id)
+          .map((project) => project.id),
+      ),
+    [projects, session.user.id],
+  );
   const selectedProjects = projects.filter((project) => selectedProjectIds.has(project.id));
 
   useEffect(() => {
     setSelectedProjectIds((current) => {
       if (current.size === 0) return current;
-      const visibleIds = new Set(projects.map((project) => project.id));
-      const next = new Set(Array.from(current).filter((projectId) => visibleIds.has(projectId)));
+      const next = new Set(
+        Array.from(current).filter((projectId) => selectableProjectIds.has(projectId)),
+      );
       return next.size === current.size ? current : next;
     });
-  }, [projects]);
+  }, [selectableProjectIds]);
 
   const handleSignOut = () => {
     signOutMutation.mutate(undefined, {
@@ -65,6 +76,7 @@ export function Dashboard({ session }: { session: AuthSession }) {
 
   const toggleProjectSelection = (projectId: string, selected: boolean) => {
     setSelectedProjectIds((current) => {
+      if (selected && !selectableProjectIds.has(projectId)) return current;
       const next = new Set(current);
       if (selected) {
         next.add(projectId);
@@ -76,7 +88,7 @@ export function Dashboard({ session }: { session: AuthSession }) {
   };
 
   const toggleAllProjects = (selected: boolean) => {
-    setSelectedProjectIds(selected ? new Set(projects.map((project) => project.id)) : new Set());
+    setSelectedProjectIds(selected ? new Set(selectableProjectIds) : new Set());
   };
 
   const openDeleteModal = () => {
@@ -142,9 +154,11 @@ export function Dashboard({ session }: { session: AuthSession }) {
             isLoading={projectsQuery.isLoading}
             error={projectsQuery.error}
             projects={projects}
+            grouped={grouped}
             onCreateProject={() => setIsCreateOpen(true)}
             selectedProjectIds={selectedProjectIds}
-            selectedCount={selectedProjectIds.size}
+            selectableProjectIds={selectableProjectIds}
+            selectedCount={selectedProjects.length}
             isDeleting={bulkDeleteMutation.isPending}
             onToggleProject={toggleProjectSelection}
             onToggleAllProjects={toggleAllProjects}

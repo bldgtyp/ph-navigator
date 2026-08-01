@@ -19,6 +19,12 @@ the route without it (also handling a backend 403). The route is app-scoped,
 so it uses the plain `WorkspaceTopbar` (breadcrumb "Users") rather than a
 project header.
 
+The current Admin preset also carries **All-project access** as defined in the
+[`GLOSSARY.md`](../../GLOSSARY.md). An admin therefore sees every non-deleted
+project on `/dashboard`, grouped by owner. See
+[`dashboard.md`](./dashboard.md) for that view and its owner-only selection
+behavior.
+
 ## Layout
 
 - Heading "Users" with a primary **Invite user** button.

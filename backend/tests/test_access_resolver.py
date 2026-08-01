@@ -37,6 +37,7 @@ def _project() -> ProjectSummary:
     now = datetime(2026, 6, 27, tzinfo=UTC)
     return ProjectSummary(
         id=uuid4(),
+        owner_id=uuid4(),
         name="P",
         public_alias=None,
         bt_number="0000",
