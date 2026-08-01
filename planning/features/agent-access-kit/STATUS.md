@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:58 EDT
-STATUS: Active — Phases 01–02 complete; Phase 03 next
+TIME: 12:22 EDT
+STATUS: Active — Phases 01–03 complete; Phase 04 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the agent-access-kit.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,7 +11,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 01–02 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
+**Phases 01–03 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
 now share `mcp_tokens` with project tokens (`project_id IS NULL` identifies the
 user principal), default to a 365-day expiry, and expose account-level
 issue/list/revoke REST routes plus the **My agent tokens** list/revoke page.
@@ -24,6 +24,11 @@ decision, database-enforced poll cadence, and single redemption into the same
 365-day user-token rows. The reference `backend/scripts/phn_login.py` client
 stores the result atomically at `~/.config/phn/credentials.json` with mode
 `0600`; plaintext never reaches the approving browser or terminal output.
+
+The generic Dropbox kickoff template now carries a null-id `.phn.json` plus
+thin Claude/Codex project-folder instructions. The Linde Residence folder has
+the exact instruction copies and a stamped production project id. The template
+contains no client name, project id, or credential material.
 
 **Amended 2026-08-01 (cross-plan review).** A conflict with this packet's own
 dependency was found and resolved: three places specified `403` / `forbidden`
@@ -42,14 +47,15 @@ device-approval copy and to whether admins should mint 365-day tokens (§D-11).
 
 ## Next step
 
-Implement Phase 03: generic project-folder marker/template files, then stamp the
-real Linde marker without changing the project-folder tree.
+Implement Phase 04: create and publish the public `bldgtyp/claude-plugins`
+marketplace with the `phn` MCP launcher, skill, minimal commands, and canonical
+generator/source for the Phase-03 Dropbox files.
 
 ## Dependency status
 
 - Phase 01 dependency is merged on `main`; Phase 01 is implemented and locally
   verified.
-- Phase 02 is complete and locally verified. Phase 03 is unblocked; 04–05 can
+- Phases 02–03 are complete and locally verified. Phase 04 is unblocked and can
   target the concrete user-token and device-login contract.
 
 ## Open questions for Ed
@@ -86,6 +92,18 @@ Phase 02 evidence:
 - Live local grant redeemed with the reference client functions, temporary
   credential written as `0600`, token authenticated/revoked, and temporary
   credential removed.
+
+Phase 03 evidence:
+
+- Template `.phn.json` parses with a null id and exact production URLs; Linde
+  parses with project id `2f2b0cbd-19b7-41cb-9e38-72593c34d699`.
+- A scratch copy of `0000 Folder Tree` preserved all `01_Reference` through
+  `14_HBJSON` directories and carried the three new generic files unchanged.
+- Template hygiene scan found no Linde name, number, or project id; `cmp`
+  verified both Linde instruction files are exact template copies.
+- Three-lens simplify review found no correctness or reuse defects. Its one
+  maintenance note—the intentional four Dropbox copies—remains owned by the
+  Phase-04 canonical generator required by §D-8.
 
 Per PRD §7. The two easiest to skip and most important:
 

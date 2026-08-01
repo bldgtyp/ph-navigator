@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Ready — no backend dependency
+TIME: 12:22 EDT
+STATUS: Complete — Dropbox template and Linde marker verified
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Dropbox-side — `.phn.json` marker spec + agent files in the kickoff
   template folder; stamp the Linde test folder.
@@ -60,3 +60,22 @@ copy/rename kickoff template with no per-project editing.
 
 Copying `0000 Folder Tree` to a scratch name yields a folder whose files need
 zero edits; the Linde folder carries a stamped marker + both agent files.
+
+## Completion evidence
+
+Implemented 2026-08-01:
+
+- Added generic `.phn.json`, `CLAUDE.md`, and `AGENTS.md` files to
+  `/Users/em/Dropbox/bldgtyp/0000 Folder Tree` without changing its existing
+  folder structure.
+- Added exact instruction copies and the accepted production project id to
+  `/Users/em/Dropbox/bldgtyp/2524_Linde_Residence`.
+- Parsed both markers with `jq`; scanned the template for client identifiers;
+  compared the template/Linde instruction files byte-for-byte; and copied the
+  complete template to a scratch directory where all 14 numbered directories
+  and the three agent-access files were present with no edits.
+- Simplify review: correctness and reuse lenses found no defects. The
+  efficiency lens noted the intentional Dropbox copies; Phase 04 owns the
+  required canonical source/generator so those copies cannot drift (§D-8).
+- `make format` and `make ci` passed: backend 1,766 passed / 7 skipped;
+  frontend 2,371 passed; production build and version-marker check passed.

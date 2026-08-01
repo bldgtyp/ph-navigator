@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Active — contract accepted, implementation not started
+TIME: 12:22 EDT
+STATUS: Active — Phases 01–03 complete; distribution phases remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Product/behavior contract for the agent-access-kit.
 RELATED: ./README.md, ./decisions.md, ./phases/, context/mcp.md,

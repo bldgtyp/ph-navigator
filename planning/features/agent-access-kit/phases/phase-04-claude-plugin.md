@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Blocked — auth content needs Phases 01–02 shapes final (§D-6)
+TIME: 12:22 EDT
+STATUS: Ready — Phases 01–03 contracts are final
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: `bldgtyp` Claude Code plugin — MCP entry + `phn` skill + slash commands.
 RELATED: ../PRD.md §5.1, ../decisions.md §D-7/D-8, context/mcp.md
