@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 10:14 EDT
-STATUS: Complete — verified; ready to archive
+STATUS: Archived — complete and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the project-ownership enforcement refactor.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -15,11 +15,11 @@ RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
 
 # Project-ownership enforcement (close the cross-user read/write gap)
 
-Any signed-in PH-Navigator user can currently **read and edit any project by
-ID**, regardless of who owns it. Project-scoped routes gate on *global*
-capabilities that every signed-in user holds, so the only thing keeping one
-user's projects away from another is the dashboard's `WHERE owner_id` filter —
-obscurity, not access control.
+Before this refactor, any signed-in PH-Navigator user could **read and edit any
+project by ID**, regardless of who owned it. Project-scoped routes gated on
+*global* capabilities that every signed-in user held, so the only thing keeping
+one user's projects away from another was the dashboard's `WHERE owner_id`
+filter — obscurity, not access control.
 
 This refactor moves the project seam from "is there a session?" to "does this
 principal have a relationship to *this* project?".
@@ -43,7 +43,7 @@ current code, and `multi-tenant-teams` §2's line references
 ## Why now
 
 It is a prerequisite for
-[`planning/features/admin-all-projects-dashboard/`](../../features/admin-all-projects-dashboard/README.md).
+[`planning/features/admin-all-projects-dashboard/`](../../../../features/admin-all-projects-dashboard/README.md).
 That feature grants admins an all-projects view. If the gap stays open, the
 feature is not a capability grant at all — it just surfaces in the UI what
 every signed-in user could already reach by URL. Fixing enforcement first makes

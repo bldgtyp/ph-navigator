@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 10:14 EDT
-STATUS: Complete — verified; ready to archive
+STATUS: Archived — complete and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for project-ownership enforcement.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -76,8 +76,8 @@ Done 2026-08-01:
 
 ## Next step
 
-Archive this packet under `planning/archive/dated/2026-08-01/` and update all
-active references to the archived path.
+Merge the implementation branch when ready. Before deployment, run the
+production owner-distribution query recorded below and review the result.
 
 ## Blockers
 

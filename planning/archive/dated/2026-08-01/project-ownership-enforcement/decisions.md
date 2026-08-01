@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 08:25 EDT
-STATUS: Active — D-1..D-6 accepted by Ed 2026-08-01
+STATUS: Archived — D-1..D-6 accepted by Ed 2026-08-01
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Accepted and rejected decisions for project-ownership enforcement.
 RELATED: ./README.md, ./PRD.md, ./phases/

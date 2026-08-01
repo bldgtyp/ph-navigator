@@ -26,8 +26,8 @@ altitude — stop and re-read `decisions.md` §D-6.
 ```python
 # Reach any project regardless of ownership. Derived, never granted directly:
 # from users.is_staff (the reserved bldgtyp cross-tenant flag) or — as a dated
-# bridge until teams land — from the Admin preset. See planning/refactor/
-# project-ownership-enforcement/decisions.md §D-3.
+# bridge until teams land — from the Admin preset. See planning/archive/dated/
+# 2026-08-01/project-ownership-enforcement/decisions.md §D-3.
 PROJECT_ACCESS_ALL = "projects.access.all"
 ```
 

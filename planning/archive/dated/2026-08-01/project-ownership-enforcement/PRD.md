@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 10:03 EDT
-STATUS: Implemented and verified on branch
+TIME: 10:14 EDT
+STATUS: Archived — implemented and verified on branch
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Behavior contract for project-ownership enforcement at the access seam.
 RELATED: ./README.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -60,7 +60,7 @@ not a side effect — it is the public client-viewer contract.
 # capabilities.py
 # Reach any project regardless of ownership. Derived — never granted directly —
 # from the bldgtyp cross-tenant staff flag, or (as a dated bridge) from the
-# Admin preset. See planning/refactor/project-ownership-enforcement/
+# Admin preset. See planning/archive/dated/2026-08-01/project-ownership-enforcement/
 # decisions.md §D-3; the Admin clause is deleted when teams land.
 PROJECT_ACCESS_ALL = "projects.access.all"
 ```
