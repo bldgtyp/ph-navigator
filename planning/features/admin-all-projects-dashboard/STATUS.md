@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 10:41 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+TIME: 10:57 EDT
+STATUS: Active — Phases 1-2 complete; Phase 3 next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the admin all-projects dashboard.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
@@ -12,7 +12,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
 
 ## State
 
-**Phase 1 backend implementation is complete and verified.**
+**Backend and grouped-dashboard implementation are complete and verified.**
 
 Done 2026-08-01:
 - Surveyed the existing auth plumbing; confirmed `ADMIN_USERS_MANAGE`, the
@@ -28,6 +28,12 @@ Done 2026-08-01:
 - Added the capability-gated all-project listing with own-group-first ordering.
 - Kept the existing owner-filter regression untouched and green; added admin
   ordering/grouping coverage and an explicit non-admin `grouped: false` check.
+- Added server-controlled grouped rendering with owner headings and per-owner
+  counts.
+- Kept deletion owner-only: foreign row controls are disabled with an
+  accessible explanation, while select-all operates on owned projects only.
+- Verified the grouped dashboard live and captured
+  `assets/admin-all-projects-dashboard.png`.
 
 ## Dependency status
 
@@ -40,9 +46,8 @@ non-owners receive `404 project_not_found` at the project seam.
 
 ## Next step
 
-Start `phases/phase-02-frontend.md`: reconcile the frontend response types,
-render owner headings only for grouped responses, and restrict selection to
-projects owned by the signed-in user.
+Complete `phases/phase-03-docs.md`: update the durable dashboard/admin-user
+documentation, run final verification, and close the packet.
 
 ## Verification
 
@@ -61,6 +66,15 @@ Phase 1 focused verification:
   **30 passed**.
 - `uv run ty check` — **passed**.
 - Focused Ruff format/lint checks — **passed**.
+
+Phase 2 focused verification:
+
+- Focused Vitest (`ProjectList`, `Dashboard`, and `App`) — **36 passed**.
+- `make frontend-dev-check` — **passed** (18 pre-existing ESLint warnings,
+  zero errors).
+- `make ci` — **passed**: backend **1,756 passed / 7 skipped**; frontend
+  **2,369 passed**; all required checks green.
+- Live grouped-dashboard and owner-only select-all check — **passed**.
 
 ## Estimate
 

@@ -14,6 +14,8 @@ export type ProjectVersion = {
 
 export type ProjectSummary = {
   id: string;
+  owner_id: string;
+  owner_display_name: string | null;
   name: string;
   /** User-settable public-facing alias; null when unset. */
   public_alias: string | null;
@@ -37,11 +39,11 @@ export type ProjectDetail = ProjectSummary & {
   versions: ProjectVersion[];
   active_version: ProjectVersion | null;
   access_mode: "editor" | "viewer";
-  owner_display_name: string | null;
 };
 
 export type ProjectListResponse = {
   projects: ProjectSummary[];
+  grouped: boolean;
 };
 
 export type ProjectDeleteCounts = {

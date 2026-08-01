@@ -45,6 +45,7 @@ function buildProject(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
   };
   return {
     id: PROJECT_ID,
+    owner_id: "owner-ed",
     name: "West Stockbridge House",
     public_alias: null,
     display_name: "West Stockbridge House",

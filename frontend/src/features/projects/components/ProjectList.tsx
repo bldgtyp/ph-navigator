@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { formatProjectDateTime, formatRelativeProjectDate } from "../../../shared/lib/dates";
@@ -8,8 +9,10 @@ export function ProjectList({
   isLoading,
   error,
   projects,
+  grouped,
   onCreateProject,
   selectedProjectIds,
+  selectableProjectIds,
   selectedCount,
   isDeleting,
   onToggleProject,
@@ -19,8 +22,10 @@ export function ProjectList({
   isLoading: boolean;
   error: unknown;
   projects: ProjectSummary[];
+  grouped: boolean;
   onCreateProject: () => void;
   selectedProjectIds: Set<string>;
+  selectableProjectIds: Set<string>;
   selectedCount: number;
   isDeleting: boolean;
   onToggleProject: (projectId: string, selected: boolean) => void;
@@ -53,7 +58,8 @@ export function ProjectList({
 
   const renderedAt = new Date();
   const allSelected =
-    projects.length > 0 && projects.every((project) => selectedProjectIds.has(project.id));
+    selectableProjectIds.size > 0 &&
+    Array.from(selectableProjectIds).every((projectId) => selectedProjectIds.has(projectId));
 
   return (
     <section aria-labelledby="all-projects-title">
@@ -78,12 +84,26 @@ export function ProjectList({
         </div>
       ) : null}
       <div className="project-list" aria-label="All projects">
+        <span className="sr-only" id="project-delete-owner-only-description">
+          Only the owner can delete this project
+        </span>
         <div className="project-list-heading">
           <span className="project-select-cell">
             <input
               type="checkbox"
               aria-label="Select all projects"
               checked={allSelected}
+              disabled={selectableProjectIds.size === 0}
+              aria-describedby={
+                selectableProjectIds.size === 0
+                  ? "project-delete-owner-only-description"
+                  : undefined
+              }
+              title={
+                selectableProjectIds.size === 0
+                  ? "Only the owner can delete these projects"
+                  : undefined
+              }
               onChange={(event) => onToggleAllProjects(event.currentTarget.checked)}
             />
           </span>
@@ -92,37 +112,72 @@ export function ProjectList({
           <span>Client</span>
           <span>Last modified</span>
         </div>
-        {projects.map((project) => (
-          <div className="project-row" key={project.id}>
-            <span className="project-select-cell">
-              <input
-                type="checkbox"
-                aria-label={`Select project ${project.bt_number} ${project.display_name}`}
-                checked={selectedProjectIds.has(project.id)}
-                onChange={(event) => onToggleProject(project.id, event.currentTarget.checked)}
-              />
-            </span>
-            <span className="project-number">{project.bt_number}</span>
-            <Link
-              aria-label={`${project.bt_number} - ${project.display_name}`}
-              className="project-name-link"
-              to={projectStatusPath(project.id)}
-            >
-              <strong>{project.display_name}</strong>
-            </Link>
-            <span>{project.client || "-"}</span>
-            <span
-              title={
-                project.last_saved_at ? formatProjectDateTime(project.last_saved_at) : undefined
-              }
-            >
-              {project.last_saved_at
-                ? formatRelativeProjectDate(project.last_saved_at, renderedAt)
-                : "-"}
-            </span>
-          </div>
-        ))}
+        {projects.map((project, index) => {
+          const startsGroup = grouped && project.owner_id !== projects[index - 1]?.owner_id;
+          const selectable = selectableProjectIds.has(project.id);
+          return (
+            <Fragment key={project.id}>
+              {startsGroup ? (
+                <OwnerGroupHeading project={project} count={projectGroupCount(projects, index)} />
+              ) : null}
+              <div className="project-row">
+                <span className="project-select-cell">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select project ${project.bt_number} ${project.display_name}`}
+                    checked={selectedProjectIds.has(project.id)}
+                    disabled={!selectable}
+                    aria-describedby={
+                      !selectable ? "project-delete-owner-only-description" : undefined
+                    }
+                    title={!selectable ? "Only the owner can delete this project" : undefined}
+                    onChange={(event) => onToggleProject(project.id, event.currentTarget.checked)}
+                  />
+                </span>
+                <span className="project-number">{project.bt_number}</span>
+                <Link
+                  aria-label={`${project.bt_number} - ${project.display_name}`}
+                  className="project-name-link"
+                  to={projectStatusPath(project.id)}
+                >
+                  <strong>{project.display_name}</strong>
+                </Link>
+                <span>{project.client || "-"}</span>
+                <span
+                  title={
+                    project.last_saved_at ? formatProjectDateTime(project.last_saved_at) : undefined
+                  }
+                >
+                  {project.last_saved_at
+                    ? formatRelativeProjectDate(project.last_saved_at, renderedAt)
+                    : "-"}
+                </span>
+              </div>
+            </Fragment>
+          );
+        })}
       </div>
     </section>
   );
+}
+
+function OwnerGroupHeading({ project, count }: { project: ProjectSummary; count: number }) {
+  const ownerName = project.owner_display_name ?? "Unknown owner";
+  return (
+    <div className="project-section-heading project-owner-heading">
+      <div>
+        <h3>{ownerName}</h3>
+        <span>
+          {count} {count === 1 ? "project" : "projects"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function projectGroupCount(projects: ProjectSummary[], startIndex: number): number {
+  const ownerId = projects[startIndex]?.owner_id;
+  let endIndex = startIndex;
+  while (projects[endIndex]?.owner_id === ownerId) endIndex += 1;
+  return endIndex - startIndex;
 }

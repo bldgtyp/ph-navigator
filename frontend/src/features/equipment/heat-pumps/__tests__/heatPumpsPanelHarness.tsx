@@ -339,6 +339,7 @@ function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
 function project(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
   return {
     id: "proj_1",
+    owner_id: "owner-ed",
     name: "Test Project",
     public_alias: null,
     display_name: "Test Project",
