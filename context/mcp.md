@@ -270,10 +270,20 @@ human:
 3. The agent sends the device code to unauthenticated
    `POST /api/v1/agent-tokens/device/poll`. Pending, early-poll, denied, and
    expired responses use `authorization_pending`, `slow_down`, `denied`, and
-   `expired`. Approval returns a normal user-scoped token exactly once.
+   `expired`. Approval returns `approved` with a normal user-scoped token
+   exactly once.
 4. `backend/scripts/phn_login.py` is the reference client. It writes
    `~/.config/phn/credentials.json` atomically with mode `0600` and never
-   prints the token.
+   prints the token. The shared credential file has this stable shape:
+
+   ```json
+   {
+     "phn_api": "https://api.ph-nav.com",
+     "token": "<one-time token>",
+     "label": "My workstation (agent)",
+     "issued": "2026-08-01T12:00:00+00:00"
+   }
+   ```
 
 Device codes are hashed at rest. Database state enforces the polling cadence,
 single redemption, and expiry; terminal rows are retained for at most 30 days.

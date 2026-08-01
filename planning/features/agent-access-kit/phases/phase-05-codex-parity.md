@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Blocked — follows Phase 04 (same source, second output)
+TIME: 12:58 EDT
+STATUS: Ready — Phase 04 source/generator and bridge are published
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Codex — global MCP registration + AGENTS.md workflow section.
 RELATED: ../PRD.md §5.2, ../decisions.md §D-8, ./phase-04-claude-plugin.md

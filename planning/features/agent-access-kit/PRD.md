@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 12:22 EDT
-STATUS: Active — Phases 01–03 complete; distribution phases remain
+TIME: 12:58 EDT
+STATUS: Active — Phases 01–04 complete; Codex parity and production E2E remain
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Product/behavior contract for the agent-access-kit.
 RELATED: ./README.md, ./decisions.md, ./phases/, context/mcp.md,
@@ -139,8 +139,8 @@ A `bldgtyp` plugin in a marketplace repo (working name:
   `replace_table`, error-recoverability table, device-flow bootstrap when no
   credential exists. Generated/checked against `context/mcp.md` so there is
   one truth (§D-8).
-- **Slash commands** (small, optional): e.g. `/phn-status` (project +
-  version + unfinished-work summary), `/phn-login` (device flow).
+- **Namespaced commands** (small, optional): `/bldgtyp:phn-status` (project +
+  version + unfinished-work summary), `/bldgtyp:phn-login` (device flow).
 
 The in-repo `phn-local` stdio server stays as-is for PHN development; the
 plugin targets production data access from anywhere. Naming must keep the two

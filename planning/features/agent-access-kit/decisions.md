@@ -133,3 +133,21 @@ permissions boundary, and should re-resolve rather than guess.
 `forbidden` remains correct for its actual meaning elsewhere — a *reachable*
 project where the principal lacks a specific capability (e.g. a
 `project:read`-only token attempting a write).
+
+## D-15 — One stdlib bridge and generated contract own Claude/Codex distribution
+
+Phase 04 chose a thin Python stdio bridge over embedding a bearer in Claude
+configuration. It reads the Phase-02 credential file, performs device login on
+missing/rejected credentials, and translates stdio JSON-RPC to PH-Navigator's
+stateless Streamable HTTP endpoint. The same published bridge will serve Codex
+in Phase 05; no third-party proxy or runtime dependency is required.
+
+`plugins/bldgtyp/config/phn.json`, `source/phn-workflow.md`, and the shared
+`source/project-resolution.md` are the canonical distribution inputs. They
+generate the plugin skill, Codex AGENTS section, and Dropbox instructions.
+Public CI checks a vendored `context/mcp.md` snapshot for required tools,
+recoverability, device/credential protocol values, and draft-safety anchors.
+
+Claude plugin skills are namespaced, so the user-facing commands are
+`/bldgtyp:phn`, `/bldgtyp:phn-login`, and `/bldgtyp:phn-status`; the packet's
+earlier unqualified shorthand is superseded.

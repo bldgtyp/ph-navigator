@@ -36,7 +36,7 @@ copy/rename kickoff template with no per-project editing.
    - `.phn.json` (null id, prod URLs, as above).
    - `CLAUDE.md` — what this folder is, the 01–14 subfolder map, the marker
      rule, "use the `phn` MCP tools (`phn` skill) for PH-Navigator project
-     data; credentials via `/phn-login` if missing". Generic — no project
+     data; credentials via `/bldgtyp:phn-login` if missing". Generic — no project
      names.
    - `AGENTS.md` — same content for Codex.
 
@@ -53,7 +53,7 @@ copy/rename kickoff template with no per-project editing.
 - Existing project folders are back-filled opportunistically (first agent
   contact triggers the null-id bootstrap after the two files are dropped in);
   no bulk migration required.
-- Content referencing auth (`/phn-login`) describes the Phase-02/04 target;
+- Content referencing auth (`/bldgtyp:phn-login`) describes the Phase-02/04 target;
   files can land now, that line simply activates when the plugin ships.
 
 ## Done when
