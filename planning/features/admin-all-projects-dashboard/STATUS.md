@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 10:57 EDT
-STATUS: Active — Phases 1-2 complete; Phase 3 next
+TIME: 11:07 EDT
+STATUS: Complete — final archive cleanup next
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the admin all-projects dashboard.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
@@ -12,7 +12,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
 
 ## State
 
-**Backend and grouped-dashboard implementation are complete and verified.**
+**All three implementation phases are complete and verified.**
 
 Done 2026-08-01:
 - Surveyed the existing auth plumbing; confirmed `ADMIN_USERS_MANAGE`, the
@@ -34,20 +34,21 @@ Done 2026-08-01:
   accessible explanation, while select-all operates on owned projects only.
 - Verified the grouped dashboard live and captured
   `assets/admin-all-projects-dashboard.png`.
+- Folded the grouped-dashboard behavior into the durable Dashboard and Admin
+  Users documentation without duplicating the access-model glossary.
 
 ## Dependency status
 
-`PROJECT_ACCESS_ALL` and the owner-or-all seam are implemented and verified.
-This feature can begin as stacked work from the implementation branch; merge
-the dependency before starting it from `main`.
+`PROJECT_ACCESS_ALL` and the owner-or-all seam are implemented, verified, and
+archived under `planning/archive/dated/2026-08-01/project-ownership-enforcement/`.
 
 The admin-only view now represents a real privilege: ordinary signed-in
 non-owners receive `404 project_not_found` at the project seam.
 
 ## Next step
 
-Complete `phases/phase-03-docs.md`: update the durable dashboard/admin-user
-documentation, run final verification, and close the packet.
+Archive this completed packet and update the planning indexes. Deployment
+remains Ed's decision.
 
 ## Verification
 
@@ -76,6 +77,9 @@ Phase 2 focused verification:
   **2,369 passed**; all required checks green.
 - Live grouped-dashboard and owner-only select-all check — **passed**.
 
-## Estimate
+Phase 3 closeout verification:
 
-Roughly a day once unblocked: backend ~2h, frontend ~3h, tests + docs ~2h.
+- `simplify` — three parallel reviews complete; documentation findings fixed.
+- `docs-pass` — durable Dashboard/Admin Users docs reconciled; glossary reused.
+- `make ci` — **passed**: backend **1,756 passed / 7 skipped**; frontend
+  **2,369 passed**; format, lint, type, boundary, guard, and build checks green.

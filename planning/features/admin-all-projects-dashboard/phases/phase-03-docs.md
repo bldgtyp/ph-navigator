@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Planned — blocked on phase-02
+TIME: 11:07 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Phase 3 — docs fold-back and closeout.
 RELATED: ../PRD.md, ../decisions.md, ./phase-02-frontend.md
@@ -35,9 +35,9 @@ On merge, per `planning/.instructions.md`:
 - Move `planning/features/admin-all-projects-dashboard/` to
   `planning/archive/dated/<merge-date>/admin-all-projects-dashboard/`.
 - Add one newest-first line to `planning/archive/README.md`.
-- Do the same for
-  `planning/archive/dated/2026-08-01/project-ownership-enforcement/` if it merged first and is
-  complete.
+
+The `project-ownership-enforcement` dependency was already archived on
+2026-08-01; no dependency archive action remains.
 
 ## Deploy
 
@@ -46,3 +46,17 @@ Deploying is **Ed's call**, never an agent's. Merging to `main` does not deploy.
 Flag for the deploy decision: the enforcement refactor changes who can reach
 which project in production. Its Phase 3 §3.5 production owner-distribution
 query should be reviewed before that deploy, not after.
+
+## Implementation record
+
+Updated the dashboard and Admin Users page contracts on 2026-08-01.
+`context/GLOSSARY.md` already defines **Owner** and **All-project access**, so
+no duplicate access-model definition was added.
+
+Closeout verification:
+
+- `simplify` — three parallel reviews complete; findings fixed.
+- `docs-pass` — current behavior reconciled with durable UI and glossary docs.
+- `make format` — **passed** with no changed source files.
+- `make ci` — **passed**: backend **1,756 passed / 7 skipped**; frontend
+  **2,369 passed**; all required checks green.
