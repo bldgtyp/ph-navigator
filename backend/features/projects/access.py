@@ -14,6 +14,7 @@ Beta behavior is identical to the old binary check: anonymous → `client`
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from functools import cached_property
@@ -24,7 +25,7 @@ from fastapi import HTTPException, Request
 from starlette import status
 
 from database import connection
-from features.access.capabilities import PROJECT_EDIT, capabilities_for
+from features.access.capabilities import PROJECT_ACCESS_ALL, PROJECT_EDIT, capabilities_for
 from features.access.principals import Principal, UserPrincipal, ViewerPrincipal
 from features.access.user_capabilities import build_user_principal
 from features.auth.models import UserPublic
@@ -80,6 +81,9 @@ def require_project_access(project_id: UUID, request: Request, mode: ProjectAcce
         project_row = repository.get_project_by_id_including_deleted(conn, project_id)
         if project_row is None:
             raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
+        principal: Principal = build_user_principal(conn, user) if user is not None else ViewerPrincipal()
+        if isinstance(principal, UserPrincipal) and not _may_reach_project(principal, project_row):
+            raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
         if project_row["deleted_at"] is not None:
             raise api_error(
                 status.HTTP_410_GONE,
@@ -95,7 +99,6 @@ def require_project_access(project_id: UUID, request: Request, mode: ProjectAcce
         project = ProjectSummary.model_validate(
             {field: project_row[field] for field in ProjectSummary.model_fields if field in project_row}
         )
-        principal: Principal = build_user_principal(conn, user) if user is not None else ViewerPrincipal()
 
     access = ProjectAccess(project_id=project_id, mode=mode, principal=principal, project=project)
     if mode == "edit":
@@ -112,6 +115,9 @@ def project_access_for_user(user: UserPublic, project: ProjectSummary, mode: Pro
     """
     with connection() as conn:
         principal = build_user_principal(conn, user)
+        project_row = repository.get_project_by_id_including_deleted(conn, project.id)
+        if project_row is None or not _may_reach_project(principal, project_row):
+            raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
     return ProjectAccess(project_id=project.id, mode=mode, principal=principal, project=project)
 
 
@@ -147,6 +153,13 @@ def require_editor_user(access: ProjectAccess) -> UserPublic:
     require_capability(access, PROJECT_EDIT)
     assert isinstance(access.principal, UserPrincipal)
     return access.principal.user
+
+
+def _may_reach_project(principal: UserPrincipal, project_row: Mapping[str, object]) -> bool:
+    """Keep the owner and global overrides separate so team reach can slot in."""
+    if project_row["owner_id"] == principal.user.id:
+        return True
+    return PROJECT_ACCESS_ALL in capabilities_for(principal)
 
 
 def _isoformat(value: object) -> str | None:

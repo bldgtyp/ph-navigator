@@ -11,13 +11,12 @@ from fastapi.testclient import TestClient
 
 from database import transaction
 from features.access import repository as access_repository
-from features.access.capabilities import ADMIN_USERS_MANAGE
+from features.access.capabilities import ADMIN_USERS_MANAGE, PROJECT_ACCESS_ALL
 from features.auth import repository as auth_repository
 from features.auth.service import create_or_update_user
 from main import app
 
 ORIGIN = "http://localhost:5173"
-PROJECT_ACCESS_ALL = "projects.access.all"
 
 
 @pytest.fixture(autouse=True)
@@ -97,7 +96,6 @@ def _elevated_client(actor: Literal["admin", "staff"]) -> TestClient:
 
 
 def test_stranger_cannot_read_owned_project(owned_project: OwnedProject, stranger_client: TestClient) -> None:
-    # Fails until Phase 2 adds ownership enforcement at the project seam.
     response = stranger_client.get(f"/api/v1/projects/{owned_project.project_id}")
 
     assert response.status_code == 404
@@ -105,7 +103,6 @@ def test_stranger_cannot_read_owned_project(owned_project: OwnedProject, strange
 
 
 def test_stranger_cannot_edit_owned_project(owned_project: OwnedProject, stranger_client: TestClient) -> None:
-    # Fails until Phase 2 adds ownership enforcement at the project seam.
     response = stranger_client.patch(
         f"/api/v1/projects/{owned_project.project_id}",
         headers={"Origin": ORIGIN},
@@ -177,7 +174,6 @@ def test_elevated_principal_cannot_delete_another_users_project(
 def test_elevated_session_exposes_all_projects_capability(
     actor: Literal["admin", "staff"],
 ) -> None:
-    # Fails until Phase 2 derives the new capability for both elevated paths.
     session = _elevated_client(actor).get("/api/v1/auth/session")
 
     assert session.status_code == 200

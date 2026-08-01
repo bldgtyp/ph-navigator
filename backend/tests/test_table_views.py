@@ -12,6 +12,7 @@ from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.table_views import repository
 from main import app
+from tests.catalog_helpers import create_catalog_admin
 
 ORIGIN = "http://localhost:5173"
 TABLE_KEY = "rooms"
@@ -35,8 +36,13 @@ def _truncate() -> None:
         )
 
 
-def _signed_in_client(email: str = "ed@example.com", display_name: str = "Ed May") -> TestClient:
-    create_or_update_user(email=email, display_name=display_name, password="password")
+def _signed_in_client(
+    email: str = "ed@example.com", display_name: str = "Ed May", *, is_staff: bool = False
+) -> TestClient:
+    if is_staff:
+        create_catalog_admin(email=email, display_name=display_name)
+    else:
+        create_or_update_user(email=email, display_name=display_name, password="password")
     client = TestClient(app)
     response = client.post(
         "/api/v1/auth/login",
@@ -286,7 +292,7 @@ def test_view_state_is_user_scoped(clean_table_view_tables: None) -> None:
         json={"view_state_schema_version": 1, "view_state": _sample_view_state()},
     )
 
-    editor_b = _signed_in_client(email="b@example.com", display_name="B")
+    editor_b = _signed_in_client(email="b@example.com", display_name="B", is_staff=True)
     response_b = editor_b.get(
         f"/api/v1/projects/{project_id}/table-views/{TABLE_KEY}",
         headers={"Origin": ORIGIN},
@@ -423,7 +429,7 @@ def test_batch_is_user_scoped(clean_table_view_tables: None) -> None:
     project_id = _create_project(editor_a)
     _put_sample_view(editor_a, project_id, "pumps")
 
-    editor_b = _signed_in_client(email="b@example.com", display_name="B")
+    editor_b = _signed_in_client(email="b@example.com", display_name="B", is_staff=True)
     response_b = editor_b.get(
         f"/api/v1/projects/{project_id}/table-views",
         headers={"Origin": ORIGIN},

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Planned
+TIME: 09:38 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Phase 2 — enforce ownership at the project access seam.
 RELATED: ../PRD.md, ../decisions.md, ./phase-01-reproduce.md, ./phase-03-sweep.md
@@ -9,7 +9,7 @@ RELATED: ../PRD.md, ../decisions.md, ./phase-01-reproduce.md, ./phase-03-sweep.m
 
 # Phase 2 — Enforce
 
-Turn Phase 1's two red cases green without turning anything else red.
+Turn Phase 1's four red cases green without turning anything else red.
 
 ## Files
 
@@ -130,3 +130,23 @@ Owners keep the 410 + restore affordance — that path is unchanged for them.
 - `uv run ty` clean.
 - `make ci` green.
 - Diff touches two files.
+
+## Completion evidence
+
+Completed 2026-08-01. The behavior change is confined to the two planned
+production files. Test/docs-pass updates also removed temporary Phase 1
+comments and adapted three user-scoped view-state tests so the second user has
+legitimate staff reach.
+
+```text
+uv run pytest tests/test_project_access_ownership.py -q  # 11 passed
+uv run pytest <3 view-state regressions> ... -q          # 14 passed with ownership suite
+uv run ty check                                          # pass
+make format                                              # no changes
+make ci                                                  # pass; backend 1752 passed, 7 skipped
+```
+
+Simplify findings addressed: reused the production capability constant and
+staff test helper, retained the ordinary-member fast return, and kept the
+intentional centralized project re-fetch in `project_access_for_user` instead
+of widening three caller contracts.

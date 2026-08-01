@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:24 EDT
-STATUS: Active — Phase 1 complete
+TIME: 09:38 EDT
+STATUS: Active — Phase 2 complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for project-ownership enforcement.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,9 +11,8 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phase 1 complete.** The permanent ownership-contract suite now reproduces the
-gap without weakening it with `xfail`. Phase 2 has not changed the access seam
-yet.
+**Phase 2 complete.** Project reach is now owner-or-`projects.access.all` for
+signed-in REST and MCP principals. Anonymous read-only access is unchanged.
 
 Done 2026-08-01:
 - Reproduced the cross-user read/write gap against the local test database with
@@ -34,6 +33,15 @@ Done 2026-08-01:
 - Phase 1 simplify pass split actor setup into targeted fixtures, avoiding
   repeated password hashing and 44 eager logins; reuse and efficiency reviews
   found no remaining issue. Ruff and `ty` are clean.
+- Added `PROJECT_ACCESS_ALL`, derived for `is_staff` and the interim Admin
+  preset; enforced it with ownership in `require_project_access` before the
+  deleted-project branch and in `project_access_for_user`.
+- Updated sidebar/table view-state isolation tests so their second actor holds
+  legitimate all-project reach; ordinary signed-in strangers now correctly
+  receive 404 before per-user view state is considered.
+- Phase 2 simplify/docs passes complete. `make format` changed nothing and
+  `make ci` passed (`1752 passed`, `7 skipped` backend; frontend tests and
+  production build green).
 - **Reviewed against the three deferred v2.0 packets**
   (`access-capability-enforcement`, `account-security-hardening`,
   `multi-tenant-teams`). Result: the seam choice and the access predicate line
@@ -45,9 +53,9 @@ Done 2026-08-01:
 
 ## Next step
 
-**Phase 2** — `phases/phase-02-enforce.md`. Add `PROJECT_ACCESS_ALL`, derive it
-for staff/Admin principals, and enforce owner-or-all-project reach in both
-`require_project_access` and `project_access_for_user`.
+**Phase 3** — `phases/phase-03-sweep.md`. Enumerate every project-scoped route,
+add six representative stranger probes plus MCP coverage, and verify the local
+agent-browser fixture end to end.
 
 ## Blockers
 
@@ -73,6 +81,14 @@ cd backend
 uv run ruff check tests/test_project_access_ownership.py  # pass
 uv run ty check                                           # pass
 uv run pytest tests/test_project_access_ownership.py -q  # 4 failed, 7 passed (expected)
+```
+
+Phase 2 evidence:
+
+```text
+uv run pytest tests/test_project_access_ownership.py -q  # 11 passed
+make format                                               # no changes
+make ci                                                   # pass
 ```
 
 Per PRD §5. The two that matter most and are easiest to skip:

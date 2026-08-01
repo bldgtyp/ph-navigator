@@ -47,6 +47,10 @@ EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
 MODEL_EXPORT = "model.export"
 DOCUMENT_EXPORT = "document.export"
 
+# Reach any project regardless of ownership. Derived from the reserved staff
+# flag or, until team roles land, the Admin preset.
+PROJECT_ACCESS_ALL = "projects.access.all"
+
 # Write access to the shared catalog library, held by every signed-in member.
 CATALOG_EDIT = "catalog.edit"
 
@@ -97,5 +101,8 @@ def capabilities_for(principal: Principal) -> frozenset[str]:
     if isinstance(principal, UserPrincipal):
         if not principal.granted_capabilities and not principal.is_staff:
             return MEMBER_CAPS
-        return MEMBER_CAPS | principal.granted_capabilities
+        capabilities = MEMBER_CAPS | principal.granted_capabilities
+        if principal.is_staff or ADMIN_USERS_MANAGE in principal.granted_capabilities:
+            return capabilities | frozenset({PROJECT_ACCESS_ALL})
+        return capabilities
     assert_never(principal)
