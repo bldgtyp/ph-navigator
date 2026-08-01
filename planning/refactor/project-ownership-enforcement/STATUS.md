@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:38 EDT
-STATUS: Active — Phase 2 complete
+TIME: 09:44 EDT
+STATUS: Active — Phase 3 complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for project-ownership enforcement.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,8 +11,9 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phase 2 complete.** Project reach is now owner-or-`projects.access.all` for
-signed-in REST and MCP principals. Anonymous read-only access is unchanged.
+**Phase 3 complete.** Project reach is owner-or-`projects.access.all` for
+signed-in REST and MCP principals, and the full project route surface has been
+verified on-seam. Anonymous read-only access is unchanged.
 
 Done 2026-08-01:
 - Reproduced the cross-user read/write gap against the local test database with
@@ -42,6 +43,18 @@ Done 2026-08-01:
 - Phase 2 simplify/docs passes complete. `make format` changed nothing and
   `make ci` passed (`1752 passed`, `7 skipped` backend; frontend tests and
   production build green).
+- Audited every registered project feature module and all 103 current
+  project-reachable HTTP operations. All route modules are on-seam; the three
+  project destructive operations intentionally remain stricter and owner-only.
+- The deeper MCP sweep found metadata/list tools that checked token scope but
+  did not re-check issuer ownership. Phase 3 routed those reads through
+  `project_access_for_token` and added structured `project_not_found` mapping.
+- Added six stranger probes across document, apertures, envelope, model data,
+  signed asset URLs, and status, plus the stale cross-user MCP-token case. The
+  ownership suite is green at 13 tests.
+- `make smoke-mcp-local`, `make agent-browser-ready`, and an authenticated
+  `agent-browser.mjs` load of the task-owned fixture all passed. See
+  `implementation-report.md` for the module verdict table and evidence.
 - **Reviewed against the three deferred v2.0 packets**
   (`access-capability-enforcement`, `account-security-hardening`,
   `multi-tenant-teams`). Result: the seam choice and the access predicate line
@@ -53,9 +66,9 @@ Done 2026-08-01:
 
 ## Next step
 
-**Phase 3** — `phases/phase-03-sweep.md`. Enumerate every project-scoped route,
-add six representative stranger probes plus MCP coverage, and verify the local
-agent-browser fixture end to end.
+**Phase 4** — `phases/phase-04-docs.md`. Fold the shipped ownership contract
+into canonical access/public-viewer docs, correct the deferred v2.0 packets,
+then run the final simplify/docs/format/CI closeout.
 
 ## Blockers
 
@@ -63,11 +76,11 @@ None.
 
 ## Open questions for Ed
 
-1. **Production owner distribution.** Before this deploys, we should look at
-   `SELECT owner_id, count(*) FROM projects GROUP BY owner_id` on production. If
-   projects were created under an account that is not the person who now works
-   on them, enforcement will lock someone out. Phase 3 task; Ed runs or
-   authorises the query.
+1. **Production owner distribution.** Before this deploys, Ed must run and
+   review `SELECT owner_id, count(*) FROM projects WHERE deleted_at IS NULL
+   GROUP BY owner_id` on production. It was not run during Phase 3 because no
+   production access was authorised; this remains a pre-deploy operator gate,
+   not an implementation blocker.
 2. **Setting `is_staff` in production** (Phase 2 §2.1b) — a one-time script run
    per admin account. Not urgent: the `admin.users.manage` bridge clause keeps
    admins working without it. Ed's call, alongside the deploy.

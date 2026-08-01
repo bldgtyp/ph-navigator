@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Planned
+TIME: 09:44 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Phase 3 — verify the seam actually covers the whole project surface.
 RELATED: ../PRD.md, ../decisions.md, ./phase-02-enforce.md
@@ -101,3 +101,22 @@ Ed; any re-assignment is his decision, not an agent's.
 - MCP cross-user case green.
 - `make agent-browser-ready` + a manual project load succeed.
 - Production owner distribution reported to Ed.
+
+## Completion evidence
+
+Completed 2026-08-01. The full verdict table and the production pre-deploy
+operator gate are in `../implementation-report.md`.
+
+The ownership suite, exact MCP smoke, browser readiness check, and authenticated
+fixture load all passed. `../implementation-report.md` owns the command
+evidence, current operation count, and full per-module verdict table.
+
+The production owner-distribution query was not run because no production
+access was authorised. It is explicitly retained as Ed's pre-deploy gate; no
+ownership reassignment was attempted.
+
+The three-way simplify review consolidated the six immutable route probes into
+one setup, centralized volatile counts and command evidence in the
+implementation report, and found the MCP metadata/list bypass described there.
+The docs pass left the canonical contract update to Phase 4 and kept this phase
+focused on its durable audit evidence.

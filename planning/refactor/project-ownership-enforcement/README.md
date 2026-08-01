@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:38 EDT
-STATUS: Active — Phase 2 complete
+TIME: 09:44 EDT
+STATUS: Active — Phase 3 complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the project-ownership enforcement refactor.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -90,9 +90,8 @@ review, and is explicitly **out of scope** here (`decisions.md` §D-5).
 
 ## Shape of the fix
 
-All 96 project-gated endpoints across 18 feature modules funnel through **one
-function** — `require_project_access` in `backend/features/projects/access.py`.
-The enforcement point is that function plus its MCP sibling
-`project_access_for_user`. This is a narrow change with a wide blast radius,
-which is why Phase 3 is a dedicated verification sweep rather than a
-afterthought.
+The project-reachable HTTP surface funnels through **one function** —
+`require_project_access` in `backend/features/projects/access.py` — or its
+MCP/GH sibling path, `project_access_for_user`. The enforcement change stays
+narrow despite its wide blast radius; Phase 3's current operation count and
+full module verdict table are in `implementation-report.md`.

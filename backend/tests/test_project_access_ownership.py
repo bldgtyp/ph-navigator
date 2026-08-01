@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from mcp.server.fastmcp import Context
+from mcp.server.fastmcp.exceptions import ToolError
 
 from database import transaction
 from features.access import repository as access_repository
 from features.access.capabilities import ADMIN_USERS_MANAGE, PROJECT_ACCESS_ALL
 from features.auth import repository as auth_repository
 from features.auth.service import create_or_update_user
+from features.mcp.tools_documents import tool_get_document
+from features.mcp.tools_projects import tool_get_project
 from main import app
 
 ORIGIN = "http://localhost:5173"
@@ -63,6 +68,7 @@ def _project_payload() -> dict[str, object]:
 @dataclass(frozen=True)
 class OwnedProject:
     project_id: str
+    version_id: str
     owner: TestClient
 
 
@@ -71,7 +77,12 @@ def owned_project() -> OwnedProject:
     owner = _signed_in_client("ed@example.com", "Ed May")
     created = owner.post("/api/v1/projects", headers={"Origin": ORIGIN}, json=_project_payload())
     assert created.status_code == 201, created.text
-    return OwnedProject(project_id=str(created.json()["id"]), owner=owner)
+    body = created.json()
+    return OwnedProject(
+        project_id=str(body["id"]),
+        version_id=str(body["active_version_id"]),
+        owner=owner,
+    )
 
 
 @pytest.fixture()
@@ -121,6 +132,75 @@ def test_stranger_dashboard_stays_filtered_to_owner(
 
     assert response.status_code == 200
     assert response.json()["projects"] == []
+
+
+def test_stranger_cannot_reach_representative_project_surfaces(
+    owned_project: OwnedProject,
+    stranger_client: TestClient,
+) -> None:
+    project_id = owned_project.project_id
+    version_id = owned_project.version_id
+    missing_id = "00000000-0000-0000-0000-000000000000"
+    paths = {
+        "project_document": f"/api/v1/projects/{project_id}/versions/{version_id}/document",
+        "apertures": f"/api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report",
+        "envelope": f"/api/v1/projects/{project_id}/versions/{version_id}/envelope",
+        "model_viewer": f"/api/v1/projects/{project_id}/hbjson-files/{missing_id}/model_data",
+        "assets": f"/api/v1/projects/{project_id}/assets/missing-asset/url",
+        "project_status": f"/api/v1/projects/{project_id}/status-items",
+    }
+
+    for surface, path in paths.items():
+        response = stranger_client.get(path)
+
+        assert response.status_code == 404, surface
+        assert response.json()["error_code"] == "project_not_found", surface
+
+
+def test_mcp_tools_recheck_issuer_project_access(
+    owned_project: OwnedProject,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    issued = owned_project.owner.post(
+        f"/api/v1/projects/{owned_project.project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Ownership transfer regression", "scopes": ["project:read"]},
+    )
+    assert issued.status_code == 201, issued.text
+    stranger = create_or_update_user(
+        email="john@example.com",
+        display_name="John Mitchell",
+        password="password",
+    )
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE projects SET owner_id = %(owner_id)s WHERE id = %(project_id)s",
+            {"owner_id": stranger.id, "project_id": owned_project.project_id},
+        )
+    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_get_project(
+            owned_project.project_id,
+            cast(Context, None),
+            allow_env_token=True,
+        )
+
+    error = json.loads(str(exc_info.value))
+    assert error["code"] == "project_not_found"
+    assert error["recoverability"] == "refresh"
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_get_document(
+            owned_project.project_id,
+            owned_project.version_id,
+            cast(Context, None),
+            allow_env_token=True,
+        )
+
+    error = json.loads(str(exc_info.value))
+    assert error["code"] == "project_not_found"
+    assert error["recoverability"] == "refresh"
 
 
 def test_owner_can_read_and_edit_owned_project(
