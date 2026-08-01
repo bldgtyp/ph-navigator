@@ -97,8 +97,8 @@ no audit UI for cross-user destructive actions.
 
 **Consequence for the dependent feature:** on the admin dashboard, the
 select/bulk-delete checkbox must be **disabled** for projects the admin does not
-own, or admins will select rows that then 404. Carried into
-`planning/features/admin-all-projects-dashboard/PRD.md` §4.
+own, or admins will select rows that then 404. Implemented by
+`planning/archive/dated/2026-08-01/admin-all-projects-dashboard/PRD.md` §4.
 
 ## D-5 — The anonymous path is out of scope
 

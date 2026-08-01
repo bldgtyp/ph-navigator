@@ -27,8 +27,9 @@ it is nullable here too.
 Currently one flat `.project-list` with a heading row and a `projects.map`
 (`ProjectList.tsx:80-124`).
 
-When `grouped` is false, render exactly today's DOM — no wrapper changes, no new
-classes. The non-admin path should be diff-invisible.
+When `grouped` is false, retain the flat row/grid structure and omit owner
+headings. The shared accessibility explanation node may exist in both modes;
+the non-admin visual structure remains unchanged.
 
 When `grouped` is true, walk the (already server-ordered) list and emit a group
 heading whenever `owner_id` differs from the previous row:

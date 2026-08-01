@@ -5,7 +5,7 @@ STATUS: Archived — complete and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Router for the project-ownership enforcement refactor.
 RELATED: ./PRD.md, ./decisions.md, ./STATUS.md, ./phases/,
-  planning/features/admin-all-projects-dashboard/,
+  planning/archive/dated/2026-08-01/admin-all-projects-dashboard/,
   backend/features/projects/access.py, backend/features/access/capabilities.py,
   planning/archive/dated/2026-06-27/access-capability-model/PRD.md,
   planning/features_v2.0/multi-tenant-teams/PRD.md — §2 + R1 own this gap,
@@ -40,14 +40,14 @@ The probe below was still worth running: it re-verified the claim against
 current code, and `multi-tenant-teams` §2's line references
 (`access.py:62-66`, `routes.py:110-127`) have since gone stale.
 
-## Why now
+## Why it landed then
 
-It is a prerequisite for
-[`planning/features/admin-all-projects-dashboard/`](../../../../features/admin-all-projects-dashboard/README.md).
-That feature grants admins an all-projects view. If the gap stays open, the
-feature is not a capability grant at all — it just surfaces in the UI what
-every signed-in user could already reach by URL. Fixing enforcement first makes
-the admin view mean something. (`decisions.md` §D-1.)
+It was a prerequisite for
+[`admin-all-projects-dashboard`](../admin-all-projects-dashboard/README.md).
+That feature grants admins an all-projects view. If the gap had stayed open,
+the feature would not have been a capability grant at all—it would only have
+surfaced in the UI what every signed-in user could already reach by URL.
+Fixing enforcement first made the admin view meaningful. (`decisions.md` §D-1.)
 
 ## Evidence
 

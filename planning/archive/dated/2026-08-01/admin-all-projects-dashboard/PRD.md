@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Ready — ownership dependency implemented and verified
+TIME: 11:12 EDT
+STATUS: Complete — acceptance criteria verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Behavior contract for the admin all-projects dashboard.
 RELATED: ./README.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -24,9 +24,8 @@ without asking whose account it is under.
 | Admin (`projects.access.all`) | **All projects, grouped by owner** | **Own only** (unchanged, §D-3) |
 | Everyone else | Own only, ungrouped (unchanged) | Own only (unchanged) |
 
-Non-admin behavior is byte-identical to today. That is a test, not an
-aspiration — the existing `test_dashboard_list_is_filtered_to_owner` stays green
-untouched.
+Non-admin project visibility and ordering are unchanged. The existing
+`test_dashboard_list_is_filtered_to_owner` stayed green untouched.
 
 ## 3. Response shape
 
@@ -95,7 +94,8 @@ part of the feature, not a nicety.
   new one; check `context/DESIGN_SYSTEM.md` for a blessed grouping affordance
   before adding CSS.
 - The "All projects" heading count becomes the total across groups.
-- Ungrouped rendering for non-admins is untouched — same DOM as today.
+- Ungrouped rendering for non-admins retains the flat row/grid structure and
+  adds no owner headings.
 - An admin's own group sorts first; other owners follow alphabetically. (§D-4.)
 
 ## 6. Out of scope
@@ -110,8 +110,9 @@ part of the feature, not a nicety.
 
 1. Admin `GET /api/v1/projects` returns every non-deleted project, ordered by
    owner display name then `bt_number` desc, with `grouped: true`.
-2. Non-admin response is unchanged, `grouped: false`, and
-   `test_dashboard_list_is_filtered_to_owner` passes untouched.
+2. Non-admin response remains owner-filtered in the existing order, returns
+   `grouped: false`, and `test_dashboard_list_is_filtered_to_owner` passes
+   untouched.
 3. Admin dashboard renders a heading per owner with correct counts.
 4. Checkboxes are disabled on non-owned rows; select-all picks owned only.
 5. Deleted panel still shows own-only for admins.

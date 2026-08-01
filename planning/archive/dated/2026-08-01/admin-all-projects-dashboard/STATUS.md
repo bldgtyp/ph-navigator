@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 11:07 EDT
-STATUS: Complete — final archive cleanup next
+TIME: 11:12 EDT
+STATUS: Archived — complete and verified
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for the admin all-projects dashboard.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/,
@@ -47,14 +47,13 @@ non-owners receive `404 project_not_found` at the project seam.
 
 ## Next step
 
-Archive this completed packet and update the planning indexes. Deployment
-remains Ed's decision.
+No implementation work remains. Deployment remains Ed's decision.
 
 ## Verification
 
 Per PRD §7. The two worth not rushing:
 
-- Criterion 2 — non-admin output unchanged. The existing
+- Criterion 2 — non-admin visibility and ordering unchanged. The existing
   `test_dashboard_list_is_filtered_to_owner` must pass **untouched**; if it
   needs editing, the change went too far.
 - Criterion 4 — disabled checkboxes on non-owned rows. Easy to skip, and its

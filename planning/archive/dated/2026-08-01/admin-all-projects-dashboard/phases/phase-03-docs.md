@@ -30,14 +30,10 @@ this feature's docs should point at it, not restate it.
 
 ## Archive
 
-On merge, per `planning/.instructions.md`:
-
-- Move `planning/features/admin-all-projects-dashboard/` to
-  `planning/archive/dated/<merge-date>/admin-all-projects-dashboard/`.
-- Add one newest-first line to `planning/archive/README.md`.
-
-The `project-ownership-enforcement` dependency was already archived on
-2026-08-01; no dependency archive action remains.
+Archived on 2026-08-01 under
+`planning/archive/dated/2026-08-01/admin-all-projects-dashboard/` and indexed
+in `planning/archive/README.md`. The `project-ownership-enforcement` dependency
+was already archived beside it.
 
 ## Deploy
 
