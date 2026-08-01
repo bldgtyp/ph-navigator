@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 12:58 EDT
-STATUS: Ready — Phase 04 source/generator and bridge are published
+TIME: 13:19 EDT
+STATUS: Complete — global Codex MCP/instructions installed and locally verified
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Codex — global MCP registration + AGENTS.md workflow section.
 RELATED: ../PRD.md §5.2, ../decisions.md §D-8, ./phase-04-claude-plugin.md
@@ -40,4 +40,32 @@ Claude Code (§D-13).
 ## Done when
 
 Fresh `codex` session in the Linde folder answers a project-data question
-from production with no per-session setup (PRD §7 criterion 4).
+from production with no per-session setup (PRD §7 criterion 4). The local
+equivalent is verified here; production remains the explicit Phase-06 gate.
+
+## Completion evidence
+
+- Public installer commit `66c1ee4` plus CI-stability follow-up `2ca47aa`
+  pushed to `bldgtyp/claude-plugins`; GitHub Actions run `30710065404` passed.
+- Public `make check` passed: 24 tests plus generation, hygiene, compileall,
+  and vendored MCP-contract drift checks. Three-lens simplify review ended
+  with no remaining findings.
+- `scripts/install_codex.py` stages one immutable, content-hashed runtime
+  release, preserves existing global files/permissions, manages bounded
+  sections atomically, refuses unmanaged `phn` TOML in all valid spellings,
+  injects the exact installed login command, is no-op idempotent, and retains
+  one fallback release.
+- The installer ran twice against Ed's real `~/.codex`: resulting TOML parsed,
+  `codex mcp get phn` showed the enabled stdio server, the installed launcher
+  exists, and the global AGENTS section has exactly one marker pair.
+- A fresh headless Codex 0.139 session launched in `0000 Folder Tree` with
+  `-m gpt-5.5` plus explicit local endpoint/credential overrides, loaded the
+  global `phn` server, called `phn/list_projects`, and returned the isolated
+  local agent-browser fixture. Its temporary user token was revoked.
+- The first attempt using Ed's configured `gpt-5.6-sol` default was rejected by
+  Codex 0.139 as requiring a newer CLI. That is outside the MCP install, but
+  Phase 06 must upgrade Codex or select a supported model before its Codex run.
+- The first read attempt encountered a closed local HTTP connection; Codex
+  retried the known-safe read and succeeded. The bridge correctly did not
+  auto-replay the indeterminate POST.
+- No PH-Navigator production deployment or Linde read/write was performed.

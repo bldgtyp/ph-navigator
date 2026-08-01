@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 12:58 EDT
-STATUS: Active — Phases 01–04 complete; Phase 05 next
+TIME: 13:19 EDT
+STATUS: Active — Phases 01–05 complete; Phase 06 blocked on production approval
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the agent-access-kit.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,7 +11,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 01–04 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
+**Phases 01–05 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
 now share `mcp_tokens` with project tokens (`project_id IS NULL` identifies the
 user principal), default to a 365-day expiry, and expose account-level
 issue/list/revoke REST routes plus the **My agent tokens** list/revoke page.
@@ -39,6 +39,13 @@ The stdlib bridge enforces HTTPS outside explicit localhost development, keeps
 connections alive, bounds concurrency/backpressure, negotiates MCP versions,
 and does not automatically replay ambiguous POST failures.
 
+Codex now uses that same bridge from a managed global `mcp_servers.phn` entry
+and the generated workflow from one marked section in `~/.codex/AGENTS.md`.
+The installer activates complete content-hashed runtime releases, preserves
+unmanaged global content, injects an absolute `phn-login` path, and retains one
+fallback release. Ed's installation is live and a fresh local Codex session
+successfully called `phn/list_projects`.
+
 **Amended 2026-08-01 (cross-plan review).** A conflict with this packet's own
 dependency was found and resolved: three places specified `403` / `forbidden`
 for cross-user access, while
@@ -56,15 +63,18 @@ device-approval copy and to whether admins should mint 365-day tokens (§D-11).
 
 ## Next step
 
-Implement Phase 05: install the generated Codex workflow and the same `phn`
-bridge globally without colliding with this repo's `phn-local` server.
+With Ed's explicit approval, merge/deploy the PH-Navigator changes and run
+Phase 06's six production/local acceptance checks while Ed is present for the
+approval clicks and Linde draft-only write round-trip. Do not deploy or touch
+the live Linde draft without that approval.
 
 ## Dependency status
 
 - Phase 01 dependency is merged on `main`; Phase 01 is implemented and locally
   verified.
-- Phases 02–04 are complete and locally verified. Phase 05 is unblocked and
-  uses the published bridge plus generated Codex instructions.
+- Phases 02–05 are complete and locally verified. Phase 06 is blocked on an
+  explicit PH-Navigator production merge/deploy decision and Ed's presence for
+  the approval/live-client checks.
 
 ## Open questions for Ed
 
@@ -129,6 +139,24 @@ Phase 04 evidence:
 - Canonical generation now owns the plugin skill, Codex AGENTS section, and
   both Dropbox instruction templates; exact-file comparison passed after sync.
 - Full production/Linde acceptance remains held for Phase 06 after deployment.
+
+Phase 05 evidence:
+
+- Public installer commits `66c1ee4` and `2ca47aa` pushed; GitHub Actions run
+  `30710065404` passed.
+- Public `make check` passed 24 tests plus generation, hygiene, compilation,
+  and contract drift; final three-lens simplify review reported no findings.
+- Real global install ran twice without duplication or unrelated-file loss;
+  TOML parsed, the installed launcher exists, and `codex mcp get phn` reports
+  enabled stdio transport with 600-second startup and 120-second tool timeout.
+- The generated global AGENTS section contains exactly one marker pair and the
+  exact installed `phn-login` path.
+- Fresh headless Codex 0.139 in the generic Dropbox template, using
+  `-m gpt-5.5` and explicit local endpoint overrides, called
+  `phn/list_projects` and returned the isolated fixture; its temporary user
+  token was revoked. No production or Linde mutation occurred. The configured
+  `gpt-5.6-sol` default requires a newer CLI, so Phase 06 must upgrade Codex or
+  explicitly select a supported model.
 
 Per PRD §7. The two easiest to skip and most important:
 

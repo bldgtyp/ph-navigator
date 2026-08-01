@@ -151,3 +151,11 @@ recoverability, device/credential protocol values, and draft-safety anchors.
 Claude plugin skills are namespaced, so the user-facing commands are
 `/bldgtyp:phn`, `/bldgtyp:phn-login`, and `/bldgtyp:phn-status`; the packet's
 earlier unqualified shorthand is superseded.
+
+Phase 05 installs the same bridge for Codex as an immutable content-hashed
+release under the user's data directory. Managed marker blocks update global
+Codex TOML/AGENTS content without owning the rest of either file; config is the
+final activation write and AGENTS is rolled back if it fails. An existing
+unmanaged `phn` server is a hard error rather than an overwrite. The installed
+instructions contain the absolute release-local `phn-login` command, avoiding
+an implicit `PATH` dependency.

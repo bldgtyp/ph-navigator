@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Blocked — final phase; needs 01–05
+TIME: 13:19 EDT
+STATUS: Blocked — Phases 01–05 complete; needs production deploy + Ed present
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: End-to-end acceptance on the Linde Residence test case.
 RELATED: ../PRD.md §7, ../decisions.md §D-9
@@ -44,6 +44,16 @@ RELATED: ../PRD.md §7, ../decisions.md §D-9
 - Ed present for the approval clicks and watching run 3.
 - Record each run's transcript notes + screenshots under `./assets/` or
   `working/` and fold outcomes into `STATUS.md`.
+
+## Current blocker
+
+The user-token/device-flow commits on `codex/agent-access-kit` are not deployed
+to PH-Navigator production. Running this phase requires explicit authorization
+to merge/deploy that application change, followed by Ed being present for the
+Claude and Codex approval clicks and watching the live-client draft round-trip.
+Codex CLI 0.139 also rejects Ed's configured `gpt-5.6-sol`; upgrade it or select
+a supported model for the production Codex run. Do not substitute local
+evidence or deploy without authorization.
 
 ## Done when
 

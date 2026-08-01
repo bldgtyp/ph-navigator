@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 12:58 EDT
-STATUS: Active — Phases 01–04 complete; Codex parity and production E2E remain
+TIME: 13:19 EDT
+STATUS: Active — Phases 01–05 complete; production E2E remains
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Product/behavior contract for the agent-access-kit.
 RELATED: ./README.md, ./decisions.md, ./phases/, context/mcp.md,
