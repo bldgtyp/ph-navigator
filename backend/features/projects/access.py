@@ -6,8 +6,9 @@ instead of testing raw session presence. `is_editor` survives as a derived
 convenience over `PROJECT_EDIT` so existing call sites keep working while route
 gates migrate to explicit capabilities incrementally.
 
-Beta behavior is identical to the old binary check: anonymous → `client`
-(read-only), any session → `member` (read + write). See
+Anonymous callers resolve to `client` (read-only). Signed-in users resolve to
+`member` capabilities but may reach a project only when they own it or hold
+`projects.access.all`; non-owners receive `404 project_not_found`. See
 `features/access/capabilities.py` and
 `planning/archive/dated/2026-06-27/access-capability-model/PRD.md` §4.
 """

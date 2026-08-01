@@ -15,7 +15,8 @@ find something, and the one most likely to get skipped.
 
 ## 3.1 Enumerate the surface
 
-18 modules currently reference the seam:
+The registered project feature modules below reference the seam; the shared
+`projects/access.py` unit is the common chokepoint:
 
 ```text
 projects  project_status  sidebar_views  aperture_drift  project_climate_source

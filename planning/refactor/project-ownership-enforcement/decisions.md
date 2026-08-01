@@ -125,11 +125,14 @@ permanent.
 
 ## D-6 — Enforce at the seam, not per route
 
-**Accepted.** All 96 gated endpoints across 18 feature modules resolve through
-`require_project_access`. One check there covers all of them; 96 per-route checks
-would rot. The cost is that a route which *bypasses* the seam stays open
-silently — which is why Phase 3 is a dedicated enumeration sweep with a
-per-module verdict rather than a spot check.
+**Accepted.** Ordinary REST reads/writes resolve through
+`require_project_access`; MCP/GH authenticated read paths resolve through
+`project_access_for_user`. Project-destructive paths deliberately keep the
+stricter owner-only service guard, and anonymous GH reads use the explicit
+public-viewer path. These centralized boundaries cover the surface more
+reliably than per-route checks. Phase 3's deeper sweep found and fixed MCP
+metadata/list tools that had checked token scope without re-checking issuer
+ownership; `implementation-report.md` owns the current counts and verdicts.
 
 Both deferred v2.0 packets independently reached the same conclusion, which is
 worth noting as corroboration rather than coincidence:

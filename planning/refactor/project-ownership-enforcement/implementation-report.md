@@ -28,7 +28,7 @@ operations rather than the packet's stale count of 96.
 | `aperture_drift` | On-seam | Drift reporting uses `ProjectViewAccess`. |
 | `project_climate_source` | On-seam | Project climate-source reads and writes use the shared dependencies. |
 | `aperture_u_value` | On-seam | Project/version calculations and reports use the shared dependencies. |
-| `mcp` | On-seam after Phase 3 fix | Token-management routes use `ProjectEditAccess`; bearer tools now consistently call `project_access_for_token`, which re-enters `project_access_for_user` as the issuer. The sweep found and fixed metadata/list tools that previously checked token scope only. |
+| `mcp` | On-seam after Phase 3 fix | Token-management routes use `ProjectEditAccess`; bearer read/data tools call `project_access_for_token`, which re-enters `project_access_for_user` as the issuer. Destructive tools retain the stricter issuer/owner service guard. The sweep found and fixed metadata/list tools that previously checked token scope only. |
 | `model_viewer` | On-seam | HBJSON list, signed download, model-data, subset, and mutation routes use the shared dependencies. |
 | `gh_api` | On-seam | Signed-in requests call `project_access_for_user`; bearer requests call `project_access_for_token`. Anonymous viewer access is intentional and unchanged. |
 | `envelope` | On-seam | All project/version assembly reads, exports, imports, and commands use the shared dependencies. |

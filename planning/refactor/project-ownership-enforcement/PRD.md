@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Active — planned, not started
+TIME: 10:03 EDT
+STATUS: Implemented and verified on branch
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Behavior contract for project-ownership enforcement at the access seam.
 RELATED: ./README.md, ./decisions.md, ./STATUS.md, ./phases/,
@@ -149,7 +149,7 @@ torn up to accept it. (§D-7.)
 ## 5. Acceptance criteria
 
 1. Signed-in stranger gets 404 on `GET`, `PATCH`, and a representative sample of
-   the 96 gated endpoints.
+   the project-reachable HTTP surface.
 2. Owner behavior is byte-identical to today across the same sample.
 3. Admin (holding `ADMIN_USERS_MANAGE`) reads and writes any project.
 4. **Anonymous regression guard**: `GET` returns 200 with `client`,
@@ -165,6 +165,6 @@ torn up to accept it. (§D-7.)
 | Risk | Mitigation |
 | --- | --- |
 | A real workflow depends on cross-user reach (dev seed, agent-browser fixture, MCP) | Phase 1 lands tests first; Phase 3 runs `make agent-browser-ready` + `make smoke-mcp-local` before merge |
-| A route bypasses the seam and stays open | Phase 3 enumerates all 18 modules; any route not on the seam is listed explicitly with a verdict |
+| A route bypasses the seam and stays open | Phase 3 inventories every registered project feature module and the shared access unit; current counts and every verdict live in `implementation-report.md` |
 | Silent breakage of the public viewer | Criterion 4 is a dedicated regression test, not a manual check |
-| Production data where projects were created by the "wrong" owner | Phase 3 queries production `projects.owner_id` distribution before deploy; **Ed's call** whether any re-assignment is needed |
+| Production data where projects were created by the "wrong" owner | The production `projects.owner_id` distribution remains an explicit pre-deploy operator query; **Ed's call** whether any re-assignment is needed |

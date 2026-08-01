@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 09:44 EDT
-STATUS: Active — Phase 3 complete
+TIME: 10:14 EDT
+STATUS: Complete — verified; ready to archive
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Current state, next step, and blockers for project-ownership enforcement.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,9 +11,11 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phase 3 complete.** Project reach is owner-or-`projects.access.all` for
-signed-in REST and MCP principals, and the full project route surface has been
-verified on-seam. Anonymous read-only access is unchanged.
+**Implementation complete and verified.** Project reach is
+owner-or-`projects.access.all` for
+signed-in REST and MCP principals; the full project route surface is verified,
+and the accepted contract is folded into canonical docs. Anonymous read-only
+access is unchanged.
 
 Done 2026-08-01:
 - Reproduced the cross-user read/write gap against the local test database with
@@ -22,8 +24,8 @@ Done 2026-08-01:
 - Reproduced the anonymous path separately and confirmed it is **working as
   designed** — read-only, private metadata redacted, writes 401. Scoped out
   (`decisions.md` §D-5).
-- Established the blast radius: 96 gated endpoints across 18 feature modules,
-  all funnelling through `require_project_access`.
+- Established the blast radius across the project-reachable route surface; the
+  final counts and verdicts live in `implementation-report.md`.
 - Found the only existing ownership check — `_ensure_project_owner`, three call
   sites, all destructive.
 - D-1..D-6 accepted by Ed.
@@ -43,9 +45,10 @@ Done 2026-08-01:
 - Phase 2 simplify/docs passes complete. `make format` changed nothing and
   `make ci` passed (`1752 passed`, `7 skipped` backend; frontend tests and
   production build green).
-- Audited every registered project feature module and all 103 current
-  project-reachable HTTP operations. All route modules are on-seam; the three
-  project destructive operations intentionally remain stricter and owner-only.
+- Audited every registered project feature module and current project-reachable
+  HTTP operation. All route modules are on-seam; the three project destructive
+  operations intentionally remain stricter and owner-only. The implementation
+  report owns the volatile counts.
 - The deeper MCP sweep found metadata/list tools that checked token scope but
   did not re-check issuer ownership. Phase 3 routed those reads through
   `project_access_for_token` and added structured `project_not_found` mapping.
@@ -55,6 +58,13 @@ Done 2026-08-01:
 - `make smoke-mcp-local`, `make agent-browser-ready`, and an authenticated
   `agent-browser.mjs` load of the task-owned fixture all passed. See
   `implementation-report.md` for the module verdict table and evidence.
+- Folded the current matrix into the canonical PRD, auth requirements, MCP
+  contract, public-viewer narrative, data model, glossary, and access module
+  docs; corrected the deferred access/team planning packets.
+- Completed the final three-way simplify review and docs pass. `make format`
+  changed nothing; `graphify update .` rebuilt the code graph; full `make ci`
+  passed with 1,754 backend tests, 7 backend skips, 2,365 frontend tests, and a
+  successful production build.
 - **Reviewed against the three deferred v2.0 packets**
   (`access-capability-enforcement`, `account-security-hardening`,
   `multi-tenant-teams`). Result: the seam choice and the access predicate line
@@ -66,9 +76,8 @@ Done 2026-08-01:
 
 ## Next step
 
-**Phase 4** — `phases/phase-04-docs.md`. Fold the shipped ownership contract
-into canonical access/public-viewer docs, correct the deferred v2.0 packets,
-then run the final simplify/docs/format/CI closeout.
+Archive this packet under `planning/archive/dated/2026-08-01/` and update all
+active references to the archived path.
 
 ## Blockers
 
@@ -102,6 +111,19 @@ Phase 2 evidence:
 uv run pytest tests/test_project_access_ownership.py -q  # 11 passed
 make format                                               # no changes
 make ci                                                   # pass
+```
+
+Final closeout evidence:
+
+```text
+simplify (reuse / quality / efficiency)                  # pass after fixes
+docs-pass                                                 # pass
+make format                                               # no changes
+graphify update .                                         # 19,129 nodes / 58,570 edges
+make ci                                                   # pass
+  backend                                                 # 1,754 passed, 7 skipped
+  frontend                                                # 2,365 passed
+  production build                                        # pass
 ```
 
 Per PRD §5. The two that matter most and are easiest to skip:

@@ -9,6 +9,13 @@
 read-only. There is no separate public URL, no `/v/{token}` route, and
 no public link management surface.
 
+This anonymous contract is intentionally unchanged by signed-in ownership
+enforcement and has a dedicated backend regression guard. A signed-in user who
+does not own the project and lacks `projects.access.all` receives
+`404 project_not_found`; the same request without a session remains a redacted,
+read-only Viewer response. Public visibility narrowing is separate future
+`access_mode`/share-link work, not an ownership side effect.
+
 **Header:** same project-workspace shell, rendered in Viewer
 read-only mode. The header shows a "Read-only" pill next to the
 project/version label. A sign-in affordance may appear in the account

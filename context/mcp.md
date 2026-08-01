@@ -17,6 +17,12 @@ MCP tokens are project-scoped bearer tokens issued by a logged-in editor. Tokens
 must include `project:read`; write-capable tokens also include `project:write`.
 Every project-scoped tool re-checks the current token record at call time, so
 revoked or expired tokens fail closed before a write or commit runs.
+The token also acts as its issuing user: read/data tools intersect token
+project/scope with the issuer's current owner-or-`projects.access.all` reach.
+If ownership is transferred or the issuer loses elevated reach, the next call
+returns structured `project_not_found` with `recoverability: "refresh"`.
+Delete, restore, and hard-delete are stricter: they re-check the issuer and
+remain owner-only even when the issuer holds all-project reach.
 
 Project-document writes land in the issuing editor's draft, not directly in the
 saved version. The normal write loop is:

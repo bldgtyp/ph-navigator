@@ -2,10 +2,11 @@
 
 Catalog reads are open to any signed-in member (catalogs are auth-only, CP-8);
 catalog *writes* require the resolved `catalog.edit` capability. That capability
-can come from an explicit grant, the Admin preset, or `is_staff`. `CatalogEditor`
-is the dependency the write routes use in place of `CurrentUser`; it has the
-same shape (so route bodies keep unpacking `user, _ = auth`) but fails closed
-with 403 for a member without the capability.
+is currently part of `MEMBER_CAPS`, so every signed-in member holds it.
+`CatalogEditor` is the dependency the write routes use in place of
+`CurrentUser`; it has the same shape (so route bodies keep unpacking
+`user, _ = auth`) but fails closed with 403 if a future bundle change removes
+the capability.
 """
 
 from __future__ import annotations

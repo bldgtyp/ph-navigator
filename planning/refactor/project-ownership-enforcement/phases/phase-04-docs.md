@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
-TIME: 08:25 EDT
-STATUS: Planned
+TIME: 10:03 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 5) with Ed May
 SCOPE: Phase 4 — fold accepted decisions back into context/.
 RELATED: ../PRD.md, ../decisions.md, ./phase-03-sweep.md
@@ -59,6 +59,30 @@ Then the standard gate from `CLAUDE.md`:
 ## Exit criteria
 
 - No doc still claims any signed-in user is a member of every project.
-- `planning/refactor/project-ownership-enforcement/STATUS.md` set to
-  `Merged to main` with evidence.
+- Packet `STATUS.md` records the verified implementation state without claiming
+  a merge that has not happened; the packet is archived after the final gate.
 - The dependent feature's `STATUS.md` unblocked.
+
+## Completion evidence
+
+Completed 2026-08-01.
+
+- Updated both access module docstrings, the catalog-access docstring, the
+  canonical PRD/access matrix, auth requirements, MCP contract, data-model
+  owner comment, public-viewer narrative, and glossary.
+- Corrected the deferred access-capability PRD and multi-tenant STATUS without
+  promoting or re-dating either deferred feature.
+- Updated the two user-owned dependent feature STATUS files to show that the
+  implementation dependency is satisfied on this branch, while retaining the
+  honest requirement to merge before starting them from `main`.
+- Searched the repository for `project_access_model_review_2026_06_27.md`; no
+  such repo memory note exists, so no duplicate or invented note was created.
+  The stale contract instead lived in canonical `context/PRD.md`,
+  `context/GLOSSARY.md`, and `context/technical-requirements/data-model.md`, all
+  corrected here.
+- The final three-way simplify review and docs pass completed after correcting
+  over-broad seam language, MCP destructive-operation wording, stale catalog
+  capability wording, and duplicated volatile inventory counts.
+- `make format` changed nothing, `graphify update .` completed, and full
+  `make ci` passed (backend 1,754 passed / 7 skipped; frontend 2,365 passed;
+  production build green). The same evidence is recorded in `STATUS.md`.

@@ -6,15 +6,15 @@ explicit grants (``user_grants``). `capabilities_for` is the pure mapping from a
 resolved principal to its capability set; `features/projects/access.py` wires it
 to project routes via `require_capability`.
 
-Beta collapses the model to today's binary behavior:
+Capability bundles describe what a principal may do after reaching a project;
+they do not grant reach to an arbitrary project. Anonymous client viewers keep
+public read-only access. A signed-in user must own the project or hold the
+derived `projects.access.all` capability before `MEMBER_CAPS` can authorize
+reads or writes there. Shared catalog editing remains in `MEMBER_CAPS` and is
+not project-scoped.
 
-- anonymous → `ViewerPrincipal("client")` → `CLIENT_CAPS` (read only)
-- signed-in → `UserPrincipal` → `MEMBER_CAPS` (read + write, including shared
-  catalog editing), plus any explicitly granted capabilities.
-
-So `CLIENT_CAPS` ≈ today's viewer and `MEMBER_CAPS` ≈ today's editor. The
-`certifier`/`admin`/`staff` bundles and finer per-tab/export capabilities are
-added in later phases without changing this shape (see
+The `certifier`/team-role bundles and finer scoped capability resolution are
+added in later phases without changing this separation (see
 `planning/archive/dated/2026-06-27/access-capability-model/PRD.md` §3–§4, §6).
 """
 
