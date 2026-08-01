@@ -715,7 +715,7 @@ describe("App", () => {
     await user.click(
       within(existingTokenRow as HTMLElement).getByRole("button", { name: "Revoke" }),
     );
-    expect(await screen.findByText("1 revoked token")).toBeVisible();
+    expect(await screen.findByText("1 inactive token")).toBeVisible();
     await user.click(
       within(screen.getByRole("dialog", { name: "Project settings" })).getByRole("button", {
         name: "Save",
@@ -1251,6 +1251,44 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     await user.click(screen.getByRole("heading", { name: "No projects yet" }));
     expect(screen.getByRole("button", { name: "Sign out", hidden: true })).not.toBeVisible();
+  });
+
+  test("opens My agent tokens from the account menu and revokes a user token", async () => {
+    const user = userEvent.setup();
+    const userToken = {
+      id: "d59a25cf-7b4a-44d5-9418-d518698a2f47",
+      project_id: null,
+      label: "Ed workstation",
+      token_prefix: "phn_mcp_user",
+      scopes: ["project:read", "project:write"],
+      created_at: "2026-08-01T15:00:00Z",
+      last_used_at: null,
+      expires_at: "2027-08-01T15:00:00Z",
+      revoked_at: null,
+    };
+    window.history.pushState({}, "", "/dashboard");
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === "/api/v1/projects") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/projects/deleted") return jsonResponse({ projects: [] });
+      if (url === "/api/v1/agent-tokens") return jsonResponse({ tokens: [userToken] });
+      if (url === `/api/v1/agent-tokens/${userToken.id}/revoke` && init?.method === "POST") {
+        return jsonResponse({ ...userToken, revoked_at: "2026-08-01T16:00:00Z" });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByLabelText("Account: Ed May"));
+    await user.click(screen.getByRole("link", { name: "Agent tokens" }));
+    expect(await screen.findByRole("heading", { name: "My agent tokens" })).toBeVisible();
+    const tokenRow = (await screen.findByText("Ed workstation")).closest(".token-row");
+    if (!tokenRow) throw new Error("Expected user-token row.");
+    await user.click(within(tokenRow as HTMLElement).getByRole("button", { name: "Revoke" }));
+    expect(await screen.findByText("1 inactive token")).toBeVisible();
+    expect(window.location.pathname).toBe("/account/agent-tokens");
   });
 
   test("routes the Window-Frame Elements dashboard card to its catalog page", async () => {

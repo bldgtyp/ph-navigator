@@ -58,7 +58,7 @@ class McpTokenPublic(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: UUID
-    project_id: UUID
+    project_id: UUID | None
     label: str
     token_prefix: str
     scopes: list[McpScope]

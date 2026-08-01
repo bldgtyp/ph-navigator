@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 09:58 EDT
-STATUS: Ready — ownership dependency implemented and verified
+STATUS: Active — Phase 01 complete; Phase 02 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the agent-access-kit.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,11 +11,13 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Planned. No code written.** Current-state survey done (remote streamable
-HTTP MCP confirmed live at `api.ph-nav.com/mcp`; gap characterised as
-discovery + project resolution + credentials). Contract, decisions D-1..D-14
-(D-1, D-5, D-9, D-11, D-12, D-13, D-14 explicitly Ed's), and six phases written
-2026-08-01.
+**Phase 01 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
+now share `mcp_tokens` with project tokens (`project_id IS NULL` identifies the
+user principal), default to a 365-day expiry, and expose account-level
+issue/list/revoke REST routes plus the **My agent tokens** list/revoke page.
+`list_projects` returns the issuer's current owner-or-`projects.access.all`
+reach; every other MCP tool reuses the existing project-access seam. Project
+tokens remain unchanged.
 
 **Amended 2026-08-01 (cross-plan review).** A conflict with this packet's own
 dependency was found and resolved: three places specified `403` / `forbidden`
@@ -34,17 +36,15 @@ device-approval copy and to whether admins should mint 365-day tokens (§D-11).
 
 ## Next step
 
-Phase 01 can begin as stacked work from the ownership implementation branch;
-merge that dependency before starting from `main`. Phase 03 (folder marker +
-template files) remains independently implementable.
+Implement Phase 02: device-code persistence and endpoints, approval UI, and the
+reference `phn-login` client.
 
 ## Dependency status
 
-- **Phase 01 dependency satisfied on the implementation branch.** The owner-or-
-  all seam, MCP surface sweep, and stale-token regression are complete. Phase
-  01 still needs the dependency merged before it starts from `main`.
-- Phase 03 is independently unblocked; 04–05 can be drafted but should not ship
-  auth instructions until the user-token shape is real (§D-6).
+- Phase 01 dependency is merged on `main`; Phase 01 is implemented and locally
+  verified.
+- Phase 02 is unblocked. Phase 03 remains independently unblocked; 04–05 can
+  now target the concrete nullable-`project_id` user-token contract.
 
 ## Open questions for Ed
 
@@ -54,6 +54,19 @@ public), §D-13 (Codex parity first-class; Ed uses both runtimes, John is
 Claude-primary).
 
 ## Verification
+
+Phase 01 evidence:
+
+- `cd backend && uv run pytest tests/test_mcp.py -q` — 29 passed.
+- `cd backend && uv run ty check` — passed.
+- `cd frontend && pnpm exec vitest run src/App.test.tsx` — 33 passed.
+- `cd frontend && pnpm exec tsc -b` — passed.
+- `make agent-browser-ready`, then authenticated `/account/agent-tokens`
+  screenshot — correct account route, empty state, and no application-console
+  error after sign-in (the helper's initial unsigned session probe returned its
+  expected 401).
+- `make ci` — 1,758 backend tests passed (7 skipped), 2,370 frontend tests
+  passed, and the production build completed.
 
 Per PRD §7. The two easiest to skip and most important:
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import Request
@@ -30,6 +31,7 @@ from features.projects.models import ProjectSummary
 from features.shared.errors import api_error
 
 TOKEN_PREFIX_LENGTH = 16
+USER_TOKEN_LIFETIME = timedelta(days=365)
 
 
 class McpProjectDeletedError(LookupError):
@@ -91,11 +93,49 @@ def issue_token(
     return McpTokenIssueResponse(token=plaintext, token_record=token_public(row))
 
 
+def issue_user_token(
+    payload: McpTokenIssueRequest,
+    user: UserPublic,
+    request_meta: Request,
+) -> McpTokenIssueResponse:
+    """Create a user-scoped bearer token with the fixed one-year lifetime."""
+    expires_at = payload.expires_at or now_utc() + USER_TOKEN_LIFETIME
+    normalized = payload.model_copy(update={"expires_at": expires_at})
+    plaintext = generate_plaintext_token()
+    with transaction() as conn:
+        row = repository.insert_token(
+            conn,
+            project_id=None,
+            issued_by_user_id=user.id,
+            payload=normalized,
+            token_hash=token_hash(plaintext),
+            token_prefix=token_prefix(plaintext),
+        )
+        auth_repository.log_action(
+            conn,
+            action="agent_token_issue",
+            user_id=user.id,
+            email=user.email,
+            session_id=None,
+            ip_address=client_ip(request_meta),
+            user_agent=user_agent(request_meta),
+            details={"token_id": str(row["id"]), "scopes": normalized.scopes},
+        )
+    return McpTokenIssueResponse(token=plaintext, token_record=token_public(row))
+
+
 def list_project_tokens(access: ProjectAccess) -> McpTokenListResponse:
     """List issued token metadata without exposing token hashes or plaintext."""
     require_editor_user(access)
     with connection() as conn:
         rows = repository.list_tokens_for_project(conn, access.project_id)
+    return McpTokenListResponse(tokens=[token_public(row) for row in rows])
+
+
+def list_user_tokens(user: UserPublic) -> McpTokenListResponse:
+    """List the signed-in user's account token metadata."""
+    with connection() as conn:
+        rows = repository.list_tokens_for_user(conn, user.id)
     return McpTokenListResponse(tokens=[token_public(row) for row in rows])
 
 
@@ -119,6 +159,29 @@ def revoke_project_token(token_id: UUID, access: ProjectAccess, request_meta: Re
     return token_public(row)
 
 
+def revoke_user_token(
+    token_id: UUID,
+    user: UserPublic,
+    request_meta: Request,
+) -> McpTokenPublic:
+    """Revoke one account token owned by the signed-in user."""
+    with transaction() as conn:
+        row = repository.revoke_user_token(conn, user.id, token_id)
+        if row is None:
+            raise api_error(status.HTTP_404_NOT_FOUND, "agent_token_not_found", "Agent token not found.")
+        auth_repository.log_action(
+            conn,
+            action="agent_token_revoke",
+            user_id=user.id,
+            email=user.email,
+            session_id=None,
+            ip_address=client_ip(request_meta),
+            user_agent=user_agent(request_meta),
+            details={"token_id": str(token_id)},
+        )
+    return token_public(row)
+
+
 def authenticate_plaintext_token(plaintext: str) -> McpTokenRecord | None:
     """Validate a high-entropy MCP bearer token and update its last-used timestamp."""
     with transaction() as conn:
@@ -137,9 +200,13 @@ def get_active_token_by_id(token_id: UUID) -> McpTokenRecord | None:
     return token_record(row)
 
 
-def require_token_scope(token: McpTokenRecord, project_id: UUID, scope: McpScope) -> McpTokenRecord:
+def require_token_scope(
+    token: McpTokenRecord,
+    project_id: UUID | None,
+    scope: McpScope,
+) -> McpTokenRecord:
     """Apply the same project boundary for MCP tools as REST project routes."""
-    if token.project_id != project_id:
+    if token.project_id is not None and token.project_id != project_id:
         raise PermissionError("mcp_project_scope_mismatch")
     if scope not in token.scopes:
         raise PermissionError("mcp_scope_insufficient")
@@ -169,7 +236,7 @@ def project_access_for_token(token: McpTokenRecord, project_id: UUID, scope: Mcp
 
 
 class PhNavigatorTokenVerifier(TokenVerifier):
-    """Validate PH-Navigator project-scoped bearer tokens for FastMCP."""
+    """Validate PH-Navigator project- or user-scoped bearer tokens for FastMCP."""
 
     async def verify_token(self, token: str) -> AccessToken | None:
         record = await run_in_threadpool(authenticate_plaintext_token, token)
@@ -181,5 +248,5 @@ class PhNavigatorTokenVerifier(TokenVerifier):
             client_id=str(record.id),
             scopes=list(record.scopes),
             expires_at=expires_at,
-            resource=str(record.project_id),
+            resource=str(record.project_id or record.issued_by_user_id),
         )

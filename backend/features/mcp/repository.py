@@ -1,4 +1,4 @@
-"""Raw-SQL repository functions for project-scoped MCP tokens."""
+"""Raw-SQL repository functions for project- and user-scoped MCP tokens."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from features.mcp.models import McpScope, McpTokenIssueRequest
 
 def insert_token(
     conn: Connection[Any],
-    project_id: UUID,
+    project_id: UUID | None,
     issued_by_user_id: UUID,
     payload: McpTokenIssueRequest,
     token_hash: str,
@@ -57,6 +57,21 @@ def list_tokens_for_project(conn: Connection[Any], project_id: UUID) -> list[dic
         ORDER BY created_at DESC
         """,
         {"project_id": project_id},
+    ).fetchall()
+    return list(rows)
+
+
+def list_tokens_for_user(conn: Connection[Any], issued_by_user_id: UUID) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT id, project_id, issued_by_user_id, label, token_prefix,
+               scopes, created_at, last_used_at, expires_at, revoked_at
+        FROM mcp_tokens
+        WHERE issued_by_user_id = %(issued_by_user_id)s
+          AND project_id IS NULL
+        ORDER BY created_at DESC
+        """,
+        {"issued_by_user_id": issued_by_user_id},
     ).fetchall()
     return list(rows)
 
@@ -108,6 +123,25 @@ def revoke_token(conn: Connection[Any], project_id: UUID, token_id: UUID) -> dic
                   scopes, created_at, last_used_at, expires_at, revoked_at
         """,
         {"project_id": project_id, "token_id": token_id},
+    ).fetchone()
+
+
+def revoke_user_token(
+    conn: Connection[Any],
+    issued_by_user_id: UUID,
+    token_id: UUID,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        """
+        UPDATE mcp_tokens
+        SET revoked_at = COALESCE(revoked_at, now())
+        WHERE issued_by_user_id = %(issued_by_user_id)s
+          AND project_id IS NULL
+          AND id = %(token_id)s
+        RETURNING id, project_id, issued_by_user_id, label, token_prefix,
+                  scopes, created_at, last_used_at, expires_at, revoked_at
+        """,
+        {"issued_by_user_id": issued_by_user_id, "token_id": token_id},
     ).fetchone()
 
 

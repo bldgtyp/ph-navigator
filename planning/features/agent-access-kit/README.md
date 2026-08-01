@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 08:41 EDT
-STATUS: Active — planned, not started
+STATUS: Active — Phase 01 complete; Phase 02 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the agent-access-kit feature — make PH-Navigator trivially
   usable by agents (Claude Code / Codex) launched in any BLDGTYP project folder.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 08:41 EDT
-STATUS: Blocked — needs Phase 01 (issues user-scoped tokens)
+STATUS: Ready — Phase 01 user-scoped tokens implemented
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Backend + web UI — device-authorization flow for agent credentials.
 RELATED: ../PRD.md §3, ../decisions.md §D-3, ./phase-01-user-scoped-tokens.md

@@ -208,10 +208,9 @@ mcp_tokens (
     issued_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     -- editor who issued the token; actions performed
                     -- with the token are attributed to this user
-    project_id      UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-                    -- v1 tokens are project-scoped. All-project /
-                    -- workspace-scoped tokens defer until there is a
-                    -- concrete agent workflow that needs them.
+    project_id      UUID REFERENCES projects(id) ON DELETE CASCADE,
+                    -- non-null = project-scoped; null = user-scoped
+                    -- agent token whose per-call reach follows the issuer
     label           TEXT NOT NULL,
                     -- user-facing label, e.g. "Claude Desktop - Foo"
     token_prefix    TEXT NOT NULL,
@@ -228,11 +227,12 @@ mcp_tokens (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_used_at    TIMESTAMPTZ,
     expires_at      TIMESTAMPTZ,
-                    -- nullable in v1; UI should encourage expiry but
-                    -- not require it for local Claude workflows
+                    -- project-token expiry is optional; user-scoped agent
+                    -- tokens default to 365 days
     revoked_at      TIMESTAMPTZ
 )
 CREATE INDEX ON mcp_tokens (project_id, created_at) WHERE revoked_at IS NULL;
+CREATE INDEX ON mcp_tokens (issued_by_user_id, created_at DESC) WHERE project_id IS NULL;
 
 -- Project-level lifecycle / certification milestone tracker.
 -- Lives outside the project document body intentionally: status is

@@ -1,12 +1,13 @@
 # mcp feature
 
-This feature manages **MCP (Model Context Protocol) project tokens** — issuance,
-listing, and revocation. It currently has **no UI surface** of its own: tokens
-are surfaced to the user through other features' settings panes, and this
-feature provides only the API + TanStack Query hooks.
+This feature manages **MCP (Model Context Protocol) bearer tokens** for both
+supported principals:
 
-The empty `routes/` and `components/` directories (with `.gitkeep`) and the
-no-op `lib.ts` are kept for **structural consistency** with the canonical
-feature shape established by `features/catalogs/` and `features/projects/`
-(see `planning/archive/dated/2026-05-25/plan-23-frontend-refactor-phased.md` §Phase 6).
-They are placeholders — populate them when MCP grows a dedicated UI.
+- Project-scoped token issue/list/revoke controls stay in Project Settings.
+- User-scoped agent tokens are listed and revoked at
+  `/account/agent-tokens`, reachable from the account menu.
+
+`api.ts`, `hooks.ts`, and `types.ts` carry the shared client contract;
+`components/McpTokenList.tsx` renders both token lists; and
+`routes/AgentTokensPage.tsx` owns the account surface. Plaintext user-token
+delivery is handled by the device authorization flow, not this page.

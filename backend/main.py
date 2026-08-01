@@ -28,6 +28,7 @@ from features.climate.routes import router as climate_router
 from features.envelope.routes import router as envelope_router
 from features.gh_api.routes import router as gh_api_router
 from features.heat_pumps.routes import router as heat_pumps_router
+from features.mcp.routes import agent_router as agent_token_router
 from features.mcp.routes import router as mcp_token_router
 from features.mcp.server import mcp as phn_mcp
 from features.model_viewer.routes import router as model_viewer_router
@@ -95,6 +96,7 @@ app.include_router(heat_pumps_router)
 app.include_router(project_status_router)
 app.include_router(model_viewer_router)
 app.include_router(mcp_token_router)
+app.include_router(agent_token_router)
 for catalog_router in catalog_routers:
     app.include_router(catalog_router)
 app.include_router(climate_router)

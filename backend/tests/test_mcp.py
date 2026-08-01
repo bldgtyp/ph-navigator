@@ -27,9 +27,11 @@ from features.mcp.tools import (
     tool_delete_project,
     tool_diff_versions,
     tool_discard_draft,
+    tool_get_project,
     tool_get_table,
     tool_hard_delete_project,
     tool_list_envelope_assemblies,
+    tool_list_projects,
     tool_preview_replace_table,
     tool_query_unfinished_envelope_work,
     tool_replace_table,
@@ -74,13 +76,16 @@ def clean_mcp_tables() -> Iterator[None]:
         )
 
 
-def signed_in_client() -> TestClient:
-    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+def signed_in_client(
+    email: str = "ed@example.com",
+    display_name: str = "Ed May",
+) -> TestClient:
+    create_or_update_user(email=email, display_name=display_name, password="password")
     client = TestClient(app)
     response = client.post(
         "/api/v1/auth/login",
         headers={"Origin": ORIGIN},
-        json={"email": "ed@example.com", "password": "password"},
+        json={"email": email, "password": "password"},
     )
     assert response.status_code == 200
     return client
@@ -263,6 +268,87 @@ def test_editor_can_issue_list_and_revoke_project_scoped_token(clean_mcp_tables:
     assert [row["action"] for row in actions] == ["mcp_token_issue", "mcp_token_revoke"]
 
 
+def test_user_token_account_api_defaults_to_one_year_and_revokes(clean_mcp_tables: None) -> None:
+    client = signed_in_client()
+    issued = client.post(
+        "/api/v1/agent-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Ed workstation", "scopes": ["project:read", "project:write"]},
+    )
+
+    assert issued.status_code == 201, issued.text
+    body = issued.json()
+    assert body["token_record"]["project_id"] is None
+    expires_at = datetime.fromisoformat(body["token_record"]["expires_at"])
+    assert timedelta(days=364, hours=23) < expires_at - datetime.now(UTC) <= timedelta(days=365)
+
+    listed = client.get("/api/v1/agent-tokens")
+    assert listed.status_code == 200
+    assert [token["id"] for token in listed.json()["tokens"]] == [body["token_record"]["id"]]
+    assert "token" not in listed.json()["tokens"][0]
+
+    revoked = client.post(
+        f"/api/v1/agent-tokens/{body['token_record']['id']}/revoke",
+        headers={"Origin": ORIGIN},
+    )
+    assert revoked.status_code == 200
+    assert revoked.json()["revoked_at"] is not None
+    assert authenticate_plaintext_token(body["token"]) is None
+
+
+def test_user_token_lists_and_round_trips_only_issuer_projects(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ed = signed_in_client()
+    first = create_project(ed, "2426")
+    second = create_project(ed, "2427")
+    john = signed_in_client("john@example.com", "John Mitchell")
+    john_project = create_project(john, "2428")
+    issued = ed.post(
+        "/api/v1/agent-tokens",
+        headers={"Origin": ORIGIN},
+        json={
+            "label": "Cross-project agent",
+            "scopes": ["project:read", "project:write", "asset:read", "asset:write"],
+        },
+    )
+    assert issued.status_code == 201, issued.text
+    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+
+    listed = tool_list_projects(cast(Context, None), allow_env_token=True)
+    assert {str(project.id) for project in listed.projects} == {str(first["id"]), str(second["id"])}
+
+    project_id = cast(str, first["id"])
+    version_id = cast(str, first["active_version_id"])
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    initial_rows = cast(dict[str, object], initial.rows)
+    replaced = tool_replace_table(
+        project_id,
+        version_id,
+        "rooms",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=room_payload(cast(list[dict[str, object]], initial_rows["field_defs"])),
+        base_version_etag=initial.version_body_etag,
+    )
+    assert replaced["source"] == "draft"
+    assert draft_row(version_id) is not None
+    assert tool_discard_draft(
+        project_id,
+        version_id,
+        cast(Context, None),
+        allow_env_token=True,
+    ).discarded
+    assert draft_row(version_id) is None
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_get_project(cast(str, john_project["id"]), cast(Context, None), allow_env_token=True)
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "project_not_found"
+    assert error["recoverability"] == "refresh"
+
+
 def test_token_issue_rejects_past_expiration(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
@@ -322,6 +408,7 @@ def test_project_token_validates_scope_and_project_boundary(clean_mcp_tables: No
     )
     token = authenticate_plaintext_token(issued.json()["token"])
     assert token is not None
+    assert token.project_id is not None
 
     access = project_access_for_token(token, token.project_id, "project:read")
     assert access.project.bt_number == "2426"

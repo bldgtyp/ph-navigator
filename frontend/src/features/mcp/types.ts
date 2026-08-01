@@ -2,7 +2,7 @@ export type McpScope = "project:read" | "project:write" | "asset:read" | "asset:
 
 export type McpTokenRecord = {
   id: string;
-  project_id: string;
+  project_id: string | null;
   label: string;
   token_prefix: string;
   scopes: McpScope[];

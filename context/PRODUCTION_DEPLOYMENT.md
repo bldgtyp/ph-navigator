@@ -237,9 +237,10 @@ run it in the recreated `ph-navigator-v2-api-staging` environment.
 
 ## Runtime MCP
 
-PH-Navigator exposes its own project-scoped MCP server at
+PH-Navigator exposes its own scoped MCP server at
 `https://api.ph-nav.com/mcp`. It is not the same thing as Codex MCP connectors.
-Runtime MCP clients use project-scoped bearer tokens issued from the app.
+Runtime MCP clients use project- or user-scoped bearer tokens issued from the
+app; both are stored hashed and re-check the issuing user's current reach.
 
 Production MCP settings are:
 

@@ -28,3 +28,13 @@ export async function revokeMcpToken(projectId: string, tokenId: string): Promis
     method: "POST",
   });
 }
+
+export async function listAgentTokens(signal?: AbortSignal): Promise<McpTokenListResponse> {
+  return fetchJson<McpTokenListResponse>("/api/v1/agent-tokens", { signal });
+}
+
+export async function revokeAgentToken(tokenId: string): Promise<McpTokenRecord> {
+  return fetchJson<McpTokenRecord>(`/api/v1/agent-tokens/${tokenId}/revoke`, {
+    method: "POST",
+  });
+}

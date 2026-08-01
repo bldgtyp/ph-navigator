@@ -1,9 +1,36 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { issueMcpToken, listMcpTokens, revokeMcpToken } from "./api";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
+import {
+  issueMcpToken,
+  listAgentTokens,
+  listMcpTokens,
+  revokeAgentToken,
+  revokeMcpToken,
+} from "./api";
 import { mcpTokenQueryKeys } from "./query-keys";
-import type { McpTokenIssuePayload, McpTokenListResponse } from "./types";
+import type { McpTokenIssuePayload, McpTokenListResponse, McpTokenRecord } from "./types";
 
 export { mcpTokenQueryKeys };
+
+function replaceCachedToken(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  replacement: McpTokenRecord,
+) {
+  const current = queryClient.getQueryData<McpTokenListResponse>(queryKey);
+  if (!current) {
+    queryClient.invalidateQueries({ queryKey });
+    return;
+  }
+  queryClient.setQueryData(queryKey, {
+    tokens: current.tokens.map((token) => (token.id === replacement.id ? replacement : token)),
+  });
+}
 
 export function useMcpTokensQuery(projectId: string, enabled = true) {
   return useQuery({
@@ -40,15 +67,25 @@ export function useRevokeMcpTokenMutation(projectId: string) {
   return useMutation({
     mutationFn: (tokenId: string) => revokeMcpToken(projectId, tokenId),
     onSuccess: (revoked) => {
-      const queryKey = mcpTokenQueryKeys.list(projectId);
-      const current = queryClient.getQueryData<McpTokenListResponse>(queryKey);
-      if (!current) {
-        queryClient.invalidateQueries({ queryKey });
-        return;
-      }
-      queryClient.setQueryData(queryKey, {
-        tokens: current.tokens.map((token) => (token.id === revoked.id ? revoked : token)),
-      });
+      replaceCachedToken(queryClient, mcpTokenQueryKeys.list(projectId), revoked);
+    },
+  });
+}
+
+export function useAgentTokensQuery() {
+  return useQuery({
+    queryKey: mcpTokenQueryKeys.account(),
+    queryFn: ({ signal }) => listAgentTokens(signal),
+    select: (payload) => payload.tokens,
+  });
+}
+
+export function useRevokeAgentTokenMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: revokeAgentToken,
+    onSuccess: (revoked) => {
+      replaceCachedToken(queryClient, mcpTokenQueryKeys.account(), revoked);
     },
   });
 }

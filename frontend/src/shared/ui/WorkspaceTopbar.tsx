@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { CircleUserRound, LogOut } from "lucide-react";
+import { CircleUserRound, KeyRound, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TopbarUnitToggle } from "./TopbarUnitToggle";
 import { useOutsidePointerDown } from "./useOutsidePointerDown";
@@ -81,6 +81,10 @@ export function TopbarAccountMenu({ label, onSignOut }: { label: string; onSignO
       </summary>
       <div className="account-menu-panel">
         <p className="account-menu-label">{label}</p>
+        <Link className="text-button" to="/account/agent-tokens">
+          <KeyRound aria-hidden="true" size={14} strokeWidth={1.8} />
+          Agent tokens
+        </Link>
         <button type="button" className="text-button" onClick={onSignOut}>
           <LogOut aria-hidden="true" size={14} strokeWidth={1.8} />
           Sign out

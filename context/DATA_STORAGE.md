@@ -132,7 +132,7 @@ on top since; see `backend/alembic/versions/` for the current chain):
 | `projects` | name, `bt_number` (unique), `cert_programs[]`, `owner_id`, `team_id`, `active_version_id`, denormalized `last_saved_at`, soft-delete + `hard_delete_after` | `owner_id` is a dashboard concept, **not** an ACL. `team_id` (2026-06-27, nullable, no FK yet) reserves tenancy; `NULL` = legacy/bldgtyp-internal project. |
 | `project_status_items` | lifecycle checklist (`todo`/`done`/`na`), fractional `order_index` | Intentionally outside the document body — status is "where is this project," not a versioned model property. |
 | `user_project_preferences` | per-user pin/order on the dashboard | personal, so not on `projects`. |
-| `mcp_tokens` | project-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | Plaintext token never stored. |
+| `mcp_tokens` | project- and user-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | `project_id IS NULL` means user-scoped; plaintext token never stored. |
 
 ### Catalogs (immutable shared libraries — the "bookshelf")
 | Table | Holds | Notes |

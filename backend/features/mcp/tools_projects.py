@@ -22,7 +22,7 @@ from features.mcp.tools_shared import get_project_detail_or_error, token_user_or
 from features.project_status.service import list_project_status_items
 from features.projects.models import ProjectDeleteRequest, ProjectHardDeleteRequest, ProjectSummary
 from features.projects.service import delete_project as soft_delete_project
-from features.projects.service import hard_delete_project, restore_project
+from features.projects.service import hard_delete_project, list_dashboard_projects, restore_project
 
 __all__ = [
     "tool_delete_project",
@@ -37,6 +37,10 @@ __all__ = [
 
 def tool_list_projects(ctx: Context, *, allow_env_token: bool) -> McpProjectListEnvelope:
     token = current_token(ctx, allow_env_token)
+    if token.project_id is None:
+        require_token_scope_or_error(token, None, "project:read", ctx)
+        user = token_user_or_error(token.issued_by_user_id, ctx)
+        return McpProjectListEnvelope(projects=list_dashboard_projects(user).projects)
     project_access_or_error(token, token.project_id, "project:read", ctx)
     detail = get_project_detail_or_error(token.project_id, "viewer", ctx)
     project = ProjectSummary.model_validate(

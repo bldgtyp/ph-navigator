@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
-import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
+import { McpTokenList } from "../../mcp/components/McpTokenList";
 import { MCP_SCOPES, REQUIRED_MCP_SCOPE } from "../../mcp/constants";
 import { useIssueMcpTokenMutation, useRevokeMcpTokenMutation } from "../../mcp/hooks";
 import type { McpScope, McpTokenRecord } from "../../mcp/types";
@@ -26,8 +26,6 @@ export const ProjectMcpTokensSection = memo(function ProjectMcpTokensSection({
   const issueMutation = useIssueMcpTokenMutation(projectId);
   const revokeMutation = useRevokeMcpTokenMutation(projectId);
   const resolvedTokens = tokens ?? EMPTY_MCP_TOKENS;
-  const activeTokens = resolvedTokens.filter((token) => token.revoked_at === null);
-  const revokedTokens = resolvedTokens.filter((token) => token.revoked_at !== null);
   const canIssue =
     label.trim().length > 0 && scopes.includes(REQUIRED_MCP_SCOPE) && !issueMutation.isPending;
 
@@ -96,29 +94,12 @@ export const ProjectMcpTokensSection = memo(function ProjectMcpTokensSection({
           {copyStatus ? <p>{copyStatus}</p> : null}
         </div>
       ) : null}
-      <div className="token-list" aria-label="Active MCP tokens">
-        {activeTokens.length === 0 ? <p className="form-note">No active MCP tokens.</p> : null}
-        {activeTokens.map((token) => (
-          <TokenRow
-            key={token.id}
-            token={token}
-            onRevoke={() => revokeMutation.mutate(token.id)}
-            isRevoking={revokeMutation.isPending && revokeMutation.variables === token.id}
-          />
-        ))}
-      </div>
-      {revokedTokens.length > 0 ? (
-        <details className="revoked-token-details">
-          <summary>
-            {revokedTokens.length} revoked token{revokedTokens.length === 1 ? "" : "s"}
-          </summary>
-          <div className="token-list">
-            {revokedTokens.map((token) => (
-              <TokenRow key={token.id} token={token} revoked />
-            ))}
-          </div>
-        </details>
-      ) : null}
+      <McpTokenList
+        tokens={resolvedTokens}
+        emptyMessage="No active MCP tokens."
+        revokingTokenId={revokeMutation.isPending ? revokeMutation.variables : undefined}
+        onRevoke={(tokenId) => revokeMutation.mutate(tokenId)}
+      />
       <div className="token-issue-form">
         <label>
           <span>Token label</span>
@@ -168,37 +149,3 @@ export const ProjectMcpTokensSection = memo(function ProjectMcpTokensSection({
     </section>
   );
 });
-
-function TokenRow({
-  token,
-  revoked = false,
-  isRevoking = false,
-  onRevoke,
-}: {
-  token: McpTokenRecord;
-  revoked?: boolean;
-  isRevoking?: boolean;
-  onRevoke?: () => void;
-}) {
-  return (
-    <div className="token-row">
-      <div>
-        <strong>{token.label}</strong>
-        <span>
-          {token.token_prefix} · {token.scopes.join(", ")}
-        </span>
-        <span>
-          Created {formatProjectDateTime(token.created_at)} · Last used{" "}
-          {token.last_used_at ? formatProjectDateTime(token.last_used_at) : "never"}
-          {token.expires_at ? ` · Expires ${formatProjectDateTime(token.expires_at)}` : ""}
-          {token.revoked_at ? ` · Revoked ${formatProjectDateTime(token.revoked_at)}` : ""}
-        </span>
-      </div>
-      {!revoked && onRevoke ? (
-        <button type="button" className="danger-button" disabled={isRevoking} onClick={onRevoke}>
-          {isRevoking ? "Revoking..." : "Revoke"}
-        </button>
-      ) : null}
-    </div>
-  );
-}

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 08:41 EDT
-STATUS: Ready — ownership dependency implemented and verified
+STATUS: Complete — implemented and verified on `codex/agent-access-kit`
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Backend — add the user-scoped agent-token principal to the MCP surface.
 RELATED: ../PRD.md §2, ../decisions.md §D-1/D-2/D-6,
@@ -85,3 +85,28 @@ but it also means the `AGENT-BROWSER` fixture must grant codex something to
 list, or `list_projects` returns empty and the round-trip has nowhere to run.
 Coordinate with ownership-enforcement Phase 3 §3.4, which checks the same
 fixture.
+
+## Completion evidence
+
+Implemented 2026-08-01:
+
+- Migration `20260801_0012` makes `mcp_tokens.project_id` nullable; null rows
+  are user-scoped and indexed by issuer/creation time.
+- Account REST routes issue/list/revoke 365-day-default user tokens; the account
+  menu exposes **My agent tokens** for list/revoke.
+- MCP authentication accepts either principal. User-token `list_projects`
+  returns current accessible projects; requested project tools use the existing
+  issuer access seam. Cross-user access remains `project_not_found` / `refresh`.
+- Backend user-token coverage proves multi-project list, draft write/discard,
+  cross-user rejection, one-time plaintext delivery, expiry, and revocation.
+  Existing project-token coverage remains green.
+
+Verification:
+
+- `cd backend && uv run pytest tests/test_mcp.py -q` — 29 passed.
+- `cd backend && uv run ty check` and focused Ruff — passed.
+- `cd frontend && pnpm exec vitest run src/App.test.tsx` — 33 passed.
+- `cd frontend && pnpm exec tsc -b` and focused ESLint — passed.
+- Authenticated browser check at `/account/agent-tokens` — passed.
+- `make ci` — 1,758 backend tests passed (7 skipped), 2,370 frontend tests
+  passed, and the production build completed.

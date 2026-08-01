@@ -508,9 +508,9 @@ The substrate is:
 - hand-written context docs;
 - a v1 MCP server.
 
-MCP ships read/write capable in v1, but it is not anonymous. MCP clients
-use project-scoped bearer tokens issued by logged-in editors, stored
-hashed, revocable, scoped, and audit-logged. Catalog browsing is allowed
+MCP ships read/write capable in v1, but it is not anonymous. MCP clients use
+project- or user-scoped bearer tokens issued by logged-in editors, stored
+hashed, revocable, explicitly scoped, and audit-logged. Catalog browsing is allowed
 through MCP in v1; catalog writes are deferred.
 
 Implementation contract: `context/technical-requirements/llm-mcp-schema.md`.
@@ -665,8 +665,8 @@ V2 v1 has two access modes:
 - browser editor sessions: email/password login, HTTP-only cookies,
   server-side sessions, 60-minute sliding expiration, single active
   session per user;
-- MCP bearer tokens: project-scoped, issued by editors, stored hashed,
-  scoped for project/assets read/write, revocable, and audit-logged.
+- MCP bearer tokens: project- or user-scoped, issued by editors, stored
+  hashed, scoped for project/assets read/write, revocable, and audit-logged.
 
 Project URLs are public-readable. Viewers need no session and cannot
 write. Every write path requires either a valid editor session or a valid

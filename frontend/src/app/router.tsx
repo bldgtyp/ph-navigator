@@ -36,6 +36,11 @@ const AdminUsersPage = lazy(() =>
     default: module.AdminUsersPage,
   })),
 );
+const AgentTokensPage = lazy(() =>
+  import("../features/mcp/routes/AgentTokensPage").then((module) => ({
+    default: module.AgentTokensPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -43,6 +48,16 @@ export function AppRouter() {
       <Route path="/sign-in" element={<SignInPage />} />
       <Route path="/invite" element={<AccountCompletePage mode="invite" />} />
       <Route path="/reset" element={<AccountCompletePage mode="reset" />} />
+      <Route
+        path="/account/agent-tokens"
+        element={authenticatedRoute(
+          (session) => (
+            <AgentTokensPage session={session} />
+          ),
+          "Agent tokens",
+          "Loading agent tokens...",
+        )}
+      />
       <Route
         path="/admin/users"
         element={authenticatedRoute(

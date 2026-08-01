@@ -1,6 +1,6 @@
 ---
-DATE: 2026-06-30
-TIME: 17:44 EDT
+DATE: 2026-08-01
+TIME: 11:45 EDT
 STATUS: ACTIVE MCP CONTRACT
 RELATED: context/technical-requirements/llm-mcp-schema.md, context/technical-requirements/save-versioning.md, backend/features/mcp/
 ---
@@ -13,14 +13,20 @@ disagree, this file describes the shipped surface.
 
 ## Operating Model
 
-MCP tokens are project-scoped bearer tokens issued by a logged-in editor. Tokens
-must include `project:read`; write-capable tokens also include `project:write`.
-Every project-scoped tool re-checks the current token record at call time, so
-revoked or expired tokens fail closed before a write or commit runs.
-The token also acts as its issuing user: read/data tools intersect token
-project/scope with the issuer's current owner-or-`projects.access.all` reach.
-If ownership is transferred or the issuer loses elevated reach, the next call
-returns structured `project_not_found` with `recoverability: "refresh"`.
+PH-Navigator accepts two MCP bearer-token principals:
+
+- **Project-scoped tokens** remain the least-privilege option for one project.
+- **User-scoped agent tokens** apply the same scope strings across every
+  project their issuing user can currently access.
+
+Tokens must include `project:read`; write-capable tokens also include
+`project:write`. Every project-scoped tool re-checks the current token record at
+call time, so revoked or expired tokens fail closed before a write or commit
+runs. Both principal types act as their issuing user: read/data tools intersect
+token scope with the issuer's current owner-or-`projects.access.all` reach. A
+project token adds its fixed project boundary to that intersection. If ownership
+is transferred or the issuer loses elevated reach, the next call returns
+structured `project_not_found` with `recoverability: "refresh"`.
 Delete, restore, and hard-delete are stricter: they re-check the issuer and
 remain owner-only even when the issuer holds all-project reach.
 
@@ -54,11 +60,17 @@ Recoverability values:
 |---|---|
 | `refresh` | Re-read project/version/draft state and retry only if still intended. |
 | `reauthenticate` | Issue or select a valid token. |
-| `forbidden` | The token lacks scope or is for another project. |
+| `forbidden` | The token lacks scope, or a project-scoped token targets another project. |
 | `fatal` | Caller input or unsupported operation; do not retry unchanged. |
 | `retry` | Transient failure; retry may succeed. |
 
 ## Scope Matrix
+
+The listed scopes apply to one project for a project token and to every
+currently accessible project for a user token. A user token aimed at an
+inaccessible project returns `project_not_found` / `refresh`, not `forbidden`;
+the caller must re-resolve through `list_projects` rather than infer whether a
+project id exists.
 
 | Tool | Scope |
 |---|---|
@@ -148,7 +160,9 @@ once, and every name here must be registered by `build_mcp_server`.
 
 ### Project And Version Reads
 
-- `list_projects()` returns the one project visible to the project-scoped token.
+- `list_projects()` returns the one bound project for a project-scoped token,
+  or every currently accessible project for a user token. This is the fallback
+  for resolving a project-folder marker.
 - `get_project(project_id)` returns project metadata plus version list.
 - `list_versions(project_id)` returns version metadata.
 - `list_status_items(project_id)` returns the relational status tracker.
@@ -231,6 +245,17 @@ Those tools are read or asset-specific surfaces; mutating document tools still
 follow the draft lifecycle above.
 
 ## Token Issuance
+
+Signed-in users issue, list, and revoke account-level agent tokens through:
+
+- `GET /api/v1/agent-tokens`
+- `POST /api/v1/agent-tokens`
+- `POST /api/v1/agent-tokens/{token_id}/revoke`
+
+Agent tokens default to a 365-day expiry. They have no fixed `project_id` and
+are re-checked against the issuing user's current project reach on every call.
+The account menu's **My agent tokens** page lists and revokes them. Interactive
+device authorization is documented separately once that flow ships.
 
 Editors issue and revoke project tokens through:
 

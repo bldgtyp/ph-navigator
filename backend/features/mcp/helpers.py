@@ -97,7 +97,12 @@ def parse_uuid(value: str, field_name: str, ctx: Context) -> UUID:
         )
 
 
-def require_token_scope_or_error(token: McpTokenRecord, project_id: UUID, scope: McpScope, ctx: Context) -> None:
+def require_token_scope_or_error(
+    token: McpTokenRecord,
+    project_id: UUID | None,
+    scope: McpScope,
+    ctx: Context,
+) -> None:
     try:
         require_token_scope(token, project_id, scope)
     except PermissionError as exc:

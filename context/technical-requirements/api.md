@@ -97,6 +97,9 @@ All gated server-side by the `admin.users.manage` capability; see
 ### 9.2c MCP tokens (added, undated)
 
 ```
+GET    /api/v1/agent-tokens                                  list the signed-in user's agent tokens
+POST   /api/v1/agent-tokens                                  issue a user-scoped token (plaintext shown once)
+POST   /api/v1/agent-tokens/{id}/revoke                      revoke the user's token
 GET    /api/v1/projects/{project_id}/mcp-tokens              list a project's MCP tokens
 POST   /api/v1/projects/{project_id}/mcp-tokens               issue a token (plaintext shown once)
 POST   /api/v1/projects/{project_id}/mcp-tokens/{id}/revoke   revoke a token

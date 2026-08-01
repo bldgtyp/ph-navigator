@@ -199,9 +199,10 @@ in-flight.
   `404 project_not_found`. Owners may read/write; Admin/staff principals may
   read/write any project but destructive project operations remain owner-only.
   See `context/PRD.md` §4 for the full access model.
-- **MCP auth** — project-scoped bearer tokens stored in
-  `mcp_tokens` (§6.1). Issued by logged-in editors from Project
-  Settings, shown once, stored hashed, revocable, and audit-logged.
+- **MCP auth** — project- and user-scoped bearer tokens stored in
+  `mcp_tokens` (§6.1). Project tokens are issued from Project Settings; user
+  tokens use the account/device authorization surfaces. Plaintext is delivered
+  once; stored rows remain hashed, revocable, and audit-logged.
   v1 tokens can carry `project:read`, `project:write`, `asset:read`,
   and `asset:write` scopes. Write-capable tokens also include
   `project:read`; write-only project tokens are rejected. Public browser
