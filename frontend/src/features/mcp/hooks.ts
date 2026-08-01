@@ -6,6 +6,8 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 import {
+  decideDeviceAuthorization,
+  getDeviceAuthorization,
   issueMcpToken,
   listAgentTokens,
   listMcpTokens,
@@ -13,7 +15,12 @@ import {
   revokeMcpToken,
 } from "./api";
 import { mcpTokenQueryKeys } from "./query-keys";
-import type { McpTokenIssuePayload, McpTokenListResponse, McpTokenRecord } from "./types";
+import type {
+  DeviceAuthorizationDecision,
+  McpTokenIssuePayload,
+  McpTokenListResponse,
+  McpTokenRecord,
+} from "./types";
 
 export { mcpTokenQueryKeys };
 
@@ -86,6 +93,25 @@ export function useRevokeAgentTokenMutation() {
     mutationFn: revokeAgentToken,
     onSuccess: (revoked) => {
       replaceCachedToken(queryClient, mcpTokenQueryKeys.account(), revoked);
+    },
+  });
+}
+
+export function useDeviceAuthorizationQuery(userCode: string) {
+  return useQuery({
+    queryKey: mcpTokenQueryKeys.device(userCode),
+    queryFn: ({ signal }) => getDeviceAuthorization(userCode, signal),
+    enabled: userCode.length > 0,
+  });
+}
+
+export function useDecideDeviceAuthorizationMutation(userCode: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (decision: DeviceAuthorizationDecision) =>
+      decideDeviceAuthorization(userCode, decision),
+    onSuccess: (authorization) => {
+      queryClient.setQueryData(mcpTokenQueryKeys.device(userCode), authorization);
     },
   });
 }

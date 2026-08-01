@@ -41,6 +41,11 @@ const AgentTokensPage = lazy(() =>
     default: module.AgentTokensPage,
   })),
 );
+const ApproveAgentPage = lazy(() =>
+  import("../features/mcp/routes/ApproveAgentPage").then((module) => ({
+    default: module.ApproveAgentPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -48,6 +53,16 @@ export function AppRouter() {
       <Route path="/sign-in" element={<SignInPage />} />
       <Route path="/invite" element={<AccountCompletePage mode="invite" />} />
       <Route path="/reset" element={<AccountCompletePage mode="reset" />} />
+      <Route
+        path="/approve-agent"
+        element={authenticatedRoute(
+          (session) => (
+            <ApproveAgentPage session={session} />
+          ),
+          "Approve agent",
+          "Loading agent request...",
+        )}
+      />
       <Route
         path="/account/agent-tokens"
         element={authenticatedRoute(

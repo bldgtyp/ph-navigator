@@ -26,3 +26,15 @@ export type McpTokenIssueResponse = {
   token: string;
   token_record: McpTokenRecord;
 };
+
+export type DeviceAuthorizationStatus = "pending" | "approved" | "denied" | "expired" | "redeemed";
+
+export type DeviceAuthorization = {
+  user_code: string;
+  label: string;
+  scopes: McpScope[];
+  status: DeviceAuthorizationStatus;
+  expires_at: string;
+};
+
+export type DeviceAuthorizationDecision = "approve" | "deny";

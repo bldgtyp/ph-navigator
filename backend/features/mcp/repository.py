@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import Connection
 
-from features.mcp.models import McpScope, McpTokenIssueRequest
+from features.mcp.models import McpDeviceAuthorizationRequest, McpScope, McpTokenIssueRequest
+
+DEVICE_AUTHORIZATION_COLUMNS = """
+    id, user_code, label, scopes, status, approving_user_id, token_id,
+    poll_interval_seconds, created_at, expires_at, last_polled_at,
+    decided_at, redeemed_at
+"""
 
 
 def insert_token(
@@ -163,6 +169,201 @@ def revoke_tokens_for_user(conn: Connection[Any], issued_by_user_id: UUID) -> li
         {"user_id": issued_by_user_id},
     ).fetchall()
     return [row["id"] for row in rows]
+
+
+def insert_device_authorization(
+    conn: Connection[Any],
+    payload: McpDeviceAuthorizationRequest,
+    *,
+    device_code_hash: str,
+    user_code: str,
+    expires_at: datetime,
+    poll_interval_seconds: int,
+) -> dict[str, Any]:
+    row = conn.execute(
+        f"""
+        INSERT INTO mcp_device_authorizations (
+            device_code_hash, user_code, label, scopes, expires_at,
+            poll_interval_seconds
+        )
+        VALUES (
+            %(device_code_hash)s, %(user_code)s, %(label)s, %(scopes)s,
+            %(expires_at)s, %(poll_interval_seconds)s
+        )
+        RETURNING {DEVICE_AUTHORIZATION_COLUMNS}
+        """,
+        {
+            "device_code_hash": device_code_hash,
+            "user_code": user_code,
+            "label": payload.label,
+            "scopes": payload.scopes,
+            "expires_at": expires_at,
+            "poll_interval_seconds": poll_interval_seconds,
+        },
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("Device authorization insert did not return a row.")
+    return row
+
+
+def expire_stale_device_authorizations(conn: Connection[Any], now: datetime) -> int:
+    result = conn.execute(
+        """
+        UPDATE mcp_device_authorizations
+        SET status = 'expired'
+        WHERE status IN ('pending', 'approved')
+          AND expires_at <= %(now)s
+        """,
+        {"now": now},
+    )
+    return result.rowcount
+
+
+def purge_terminal_device_authorizations(conn: Connection[Any], older_than: datetime) -> int:
+    result = conn.execute(
+        """
+        DELETE FROM mcp_device_authorizations
+        WHERE status IN ('denied', 'expired', 'redeemed')
+          AND created_at < %(older_than)s
+        """,
+        {"older_than": older_than},
+    )
+    return result.rowcount
+
+
+def expire_device_authorization(
+    conn: Connection[Any],
+    authorization_id: UUID,
+    *,
+    now: datetime,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        UPDATE mcp_device_authorizations
+        SET status = 'expired'
+        WHERE id = %(authorization_id)s
+          AND status IN ('pending', 'approved')
+          AND expires_at <= %(now)s
+        RETURNING {DEVICE_AUTHORIZATION_COLUMNS}
+        """,
+        {"authorization_id": authorization_id, "now": now},
+    ).fetchone()
+
+
+def get_device_authorization_by_user_code(
+    conn: Connection[Any],
+    user_code: str,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        SELECT {DEVICE_AUTHORIZATION_COLUMNS}
+        FROM mcp_device_authorizations
+        WHERE user_code = %(user_code)s
+        """,
+        {"user_code": user_code},
+    ).fetchone()
+
+
+def decide_device_authorization(
+    conn: Connection[Any],
+    user_code: str,
+    *,
+    approving_user_id: UUID,
+    target_status: Literal["approved", "denied"],
+    now: datetime,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        UPDATE mcp_device_authorizations
+        SET status = %(status)s,
+            approving_user_id = %(approving_user_id)s,
+            decided_at = %(now)s
+        WHERE user_code = %(user_code)s
+          AND status = 'pending'
+          AND expires_at > %(now)s
+        RETURNING {DEVICE_AUTHORIZATION_COLUMNS}
+        """,
+        {
+            "status": target_status,
+            "approving_user_id": approving_user_id,
+            "user_code": user_code,
+            "now": now,
+        },
+    ).fetchone()
+
+
+def deny_approved_device_authorization(
+    conn: Connection[Any],
+    authorization_id: UUID,
+    *,
+    now: datetime,
+) -> None:
+    conn.execute(
+        """
+        UPDATE mcp_device_authorizations
+        SET status = 'denied', decided_at = COALESCE(decided_at, %(now)s)
+        WHERE id = %(authorization_id)s
+          AND status = 'approved'
+        """,
+        {"authorization_id": authorization_id, "now": now},
+    )
+
+
+def get_device_authorization_for_poll(
+    conn: Connection[Any],
+    device_code_hash: str,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        SELECT {DEVICE_AUTHORIZATION_COLUMNS}
+        FROM mcp_device_authorizations
+        WHERE device_code_hash = %(device_code_hash)s
+        FOR UPDATE
+        """,
+        {"device_code_hash": device_code_hash},
+    ).fetchone()
+
+
+def record_device_poll(
+    conn: Connection[Any],
+    authorization_id: UUID,
+    *,
+    now: datetime,
+    poll_interval_seconds: int,
+) -> None:
+    conn.execute(
+        """
+        UPDATE mcp_device_authorizations
+        SET last_polled_at = %(now)s,
+            poll_interval_seconds = %(poll_interval_seconds)s
+        WHERE id = %(authorization_id)s
+        """,
+        {
+            "authorization_id": authorization_id,
+            "now": now,
+            "poll_interval_seconds": poll_interval_seconds,
+        },
+    )
+
+
+def redeem_device_authorization(
+    conn: Connection[Any],
+    authorization_id: UUID,
+    *,
+    token_id: UUID,
+    now: datetime,
+) -> bool:
+    result = conn.execute(
+        """
+        UPDATE mcp_device_authorizations
+        SET status = 'redeemed', token_id = %(token_id)s,
+            redeemed_at = %(now)s, last_polled_at = %(now)s
+        WHERE id = %(authorization_id)s
+          AND status = 'approved'
+        """,
+        {"authorization_id": authorization_id, "token_id": token_id, "now": now},
+    )
+    return result.rowcount == 1
 
 
 def token_has_scope(token: dict[str, Any], scope: McpScope) -> bool:

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 08:41 EDT
-STATUS: Ready — Phase 01 user-scoped tokens implemented
+STATUS: Complete — implemented and verified on `codex/agent-access-kit`
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Backend + web UI — device-authorization flow for agent credentials.
 RELATED: ../PRD.md §3, ../decisions.md §D-3, ./phase-01-user-scoped-tokens.md
@@ -50,3 +50,39 @@ Local stack: from a shell with no credential, the reference script prints the
 approval URL, `codex@example.com` approves in the browser, the script writes
 `credentials.json`, and an MCP call with that token succeeds — with zero
 copy-paste.
+
+## Completion evidence
+
+Implemented 2026-08-01:
+
+- Migration `20260801_0013` adds 10-minute device authorizations with hashed
+  device codes, `XXXX-XXXX` user codes, requested scopes/label, decision state,
+  bounded poll interval, and optional redeemed token linkage.
+- Device start/poll are unauthenticated CLI endpoints; the browser-readable
+  request and approve/deny decision remain session-gated, with the normal
+  mutation-Origin policy. Approve/deny and token issuance are audited.
+- `/approve-agent?code=...` shows the exact label, scopes, expiry, and user code;
+  elevated accounts receive an explicit tenant-wide-reach warning.
+- `backend/scripts/phn_login.py` opens/prints the approval URL, respects
+  `authorization_pending` / `slow_down`, and atomically writes the credential
+  file with mode `0600` without printing the token.
+
+Verification:
+
+- `cd backend && uv run pytest tests/test_mcp.py tests/test_phn_login.py -q` —
+  37 passed (approve/redeem, deny, expiry, double redemption, per-grant poll
+  flood, per-IP budgets, retention purge, credential permissions).
+- `cd backend && uv run ty check` and focused Ruff — passed.
+- `cd frontend && pnpm exec vitest run src/App.test.tsx` — 34 passed; TypeScript
+  and focused ESLint passed.
+- `make ci` — passed: backend 1,766 passed / 7 skipped; frontend 2,371 passed,
+  production build and version-marker check passed. Existing lint, React `act`,
+  chart-geometry, and bundle-size warnings remain unchanged.
+- Live local browser: session redirect/sign-in, request detail, full-scope and
+  elevated-reach copy, Approve transition, and zero console errors — passed.
+- The approved live grant was redeemed through the reference client functions,
+  written to a temporary `0600` credential file, authenticated as a normal user
+  token, revoked, and the temporary credential removed — passed.
+- Simplify review — resolved outer request budgets, hot-path global expiry,
+  terminal-row retention, discriminated poll responses, typed client reuse,
+  shared user-token issuance, collision handling, and decision-state copy.

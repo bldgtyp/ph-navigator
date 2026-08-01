@@ -133,6 +133,7 @@ on top since; see `backend/alembic/versions/` for the current chain):
 | `project_status_items` | lifecycle checklist (`todo`/`done`/`na`), fractional `order_index` | Intentionally outside the document body — status is "where is this project," not a versioned model property. |
 | `user_project_preferences` | per-user pin/order on the dashboard | personal, so not on `projects`. |
 | `mcp_tokens` | project- and user-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | `project_id IS NULL` means user-scoped; plaintext token never stored. |
+| `mcp_device_authorizations` | 10-minute agent-login grants with hashed device codes, visible user codes, requested scopes, poll cadence, and decision/redeem state | Approval binds to a signed-in user; redemption creates one normal user-scoped `mcp_tokens` row. |
 
 ### Catalogs (immutable shared libraries — the "bookshelf")
 | Table | Holds | Notes |

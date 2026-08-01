@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import cast
+from uuid import UUID
 
 import httpx
 import pytest
@@ -17,9 +18,10 @@ from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import TextContent
 
-from config import Settings
+from config import Settings, settings
 from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.mcp.rate_limit import reset_device_rate_limiters
 from features.mcp.server import mcp as phn_mcp
 from features.mcp.service import authenticate_plaintext_token, project_access_for_token, require_token_scope
 from features.mcp.tools import (
@@ -294,6 +296,215 @@ def test_user_token_account_api_defaults_to_one_year_and_revokes(clean_mcp_table
     assert revoked.status_code == 200
     assert revoked.json()["revoked_at"] is not None
     assert authenticate_plaintext_token(body["token"]) is None
+
+
+def start_device_authorization(client: TestClient, label: str = "Ed MacBook") -> dict[str, object]:
+    response = client.post(
+        "/api/v1/agent-tokens/device",
+        json={
+            "label": label,
+            "scopes": ["project:read", "project:write", "asset:read", "asset:write"],
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_device_authorization_approves_and_redeems_once(clean_mcp_tables: None) -> None:
+    unsigned = TestClient(app)
+    started = start_device_authorization(unsigned)
+    user_code = cast(str, started["user_code"])
+    device_code = cast(str, started["device_code"])
+    verification_url = cast(str, started["verification_url"])
+    assert device_code.startswith("phn_device_")
+    assert verification_url.endswith(f"/approve-agent?code={user_code}")
+    assert started["expires_in"] == 600
+
+    approver = signed_in_client()
+    visible = approver.get(f"/api/v1/agent-tokens/device/{user_code}")
+    assert visible.status_code == 200
+    assert visible.json() == {
+        "user_code": user_code,
+        "label": "Ed MacBook",
+        "scopes": ["project:read", "project:write", "asset:read", "asset:write"],
+        "status": "pending",
+        "expires_at": visible.json()["expires_at"],
+    }
+    approved = approver.post(
+        f"/api/v1/agent-tokens/device/{user_code}",
+        headers={"Origin": ORIGIN},
+        json={"decision": "approve"},
+    )
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["status"] == "approved"
+
+    redeemed = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": device_code},
+    )
+    assert redeemed.status_code == 200, redeemed.text
+    payload = redeemed.json()
+    assert payload["status"] == "approved"
+    assert payload["token"].startswith("phn_mcp_")
+    assert payload["token_record"]["project_id"] is None
+    assert authenticate_plaintext_token(payload["token"]) is not None
+
+    second = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": device_code},
+    )
+    assert second.status_code == 200
+    assert second.json() == {"status": "expired"}
+    with connection() as conn:
+        actions = conn.execute(
+            """
+            SELECT action
+            FROM user_action_log
+            WHERE action IN ('agent_device_approve', 'agent_token_issue')
+            ORDER BY created_at ASC
+            """
+        ).fetchall()
+        device_row = conn.execute(
+            """
+            SELECT device_code_hash, status, token_id
+            FROM mcp_device_authorizations
+            WHERE user_code = %(user_code)s
+            """,
+            {"user_code": user_code},
+        ).fetchone()
+    assert [row["action"] for row in actions] == ["agent_device_approve", "agent_token_issue"]
+    assert device_row is not None
+    assert device_row["device_code_hash"] != device_code
+    assert device_row["status"] == "redeemed"
+    assert device_row["token_id"] == UUID(payload["token_record"]["id"])
+
+
+def test_device_authorization_deny_fails_closed(clean_mcp_tables: None) -> None:
+    unsigned = TestClient(app)
+    started = start_device_authorization(unsigned)
+    approver = signed_in_client()
+    denied = approver.post(
+        f"/api/v1/agent-tokens/device/{started['user_code']}",
+        headers={"Origin": ORIGIN},
+        json={"decision": "deny"},
+    )
+    assert denied.status_code == 200
+    assert denied.json()["status"] == "denied"
+
+    polled = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": started["device_code"]},
+    )
+    assert polled.status_code == 200
+    assert polled.json()["status"] == "denied"
+    assert "token" not in polled.json()
+
+
+def test_device_authorization_expiry_sweep_blocks_approval_and_poll(clean_mcp_tables: None) -> None:
+    unsigned = TestClient(app)
+    started = start_device_authorization(unsigned)
+    with transaction() as conn:
+        conn.execute(
+            """
+            UPDATE mcp_device_authorizations
+            SET expires_at = now() - interval '1 second'
+            WHERE user_code = %(user_code)s
+            """,
+            {"user_code": started["user_code"]},
+        )
+
+    approver = signed_in_client()
+    approval = approver.post(
+        f"/api/v1/agent-tokens/device/{started['user_code']}",
+        headers={"Origin": ORIGIN},
+        json={"decision": "approve"},
+    )
+    assert approval.status_code == 409
+    assert approval.json()["error_code"] == "device_authorization_not_pending"
+    assert approval.json()["details"] == {"status": "expired"}
+
+    polled = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": started["device_code"]},
+    )
+    assert polled.status_code == 200
+    assert polled.json()["status"] == "expired"
+
+
+def test_device_authorization_poll_flood_slows_down(clean_mcp_tables: None) -> None:
+    unsigned = TestClient(app)
+    started = start_device_authorization(unsigned)
+    first = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": started["device_code"]},
+    )
+    second = unsigned.post(
+        "/api/v1/agent-tokens/device/poll",
+        json={"device_code": started["device_code"]},
+    )
+
+    assert first.status_code == 200
+    assert first.json()["status"] == "authorization_pending"
+    assert first.json()["interval"] == 5
+    assert second.status_code == 200
+    assert second.json()["status"] == "slow_down"
+    assert second.json()["interval"] == 10
+
+
+def test_device_authorization_public_endpoints_have_per_ip_budgets(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reset_device_rate_limiters()
+    monkeypatch.setattr(settings, "agent_device_rate_limit_enabled", True)
+    monkeypatch.setattr(settings, "agent_device_start_per_ip_per_minute", 1)
+    monkeypatch.setattr(settings, "agent_device_poll_per_ip_per_minute", 1)
+    client = TestClient(app)
+    try:
+        started = start_device_authorization(client)
+        blocked_start = client.post(
+            "/api/v1/agent-tokens/device",
+            json={"label": "Second", "scopes": ["project:read"]},
+        )
+        assert blocked_start.status_code == 429
+        assert blocked_start.json()["error_code"] == "rate_limited"
+
+        first_poll = client.post(
+            "/api/v1/agent-tokens/device/poll",
+            json={"device_code": started["device_code"]},
+        )
+        blocked_poll = client.post(
+            "/api/v1/agent-tokens/device/poll",
+            json={"device_code": started["device_code"]},
+        )
+        assert first_poll.status_code == 200
+        assert blocked_poll.status_code == 429
+        assert blocked_poll.json()["error_code"] == "rate_limited"
+    finally:
+        reset_device_rate_limiters()
+
+
+def test_device_authorization_start_purges_old_terminal_rows(clean_mcp_tables: None) -> None:
+    client = TestClient(app)
+    started = start_device_authorization(client)
+    with transaction() as conn:
+        conn.execute(
+            """
+            UPDATE mcp_device_authorizations
+            SET status = 'denied', created_at = now() - interval '31 days'
+            WHERE user_code = %(user_code)s
+            """,
+            {"user_code": started["user_code"]},
+        )
+
+    start_device_authorization(client, "Fresh request")
+
+    with connection() as conn:
+        retained = conn.execute(
+            "SELECT 1 FROM mcp_device_authorizations WHERE user_code = %(user_code)s",
+            {"user_code": started["user_code"]},
+        ).fetchone()
+    assert retained is None
 
 
 def test_user_token_lists_and_round_trips_only_issuer_projects(

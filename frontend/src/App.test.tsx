@@ -1291,6 +1291,38 @@ describe("App", () => {
     expect(window.location.pathname).toBe("/account/agent-tokens");
   });
 
+  test("shows and approves a device authorization request", async () => {
+    const user = userEvent.setup();
+    const userCode = "ABCD-2345";
+    const authorization = {
+      user_code: userCode,
+      label: "Ed MacBook",
+      scopes: ["project:read", "project:write", "asset:read", "asset:write"],
+      status: "pending",
+      expires_at: "2026-08-01T17:00:00Z",
+    };
+    window.history.pushState({}, "", `/approve-agent?code=${userCode}`);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === `/api/v1/agent-tokens/device/${userCode}` && init?.method === "POST") {
+        return jsonResponse({ ...authorization, status: "approved" });
+      }
+      if (url === `/api/v1/agent-tokens/device/${userCode}`) {
+        return jsonResponse(authorization);
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Approve this agent?" })).toBeVisible();
+    expect(await screen.findByText("Ed MacBook")).toBeVisible();
+    expect(screen.getByText("project:read, project:write, asset:read, asset:write")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+    expect(await screen.findByText(/Request status:/)).toHaveTextContent("approved");
+  });
+
   test("routes the Window-Frame Elements dashboard card to its catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");

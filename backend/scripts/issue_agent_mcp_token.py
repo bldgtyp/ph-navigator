@@ -12,7 +12,7 @@ from fastapi import Request
 from database import connection
 from features.auth import repository as auth_repository
 from features.auth.service import public_user
-from features.mcp.models import McpScope, McpTokenIssueRequest
+from features.mcp.models import ALL_MCP_SCOPES, McpScope, McpTokenIssueRequest
 from features.mcp.service import issue_token
 from features.projects import repository as projects_repository
 from features.projects.access import project_access_for_user
@@ -24,8 +24,6 @@ from scripts.seed_agent_browser_fixture import (
     DEFAULT_PASSWORD,
     seed_agent_browser_fixture,
 )
-
-DEFAULT_SCOPES: tuple[McpScope, ...] = ("project:read", "project:write", "asset:read", "asset:write")
 
 
 @dataclass(frozen=True)
@@ -108,7 +106,7 @@ def issue_agent_mcp_token(
         password=password,
         bt_number=bt_number,
     )
-    resolved_scopes = scopes or list(DEFAULT_SCOPES)
+    resolved_scopes = scopes or list(ALL_MCP_SCOPES)
 
     with connection() as conn:
         user_row = auth_repository.get_user_by_email(conn, email)

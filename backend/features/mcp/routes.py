@@ -8,14 +8,30 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 
 from features.auth.routes import CurrentUser
-from features.mcp.models import McpTokenIssueRequest, McpTokenIssueResponse, McpTokenListResponse, McpTokenPublic
+from features.mcp.models import (
+    McpDeviceAuthorizationDecision,
+    McpDeviceAuthorizationPollRequest,
+    McpDeviceAuthorizationPollResponse,
+    McpDeviceAuthorizationPublic,
+    McpDeviceAuthorizationRequest,
+    McpDeviceAuthorizationStart,
+    McpTokenIssueRequest,
+    McpTokenIssueResponse,
+    McpTokenListResponse,
+    McpTokenPublic,
+)
+from features.mcp.rate_limit import enforce_device_poll_budget, enforce_device_start_budget
 from features.mcp.service import (
+    decide_device_authorization,
+    get_device_authorization,
     issue_token,
     issue_user_token,
     list_project_tokens,
     list_user_tokens,
+    poll_device_authorization,
     revoke_project_token,
     revoke_user_token,
+    start_device_authorization,
 )
 from features.projects.access import ProjectAccess, require_project_edit_access
 
@@ -72,3 +88,47 @@ def revoke_agent_token(
 ) -> McpTokenPublic:
     user, _expires_at = auth
     return revoke_user_token(token_id, user, request)
+
+
+@agent_router.post(
+    "/device",
+    response_model=McpDeviceAuthorizationStart,
+    status_code=201,
+    dependencies=[Depends(enforce_device_start_budget)],
+)
+def create_device_authorization(
+    payload: McpDeviceAuthorizationRequest,
+) -> McpDeviceAuthorizationStart:
+    return start_device_authorization(payload)
+
+
+@agent_router.post(
+    "/device/poll",
+    response_model=McpDeviceAuthorizationPollResponse,
+    dependencies=[Depends(enforce_device_poll_budget)],
+)
+def poll_agent_device_authorization(
+    payload: McpDeviceAuthorizationPollRequest,
+    request: Request,
+) -> McpDeviceAuthorizationPollResponse:
+    return poll_device_authorization(payload.device_code, request)
+
+
+@agent_router.get("/device/{user_code}", response_model=McpDeviceAuthorizationPublic)
+def read_device_authorization(
+    user_code: str,
+    auth: CurrentUser,
+) -> McpDeviceAuthorizationPublic:
+    _user, _expires_at = auth
+    return get_device_authorization(user_code)
+
+
+@agent_router.post("/device/{user_code}", response_model=McpDeviceAuthorizationPublic)
+def decide_agent_device_authorization(
+    user_code: str,
+    payload: McpDeviceAuthorizationDecision,
+    auth: CurrentUser,
+    request: Request,
+) -> McpDeviceAuthorizationPublic:
+    user, _expires_at = auth
+    return decide_device_authorization(user_code, payload, user, request)

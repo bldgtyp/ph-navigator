@@ -241,6 +241,12 @@ PH-Navigator exposes its own scoped MCP server at
 `https://api.ph-nav.com/mcp`. It is not the same thing as Codex MCP connectors.
 Runtime MCP clients use project- or user-scoped bearer tokens issued from the
 app; both are stored hashed and re-check the issuing user's current reach.
+Agent clients obtain user tokens through `/api/v1/agent-tokens/device`: the
+human approves at `https://www.ph-nav.com/approve-agent`, and the reference
+`backend/scripts/phn_login.py` client stores the one-time plaintext at
+`~/.config/phn/credentials.json` with mode `0600`.
+The public start/poll endpoints have separate single-instance per-IP budgets;
+the authenticated approval route retains browser Origin enforcement.
 
 Production MCP settings are:
 

@@ -510,8 +510,11 @@ The substrate is:
 
 MCP ships read/write capable in v1, but it is not anonymous. MCP clients use
 project- or user-scoped bearer tokens issued by logged-in editors, stored
-hashed, revocable, explicitly scoped, and audit-logged. Catalog browsing is allowed
-through MCP in v1; catalog writes are deferred.
+hashed, revocable, explicitly scoped, and audit-logged. User tokens can be
+delivered through a 10-minute device flow: the agent polls while the human
+approves the displayed label/scopes in a signed-in browser, so the human never
+handles plaintext. Catalog browsing is allowed through MCP in v1; catalog
+writes are deferred.
 
 Implementation contract: `context/technical-requirements/llm-mcp-schema.md`.
 
@@ -666,7 +669,8 @@ V2 v1 has two access modes:
   server-side sessions, 60-minute sliding expiration, single active
   session per user;
 - MCP bearer tokens: project- or user-scoped, issued by editors, stored
-  hashed, scoped for project/assets read/write, revocable, and audit-logged.
+  hashed, scoped for project/assets read/write, revocable, and audit-logged;
+  user tokens support single-redemption browser-approved device delivery.
 
 Project URLs are public-readable. Viewers need no session and cannot
 write. Every write path requires either a valid editor session or a valid

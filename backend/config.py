@@ -70,6 +70,11 @@ class Settings(BaseSettings):
     login_rate_limit_per_ip_per_minute: int = 20
     login_rate_limit_per_account_per_minute: int = 10
     login_password_verify_concurrency_limit: int = 4
+    # Public agent device-flow endpoints are intentionally Origin-exempt because
+    # they run outside a browser session. Bound their per-IP request budgets.
+    agent_device_rate_limit_enabled: bool = True
+    agent_device_start_per_ip_per_minute: int = 10
+    agent_device_poll_per_ip_per_minute: int = 120
 
     # Database
     database_url: str = Field(default="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2")

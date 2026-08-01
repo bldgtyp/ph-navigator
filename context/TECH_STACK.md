@@ -47,7 +47,7 @@ Use a boring, explicit stack:
 | Charts | recharts (declarative line/bar; Climate monthly graphs). Lazy-loaded with its tab so it stays out of the initial bundle. Sun-path diagrams are hand-rolled SVG, not recharts |
 | Object storage | Cloudflare R2 |
 | Quality gates | Ty + Ruff for backend static checks; pytest, Vitest, Playwright for tests |
-| MCP auth | Project- and user-scoped bearer tokens stored hashed in `mcp_tokens`; user tokens have nullable `project_id` and per-call issuer reach checks |
+| MCP auth | Project- and user-scoped bearer tokens stored hashed in `mcp_tokens`; user tokens have nullable `project_id` and per-call issuer reach checks. Ten-minute hashed device grants deliver user tokens to `0600` agent credentials after a signed-in browser approval |
 | Logging | stdlib `logging` + `structlog`, JSON in prod / console in dev, stdout sink for Render — see `context/LOGGING.md` |
 
 ## Backend Decision

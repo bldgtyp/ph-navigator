@@ -26,6 +26,15 @@ MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # request came from first-party application code. See
 # planning/features/admin-user-management/phases/phase-01-session-csrf-rate-limits.md.
 CSRF_PROTECTED_PREFIX = "/api/v1/admin/"
+# These two device-flow operations have no browser session or cookies: they
+# are called by the agent CLI before and while a human approves in the web UI.
+# The authenticated decision endpoint is intentionally not exempt.
+ORIGIN_EXEMPT_MUTATION_PATHS = frozenset(
+    {
+        "/api/v1/agent-tokens/device",
+        "/api/v1/agent-tokens/device/poll",
+    }
+)
 _REQUEST_ID_MAX = 64
 
 log = structlog.get_logger(__name__)
@@ -44,6 +53,9 @@ def _reject_unsafe_request(request: Request) -> Response | None:
        an app-only ``X-PHN-CSRF`` header requirement for belt-and-suspenders
        protection on sensitive account mutations.
     """
+    if request.url.path in ORIGIN_EXEMPT_MUTATION_PATHS:
+        return None
+
     origin = request.headers.get("Origin")
     if origin not in settings.cors_origins_set:
         log.warning("api.origin_not_allowed", origin=origin)

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-01
 TIME: 09:58 EDT
-STATUS: Active — Phase 01 complete; Phase 02 next
+STATUS: Active — Phases 01–02 complete; Phase 03 next
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the agent-access-kit.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,13 +11,19 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phase 01 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
+**Phases 01–02 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
 now share `mcp_tokens` with project tokens (`project_id IS NULL` identifies the
 user principal), default to a 365-day expiry, and expose account-level
 issue/list/revoke REST routes plus the **My agent tokens** list/revoke page.
 `list_projects` returns the issuer's current owner-or-`projects.access.all`
 reach; every other MCP tool reuses the existing project-access seam. Project
 tokens remain unchanged.
+
+Device login now uses a 10-minute hashed grant, signed-in `/approve-agent`
+decision, database-enforced poll cadence, and single redemption into the same
+365-day user-token rows. The reference `backend/scripts/phn_login.py` client
+stores the result atomically at `~/.config/phn/credentials.json` with mode
+`0600`; plaintext never reaches the approving browser or terminal output.
 
 **Amended 2026-08-01 (cross-plan review).** A conflict with this packet's own
 dependency was found and resolved: three places specified `403` / `forbidden`
@@ -36,15 +42,15 @@ device-approval copy and to whether admins should mint 365-day tokens (§D-11).
 
 ## Next step
 
-Implement Phase 02: device-code persistence and endpoints, approval UI, and the
-reference `phn-login` client.
+Implement Phase 03: generic project-folder marker/template files, then stamp the
+real Linde marker without changing the project-folder tree.
 
 ## Dependency status
 
 - Phase 01 dependency is merged on `main`; Phase 01 is implemented and locally
   verified.
-- Phase 02 is unblocked. Phase 03 remains independently unblocked; 04–05 can
-  now target the concrete nullable-`project_id` user-token contract.
+- Phase 02 is complete and locally verified. Phase 03 is unblocked; 04–05 can
+  target the concrete user-token and device-login contract.
 
 ## Open questions for Ed
 
@@ -67,6 +73,19 @@ Phase 01 evidence:
   expected 401).
 - `make ci` — 1,758 backend tests passed (7 skipped), 2,370 frontend tests
   passed, and the production build completed.
+
+Phase 02 evidence:
+
+- `cd backend && uv run pytest tests/test_mcp.py tests/test_phn_login.py -q` —
+  37 passed; Ty and focused Ruff passed.
+- `cd frontend && pnpm exec vitest run src/App.test.tsx` — 34 passed;
+  TypeScript and focused ESLint passed.
+- Authenticated local `/approve-agent?code=...` browser flow — exact label,
+  scopes, user code, expiry, elevated-account warning, approve state, and zero
+  console errors verified.
+- Live local grant redeemed with the reference client functions, temporary
+  credential written as `0600`, token authenticated/revoked, and temporary
+  credential removed.
 
 Per PRD §7. The two easiest to skip and most important:
 

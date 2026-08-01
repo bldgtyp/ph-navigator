@@ -1,6 +1,6 @@
 ---
 DATE: 2026-08-01
-TIME: 11:45 EDT
+TIME: 12:12 EDT
 STATUS: ACTIVE MCP CONTRACT
 RELATED: context/technical-requirements/llm-mcp-schema.md, context/technical-requirements/save-versioning.md, backend/features/mcp/
 ---
@@ -255,7 +255,33 @@ Signed-in users issue, list, and revoke account-level agent tokens through:
 Agent tokens default to a 365-day expiry. They have no fixed `project_id` and
 are re-checked against the issuing user's current project reach on every call.
 The account menu's **My agent tokens** page lists and revokes them. Interactive
-device authorization is documented separately once that flow ships.
+device authorization avoids exposing the plaintext token to the approving
+human:
+
+1. An agent sends label + scopes to unauthenticated
+   `POST /api/v1/agent-tokens/device`. The response contains a 10-minute
+   `device_code`, an `XXXX-XXXX` user code, the `/approve-agent` URL, and a
+   five-second poll interval.
+2. A signed-in user opens the URL. `GET /api/v1/agent-tokens/device/{user_code}`
+   returns the label/scopes/expiry; `POST` to the same URL with
+   `{"decision":"approve"}` or `{"decision":"deny"}` records the one-time
+   decision. Admin/staff approval explicitly warns that the credential inherits
+   tenant-wide project reach.
+3. The agent sends the device code to unauthenticated
+   `POST /api/v1/agent-tokens/device/poll`. Pending, early-poll, denied, and
+   expired responses use `authorization_pending`, `slow_down`, `denied`, and
+   `expired`. Approval returns a normal user-scoped token exactly once.
+4. `backend/scripts/phn_login.py` is the reference client. It writes
+   `~/.config/phn/credentials.json` atomically with mode `0600` and never
+   prints the token.
+
+Device codes are hashed at rest. Database state enforces the polling cadence,
+single redemption, and expiry; terminal rows are retained for at most 30 days.
+Separate per-IP request budgets protect start and poll before database work,
+while an early poll also increases that grant's interval up to 30 seconds.
+Approve/deny/token-issue actions are audited. Only device start and poll bypass
+browser-Origin enforcement because they carry no session cookie. The
+authenticated browser decision retains the normal Origin policy.
 
 Editors issue and revoke project tokens through:
 

@@ -71,7 +71,8 @@ TB-01 implementation details:
 - Every API response includes `X-Request-ID`; callers may send one or
   let the backend generate it.
 - Mutating browser requests under `/api/` require an `Origin` matching
-  the configured CORS origins.
+  the configured CORS origins. The unauthenticated agent device start/poll
+  endpoints are the narrow exceptions; neither carries a browser session.
 - The frontend currently uses a route-level auth guard for the empty
   dashboard. The in-place re-auth modal remains required before the
   first editable project surface ships.
@@ -100,12 +101,19 @@ All gated server-side by the `admin.users.manage` capability; see
 GET    /api/v1/agent-tokens                                  list the signed-in user's agent tokens
 POST   /api/v1/agent-tokens                                  issue a user-scoped token (plaintext shown once)
 POST   /api/v1/agent-tokens/{id}/revoke                      revoke the user's token
+POST   /api/v1/agent-tokens/device                           start a 10-minute device authorization
+POST   /api/v1/agent-tokens/device/poll                      poll/redeem with the hashed-at-rest device code
+GET    /api/v1/agent-tokens/device/{user_code}               inspect a pending request (signed in)
+POST   /api/v1/agent-tokens/device/{user_code}               approve/deny a request (signed in)
 GET    /api/v1/projects/{project_id}/mcp-tokens              list a project's MCP tokens
 POST   /api/v1/projects/{project_id}/mcp-tokens               issue a token (plaintext shown once)
 POST   /api/v1/projects/{project_id}/mcp-tokens/{id}/revoke   revoke a token
 ```
 
 See `context/mcp.md` for scopes and token-issuance conventions.
+Device start and poll have independent per-IP fixed-window budgets; poll
+responses are status-discriminated so approved responses require a token and
+token record, while pending/slow-down responses require an interval.
 
 ### 9.2 Projects
 

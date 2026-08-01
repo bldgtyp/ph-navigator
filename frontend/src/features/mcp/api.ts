@@ -1,5 +1,7 @@
 import { fetchJson } from "../../shared/api/client";
 import type {
+  DeviceAuthorization,
+  DeviceAuthorizationDecision,
   McpTokenIssuePayload,
   McpTokenIssueResponse,
   McpTokenListResponse,
@@ -36,5 +38,22 @@ export async function listAgentTokens(signal?: AbortSignal): Promise<McpTokenLis
 export async function revokeAgentToken(tokenId: string): Promise<McpTokenRecord> {
   return fetchJson<McpTokenRecord>(`/api/v1/agent-tokens/${tokenId}/revoke`, {
     method: "POST",
+  });
+}
+
+export async function getDeviceAuthorization(
+  userCode: string,
+  signal?: AbortSignal,
+): Promise<DeviceAuthorization> {
+  return fetchJson<DeviceAuthorization>(`/api/v1/agent-tokens/device/${userCode}`, { signal });
+}
+
+export async function decideDeviceAuthorization(
+  userCode: string,
+  decision: DeviceAuthorizationDecision,
+): Promise<DeviceAuthorization> {
+  return fetchJson<DeviceAuthorization>(`/api/v1/agent-tokens/device/${userCode}`, {
+    method: "POST",
+    body: JSON.stringify({ decision }),
   });
 }

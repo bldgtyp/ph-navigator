@@ -234,6 +234,33 @@ mcp_tokens (
 CREATE INDEX ON mcp_tokens (project_id, created_at) WHERE revoked_at IS NULL;
 CREATE INDEX ON mcp_tokens (issued_by_user_id, created_at DESC) WHERE project_id IS NULL;
 
+-- Short-lived bridge from an unauthenticated agent process to an authenticated
+-- browser decision. The device code is hashed; approval redemption creates a
+-- normal user-scoped mcp_tokens row and returns its plaintext once.
+mcp_device_authorizations (
+    id                    UUID PRIMARY KEY,
+    device_code_hash      TEXT NOT NULL UNIQUE,
+    user_code             VARCHAR(9) NOT NULL UNIQUE,
+    label                 TEXT NOT NULL,
+    scopes                TEXT[] NOT NULL,
+    status                TEXT NOT NULL,
+                          -- pending | approved | denied | expired | redeemed
+    approving_user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+    token_id              UUID REFERENCES mcp_tokens(id) ON DELETE SET NULL,
+    poll_interval_seconds INTEGER NOT NULL DEFAULT 5,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at            TIMESTAMPTZ NOT NULL,
+    last_polled_at        TIMESTAMPTZ,
+    decided_at            TIMESTAMPTZ,
+    redeemed_at           TIMESTAMPTZ
+)
+CREATE INDEX ON mcp_device_authorizations (expires_at)
+WHERE status IN ('pending', 'approved');
+
+Active rows transition to `expired` when accessed or during the next start
+request's indexed sweep. Start requests also purge terminal rows older than 30
+days; this is coordination state, not the durable audit record.
+
 -- Project-level lifecycle / certification milestone tracker.
 -- Lives outside the project document body intentionally: status is
 -- "where is this project in its lifecycle," not a versioned property

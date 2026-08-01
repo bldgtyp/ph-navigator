@@ -23,6 +23,16 @@ requires both `PHN_DATASETS_ALLOW_PRODUCTION=1` and an explicit non-default
 Datasets** workflow, not a Render shell. Full runbook:
 `context/DATASET_PIPELINE.md`.
 
+To authorize an agent machine without copying a token, run:
+
+```bash
+cd backend && uv run python -m scripts.phn_login
+```
+
+The command opens the signed-in PH-Navigator approval page, polls the 10-minute
+device grant, and atomically writes `~/.config/phn/credentials.json` with mode
+`0600`. It never prints the token.
+
 `scripts.seed_surface_films` is retired and exits with that runbook pointer.
 Licensed publishing belongs exclusively to private `ph-navigator-data`.
 
