@@ -109,10 +109,11 @@ resolves to a **Principal**, which maps to a **Capability** set —
 | **User**     | An authentication identity (a row in `users`); Admins invite additional Users via the admin user-management surface — no longer just Ed/John | Login, account                            |
 | **Principal** | What a request resolves to before capability lookup: `ViewerPrincipal` (anonymous, `audience="client"`) or `UserPrincipal` (signed-in, carrying `is_staff` + granted capabilities). `certifier` audience and MCP `TokenPrincipal` are reserved, not yet issued (Phase 5) | Role, actor |
 | **Capability** | A stable string key a route gates on (`project.view`, `project.edit`, `catalog.edit`, `admin.users.manage`, per-surface export keys), resolved per-Principal by `capabilities_for` | Permission, scope (scope is the MCP-token term) |
-| **Editor**   | Informal shorthand for a signed-in User holding `project.edit` (today: every signed-in User, via `MEMBER_CAPS`) — no longer a distinct account type | Author, admin, member                     |
+| **Editor**   | Informal shorthand for a signed-in User holding `project.edit`; the capability describes what they may do after project reach is established, not which projects they may reach | Author, admin, member                     |
 | **Viewer**   | Informal shorthand for an anonymous request holding only `CLIENT_CAPS` (read-only, redacted metadata, no bulk exports) via a Project URL | Guest, public user, anonymous client      |
 | **Admin**    | A User holding the grantable `admin.users.manage` capability (`user_grants`), backing invite/reset-link/deactivate/grant flows — never a hard-coded superuser | Superuser, root |
-| **Owner**    | The User listed in `projects.owner_id`; **dashboard-organization concept only, not an ACL**                         | Author, admin, project lead               |
+| **Owner**    | The User listed in `projects.owner_id`; the primary signed-in relationship that grants project reach and drives the personal dashboard filter | Author, admin, project lead               |
+| **All-project access** | The derived `projects.access.all` capability; permits signed-in read/write reach regardless of ownership. Currently derived from `users.is_staff` or, as an interim bridge, the Admin preset. Does not grant delete/restore/hard-delete of another User's Project | Superuser, owner bypass |
 | **Session**  | A server-side authenticated session row; single-active-per-user with 480-minute (8h) sliding idle expiry            | Token (Session ID is a token, but bare "token" is ambiguous) |
 
 ## UI surfaces
@@ -167,8 +168,14 @@ resolves to a **Principal**, which maps to a **Capability** set —
 - **"Project"** was used in two senses across the PRD: (a) the **Project** entity (metadata, owner, bt_number) and (b) the **Project document** (the JSONB body of a Version). These are distinct — Project metadata lives in the `projects` row; Project document lives in `project_versions.body`. Always qualify "Project document" when you mean the JSON body.
 - **"Material"** is overloaded: it can mean a **Catalog entry** (`catalog_materials`), a **Catalog version** (`catalog_material_versions`), or a **Project Material** (the inlined copy in `tables.project_materials`). Use the qualified term — the distinction matters for Refresh-from-catalog semantics.
 - **"Draft"** is *not* a kind of Version — it's a server-side WIP buffer for crash-recovery. Never list it as a Version, never include it in diff `from`/`to` selectors except for "live vs last save" explicitly.
-- **"Owner"** is a dashboard-organization label, not a permission. Either Editor can edit any Project; ownership only filters the dashboard view. Don't conflate with ACL — there is no per-project ACL in v1.
+- **"Owner"** is both the dashboard filter and the primary signed-in project
+  reach relationship. A non-owner needs `projects.access.all`; team membership
+  and share ACLs remain deferred.
 - **"Tab"** in this product means a workspace section (Status/Climate/Apertures/Envelope/Spaces/Equipment/Thermal Bridges/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
-- **"Editor"/"Viewer"** are informal shorthand, not distinct account types — see **Principal**/**Capability** in People & access. Today every signed-in User holds Editor-equivalent capabilities (`MEMBER_CAPS`); there is no per-project membership yet (deferred to Phase 5).
+- **"Editor"/"Viewer"** are informal shorthand, not distinct account types —
+  see **Principal**/**Capability** in People & access. Every signed-in User holds
+  Editor-equivalent `MEMBER_CAPS`, but those global capabilities do not bypass
+  owner-or-`projects.access.all` project reach. Team/share membership remains
+  deferred to Phase 5.
 - **"Snapshot"** appears as both (a) a Version `kind` (`'snapshot'`) and (b) loose talk for any saved Version. Prefer **Version** for the general concept; reserve **snapshot** for the specific `kind`.
 - **"Status"** is the workspace **Tab** name *and* the project-lifecycle tracker (`project_status_items`). The two are aligned (the Tab renders the tracker), but "Status" alone is ambiguous in code — prefer `project_status_items` or "Status tab" depending on context.

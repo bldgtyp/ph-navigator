@@ -37,6 +37,7 @@ __all__ = [
 
 def tool_list_projects(ctx: Context, *, allow_env_token: bool) -> McpProjectListEnvelope:
     token = current_token(ctx, allow_env_token)
+    project_access_or_error(token, token.project_id, "project:read", ctx)
     detail = get_project_detail_or_error(token.project_id, "viewer", ctx)
     project = ProjectSummary.model_validate(
         detail.model_dump(exclude={"versions", "active_version", "access_mode", "owner_display_name"})
@@ -47,7 +48,7 @@ def tool_list_projects(ctx: Context, *, allow_env_token: bool) -> McpProjectList
 def tool_get_project(project_id: str, ctx: Context, *, allow_env_token: bool) -> McpProjectEnvelope:
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     token = current_token(ctx, allow_env_token)
-    require_token_scope_or_error(token, parsed_project_id, "project:read", ctx)
+    project_access_or_error(token, parsed_project_id, "project:read", ctx)
     detail = get_project_detail_or_error(parsed_project_id, "editor", ctx)
     return McpProjectEnvelope(
         project=ProjectSummary.model_validate(
@@ -61,7 +62,7 @@ def tool_get_project(project_id: str, ctx: Context, *, allow_env_token: bool) ->
 def tool_list_versions(project_id: str, ctx: Context, *, allow_env_token: bool) -> McpVersionListEnvelope:
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     token = current_token(ctx, allow_env_token)
-    require_token_scope_or_error(token, parsed_project_id, "project:read", ctx)
+    project_access_or_error(token, parsed_project_id, "project:read", ctx)
     detail = get_project_detail_or_error(parsed_project_id, "editor", ctx)
     return McpVersionListEnvelope(versions=detail.versions)
 

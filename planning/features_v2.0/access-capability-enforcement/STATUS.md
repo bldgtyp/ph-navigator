@@ -32,6 +32,14 @@ left for the trigger. **No new code, no schema applied, no schedule.**
 - **Decision:** the open questions in `multi-tenant-teams` PRD §7 should be
   answered before real planning.
 
+## Update 2026-08-01 — partial early fill-in
+
+The project-ownership refactor completed the owner-half of tenant isolation
+(PRD §4.2) early and standalone — the sequencing this packet's own PRD §7
+endorses. Roles, the held DDL, shares, and the `certifier` principal remain
+deferred. `PRD.md` §2 now owns the current `MEMBER_CAPS`, `catalog.edit`,
+`is_staff`, and interim `projects.access.all` facts.
+
 ## Next step (only if pursued)
 
 1. Confirm the trigger is real; answer `multi-tenant-teams` PRD §7.

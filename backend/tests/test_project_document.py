@@ -49,8 +49,8 @@ ORIGIN = "http://localhost:5173"
 
 def signed_in_client() -> TestClient:
     # Catalog admin (is_staff): envelope tests that chain off this client create
-    # catalog materials, which now require `catalog.edit`. Harmless elsewhere —
-    # in beta `is_staff` only adds the catalog capability.
+    # catalog materials. Its cross-project capability is irrelevant here because
+    # the same user owns every project this helper creates.
     create_catalog_admin()
     client = TestClient(app)
     response = client.post(

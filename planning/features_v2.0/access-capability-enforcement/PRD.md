@@ -31,9 +31,11 @@ RELATED:
 
 ## 1. Why this is deferred (the trigger)
 
-The beta enforces a binary world correctly: `client` (anonymous viewer) and
-`member` (any logged-in user). The richer principals only become *reachable*
-when two things exist that do not today:
+The beta capability bundles still distinguish `client` (anonymous viewer) from
+`member` (any logged-in user), but project reach is no longer binary: a member
+must own the project or hold the interim `projects.access.all` capability. The
+richer team/share principals only become *reachable* when two things exist that
+do not today:
 
 1. **Teams** — so a user can be an `admin` or a scoped `member` of a tenant,
    and `staff` can be bldgtyp-internal. Gated on the **RBC partnership** (first
@@ -54,12 +56,17 @@ enforce when the consumer exists) precisely so this is a *fill-in*.
   carries an `audience` field; `AUDIENCE_CAPS` maps `"client" → CLIENT_CAPS`
   today and is the exact dict a `"certifier"` entry drops into. `UserPrincipal`
   already carries `is_staff` and `granted_capabilities`.
-- **Bundles**: `CLIENT_CAPS`, `EXPORT_CAPS`, `MEMBER_CAPS` (= client + exports +
-  edit + private-metadata), and `STAFF_EXTRA_CAPS` (= `catalog.edit`). The
-  `certifier`/`admin`/`staff` bundles named below are additive on top.
-- **Seam**: every route resolves through `projects/access.py`
-  (`require_capability` → 401 viewer / 403 user). The MCP token path already
-  flows through it (`project_access_for_user`).
+- **Bundles**: `CLIENT_CAPS`, `EXPORT_CAPS`, and `MEMBER_CAPS` (= client +
+  exports + edit + private-metadata + `catalog.edit`). There is no
+  `STAFF_EXTRA_CAPS` symbol in live code. `is_staff` is now load-bearing: it
+  derives `projects.access.all`; the Admin preset derives the same key as a
+  dated bridge until team roles land.
+- **Seam**: ordinary project reads/writes resolve through
+  `projects/access.py`; destructive project operations keep the stricter
+  owner-only service guard. MCP read/data tools flow through the seam sibling
+  (`project_access_for_user`), while destructive MCP tools use that same
+  owner-only service guard. Anonymous GH reads are the explicit public-viewer
+  exception.
 - **Grants**: `user_grants` is a real table; `active_global_capabilities_for_user`
   is **scope-filtered to `scope_type = 'global'`** — the scoped-grant resolution
   is the deferred half (see §4.3).
@@ -79,7 +86,7 @@ in. (Capabilities themselves already exist as the `*.export.*` / `project.*` /
 | `certifier` | `CERTIFIER_CAPS` | client **+** `project.view.private_metadata` (street address, client name, `phius_dropbox_url`) **+** `EXPORT_CAPS` (HBJSON/PHPP/Phius/model/CSV) **+** `version.history.view`. **Never** any `*.edit` (CP-2: certifier never writes). |
 | `member` | `MEMBER_CAPS` | (unchanged) own-scope edit |
 | `admin` | `ADMIN_CAPS` | member **+** team-wide project visibility **+** `members.manage` / `team.manage` / `seats.manage` (T2: rename/delete/metadata/MCP-token management) |
-| `staff` | `STAFF_CAPS` | admin-equivalent **cross-tenant** + `catalog.edit` (today's `STAFF_EXTRA_CAPS`) — designed deliberately, not an accidental super-user |
+| `staff` | `STAFF_CAPS` | admin-equivalent **cross-tenant** reach; today `is_staff` derives `projects.access.all`. `catalog.edit` is already in the member bundle and should not be represented as a staff-only extra. |
 | `token` | issuer's bundle | acts *as* its issuing principal; **never widens** beyond the issuer's grants |
 
 `certifier ⊇ client` and `staff ⊇ admin ⊇ member` are additive ladders (CP-2).
@@ -101,6 +108,9 @@ since 2026-06-27. Write the matching `downgrade()`.
 - Tenant scoping: the project-access seam must compare the project's `team_id`
   to the caller's team(s) — this is the **tenant-isolation** enforcement that
   [[multi-tenant-teams]] R1 owns; do it at `projects/access.py`, not per-route.
+- Retain `projects.access.all` for genuine staff cross-tenant reach, but remove
+  its interim `admin.users.manage` derivation once team-`admin` is scoped to its
+  own tenant. Do not let a team Admin inherit staff's cross-tenant bypass.
 
 ### 4.3 Shares → principals
 - A share-link request resolves its `token_hash` against `project_shares` (mirror

@@ -90,7 +90,8 @@ projects (
     phius_number       TEXT,
     phius_dropbox_url  TEXT,
     owner_id           UUID NOT NULL REFERENCES users(id),
-                       -- dashboard-organization concept, not ACL.
+                       -- signed-in project-reach relationship and dashboard
+                       -- filter; projects.access.all bypasses reach only.
                        -- Transferable post-MVP.
     active_version_id  UUID REFERENCES project_versions(id),
                        -- "the version the editor opens by default"

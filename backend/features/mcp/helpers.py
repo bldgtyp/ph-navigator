@@ -123,6 +123,15 @@ def project_access_or_error(token: McpTokenRecord, project_id: UUID, scope: McpS
                 "hard_delete_after": _isoformat(exc.project["hard_delete_after"]),
             },
         )
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_access_error",
+            default_message="Project could not be accessed.",
+            default_recoverability="refresh",
+            recoverability_by_code={"project_not_found": "refresh"},
+        )
     except LookupError:
         raise_mcp_error("project_not_found", "Project not found.", "refresh", ctx)
     except PermissionError as exc:

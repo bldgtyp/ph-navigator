@@ -193,15 +193,23 @@ in-flight.
 - **Viewer access** — no token, no session required.
   Project URLs (`/projects/{id}/...`) resolve for any visitor; the
   backend's `require_project_access(mode='view')` dependency
-  passes trivially. Writes return 401. See §4 for the full access
-  model.
+  preserves anonymous read-only access and metadata redaction. Writes return
+  401. A signed-in principal is not treated as anonymous: they must own the
+  project or hold `projects.access.all`, otherwise both reads and writes return
+  `404 project_not_found`. Owners may read/write; Admin/staff principals may
+  read/write any project but destructive project operations remain owner-only.
+  See `context/PRD.md` §4 for the full access model.
 - **MCP auth** — project-scoped bearer tokens stored in
   `mcp_tokens` (§6.1). Issued by logged-in editors from Project
   Settings, shown once, stored hashed, revocable, and audit-logged.
   v1 tokens can carry `project:read`, `project:write`, `asset:read`,
   and `asset:write` scopes. Write-capable tokens also include
   `project:read`; write-only project tokens are rejected. Public browser
-  read access does not create anonymous MCP access. Streamable HTTP MCP
+  read access does not create anonymous MCP access. Every read/data tool also
+  re-checks the issuing user's current owner-or-`projects.access.all` reach, so
+  ownership transfer or capability revocation invalidates a formerly usable
+  token at its next call. MCP delete/restore/hard-delete instead re-check the
+  issuer through the stricter owner-only service guard. Streamable HTTP MCP
   endpoints keep FastMCP DNS-rebinding protection enabled; allowed hosts
   and wildcard-port variants are derived from `MCP_ISSUER_URL`,
   `MCP_RESOURCE_SERVER_URL`, and Render's `RENDER_EXTERNAL_URL` /

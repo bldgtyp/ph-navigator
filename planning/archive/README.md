@@ -3,6 +3,19 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-08-01
+
+- `project-ownership-enforcement` - Signed-in project reach now requires the
+  caller to own the project or hold `projects.access.all`; ordinary strangers
+  receive `404 project_not_found` across REST and MCP. Anonymous read-only
+  viewer behavior remains unchanged, while the three destructive project
+  operations remain intentionally owner-only. The closeout includes a full
+  project-route inventory, stale MCP-token regression coverage, authenticated
+  browser and MCP smoke checks, Graphify, three-way simplify review, docs-pass,
+  and green CI (backend 1,754 passed / 7 skipped; frontend 2,365 passed plus
+  production build). Production `owner_id` distribution review remains an
+  explicit pre-deploy operator gate.
+
 ## 2026-07-30
 
 - `aperture-u-value-report` - Added a route-addressable SI/IP U-Values audit

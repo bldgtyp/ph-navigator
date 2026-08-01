@@ -110,12 +110,13 @@ truth.
 
 **Access model (superseded 2026-06-27 by the access-capability-model
 beta, Phases 1–4b — see `planning/archive/dated/2026-06-27/access-capability-model/`):**
-project URLs are still public-readable — the same `/projects/{id}/...`
-routes resolve for everyone, logged in or not, and there are still no
-per-share tokens or `/v/{token}` routes. But access is no longer a flat
-signed-in/anonymous binary: every request now resolves to a **Principal**
-that maps to a **Capability** set (`features/access/principals.py`,
-`features/access/capabilities.py`).
+project URLs are still anonymously public-readable, with no per-share tokens
+or `/v/{token}` routes. Signed-in access is now ownership-gated: the project
+owner and principals holding `projects.access.all` may reach the project;
+another signed-in user receives `404 project_not_found`. Every request resolves
+to a **Principal** that maps to a **Capability** set
+(`features/access/principals.py`, `features/access/capabilities.py`), while the
+project seam separately decides whether that principal may reach this project.
 
 - **Principals today:** `ViewerPrincipal` (anonymous, `audience="client"`)
   and `UserPrincipal` (a signed-in `users` row, carrying `is_staff` and any
@@ -129,21 +130,24 @@ that maps to a **Capability** set (`features/access/principals.py`,
   `MEMBER_CAPS` (any signed-in User) ≈ old "Editor" — read + write +
   private metadata + every export, including the aperture audit export key
   `apertures.export.u_value_report`; members also hold `catalog.edit`.
-  `admin.users.manage` is separately grantable via `user_grants` (Admin
-  preset, or `is_staff`) rather than being implicit in "signed in."
-- **Project ownership** is still a *dashboard-organization* concept, not
-  an ACL. Each project has exactly one `owner_id`; the owner sees the
-  project on their personal dashboard. Any signed-in User with
-  `project.edit` can edit any project they can reach. Ownership is
-  transferable (data model supports; transfer UI post-MVP).
+  `admin.users.manage` is separately grantable via `user_grants` rather than
+  being implicit in "signed in." `projects.access.all` is derived from the
+  reserved `is_staff` flag and, as an interim bridge until team roles land,
+  from the Admin preset.
+- **Project ownership is the signed-in reach relationship.** Each project has
+  exactly one `owner_id`; the owner sees it on their personal dashboard and may
+  read/write it. A non-owner needs `projects.access.all`. Ownership is
+  transferable at the data layer (transfer UI post-MVP). Destructive project
+  operations remain owner-only even for Admin/staff principals.
 - **No anonymous editing.** `project.edit` requires a `UserPrincipal`,
   REST or MCP.
-- **No per-project membership yet.** A Viewer/Client can reach every
-  version of a project they have the URL for; there is still no
-  per-project visibility gate — that's the Phase 5 tenancy work
-  (`project_members`-equivalent), not yet built.
-- **Revocation model:** unchanged — to "revoke access" to a project, the
-  project must be soft-deleted (US-1.4).
+- **No team/share membership yet.** Anonymous Viewer/Client requests can still
+  reach every version of a project by URL. Signed-in reach is owner-or-all;
+  team membership, certifier shares, and a per-project public visibility gate
+  remain Phase 5 work.
+- **Revocation model:** ownership transfer removes the prior owner's signed-in
+  reach unless they hold `projects.access.all`. Anonymous URL reach is unchanged
+  and still requires soft-delete to revoke globally (US-1.4).
 - **Admin user management shipped separately** (`admin-user-management`
   MVP, archived 2026-06-29): self-service invite/reset-link accounts,
   admin deactivate/reactivate, and Admin-grant/revoke via
@@ -153,18 +157,25 @@ that maps to a **Capability** set (`features/access/principals.py`,
 
 The seam described here as a forward-compatible commitment has shipped:
 
-- **Every project-scoped route goes through `features/projects/access.py`'s
-  `require_capability(project_id, capability)`**, backed by the
-  principal/capability resolver in §4. It does not yet consult any
-  per-project membership table — that's Phase 5.
-- **MCP tools do not yet use this seam** — they still authorize through
-  their own token-scope path (`context/mcp.md`); folding MCP into
-  `require_capability` via a `TokenPrincipal` is Phase 5 work.
+- **Project-scoped REST reads and ordinary writes go through
+  `features/projects/access.py`'s `require_project_access`**, which first applies
+  owner-or-`projects.access.all` reach and then checks the requested capability.
+  Project delete/restore/hard-delete deliberately use the stricter owner-only
+  service guard. Team membership remains Phase 5.
+- **MCP tokens act as their issuer.** Project-scoped read/data tools intersect
+  token project/scope with `project_access_for_user`, the seam's non-request
+  sibling, so a token cannot outlive its issuer's ownership or all-project
+  reach. Destructive MCP tools instead re-check the issuer and the same stricter
+  owner-only service guard. A first-class `TokenPrincipal` remains Phase 5 work.
+- **Grasshopper access is three-path by design.** Signed-in and MCP bearer
+  requests use the corresponding access sibling; anonymous GH reads construct
+  a redacted `ViewerPrincipal` access object directly, preserving public reads.
 - **Dashboard query is still simple:**
   `WHERE owner_id = current_user.id AND deleted_at IS NULL`.
-- **Anti-patterns still banned:** no inline
-  `if user.id == project.owner_id` checks in routes; no project
-  reads in handlers without going through `require_capability`.
+- **Anti-patterns still banned:** no inline ownership checks in ordinary routes;
+  authenticated reads/writes must use the shared seam, while the explicit
+  owner-only destructive and anonymous GH paths stay centralized in their
+  documented service helpers.
 
 Remaining Phase 5 scope (per-project membership/tenancy, `certifier`
 viewer audience, MCP `TokenPrincipal`) lives in
