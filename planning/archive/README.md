@@ -5,6 +5,12 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-02
 
+- `licensed-data-pipeline` - Shipped the private-git to immutable-R2 licensed
+  data pipeline, manifest-pinned runtime reads, audited fail-closed DB-seed
+  applies, and Ed-dispatched Render production workflow. Production reconciled
+  408 canonical material IDs plus 22 saved references, applied the 201-row ISO
+  10456 µ dataset with zero unmatched targets, proved the repeat no-op, and
+  verified ASHRAE films still load after guarded legacy-key deletion.
 - `agent-access-kit` - Shipped user-scoped revocable machine credentials,
   browser-approved device login, account token management, a generic Dropbox
   null-marker bootstrap, public `bldgtyp` Claude plugin 0.1.1, and generated

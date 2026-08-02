@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 delivered; Phase 4 published; production apply
-  and remaining Phase 3 live cutover remain
+UPDATED: 2026-08-02
+STATUS: Complete — all four phases and all 12 acceptance criteria verified
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Contract for the licensed-data pipeline — the private `ph-navigator-data` source
   repo, its CI publish path to R2, and the PHN-side `datasets` feature
@@ -285,11 +285,15 @@ cache reset or API restart, and the runbook says which.
 | **1** | Bootstrap `ph-navigator-data`: layout, `manifest.json` + invariant checks, standalone publisher, CI (PR validate / merge publish), first dataset = `ashrae-surface-films` (payload identical to what's live), full drill against local MinIO. | licensed data has a reviewed, versioned home |
 | **2** | PHN `datasets` feature: manifest store + integrity checks, registry, `applied_datasets` migration, `datasets_status` / `datasets_apply` CLIs + make targets, film loader migrated to manifest-pinned keys (legacy-key fallback kept). | PHN can read, apply, and audit pipeline datasets |
 | **3** | Production: "Apply Production Datasets" workflow → Render one-off job (D-5 confirmed by Ed here); films cutover published via pipeline to prod R2, verified, legacy key deleted; `seed_surface_films.py` deprecated; `context/DATASET_PIPELINE.md` runbook + pointers from `DATA_STORAGE.md` / `PRODUCTION_DEPLOYMENT.md` / `ENVIRONMENT.md`. | the manual shell path is gone |
-| **4** | First `db_seed` dataset end-to-end: `iso10456-vapor-mu` authored in `ph-navigator-data`, applied locally through the full path (publish → status → apply → idempotent re-apply). Joint milestone with `assembly-condensation-risk` Phase 1, which owns the µ *content* and the catalog columns it lands in. Production apply waits for that feature's own schedule. | the pattern is proven by its first real consumer |
+| **4** | First `db_seed` dataset end-to-end: `iso10456-vapor-mu` authored in `ph-navigator-data`, applied locally and in production through the full path (publish → status → apply → idempotent re-apply). Joint milestone with `assembly-condensation-risk` Phase 1, which owns the µ *content* and the catalog columns it lands in. | the pattern is proven by its first real consumer |
 
 Phases 1–2 are independently valuable; the feature can pause after either.
 
 ## 10. Acceptance criteria
+
+All 12 criteria passed by 2026-08-02. Production evidence is recorded in
+`STATUS.md`; the durable operator contract lives in
+`context/DATASET_PIPELINE.md`.
 
 1. No licensed values exist in this repository — including test fixtures —
    and the entire publish path (values, schemas, publisher, CI) lives outside

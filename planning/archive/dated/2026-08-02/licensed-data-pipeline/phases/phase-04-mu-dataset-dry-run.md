@@ -1,13 +1,12 @@
 ---
 DATE: 2026-07-28
-UPDATED: 2026-07-29 — local drill and private production publish complete
+UPDATED: 2026-08-02 — production apply and no-op verification complete
 TIME: 12:05 EDT
-STATUS: Complete through publish — private payload, applier,
-  idempotency/change/rollback drill, unmatched reporting, and manifest-last
-  production publish pass; production DB apply remains held
+STATUS: Complete — local drill, production identity reconciliation, guarded
+  production apply, and no-op re-dispatch all passed
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 4 — prove the `db_seed` kind end-to-end with the ISO 10456 µ
-  dataset, locally.
+  dataset, locally and in production.
 RELATED: ../PRD.md §9, ../decisions.md §D-10,
   planning/archive/dated/2026-07-29/assembly-condensation-risk/PRD.md §4/§8
 ---
@@ -16,13 +15,12 @@ RELATED: ../PRD.md §9, ../decisions.md §D-10,
 
 ## Goal
 
-The pipeline's `db_seed` path proven by its first real consumer, entirely
-locally. **Ownership split:** the µ *content* (which categories/materials get
+The pipeline's `db_seed` path proven by its first real consumer, locally and
+in production. **Ownership split:** the µ *content* (which categories/materials get
 which values, the composite-stud policy §D-12 over there) and the catalog
 columns it lands in belong to `assembly-condensation-risk` (its Phases 0–1).
 This phase owns the *mechanics*: dataset authoring shape, applier, and the
-end-to-end drill. Production apply happens on that feature's schedule, via
-the Phase 3 workflow.
+end-to-end drill. Production activation used the Phase 3 workflow.
 
 ## Prerequisites
 
@@ -33,7 +31,7 @@ the Phase 3 workflow.
 - Condensation Phase 0's coverage probe has settled which rows get seeded
   values (including the §D-12 composite-stud call).
 
-## Result — 2026-07-29
+## Result — 2026-07-29 through 2026-08-02
 
 - The condensation feature supplied its accepted 201-row stable-id roster,
   both catalog columns, and the composite cavity/base-family policy.
@@ -48,8 +46,13 @@ the Phase 3 workflow.
   rollback to reviewed v1. Final `make datasets-status` reports no mismatches.
 - Private PR [#2](https://github.com/bldgtyp/ph-navigator-data/pull/2)
   squash-merged as `3a171f6`; production publish run `30480924508` passed and
-  swapped the manifest last. The production DB apply remains on Ed's manual
-  schedule through the Phase 3 workflow after the PHN deploy.
+  swapped the manifest last.
+- The first production dispatch safely exposed the catalog identity mismatch:
+  0/201 targets matched and the fail-closed transaction wrote neither catalog
+  values nor audit state. A reviewed one-time migration reconciled all 408
+  canonical material IDs and 22 saved references. The next dispatch matched
+  and updated all 201 targets (`unmatched=0`, workflow `30756751865`); the
+  repeat dispatch returned `no_pending` (workflow `30756804033`).
 
 ## Work
 
@@ -69,7 +72,7 @@ the Phase 3 workflow.
 
 ## Out of scope
 
-Production apply; any UI; the condensation engine (its Phase 2).
+Any UI; the condensation engine (its Phase 2).
 
 ## Verification
 

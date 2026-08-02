@@ -1,9 +1,9 @@
 ---
 DATE: 2026-07-28
 UPDATED: 2026-08-02
-TIME: 12:05 EDT
-STATUS: Active — Phases 1–3 delivered; Phase 4 complete locally; Phase 3 live
-  cutover and the production µ apply remain held; private µ publish complete
+TIME: 12:45 EDT
+STATUS: Complete — all phases deployed, production-verified, and ready for
+  archive
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the licensed-data pipeline.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -13,23 +13,21 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 1–3 are delivered to their repositories' `main` branches. Private
-PR [#1](https://github.com/bldgtyp/ph-navigator-data/pull/1) squash-merged as
-`8d4baa1`, and its hosted production publish succeeded. PHN contains the
-dataset registry/apply machinery and Phase 3 workflow/runbook. Phase 3 is not
-live-complete: PHN Actions configuration, deployment, production verification,
-the no-op dispatch, and legacy-key deletion remain. Phase 4's private payload,
-local drill, and manifest-last production publish are complete; only its
-production DB apply remains held.**
+**Complete 2026-08-02.** Both repositories' work is merged; PHN is deployed at
+`87255adb`. Production applies are explicit Ed-dispatched Render one-off jobs,
+licensed runtime data loads only through manifest-pinned immutable objects,
+and DB-seed applies are audited, idempotent, and fail closed on any unmatched
+target. The initial ISO 10456 µ dataset is applied to all 201 intended rows,
+the repeat workflow is a no-op, and the retired ASHRAE legacy object is absent
+while manifest-backed v1 continues to load.
 
-Closeout resumed 2026-08-02. Production API/web are deployed at current main
-`ffcbf01c`; Actions variable `RENDER_API_SERVICE_ID` is configured. A
-fail-closed apply guard is implemented on
-`codex/licensed-data-pipeline-closeout`: any unmatched target now rolls back
-all target writes and prevents the audit row, closing the partial-apply gap
-before the first production dispatch. `RENDER_API_KEY`, merge/deploy of that
-guard, production apply/no-op evidence, the films read proof, and legacy-key
-deletion remain.
+The first production apply was a useful guard proof: all 201 targets were
+unmatched because production still carried 408 pre-idempotency random catalog
+IDs. The transaction rolled back every target change and wrote no audit row.
+A reviewed one-time reconciliation then remapped all 408 canonical catalog
+rows and the 22 saved material references to deterministic IDs, after which
+the dataset applied 201/201. No name-based fallback was added to the permanent
+applier contract.
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -137,11 +135,9 @@ Verification so far:
 
 ## Next step
 
-Finish the fail-closed apply guard, merge and deploy it, then run the first
-production apply. The required result is `matched=201`, `unmatched=0`; a second
-dispatch must report `No pending db-seed datasets.` Finish the independent
-manifest-only films proof before deleting the retired legacy object. The local
-Phase 4 drill and both private publishes are complete.
+None for v1. Future licensed datasets follow `context/DATASET_PIPELINE.md`.
+D-11 and Q-3 remain explicitly non-blocking policy discussions for later
+dataset inventory work.
 
 ## Blockers
 
@@ -150,9 +146,9 @@ Phase 4 drill and both private publishes are complete.
 | ~~Q-1 repo name + repo creation~~ | ✅ **Done 2026-07-28** — `bldgtyp/ph-navigator-data` created, infra committed (`4321620`). |
 | ~~R2 write token → repo Actions secrets~~ | ✅ **Done 2026-07-28** — token scoped to `ph-navigator-prod`, secrets + `R2_BUCKET` set, "Check R2 Credentials" workflow green. |
 | ~~Q-2 apply-trigger confirmation (§D-5)~~ | ✅ Resolved — Ed-dispatched GitHub Actions → Render one-off job. |
-| Phase 3 production cutover | Private publish and PHN merge are complete. `RENDER_API_SERVICE_ID` is configured; Actions secret `RENDER_API_KEY`, deploy of the fail-closed guard, manifest-only verification, no-op dispatch, and legacy R2-key deletion remain. |
-| Phase 4 production apply | Local payload/applier/drill and private PR #2 publication are complete. Production DB apply waits for the fail-closed guard to merge/deploy and Ed's manual dispatch. |
-| ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Production identity parity is intentionally enforced at apply time: anything other than 201/201 matches aborts and rolls back without audit state. |
+| ~~Phase 3 production cutover~~ | ✅ **Done 2026-08-02** — Actions config, deploy, manifest-only proof, exact-key deletion, and post-delete proof passed. |
+| ~~Phase 4 production apply~~ | ✅ **Done 2026-08-02** — 201/201 matched after the reviewed identity reconciliation; the repeat workflow returned `no_pending`. |
+| ~~`catalog-seed-idempotency` interaction (§D-10)~~ | ✅ **Resolved 2026-08-02** — 408 canonical IDs and 22 saved references reconciled atomically; fail-closed behavior proved before the correction. |
 
 ## Verification
 
@@ -162,11 +158,21 @@ Phase gates:
   validation and main-branch publication also passed.
 - Phase 2: focused tests, local operator/runtime drills, `make format`, and
   full `PYTEST_WORKERS=0 make ci` passed 2026-07-28.
-- Phase 3: code/docs/focused tests are on `main`, and films v1 is published.
-  PHN configuration/deploy, manifest-only production verification,
-  legacy-key deletion, and no-pending workflow dispatch remain.
+- Phase 3: code/docs/focused tests are on `main`; films v1 is published; PHN
+  deploy `30756462594` passed. Production loaded manifest-backed films before
+  and after exact-key deletion. Private retirement dry-run `30757155794` and
+  deletion run `30757191796` passed.
 - Phase 4: local path passed 2026-07-29, including the private validation,
   deliberately unmatched precondition, 201/201 stable-id match, idempotent
   re-apply, one-row v2 update, rollback to reviewed v1, and final clean status.
   Private PR #2 squash-merged as `3a171f6`, and production publish run
-  `30480924508` passed. Production DB apply remains held.
+  `30480924508` passed. The production apply run `30756751865` matched and
+  updated 201/201 with `unmatched=0`; repeat run `30756804033` returned
+  `no_pending`. Final production audit found one matching `applied_datasets`
+  row, 22/22 saved material references resolved, and no orphan references.
+- Closeout guard/reconciliation changes passed full CI before merge: backend
+  `1771 passed, 7 skipped`; frontend `258` files / `2371` tests plus the
+  production build. PHN PRs
+  [#53](https://github.com/bldgtyp/ph-navigator-v2/pull/53) and
+  [#54](https://github.com/bldgtyp/ph-navigator-v2/pull/54) merged as
+  `5f91c55` and `87255adb`.
