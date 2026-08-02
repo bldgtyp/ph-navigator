@@ -11,7 +11,7 @@ from psycopg import Connection
 
 from database import transaction
 from features.datasets import repository
-from features.datasets.apply import apply_all_pending, apply_dataset
+from features.datasets.apply import DatasetApplyError, apply_all_pending, apply_dataset
 from features.datasets.manifest import MANIFEST_KEY, DatasetManifestStore
 from features.datasets.models import ApplyReport
 from features.datasets.registry import DatasetSpec
@@ -107,6 +107,68 @@ def test_apply_is_idempotent_and_keeps_one_audit_row() -> None:
     assert second.report.updated == 0
     assert second.report.unchanged == 1
     assert row == {"count": 1, "applied_by": "second-run"}
+
+
+def test_apply_rolls_back_target_writes_and_audit_when_rows_are_unmatched(
+    clean_catalog_tables: None,
+) -> None:
+    material_id = "rec-synthetic-rollback"
+
+    def partially_apply(conn: Connection[Any], payload: object) -> ApplyReport:
+        del payload
+        conn.execute(
+            """
+            UPDATE catalog_materials
+            SET vapor_diffusion_resistance_mu = 7.5
+            WHERE id = %(id)s
+            """,
+            {"id": material_id},
+        )
+        return ApplyReport(
+            matched=1,
+            updated=1,
+            unmatched=("rec-intentionally-unmatched",),
+        )
+
+    registry = {
+        _SLUG: DatasetSpec(
+            slug=_SLUG,
+            kind="db_seed",
+            parse=lambda payload: json.loads(payload),
+            apply=partially_apply,
+        )
+    }
+    with transaction() as conn:
+        conn.execute(
+            """
+            INSERT INTO catalog_materials (id, name, category)
+            VALUES (%(id)s, 'Synthetic rollback target', 'insulation')
+            """,
+            {"id": material_id},
+        )
+        conn.execute("DELETE FROM applied_datasets WHERE slug = %(slug)s", {"slug": _SLUG})
+
+        with pytest.raises(DatasetApplyError, match="1 targets were unmatched; the apply was rolled back"):
+            apply_dataset(
+                conn,
+                slug=_SLUG,
+                applied_by="test",
+                store=_store(),
+                registry=registry,
+            )
+
+        material = conn.execute(
+            """
+            SELECT vapor_diffusion_resistance_mu
+            FROM catalog_materials
+            WHERE id = %(id)s
+            """,
+            {"id": material_id},
+        ).fetchone()
+        audit = repository.latest_applied(conn, _SLUG)
+
+    assert material == {"vapor_diffusion_resistance_mu": None}
+    assert audit is None
 
 
 def test_all_pending_skips_unknown_manifest_slugs() -> None:

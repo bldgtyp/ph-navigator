@@ -135,8 +135,9 @@ Normal production order for a DB-seed dataset:
 3. Confirm the deployed API SHA is the tip of `main`.
 4. GitHub → Actions → **Apply Production Datasets** → **Run workflow** on
    `main`.
-5. Require a green Render job. Review every unmatched count; `unmatched > 0`
-   is a data/catalog reconciliation issue even though the job completed.
+5. Require a green Render job. Any `unmatched > 0` result fails and rolls back
+   the entire dataset apply, including its audit row; reconcile the stable
+   target identities before rerunning.
 6. Re-run the workflow when useful: with nothing pending it reports
    `No pending db-seed datasets.` and writes nothing.
 
@@ -203,7 +204,7 @@ restore remains Ed's action.
 | Manifest points to a missing object or bad checksum | Hard stop; repair or revert the private manifest |
 | Apply workflow says deployed SHA differs from `main` | Run **Deploy Production** first |
 | Render job fails | Inspect the job link/logs in Actions; fix code/data, deploy if needed, rerun |
-| `unmatched > 0` | Reconcile stable target row identities; do not silently accept missing rows |
+| `unmatched > 0` | The apply rolls back without an audit row; reconcile stable target identities and rerun |
 | Runtime dataset still shows old version | Restart/cache-reset API processes, then rerun status |
 
 The production publisher holds write credentials. PHN and its one-off apply

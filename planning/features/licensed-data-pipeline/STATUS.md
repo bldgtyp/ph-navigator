@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-28
-UPDATED: 2026-07-29
+UPDATED: 2026-08-02
 TIME: 12:05 EDT
 STATUS: Active — Phases 1–3 delivered; Phase 4 complete locally; Phase 3 live
   cutover and the production µ apply remain held; private µ publish complete
@@ -21,6 +21,15 @@ live-complete: PHN Actions configuration, deployment, production verification,
 the no-op dispatch, and legacy-key deletion remain. Phase 4's private payload,
 local drill, and manifest-last production publish are complete; only its
 production DB apply remains held.**
+
+Closeout resumed 2026-08-02. Production API/web are deployed at current main
+`ffcbf01c`; Actions variable `RENDER_API_SERVICE_ID` is configured. A
+fail-closed apply guard is implemented on
+`codex/licensed-data-pipeline-closeout`: any unmatched target now rolls back
+all target writes and prevents the audit row, closing the partial-apply gap
+before the first production dispatch. `RENDER_API_KEY`, merge/deploy of that
+guard, production apply/no-op evidence, the films read proof, and legacy-key
+deletion remain.
 
 Done 2026-07-28:
 - Options analysis (private-git→CI→R2 vs tooling-only vs direct-git-consume)
@@ -128,17 +137,11 @@ Verification so far:
 
 ## Next step
 
-**Two independent resumptions remain:**
-
-1. Finish the remaining Phase 3 PHN-side live cutover below.
-2. Apply the published production `iso10456-vapor-mu` dataset through the
-   Phase 3 workflow after the application version carrying its catalog columns
-   is deployed. The local Phase 4 drill and private publish are complete.
-
-Before Phase 3 can close live: configure Actions secret `RENDER_API_KEY` and
-variable `RENDER_API_SERVICE_ID`; explicitly deploy PHN; verify the
-manifest-only films path; dispatch the no-pending drill; delete the retired
-legacy object. The private data merge/publish and PHN merge are complete.
+Finish the fail-closed apply guard, merge and deploy it, then run the first
+production apply. The required result is `matched=201`, `unmatched=0`; a second
+dispatch must report `No pending db-seed datasets.` Finish the independent
+manifest-only films proof before deleting the retired legacy object. The local
+Phase 4 drill and both private publishes are complete.
 
 ## Blockers
 
@@ -147,9 +150,9 @@ legacy object. The private data merge/publish and PHN merge are complete.
 | ~~Q-1 repo name + repo creation~~ | ✅ **Done 2026-07-28** — `bldgtyp/ph-navigator-data` created, infra committed (`4321620`). |
 | ~~R2 write token → repo Actions secrets~~ | ✅ **Done 2026-07-28** — token scoped to `ph-navigator-prod`, secrets + `R2_BUCKET` set, "Check R2 Credentials" workflow green. |
 | ~~Q-2 apply-trigger confirmation (§D-5)~~ | ✅ Resolved — Ed-dispatched GitHub Actions → Render one-off job. |
-| Phase 3 production cutover | Private publish and PHN merge are complete. Actions `RENDER_API_KEY` / `RENDER_API_SERVICE_ID` are absent; explicit deploy, manifest-only verification, no-op dispatch, and legacy R2-key deletion remain. |
-| Phase 4 production apply | Local payload/applier/drill and private PR #2 publication are complete. Production DB apply waits for Ed's manual dispatch after a deployed PHN version carries the two catalog columns. |
-| ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Named risk for the Phase 4 µ applier (stable catalog row identity), not a blocker for Phases 1–3. |
+| Phase 3 production cutover | Private publish and PHN merge are complete. `RENDER_API_SERVICE_ID` is configured; Actions secret `RENDER_API_KEY`, deploy of the fail-closed guard, manifest-only verification, no-op dispatch, and legacy R2-key deletion remain. |
+| Phase 4 production apply | Local payload/applier/drill and private PR #2 publication are complete. Production DB apply waits for the fail-closed guard to merge/deploy and Ed's manual dispatch. |
+| ⚠️ `catalog-seed-idempotency` interaction (§D-10) | Production identity parity is intentionally enforced at apply time: anything other than 201/201 matches aborts and rolls back without audit state. |
 
 ## Verification
 

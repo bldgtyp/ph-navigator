@@ -154,8 +154,9 @@ requires a reliable match key. The completed
 `planning/archive/dated/2026-07-28/catalog-seed-idempotency/` refactor gives
 every canonical seed row a deterministic id derived from catalog kind + name.
 The µ dataset must key on that same identity (and say so in its
-`PROVENANCE.md`); the former row-identity risk is resolved, while the applier
-still needs to report unmatched rows explicitly.
+`PROVENANCE.md`). The orchestrator treats any unmatched target as an atomicity
+failure: target writes and the audit row roll back together, so a partial apply
+cannot be recorded as complete.
 
 ## Part 3 — Edge cases
 
@@ -170,7 +171,7 @@ still needs to report unmatched rows explicitly.
 | E-7 | Fresh dev MinIO is empty | Boots and passes CI with typed-unavailable states; `make datasets-publish-local` is the fix, documented where the film-store unavailability is. |
 | E-8 | R2 outage at runtime | `runtime_read` keeps serving its in-process cache; a cold start surfaces the typed unavailable error. Same posture as today's film store. |
 | E-9 | Concurrent applies | Workflow `concurrency` serializes production; `UNIQUE(slug, version)` upsert makes a race harmless anyway. |
-| E-10 | `db_seed` target rows missing/renamed at apply time | Applier reports per-row outcomes in its `ApplyReport` (matched / updated / unmatched); unmatched rows are a loud warning, not a silent skip. See D-10. |
+| E-10 | `db_seed` target rows missing/renamed at apply time | Applier reports per-row outcomes in its `ApplyReport` (matched / updated / unmatched); the orchestrator aborts and rolls back target writes plus audit state when any row is unmatched. See D-10. |
 | E-11 | Token leak from `ph-navigator-data` CI | Bucket-scoped; rotate in Cloudflare + repo secret. Damage bounded to bad publishes, which the manifest history makes enumerable and revertible. |
 | E-12 | `ph-navigator-data` accidentally made public | Process guard only (README warning, repo description, private-forever policy); no technical guard exists. The values would then be a license violation to distribute — same posture as the Dropbox masters today, with better auditability. |
 | E-13 | Very large future datasets (climate-scale) | Out of v1 scope (D-8). The key layout already accommodates them; revisit CI limits and git-LFS then. |
