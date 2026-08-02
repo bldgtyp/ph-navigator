@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-08-01
-TIME: 13:19 EDT
+DATE: 2026-08-02
+TIME: 10:27 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature                                | State                                                                                                                                                                                                                                                                                                                                                                                                                     | Current pointer                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Agent Access Kit                       | Active — Phases 01–05 complete: user-scoped tokens, device flow, Dropbox markers, public Claude plugin, and globally installed/generated Codex parity; Phase 06 production Linde acceptance is blocked on explicit merge/deploy approval and Ed's presence | `features/agent-access-kit/STATUS.md`                                    |
+| Agent Access Kit                       | Complete / archived — user-scoped tokens, browser-approved device login, Dropbox null-marker bootstrap, public Claude plugin 0.1.1, and generated Codex parity shipped; production Claude/Codex cold+warm reads, Linde draft/diff/discard, template bootstrap, and cross-user scope regression all passed | `archive/dated/2026-08-02/agent-access-kit/STATUS.md`                    |
 | Admin All-Projects Dashboard           | Complete / archived — `projects.access.all` holders see every non-deleted project grouped by owner; ordinary users remain owner-filtered and destructive controls remain owner-only; backend/frontend tests, browser acceptance, Graphify, simplify, docs-pass, and full CI passed | `archive/dated/2026-08-01/admin-all-projects-dashboard/STATUS.md`        |
 | Project Ownership Enforcement         | Complete / archived — signed-in project reach now requires ownership or `projects.access.all`; REST and MCP surfaces return `404 project_not_found` to strangers, anonymous read-only viewer behavior is preserved, and the full route inventory, browser/MCP smoke, Graphify, simplify, docs-pass, and CI gates passed | `archive/dated/2026-08-01/project-ownership-enforcement/STATUS.md`       |
 | Aperture U-Value Detail Report         | Complete / archived — all six phases verified; exact-parity report, desktop-Excel-verified formula XLSX, SI/IP detail page, saved-version download guards, durable docs, Graphify, and full CI complete | `archive/dated/2026-07-30/aperture-u-value-report/STATUS.md`             |

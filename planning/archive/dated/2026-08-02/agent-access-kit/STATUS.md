@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-01
-TIME: 13:19 EDT
-STATUS: Active — Phases 01–05 complete; Phase 06 blocked on production approval
+DATE: 2026-08-02
+TIME: 10:27 EDT
+STATUS: Complete — deployed and all Phase 06 acceptance checks passed
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Current state, next step, and blockers for the agent-access-kit.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
@@ -11,7 +11,7 @@ RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 
 ## State
 
-**Phases 01–05 complete on `codex/agent-access-kit`.** User-scoped bearer tokens
+**All six phases are complete on production.** User-scoped bearer tokens
 now share `mcp_tokens` with project tokens (`project_id IS NULL` identifies the
 user principal), default to a 365-day expiry, and expose account-level
 issue/list/revoke REST routes plus the **My agent tokens** list/revoke page.
@@ -31,7 +31,7 @@ the exact instruction copies and a stamped production project id. The template
 contains no client name, project id, or credential material.
 
 The public `bldgtyp/claude-plugins` marketplace now publishes plugin version
-`0.1.0`: the `phn` MCP bridge, `/bldgtyp:phn` workflow,
+`0.1.1`: the `phn` MCP bridge, `/bldgtyp:phn` workflow,
 `/bldgtyp:phn-login`, and `/bldgtyp:phn-status`. A single config plus canonical
 workflow/project-resolution sources generate Claude, Codex, and project-folder
 outputs; a vendored `context/mcp.md` snapshot makes public CI deterministic.
@@ -43,8 +43,8 @@ Codex now uses that same bridge from a managed global `mcp_servers.phn` entry
 and the generated workflow from one marked section in `~/.codex/AGENTS.md`.
 The installer activates complete content-hashed runtime releases, preserves
 unmanaged global content, injects an absolute `phn-login` path, and retains one
-fallback release. Ed's installation is live and a fresh local Codex session
-successfully called `phn/list_projects`.
+fallback release. Ed's installation is live; production cold/warm sessions in
+both Claude and Codex successfully resolved and read Linde.
 
 **Amended 2026-08-01 (cross-plan review).** A conflict with this packet's own
 dependency was found and resolved: three places specified `403` / `forbidden`
@@ -63,18 +63,17 @@ device-approval copy and to whether admins should mint 365-day tokens (§D-11).
 
 ## Next step
 
-With Ed's explicit approval, merge/deploy the PH-Navigator changes and run
-Phase 06's six production/local acceptance checks while Ed is present for the
-approval clicks and Linde draft-only write round-trip. Do not deploy or touch
-the live Linde draft without that approval.
+None for this packet. It is archived under
+`planning/archive/dated/2026-08-02/agent-access-kit/`. Ed revoked all three
+acceptance credentials after testing, and the stale local credential file was
+removed; the next production agent use will intentionally exercise a new
+browser approval.
 
 ## Dependency status
 
-- Phase 01 dependency is merged on `main`; Phase 01 is implemented and locally
-  verified.
-- Phases 02–05 are complete and locally verified. Phase 06 is blocked on an
-  explicit PH-Navigator production merge/deploy decision and Ed's presence for
-  the approval/live-client checks.
+- The Phase 01 ownership-enforcement dependency is complete and archived.
+- Phases 01–05 are merged on `main`; Phase 06 passed against deployed
+  production commit `1928562d436355e6000366766a78245cbf29d9b2`.
 
 ## Open questions for Ed
 
@@ -138,7 +137,8 @@ Phase 04 evidence:
   Its temporary user token was revoked after the smoke.
 - Canonical generation now owns the plugin skill, Codex AGENTS section, and
   both Dropbox instruction templates; exact-file comparison passed after sync.
-- Full production/Linde acceptance remains held for Phase 06 after deployment.
+- Full production/Linde acceptance was deliberately held for Phase 06 and has
+  now passed.
 
 Phase 05 evidence:
 
@@ -155,15 +155,22 @@ Phase 05 evidence:
   `-m gpt-5.5` and explicit local endpoint overrides, called
   `phn/list_projects` and returned the isolated fixture; its temporary user
   token was revoked. No production or Linde mutation occurred. The configured
-  `gpt-5.6-sol` default requires a newer CLI, so Phase 06 must upgrade Codex or
-  explicitly select a supported model.
+  `gpt-5.6-sol` default required a newer CLI; Phase 06 selected supported model
+  `gpt-5.5` for its acceptance runs.
 
-Per PRD §7. The two easiest to skip and most important:
+Phase 06 evidence:
 
-- Criterion 3 (write round-trip on Linde via draft + `discard_draft`) — the
-  remote write path with a user token is the part nothing exercises today.
-- Criterion 6 (cross-user scope regression) — a user token must not become a
-  bypass of ownership enforcement; test rides on that refactor's fixtures.
+- All six production/local runs passed; detailed transcripts, exact ids/etags,
+  deployment/plugin run evidence, and cleanup outcomes are in
+  `phases/phase-06-linde-e2e.md`.
+- The Linde draft/diff/discard run left the saved version byte-identical and no
+  draft; Claude and Codex cold/warm reads both passed.
+- `cd backend && uv run pytest
+  tests/test_mcp.py::test_user_token_lists_and_round_trips_only_issuer_projects
+  -q` — `1 passed in 2.12s`, including cross-user `project_not_found` /
+  `recoverability: "refresh"`.
+- Ed revoked all three production acceptance credentials. Both backup files
+  and the now-stale shared credential file were permanently removed.
 
 ## Dependents / dependencies
 

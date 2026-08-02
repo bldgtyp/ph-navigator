@@ -64,7 +64,7 @@ equivalent is verified here; production remains the explicit Phase-06 gate.
   local agent-browser fixture. Its temporary user token was revoked.
 - The first attempt using Ed's configured `gpt-5.6-sol` default was rejected by
   Codex 0.139 as requiring a newer CLI. That is outside the MCP install, but
-  Phase 06 must upgrade Codex or select a supported model before its Codex run.
+  Phase 06 selected supported model `gpt-5.5` for its successful Codex runs.
 - The first read attempt encountered a closed local HTTP connection; Codex
   retried the known-safe read and succeeded. The bridge correctly did not
   auto-replay the indeterminate POST.

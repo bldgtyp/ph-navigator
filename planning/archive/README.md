@@ -3,6 +3,17 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-08-02
+
+- `agent-access-kit` - Shipped user-scoped revocable machine credentials,
+  browser-approved device login, account token management, a generic Dropbox
+  null-marker bootstrap, public `bldgtyp` Claude plugin 0.1.1, and generated
+  global Codex parity. Production acceptance passed Claude and Codex cold/warm
+  reads, a Linde draft/diff/discard round-trip with unchanged saved etag, local
+  template stamping, and cross-user `project_not_found` isolation. PH-Navigator
+  deployment run `30750524962` and public plugin CI run `30751238058` passed;
+  all acceptance credentials were revoked after verification.
+
 ## 2026-08-01
 
 - `admin-all-projects-dashboard` - Added a capability-gated all-project

@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-01
-TIME: 13:19 EDT
-STATUS: Active — Phases 01–05 complete; Phase 06 awaits production approval
+DATE: 2026-08-02
+TIME: 10:25 EDT
+STATUS: Complete — deployed, production-verified, and ready to archive
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Router for the agent-access-kit feature — make PH-Navigator trivially
   usable by agents (Claude Code / Codex) launched in any BLDGTYP project folder.
@@ -52,7 +52,8 @@ Distribution and identity, not tools:
 
 ## Test case
 
-The **Linde Residence** project, end to end (`phases/phase-06-linde-e2e.md`):
+The **Linde Residence** end-to-end test completed on 2026-08-02
+(`phases/phase-06-linde-e2e.md`):
 
 - Dropbox folder: `/Users/em/Dropbox/bldgtyp/2524_Linde_Residence`
 - Production project: `https://www.ph-nav.com/projects/2f2b0cbd-19b7-41cb-9e38-72593c34d699`

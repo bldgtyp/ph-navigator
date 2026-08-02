@@ -56,12 +56,20 @@ It installs a dependency-free stdio bridge that connects to
 
 ### Install for Claude Code
 
-Requires Claude Code 2.1.203 or newer and Python 3.11 or newer:
+Requires Claude Code 2.1.203 or newer and Python 3.9 or newer. From a checkout
+of the public plugin repo, configure Claude's MCP startup window before
+installing the plugin:
 
 ```sh
+make configure-claude
 claude plugin marketplace add bldgtyp/claude-plugins --scope user
 claude plugin install bldgtyp@bldgtyp --scope user
 ```
+
+`make configure-claude` idempotently sets `MCP_TIMEOUT` to at least 660,000 ms
+in `~/.claude/settings.json`, preserving unrelated settings and file mode. The
+one-time machine setting lets Claude wait through PH-Navigator's 10-minute
+browser-approval grant; it is not per-session setup.
 
 Restart Claude Code or run `/reload-plugins`. The plugin provides:
 
@@ -204,6 +212,7 @@ browser-approved user credential.
 | --- | --- |
 | `phn-local` unavailable in this repo | Run `make agent-browser-ready`, then restart/reconnect the client. |
 | `phn` missing in Claude | Run `claude mcp list` / `claude mcp get phn`; install or reload the plugin. |
+| Claude stops `phn` while browser approval is pending | Run `make configure-claude` in the public plugin checkout, then restart Claude. |
 | `phn` missing in Codex | Re-run `make install-codex` in the public plugin repo, verify with `codex mcp get phn`, then restart Codex. |
 | Missing, expired, or revoked production credential | Let the bridge start device authorization, or use the explicit installed login workflow. |
 | `project_not_found` with `refresh` | Re-run `list_projects` and re-resolve `.phn.json`; do not infer a permission failure. |

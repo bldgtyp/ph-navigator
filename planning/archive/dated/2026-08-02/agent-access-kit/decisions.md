@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-01
-TIME: 08:41 EDT
-STATUS: Active
+DATE: 2026-08-02
+TIME: 10:25 EDT
+STATUS: Complete
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Accepted and rejected decisions for the agent-access-kit.
 RELATED: ./PRD.md, ./README.md
@@ -159,3 +159,17 @@ final activation write and AGENTS is rolled back if it fails. An existing
 unmanaged `phn` server is a hard error rather than an overwrite. The installed
 instructions contain the absolute release-local `phn-login` command, avoiding
 an implicit `PATH` dependency.
+
+## D-16 — Claude cold start gets an explicit machine timeout
+
+Production acceptance exposed two launcher assumptions that local sideload
+testing had not exercised: Claude's default 30-second MCP startup window is
+shorter than the 10-minute device grant, and the launcher can resolve macOS's
+system Python 3.9 instead of a newer shell Python. Public plugin `0.1.1`
+therefore supports Python 3.9 and adds `make configure-claude`, which
+idempotently raises `MCP_TIMEOUT` to at least 660,000 ms while preserving the
+rest of `~/.claude/settings.json`.
+
+The setting is machine-wide because it governs Claude's MCP process startup,
+not a PH-Navigator project. It is intentionally explicit during installation;
+the plugin does not silently rewrite Claude settings when it loads.

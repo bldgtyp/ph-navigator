@@ -138,9 +138,10 @@ Per PRD §5. The two that matter most and are easiest to skip:
 
 1. **`planning/archive/dated/2026-08-01/admin-all-projects-dashboard/`** —
    complete and archived using `PROJECT_ACCESS_ALL`.
-2. **`planning/features/agent-access-kit/`** Phase 01 (user-scoped MCP tokens)
-   — remains planned; its §D-6 gates on this refactor, and its cross-user tests
-   explicitly ride **this plan's Phase 1 fixtures**. Two consequences:
+2. **`planning/archive/dated/2026-08-02/agent-access-kit/`** Phase 01
+   (user-scoped MCP tokens) — completed; its §D-6 gated on this refactor, and
+   its cross-user tests explicitly ride **this plan's Phase 1 fixtures**. Two
+   consequences:
    - Phase 1's test file is a **published contract**, not private scaffolding.
      Name the fixtures deliberately and do not reshape them casually.
    - Its §D-14 now matches our §D-2 (`404 project_not_found` /
