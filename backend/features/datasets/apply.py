@@ -25,7 +25,12 @@ def apply_dataset(
     store: DatasetManifestStore,
     registry: Mapping[str, DatasetSpec] | None = None,
 ) -> DatasetApplyResult:
-    """Apply one published db-seed dataset and refresh its audit row."""
+    """Apply one complete db-seed dataset and refresh its audit row.
+
+    Each apply owns a savepoint so a target-identity mismatch rolls back any
+    writes performed before the applier discovered the unmatched rows. A
+    partial apply must never be recorded as the published version.
+    """
     specs = dataset_registry() if registry is None else registry
     spec = specs.get(slug)
     if spec is None:
@@ -34,16 +39,22 @@ def apply_dataset(
         raise DatasetApplyError(f"Dataset {slug!r} is not a db-seed dataset.")
     fetched = store.fetch(slug)
     parsed = spec.parse(fetched.payload)
-    repository.lock_dataset(conn, slug)
-    report = spec.apply(conn, parsed)
-    if not repository.record_applied(
-        conn,
-        slug=slug,
-        version=fetched.entry.version,
-        sha256=fetched.entry.sha256,
-        applied_by=applied_by,
-    ):
-        raise DatasetApplyError(f"Dataset {slug!r} version {fetched.entry.version!r} has conflicting audit state.")
+    with conn.transaction():
+        repository.lock_dataset(conn, slug)
+        report = spec.apply(conn, parsed)
+        if report.unmatched:
+            raise DatasetApplyError(
+                f"Dataset {slug!r} matched {report.matched} target rows but "
+                f"{len(report.unmatched)} targets were unmatched; the apply was rolled back."
+            )
+        if not repository.record_applied(
+            conn,
+            slug=slug,
+            version=fetched.entry.version,
+            sha256=fetched.entry.sha256,
+            applied_by=applied_by,
+        ):
+            raise DatasetApplyError(f"Dataset {slug!r} version {fetched.entry.version!r} has conflicting audit state.")
     return DatasetApplyResult(
         slug=slug,
         version=fetched.entry.version,
