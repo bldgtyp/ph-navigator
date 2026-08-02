@@ -12,7 +12,7 @@ import { expect, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
-import type { UnitSystem } from "../../../../lib/units";
+import { numberUnitsForType, type UnitSystem } from "../../../../lib/units";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
 import {
   emptyViewState,
@@ -44,6 +44,18 @@ import {
 } from "../../types";
 
 export const fetchMock = vi.fn();
+
+const HEAT_PUMP_POWER_FIELD_KEYS = new Set([
+  "heating_cap_kw_17f",
+  "heating_cap_kw_47f",
+  "cooling_cap_kw_95f",
+  "cooling_cap_kw",
+]);
+const HEAT_PUMP_POWER_UNITS = numberUnitsForType("power", {
+  mode: "fixed",
+  precision_si: 2,
+  precision_ip: 1,
+});
 
 export function renderPanel({
   slice = heatPumpsSlice(),
@@ -317,7 +329,7 @@ function tableFieldType(fieldDef: FieldDef): TableFieldDef["field_type"] {
 
 function tableFieldConfig(fieldDef: FieldDef): Record<string, unknown> {
   const config: Record<string, unknown> = {};
-  if (fieldDef.numberUnits) config.units = fieldDef.numberUnits;
+  if (HEAT_PUMP_POWER_FIELD_KEYS.has(fieldDef.field_key)) config.units = HEAT_PUMP_POWER_UNITS;
   if (fieldDef.linked_record_config) Object.assign(config, fieldDef.linked_record_config);
   return config;
 }
@@ -444,9 +456,9 @@ export function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"]
     install_type: "opt_standard",
     nominal_tons: 1.5,
     fan_speed_cfm: null,
-    cooling_btuh: 5.28,
-    heating_btuh_47f: 5.28,
-    heating_btuh_17f: null,
+    cooling_cap_kw: 5.28,
+    heating_cap_kw_47f: 5.28,
+    heating_cap_kw_17f: null,
     heating_cop: null,
     seer: null,
     eer: null,

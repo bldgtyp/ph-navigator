@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-02
-TIME: 12:00 EDT
-STATUS: Active — fixes proposed, not yet implemented
+TIME: 18:54 EDT
+STATUS: Complete — v9 implementation and verification passed; archive pending
 AUTHOR: Claude with Ed May (from the Linde 2524 mech-equipment session handoff)
 SCOPE: Make document field keys, backend field_def metadata, and display
   names agree about canonical units for heat-pump and pump fields, so no
@@ -10,6 +10,7 @@ SCOPE: Make document field keys, backend field_def metadata, and display
 RELATED:
   - ./PRD.md
   - ./STATUS.md
+  - ./decisions.md
   - ./archive/HANDOFF_2026-08-02.md
   - ../spec-status-value-unification/ (schema-bump precedent)
   - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
@@ -25,39 +26,28 @@ traps found during the Linde 2524 MCP mechanical-equipment update
 in the UI. Production data has been corrected; this refactor removes the traps
 from the app so it cannot recur.
 
-## The three work items
+## Implemented contract
 
-1. **Backend field_defs must carry units metadata** (MEDIUM, small) — the
-   typed heat-pump capacity fields ship `config: {}` in the document
-   field_defs; the units block (`HEAT_PUMP_POWER_UNITS`) exists only in
-   `frontend/src/features/equipment/heat-pumps/field-defs.ts`. API/MCP
-   consumers cannot discover canonical units. Emit the units block from the
-   backend registry and make the frontend consume it.
-2. **Stopgap display-name truth** (HIGH, trivial) — backend display names for
-   the indoor-equip capacity fields say "Cooling Btu/h" / "Heating Btu/h 47F"
-   while the stored values are kW
-   (`backend/features/project_document/tables/heat_pumps.py:151-158`).
-   Correct the names/descriptions immediately, ahead of any rename.
-3. **Field-key renames with one schema bump v8→v9** (HIGH, larger) —
-   `heat_pumps_indoor_equip.cooling_btuh` / `heating_btuh_47f` →
-   `cooling_cap_kw` / `heating_cap_kw_47f` (matching the outdoor-equip
-   convention already in the same registry: `heating_cap_kw_17f`,
-   `heating_cap_kw_47f`, `cooling_cap_kw_95f`); decide the fate of
-   `heating_btuh_17f` (genuinely Btu/h today) and `pumps.flow_gpm`
-   (canonically l/min). See `PRD.md` for the contract and the
-   value-conversion caveat on `heating_btuh_17f`.
+1. **Backend field_defs own units metadata** — all six outdoor/indoor
+   heat-pump capacity FieldDefs publish fixed power metadata with canonical kW
+   storage. The frontend consumes schema metadata through the shared FieldDef
+   path; no duplicate feature-owned power-units contract remains.
+2. **Names and keys are truthful** — indoor capacities are
+   `cooling_cap_kw`, `heating_cap_kw_47f`, and `heating_cap_kw_17f`; pump flow
+   is `flow_l_min`; display names omit embedded unit claims because the shared
+   unit pill reports the active unit system.
+3. **One forward-only v8→v9 migration** — the two already-kW capacity values
+   and already-l/min pump values pass through; legacy `heating_btuh_17f`
+   values convert to kW using `3412.141633 Btu/h per kW`. Persisted FieldDefs
+   are refreshed from the current registries in the same step.
 
-## Out of scope, tracked as dependency
+## Closeout
 
-The MCP transport bug found in the same session (idle keep-alive sockets
-closed by Cloudflare/Render → `Remote end closed connection without
-response` on the first calls after a pause) lives in the **claude-plugins**
-repo, not this one. It was fixed 2026-08-02 (uncommitted at handoff time):
-pooled sockets idle >10 s reopen proactively, plus one retry on a fresh
-socket only when the request provably never reached the server. Needs
-review, commit, plugin version bump + reinstall. Tracked in `STATUS.md`
-here only until it lands, because it gates safe agent-driven verification
-of this refactor against production.
+The implementation, simplify/docs-pass, Graphify update, full CI, Phius export,
+and mounted localhost API/UI verification are complete. This branch has not
+written to production project data. The packet is ready to move to the dated
+planning archive after its implementation commit. The MCP transport work
+described in the original handoff remains outside this repo.
 
 ## Read in this order
 

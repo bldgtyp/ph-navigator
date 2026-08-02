@@ -100,7 +100,7 @@ class PumpRow(RowWithCustomFields):
     `link`, `notes`, `datasheet_asset_ids`, `photo_asset_ids`, and
     the Documentation-page waiver flags. Mutable-type built-ins
     (`tag`, `use`, `manufacturer`, `model`, `volts`, `horse_power`,
-    `wattage`, `flow_gpm`, `runtime_khr_yr`) live in `custom_values`.
+    `wattage`, `flow_l_min`, `runtime_khr_yr`) live in `custom_values`.
     """
 
     model_config = ConfigDict(extra="forbid")

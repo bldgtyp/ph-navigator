@@ -1,23 +1,24 @@
 ---
 DATE: 2026-08-02
-TIME: 12:00 EDT
-STATUS: Active — contract drafted from verified code inventory, not yet implemented
+TIME: 18:54 EDT
+STATUS: Complete — contract implemented and verified
 AUTHOR: Claude with Ed May
 SCOPE: Contract for truthful field keys, backend-owned units metadata, and
   the v8→v9 rename migration for heat-pump and pump document fields.
 RELATED:
   - ./README.md
   - ./STATUS.md
+  - ./decisions.md
   - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
 ---
 
 # PRD — Units metadata & field-naming truthfulness
 
-## Problem
+## Historical problem (pre-v9)
 
 A field key, its display name, its backend field_def config, and its stored
-canonical unit can currently disagree. Three concrete instances (all verified
-in code 2026-08-02):
+canonical unit disagreed in three concrete pre-v9 instances (verified in code
+2026-08-02):
 
 | Field | Key says | Stores | Display name says | Units config |
 | --- | --- | --- | --- | --- |
@@ -25,9 +26,9 @@ in code 2026-08-02):
 | `heat_pumps_indoor_equip.heating_btuh_47f` | Btu/h | **kW** | "Heating Btu/h 47F" (backend) | frontend-only |
 | `pumps.flow_gpm` | GPM | **l/min** | — | `{ si_unit: "l_min", ip_unit: "gpm" }` |
 
-Adjacent trap: `heat_pumps_indoor_equip.heating_btuh_17f` genuinely IS Btu/h
-(plain number field, no units config) — sitting next to two misnamed kW
-fields, which is maximally confusing for any consumer reasoning from keys.
+The adjacent `heat_pumps_indoor_equip.heating_btuh_17f` field genuinely stored
+Btu/h as a plain number, making the mixed capacity contract especially unsafe
+for consumers reasoning from keys.
 
 The failure mode is real, not theoretical: on Linde 2524 an MCP agent wrote
 Btu/h magnitudes into the kW-canonical fields because the keys said `_btuh`.
@@ -41,19 +42,17 @@ Btu/h magnitudes into the kW-canonical fields because the keys said `_btuh`.
    `mode: "editable" | "fixed"` governs whether users may reconfigure a
    custom field's units, not storage.
 2. Plain number fields (no units config) store the unit named in their
-   label/key (e.g. `fan_speed_cfm` = CFM, `nominal_tons` = tons,
-   `heating_btuh_17f` = Btu/h).
+   label/key (e.g. `fan_speed_cfm` = CFM and `nominal_tons` = tons).
 
-## Contract (what must be true when this refactor completes)
+## Implemented contract
 
 ### C1 — Backend field_defs are the single source of units truth
 
 - Every built-in field with unit-toggled display emits its units block
   (`si_unit`, `ip_unit`, mode) from the backend field_def registry
   (`backend/features/project_document/tables/*.py`).
-- The frontend consumes that block instead of hardcoding
-  `HEAT_PUMP_POWER_UNITS` in
-  `frontend/src/features/equipment/heat-pumps/field-defs.ts`.
+- The frontend consumes that block through the shared FieldDef path; heat-pump
+  feature production code owns no parallel power-units definition.
 - An API/MCP consumer reading the document field_defs can always determine
   the canonical storage unit of a numeric field without reading frontend
   source.
@@ -67,14 +66,11 @@ Btu/h magnitudes into the kW-canonical fields because the keys said `_btuh`.
   (`heating_cap_kw_17f` / `heating_cap_kw_47f` / `cooling_cap_kw_95f`):
   - `cooling_btuh` → `cooling_cap_kw`
   - `heating_btuh_47f` → `heating_cap_kw_47f`
-- Open decision (record in a `decisions.md` when made):
-  - `heating_btuh_17f`: keep as truthful Btu/h plain number, or convert to
-    `heating_cap_kw_17f` with a units block for consistency. **Caveat:** this
-    is the one rename that is NOT value-passthrough — stored values are Btu/h
-    and would need conversion (÷ 3412.14) in the migration.
-  - `pumps.flow_gpm`: rename to `flow_l_min` (or `flow` + units block), or
-    accept and document. The units block here is already correct; only the
-    key lies.
+  - `heating_btuh_17f` → `heating_cap_kw_17f`; migrate the genuinely Btu/h
+    persisted value to canonical kW using the exact divisor `3412.141633`.
+  - `pumps.flow_gpm` → `flow_l_min`; values pass through because storage was
+    already canonical l/min.
+- These accepted implementation decisions are recorded in `decisions.md`.
 
 ### C3 — Migration is one schema bump, passthrough where possible
 
@@ -84,15 +80,16 @@ Btu/h magnitudes into the kW-canonical fields because the keys said `_btuh`.
   `docs/SCHEMA_VERSIONS.md` and the beta-schema-evolution
   schema-bump-checklist; rollout precedent:
   `planning/refactor/spec-status-value-unification/`).
-- kW-field renames are key-only value passthrough (values are already kW).
-  Only a `heating_btuh_17f` → kW conversion (if accepted) rewrites values.
+- Existing kW and l/min field renames are key-only value passthrough.
+  Only `heating_btuh_17f` → `heating_cap_kw_17f` rewrites values.
 - Historical versions remain readable; saved v8 bodies read back as v9.
 
-### C4 — Stopgap is deliverable independently
+### C4 — FieldDef truthfulness ships atomically with v9
 
-If the rename is deferred, the backend display names/descriptions for
-`cooling_btuh` and `heating_btuh_47f` are corrected to say kW so document
-consumers are not lied to. This plus C1 ships first (small, no migration).
+Backend display names/descriptions for all three indoor capacities say
+"Capacity" and state canonical kW storage. The schema fingerprint guard proved
+that the backend FieldDef metadata change could not ship independently without
+a schema bump, so this correction lands atomically with v9.
 
 ## Known touchpoints (inventory, verified 2026-08-02)
 
@@ -118,11 +115,14 @@ Frontend: `features/equipment/heat-pumps/` — `field-defs.ts`, `types.ts`,
 
 ## Verification
 
-- Backend + frontend test suites updated for new keys; migration test proves
-  v8 bodies read back as v9 with values unchanged (or correctly converted
-  for `heating_btuh_17f` if that rename is accepted).
+- Backend + frontend test suites updated for new keys; migration tests prove
+  v8 bodies read back as v9 with kW/l-min values unchanged and the legacy
+  `heating_btuh_17f` magnitude correctly converted to kW.
 - A document field_defs read (API or MCP `get_table`) shows the units block
   for every capacity field.
 - Phius export output unchanged in magnitude for a fixture project across
   the bump.
 - `make ci` green.
+
+Execution evidence and remaining gates live in `STATUS.md`; the full CI rerun
+and mounted browser verification are still pending.

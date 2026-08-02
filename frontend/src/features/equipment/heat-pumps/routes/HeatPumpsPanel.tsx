@@ -14,6 +14,8 @@ import { IndoorEquipTable } from "../components/IndoorEquipTable";
 import { IndoorUnitsTable } from "../components/IndoorUnitsTable";
 import { OutdoorEquipTable } from "../components/OutdoorEquipTable";
 import { OutdoorUnitsTable } from "../components/OutdoorUnitsTable";
+import { indoorEquipDefaultHiddenColumns } from "../indoor-equip-columns";
+import { indoorUnitDefaultHiddenColumns } from "../indoor-unit-columns";
 import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
@@ -34,6 +36,7 @@ import {
   type HeatPumpLeafKey,
 } from "./heatPumpLeafTabs";
 import { INCOMING_INDOOR_UNITS_FIELD_KEY, INCOMING_OUTDOOR_UNITS_FIELD_KEY } from "../link-fields";
+import { outdoorUnitDefaultHiddenColumns } from "../outdoor-unit-columns";
 
 const HEAT_PUMP_CONFLICT_MESSAGES = {
   activeRowConflict:
@@ -185,15 +188,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     replaceMutation: indoorEquipMutation,
     schemaMutation: indoorEquipSchemaMutation,
     refetch: indoorEquipQuery.refetch,
-    defaultHiddenColumns: [
-      "fan_speed_cfm",
-      "heating_btuh_17f",
-      "heating_cop",
-      "seer",
-      "eer",
-      "hspf",
-      "notes",
-    ],
+    defaultHiddenColumns: indoorEquipDefaultHiddenColumns,
   });
   const outdoorUnitsController = useSliceTableController({
     projectId: project.id,
@@ -213,7 +208,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     replaceMutation: outdoorUnitsMutation,
     schemaMutation: outdoorUnitsSchemaMutation,
     refetch: outdoorUnitsQuery.refetch,
-    defaultHiddenColumns: ["notes"],
+    defaultHiddenColumns: outdoorUnitDefaultHiddenColumns,
   });
   const indoorUnitsController = useSliceTableController({
     projectId: project.id,
@@ -233,7 +228,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     replaceMutation: indoorUnitsMutation,
     schemaMutation: indoorUnitsSchemaMutation,
     refetch: indoorUnitsQuery.refetch,
-    defaultHiddenColumns: ["notes"],
+    defaultHiddenColumns: indoorUnitDefaultHiddenColumns,
   });
 
   if (isLoading) {

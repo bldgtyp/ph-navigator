@@ -162,7 +162,7 @@ export function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
       volts: 120,
       horse_power: null,
       wattage: 45,
-      flow_gpm: null,
+      flow_l_min: null,
       runtime_khr_yr: null,
       status: STATUS_DEFAULT_OPTION_ID,
     },

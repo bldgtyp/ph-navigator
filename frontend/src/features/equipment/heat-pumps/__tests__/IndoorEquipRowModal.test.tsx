@@ -30,7 +30,7 @@ describe("IndoorEquipRowModal", () => {
   test("rejects negative numeric values", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn(async () => undefined);
-    const row = buildEmptyIndoorEquipRow({ tag: "IE-1", cooling_btuh: -1 });
+    const row = buildEmptyIndoorEquipRow({ tag: "IE-1", cooling_cap_kw: -1 });
 
     render(
       <IndoorEquipRowModal

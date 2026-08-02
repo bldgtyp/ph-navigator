@@ -10,6 +10,10 @@ from pydantic import ValidationError
 from features.heat_pumps.models import HeatPumpOutdoorEquipRow
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
+from features.project_document.tables.heat_pumps import (
+    INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+)
 from tests.project_document_helpers import empty_required_tables, field_defs_fingerprint
 from tests.status_field_helpers import (
     assert_status_field_def,
@@ -23,6 +27,14 @@ HPOE_2 = "hpoe_01HX0000000000000000000002"
 HPIE_1 = "hpie_01HX0000000000000000000001"
 HPOU_1 = "hpou_01HX0000000000000000000001"
 HPIU_1 = "hpiu_01HX0000000000000000000001"
+HEAT_PUMP_POWER_FIELD_KEYS = frozenset(
+    {
+        "heating_cap_kw_17f",
+        "heating_cap_kw_47f",
+        "cooling_cap_kw_95f",
+        "cooling_cap_kw",
+    }
+)
 
 
 def heat_pumps_url(project_id: object) -> str:
@@ -76,9 +88,9 @@ def indoor_equip(**overrides: object) -> dict[str, Any]:
         "install_type": None,
         "nominal_tons": 1.0,
         "fan_speed_cfm": 425.0,
-        "cooling_btuh": 3.52,
-        "heating_btuh_47f": 4.1,
-        "heating_btuh_17f": 10000.0,
+        "cooling_cap_kw": 3.52,
+        "heating_cap_kw_47f": 4.1,
+        "heating_cap_kw_17f": 2.93,
         "heating_cop": 3.1,
         "seer": None,
         "eer": None,
@@ -198,6 +210,49 @@ def test_document_defaults_heat_pump_arrays() -> None:
     assert document.tables.equipment.heat_pumps.outdoor_equip.field_defs[0].field_key == "record_id"
     assert document.tables.equipment.heat_pumps.indoor_units.rows == []
     assert document.tables.equipment.heat_pumps.indoor_units.field_defs[0].field_key == "record_id"
+
+
+def test_heat_pump_capacity_field_defs_publish_canonical_power_units() -> None:
+    expected_units = {
+        "mode": "fixed",
+        "unit_type": "power",
+        "si_unit": "kw",
+        "ip_unit": "kbtu_h",
+        "precision_si": 2,
+        "precision_ip": 1,
+    }
+    capacity_fields = [
+        field
+        for field in (*OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS, *INDOOR_EQUIP_BUILT_IN_FIELD_DEFS)
+        if field.field_key in HEAT_PUMP_POWER_FIELD_KEYS
+    ]
+
+    assert len(capacity_fields) == 6
+    assert {field.field_key for field in capacity_fields} == HEAT_PUMP_POWER_FIELD_KEYS
+    assert all(field.config["units"] == expected_units for field in capacity_fields)
+    indoor_fields = {field.field_key: field for field in INDOOR_EQUIP_BUILT_IN_FIELD_DEFS}
+    assert indoor_fields["cooling_cap_kw"].display_name == "Cooling Capacity"
+    assert indoor_fields["heating_cap_kw_47f"].display_name == "Heating Capacity 47F"
+    assert indoor_fields["heating_cap_kw_17f"].display_name == "Heating Capacity 17F"
+
+
+def test_heat_pump_capacity_units_are_discoverable_from_table_api(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    outdoor = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip"))
+    indoor = client.get(draft_table_url(project_id, version_id, "heat_pumps_indoor_equip"))
+
+    assert outdoor.status_code == 200
+    assert indoor.status_code == 200
+    for response, expected_count in ((outdoor, 3), (indoor, 3)):
+        capacity_fields = [
+            field for field in response.json()["field_defs"] if field["field_key"] in HEAT_PUMP_POWER_FIELD_KEYS
+        ]
+        assert len(capacity_fields) == expected_count
+        assert all(field["config"]["units"]["si_unit"] == "kw" for field in capacity_fields)
 
 
 def test_document_accepts_duplicate_heat_pump_tags() -> None:

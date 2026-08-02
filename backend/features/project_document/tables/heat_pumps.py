@@ -75,6 +75,20 @@ _OUTDOOR_UNITS_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "outdoor_unit
 _INDOOR_UNITS_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "indoor_units")
 
 
+def _fixed_power_config() -> dict[str, object]:
+    """Declare canonical kW storage with kBtu/h available for IP display."""
+    return {
+        "units": {
+            "mode": "fixed",
+            "unit_type": "power",
+            "si_unit": "kw",
+            "ip_unit": "kbtu_h",
+            "precision_si": 2,
+            "precision_ip": 1,
+        }
+    }
+
+
 OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(
         field_key=RESERVED_FIELD_KEY_RECORD_ID,
@@ -101,11 +115,13 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_key="heating_cap_kw_17f",
         display_name="Heating Capacity 17F",
         field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
     ),
     built_in_field_def(
         field_key="heating_cap_kw_47f",
         display_name="Heating Capacity 47F",
         field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
     ),
     built_in_field_def(
         field_key="heating_data_type",
@@ -119,6 +135,7 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_key="cooling_cap_kw_95f",
         display_name="Cooling Capacity 95F",
         field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
     ),
     built_in_field_def(
         field_key="cooling_data_type",
@@ -148,16 +165,26 @@ INDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="install_type", display_name="Install Type", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="nominal_tons", display_name="Nominal Tons", field_type=CustomFieldType.number),
     built_in_field_def(field_key="fan_speed_cfm", display_name="Fan Speed", field_type=CustomFieldType.number),
-    built_in_field_def(field_key="cooling_btuh", display_name="Cooling Btu/h", field_type=CustomFieldType.number),
     built_in_field_def(
-        field_key="heating_btuh_47f",
-        display_name="Heating Btu/h 47F",
+        field_key="cooling_cap_kw",
+        display_name="Cooling Capacity",
         field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
+        description="Cooling capacity stored canonically in kW.",
     ),
     built_in_field_def(
-        field_key="heating_btuh_17f",
-        display_name="Heating Btu/h 17F",
+        field_key="heating_cap_kw_47f",
+        display_name="Heating Capacity 47F",
         field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
+        description="Heating capacity at 47F stored canonically in kW.",
+    ),
+    built_in_field_def(
+        field_key="heating_cap_kw_17f",
+        display_name="Heating Capacity 17F",
+        field_type=CustomFieldType.number,
+        config=_fixed_power_config(),
+        description="Heating capacity at 17F stored canonically in kW.",
     ),
     built_in_field_def(field_key="heating_cop", display_name="Heating COP", field_type=CustomFieldType.number),
     built_in_field_def(field_key="seer", display_name="SEER", field_type=CustomFieldType.number),

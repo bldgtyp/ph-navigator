@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import cast
 
+from features.heat_pumps.units import BTU_PER_H_PER_KW
 from features.project_document.custom_fields import TableFieldDef
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from features.project_document.tables._status_field import STATUS_FIELD_KEY
@@ -427,6 +428,123 @@ def _rename_missing_specification_status(row: object) -> object:
     return {**row_mapping, "specification_status": "needed"}
 
 
+HEAT_PUMP_INDOOR_CAPACITY_KEY_RENAMES: dict[str, str] = {
+    "cooling_btuh": "cooling_cap_kw",
+    "heating_btuh_47f": "heating_cap_kw_47f",
+    "heating_btuh_17f": "heating_cap_kw_17f",
+}
+
+
+def _upgrade_v8_to_v9(raw: dict[str, object]) -> dict[str, object]:
+    """Make heat-pump and pump unit-bearing keys name canonical SI storage."""
+
+    from features.project_document.tables.heat_pumps import (
+        INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    )
+    from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    equipment = dict(_mapping(tables.get("equipment"), "tables.equipment"))
+
+    heat_pumps = dict(_mapping(equipment.get("heat_pumps"), "tables.equipment.heat_pumps"))
+    outdoor_path = "tables.equipment.heat_pumps.outdoor_equip"
+    outdoor = dict(_mapping(heat_pumps.get("outdoor_equip"), outdoor_path))
+    outdoor["field_defs"] = _merge_current_built_ins(
+        outdoor.get("field_defs"),
+        current_built_ins=OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        path=f"{outdoor_path}.field_defs",
+        refresh_field_keys=frozenset({"heating_cap_kw_17f", "heating_cap_kw_47f", "cooling_cap_kw_95f"}),
+    )
+    heat_pumps["outdoor_equip"] = outdoor
+
+    indoor_path = "tables.equipment.heat_pumps.indoor_equip"
+    indoor = dict(_mapping(heat_pumps.get("indoor_equip"), indoor_path))
+    indoor["field_defs"] = _merge_current_built_ins(
+        _rename_field_def_keys(
+            indoor.get("field_defs"),
+            HEAT_PUMP_INDOOR_CAPACITY_KEY_RENAMES,
+            path=f"{indoor_path}.field_defs",
+        ),
+        current_built_ins=INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+        path=f"{indoor_path}.field_defs",
+        refresh_field_keys=frozenset(HEAT_PUMP_INDOOR_CAPACITY_KEY_RENAMES.values()),
+    )
+    indoor["rows"] = [
+        _rename_heat_pump_indoor_capacity_fields(row) for row in _list(indoor.get("rows"), f"{indoor_path}.rows")
+    ]
+    heat_pumps["indoor_equip"] = indoor
+    equipment["heat_pumps"] = heat_pumps
+
+    pumps_path = "tables.equipment.pumps"
+    pumps = dict(_mapping(equipment.get("pumps"), pumps_path))
+    pumps["field_defs"] = _merge_current_built_ins(
+        _rename_field_def_keys(
+            pumps.get("field_defs"),
+            {"flow_gpm": "flow_l_min"},
+            path=f"{pumps_path}.field_defs",
+        ),
+        current_built_ins=PUMPS_BUILT_IN_FIELD_DEFS,
+        path=f"{pumps_path}.field_defs",
+        refresh_field_keys=frozenset({"flow_l_min"}),
+    )
+    pumps["rows"] = [
+        _rename_custom_value_key(row, old_key="flow_gpm", new_key="flow_l_min")
+        for row in _list(pumps.get("rows"), f"{pumps_path}.rows")
+    ]
+    equipment["pumps"] = pumps
+
+    tables["equipment"] = equipment
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 9
+    return upgraded
+
+
+def _rename_field_def_keys(value: object, renames: Mapping[str, str], *, path: str) -> list[object]:
+    renamed: list[object] = []
+    for field in _list(value, path):
+        if not isinstance(field, Mapping):
+            renamed.append(field)
+            continue
+        field_mapping = dict(cast(Mapping[str, object], field))
+        field_key = field_mapping.get("field_key")
+        if isinstance(field_key, str) and field_key in renames:
+            field_mapping["field_key"] = renames[field_key]
+        renamed.append(field_mapping)
+    return renamed
+
+
+def _rename_heat_pump_indoor_capacity_fields(row: object) -> object:
+    if not isinstance(row, Mapping):
+        return row
+    renamed = dict(cast(Mapping[str, object], row))
+    for old_key, new_key in HEAT_PUMP_INDOOR_CAPACITY_KEY_RENAMES.items():
+        if old_key not in renamed:
+            continue
+        value = renamed.pop(old_key)
+        if old_key == "heating_btuh_17f" and isinstance(value, int | float) and not isinstance(value, bool):
+            value /= BTU_PER_H_PER_KW
+        renamed.setdefault(new_key, value)
+    return renamed
+
+
+def _rename_custom_value_key(row: object, *, old_key: str, new_key: str) -> object:
+    if not isinstance(row, Mapping):
+        return row
+    renamed = dict(cast(Mapping[str, object], row))
+    custom_values = renamed.get("custom_values")
+    if not isinstance(custom_values, Mapping):
+        return renamed
+    next_custom_values = dict(cast(Mapping[str, object], custom_values))
+    if old_key not in next_custom_values:
+        return renamed
+    value = next_custom_values.pop(old_key)
+    next_custom_values.setdefault(new_key, value)
+    renamed["custom_values"] = next_custom_values
+    return renamed
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
@@ -436,6 +554,7 @@ UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     5: _upgrade_v5_to_v6,
     6: _upgrade_v6_to_v7,
     7: _upgrade_v7_to_v8,
+    8: _upgrade_v8_to_v9,
 }
 
 

@@ -221,7 +221,11 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # the Equipment/Thermal-Bridges `opt_status_needed` option and the Needed label
 # the UI has always shown. Value replacement only — no row is added, dropped, or
 # re-derived. External Honeybee `MISSING` stays `MISSING` behind named adapters.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8
+#
+# v9: heat-pump capacity and pump-flow keys name their canonical SI storage
+# units. The migration backfills backend-owned power metadata, renames the
+# misleading keys, and converts the one legacy Btu/h value to kW.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 9
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -434,7 +438,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[8] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[9] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

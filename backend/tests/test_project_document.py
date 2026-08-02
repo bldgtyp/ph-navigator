@@ -295,6 +295,7 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
         "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
     )
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
@@ -339,6 +340,7 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
         "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
     )
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
@@ -383,6 +385,7 @@ def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields()
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
         "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
     )
     assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
         pump_keys
@@ -412,6 +415,7 @@ def test_project_document_v3_upgrade_adds_room_ventilator_field() -> None:
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
         "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
     )
     assert field_keys[field_keys.index("space_type_id") + 1] == "ventilator_id"
 
@@ -447,6 +451,7 @@ def test_project_document_v4_upgrade_adds_heat_pump_display_name_and_backfills_f
         "_upgrade_v5_to_v6",
         "_upgrade_v6_to_v7",
         "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
     )
     leaves = result.document.tables.equipment.heat_pumps
     for envelope in (leaves.outdoor_equip, leaves.indoor_equip, leaves.outdoor_units, leaves.indoor_units):
@@ -475,7 +480,7 @@ def test_project_document_v6_upgrade_backfills_documentation_evidence_statuses()
 
     rows = result.document.tables.equipment.pumps.rows
     assert result.original_schema_version == 6
-    assert result.applied_steps == ("_upgrade_v6_to_v7", "_upgrade_v7_to_v8")
+    assert result.applied_steps == ("_upgrade_v6_to_v7", "_upgrade_v7_to_v8", "_upgrade_v8_to_v9")
     assert rows[0].datasheet_status == "na"
     assert rows[0].photo_status == "complete"
     assert rows[1].datasheet_status == "complete"
@@ -507,7 +512,7 @@ def test_project_document_v7_upgrade_renames_specification_status_missing_to_nee
 
     document_tables = result.document.tables
     assert result.original_schema_version == 7
-    assert result.applied_steps == ("_upgrade_v7_to_v8",)
+    assert result.applied_steps == ("_upgrade_v7_to_v8", "_upgrade_v8_to_v9")
     assert [row.specification_status for row in document_tables.project_materials] == ["needed", "complete"]
     assert [row.specification_status for row in document_tables.project_glazings] == ["needed", "question"]
     assert [row.specification_status for row in document_tables.project_frames] == ["needed", "na"]

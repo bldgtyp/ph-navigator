@@ -16,3 +16,9 @@ diff against `expected/` is exactly `schema_version` plus those three values.
 A v7 body already carrying `needed` is covered by a focused upgrader unit test
 instead: `needed` was never a legitimate persisted v7 value, so admitting one
 here would misrepresent the baseline.
+
+`v8/inputs/units_field_naming.json` is the frozen baseline for the v8 → v9
+units-field contract. It retains the legacy indoor-capacity and pump-flow keys,
+includes representative outdoor/indoor heat-pump and pump rows, and proves the
+17F Btu/h-to-kW conversion alongside key-only passthrough renames and built-in
+FieldDef metadata refresh.

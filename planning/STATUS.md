@@ -1,7 +1,7 @@
 # Planning Status
 
 DATE: 2026-08-02
-TIME: 10:27 EDT
+TIME: 18:46 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -83,7 +83,7 @@ feature-first planning.
 | Specification Status Value Unification | **Deployed 2026-07-19** (`ef97b483`) and verified in production — both projects' stored v4 bodies read back as v8 with zero legacy `missing`, nothing rewritten, v8 write boundary not yet crossed; restore point + recovery posture recorded. Open: retire the two temporary cached-client adapters (Phase 07) after the observation window, then archive | `refactor/spec-status-value-unification/STATUS.md` |
 | Catalog Seed Idempotency (refactor) | Complete / archived — 638 deterministic guarded ids; one shared validated insert-only seed workflow; matched/no-op behavior; three-catalog pipeline replay; exact Make help and destructive local-transition warnings. Final `make ci`: backend 1639 passed / 7 skipped; frontend 2312 passed | `archive/dated/2026-07-28/catalog-seed-idempotency/STATUS.md` |
 | Modal Consistency (refactor) | Complete / archived — all 7 phases (00–06) landed one modal contract across the frontend: `ModalDialog` + `DialogActions`, footer Cancel as the canonical dismiss, styled primaries, `danger`/`extraActions` for destructive/multi-action, shared box + resize-when-oversized, backdrop off-for-forms/on-for-viewers; Radix data-table family kept + shell-conformed (D-3). `make ci` green each phase; live-screenshot + full-suite verified; contract folded into `context/DESIGN_SYSTEM.md`. Merged to `main` via #42 | `archive/dated/2026-07-20/modal-consistency/STATUS.md` |
-| Units Metadata & Field-Naming Truthfulness (refactor) | Active / planning complete from Linde 2524 handoff (2026-08-02), no implementation — heat-pump indoor-equip `*_btuh` keys store kW and backend field_defs omit units metadata; plan: stopgap display-name + backend-emitted units blocks first, then `cooling_cap_kw`/`heating_cap_kw_47f` renames in one v8→v9 schema bump; two naming decisions (`heating_btuh_17f`, `pumps.flow_gpm`) are Ed's call | `refactor/units-field-naming/STATUS.md` |
+| Units Metadata & Field-Naming Truthfulness (refactor) | Complete / archive pending — schema v9 gives heat-pump capacities and pump flow truthful SI keys, backend-owned units metadata, exact Btu/h→kW migration, and refreshed persisted FieldDefs. Simplify, docs-pass, Graphify, full CI (backend 1,776; frontend 2,373), Phius export, and mounted localhost SI/IP API/UI verification passed; no production write | `refactor/units-field-naming/STATUS.md` |
 
 ## Deferred v2.0 Feature Folders
 
