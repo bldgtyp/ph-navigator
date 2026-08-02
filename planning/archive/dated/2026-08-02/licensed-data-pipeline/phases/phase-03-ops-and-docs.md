@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Code/docs delivered to PHN main; private production publish complete;
-  PHN configuration/deploy/verification/delete/live dispatch remain
+UPDATED: 2026-08-02
+STATUS: Complete — deployed, production-verified, and legacy object retired
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Phase 3 — production apply trigger, films cutover, runbook, and
   retirement of the manual path.
@@ -80,22 +80,24 @@ Completed operator steps:
   `30418485049`), publishing films v1 and swapping the manifest last;
 - this PHN implementation was squash-merged to `main`.
 
-Held operator steps:
+Completed 2026-08-02:
 
-- add Actions secret `RENDER_API_KEY` and variable
-  `RENDER_API_SERVICE_ID` (both confirmed absent 2026-07-28);
-- explicitly deploy PHN;
-- verify the manifest-pinned production read, dispatch the no-op workflow
-  drill, and delete the legacy R2 key.
+- Actions secret `RENDER_API_KEY` and variable `RENDER_API_SERVICE_ID` were
+  configured;
+- PHN deployed at commit `87255adb` (deploy run `30756462594`);
+- production loaded `ashrae-surface-films` v1 through the manifest-only path;
+- private PR [#3](https://github.com/bldgtyp/ph-navigator-data/pull/3)
+  added an exact-key, checksum-guarded retirement workflow; dry-run
+  `30757155794` and deletion run `30757191796` passed;
+- the legacy `standards/ashrae/surface_films.json` object was verified absent,
+  then a fresh Render job again loaded manifest-backed v1 successfully.
 
 The ordering is load-bearing: do not deploy the manifest-only film loader
 before the private dataset publish succeeds.
 
 ## Verification
 
-Films served from the manifest-pinned key in production with the legacy key
-deleted (AC 9); a dry-run dispatch of the workflow with nothing pending
-reports "nothing to apply" and writes nothing (AC 7/11); docs-pass run so the
-runbook and pointers land in the same change. The private publish passed; the
-PHN-side live checks remain pending until the Actions configuration and
-explicit deployment above.
+Passed. Films served from the manifest-pinned key in production before and
+after the legacy key was deleted (AC 9). The production apply workflow's
+repeat dispatch returned `{"datasets":[],"status":"no_pending"}` and wrote
+nothing (AC 7/11). The runbook and routing pointers shipped with the feature.

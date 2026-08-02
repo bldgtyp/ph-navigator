@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-28
 TIME: 12:05 EDT
-STATUS: Active — D-1 confirmed by Ed; Q-1/Q-2 resolved
+UPDATED: 2026-08-02
+STATUS: Complete — v1 decisions resolved; D-11/Q-3 remain non-blocking policy
+  follow-ups
 AUTHOR: Claude (Fable 5) with Ed May
 SCOPE: Options analysis, design decisions, edge cases, and open questions for
   the licensed-data pipeline.
@@ -147,7 +149,7 @@ publish does nothing until someone applies it — `datasets_status` must show
 "published but not applied" loudly, or the pipeline recreates the silent-drift
 problem it exists to kill.
 
-### D-10. `db_seed` appliers need stable row identity — interaction with `catalog-seed-idempotency` ⚠️
+### D-10. `db_seed` appliers need stable row identity — interaction with `catalog-seed-idempotency` ✅
 
 The µ applier (Phase 4) updates existing `catalog_materials` rows, which
 requires a reliable match key. The completed
@@ -157,6 +159,14 @@ The µ dataset must key on that same identity (and say so in its
 `PROVENANCE.md`). The orchestrator treats any unmatched target as an atomicity
 failure: target writes and the audit row roll back together, so a partial apply
 cannot be recorded as complete.
+
+**Production resolution 2026-08-02:** the first guarded dispatch found all 201
+targets unmatched and rolled back without target or audit writes. The existing
+catalog had 408 legacy random IDs, so a reviewed one-time reconciliation
+remapped those rows to the deterministic seed IDs and rewrote all 22 saved
+material references atomically. The rerun matched 201/201 and a second dispatch
+reported `no_pending`. A permanent name-based fallback was rejected: stable IDs
+remain the apply contract.
 
 ## Part 3 — Edge cases
 

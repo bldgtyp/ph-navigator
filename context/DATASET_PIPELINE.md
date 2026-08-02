@@ -6,7 +6,7 @@ RELATED:
   - context/PRODUCTION_DEPLOYMENT.md
   - context/ENVIRONMENT.md
   - backend/features/datasets/
-  - planning/features/licensed-data-pipeline/
+  - planning/archive/dated/2026-08-02/licensed-data-pipeline/
 ---
 
 # Licensed Dataset Pipeline
@@ -139,7 +139,7 @@ Normal production order for a DB-seed dataset:
    the entire dataset apply, including its audit row; reconcile the stable
    target identities before rerunning.
 6. Re-run the workflow when useful: with nothing pending it reports
-   `No pending db-seed datasets.` and writes nothing.
+   `{"datasets":[],"status":"no_pending"}` and writes nothing.
 
 Do not add dataset application to the API start command. Publishing and
 deploying remain separate from applying.
@@ -158,6 +158,11 @@ The rollout order is load-bearing:
    requests succeed.
 5. Only after that proof, delete the retired
    `standards/ashrae/surface_films.json` object from the production bucket.
+
+The initial cutover completed 2026-08-02: the legacy object was deleted by a
+checksum-guarded private workflow and a post-delete production job loaded
+`ashrae-surface-films` v1 from the manifest-backed key. Normal dataset version
+cleanup must not reuse that one-time legacy-key retirement workflow.
 
 The PHN feature branch removes the legacy fallback. Do not deploy it before
 step 1 succeeds. The retired `scripts.seed_surface_films` exits with a pointer
