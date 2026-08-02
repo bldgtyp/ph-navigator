@@ -162,10 +162,11 @@ The seam described here as a forward-compatible commitment has shipped:
   owner-or-`projects.access.all` reach and then checks the requested capability.
   Project delete/restore/hard-delete deliberately use the stricter owner-only
   service guard. Team membership remains Phase 5.
-- **MCP tokens act as their issuer.** Project-scoped read/data tools intersect
-  token project/scope with `project_access_for_user`, the seam's non-request
-  sibling, so a token cannot outlive its issuer's ownership or all-project
-  reach. Destructive MCP tools instead re-check the issuer and the same stricter
+- **MCP tokens act as their issuer.** Read/data tools intersect token scopes
+  with `project_access_for_user`, the seam's non-request sibling, so neither a
+  project token nor a user-scoped agent token can outlive its issuer's ownership
+  or all-project reach. Project tokens add their fixed project boundary.
+  Destructive MCP tools instead re-check the issuer and the same stricter
   owner-only service guard. A first-class `TokenPrincipal` remains Phase 5 work.
 - **Grasshopper access is three-path by design.** Signed-in and MCP bearer
   requests use the corresponding access sibling; anonymous GH reads construct
@@ -763,10 +764,12 @@ lives in `context/technical-requirements/stack-auth-migration.md` §14.1.
   can switch versions, can download project / table / HBJSON JSON,
   and is blocked from all writes (frontend hides edit affordances;
   backend rejects write requests with 401).
-- Claude Desktop can connect to the MCP server, list a project, fetch
-  its document, run a JSON-Patch update against a token-scoped project,
-  save the draft, and have the change appear in the editor on next
-  reload.
+- Claude Code and Codex can use the installed production `phn` workflow from a
+  BLDGTYP project folder, resolve its `.phn.json` marker, authenticate through
+  browser-approved device login, read project data, and perform an explicitly
+  requested draft write through the shipped semantic/whole-table tools. A
+  verification-only write can be diffed and discarded without changing a saved
+  version.
 - A user can upload an HBJSON file to a project, see it in the file
   list, and view it in the 3D viewer. Uploading a second HBJSON
   preserves the first; both are independently viewable.
@@ -792,10 +795,11 @@ acceptance, but each shapes a downstream decision:
    other references. Hard purge is a 90-day GC path only after reference
    checks across saved versions and active drafts (§6.5).
 3. ~~**MCP transport** — stdio only, HTTP/SSE only, or both?~~
-   **Resolved 2026-05-12:** Streamable HTTP is mounted at `/mcp`, and
-   stdio is available for local Claude Desktop / Code via
-   `PHN_MCP_TOKEN`. Legacy SSE is deferred unless a concrete client
-   requires it.
+   **Resolved 2026-08-02:** Streamable HTTP is mounted at `/mcp`. This repo's
+   `phn-local` stdio launcher self-manages its local fixture credential; the
+   installed production `phn` stdio bridge uses the browser-approved credential
+   at `~/.config/phn/credentials.json`. Legacy SSE is deferred unless a concrete
+   client requires it.
 4. ~~**Public link granularity** — per-project link (sees all versions)
    vs. per-version link.~~ **Resolved 2026-05-11:** no separate
    public links exist. Normal `/projects/{id}/...` routes are public-readable.

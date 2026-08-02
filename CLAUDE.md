@@ -74,7 +74,7 @@ always-loaded fast-path.
 | deciding **where data lives** / storage boundaries | `context/DATA_STORAGE.md` | two stores (Postgres / object store), four classes (relational, versioned JSONB docs, dynamic assets, static licensed references); Postgres owns *references*, object store owns *bytes*; signed-URL-only, private bucket |
 | adding/publishing/applying **licensed datasets** | `context/DATASET_PIPELINE.md` + `context/DATA_STORAGE.md` | source in private `ph-navigator-data`; immutable versioned objects + manifest-last; production publish/deploy/apply/rollback are Ed-triggered; public tests use synthetic values only |
 | changing **architecture / data model** | `context/PRD.md` + `context/technical-requirements/*` | JSON-document model; versioned immutable-by-discipline saves; linear history; design for human + LLM use |
-| writing/reviewing **MCP tools** | `context/mcp.md` + `context/technical-requirements/llm-mcp-schema.md` | thin wrapper over REST service layer; project-scoped bearer tokens; writes go to a draft then `save_draft` |
+| writing/reviewing **MCP tools** | `context/mcp.md` + `context/technical-requirements/llm-mcp-schema.md` | thin wrapper over REST service layer; project- and user-scoped bearer tokens; writes go to a draft; saving requires explicit user intent |
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
 | changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; deploys via the "Deploy Production" Actions workflow (auto-deploy off); staging is deleted unless recreated from `render.yaml` |
 | operating/changing **database backups / disaster recovery** | `context/DATABASE_BACKUPS.md` | DB dumps are off-site + `age`-encrypted with the private key offline; Render PITR is the short-window net; `make backup-drill-local` round-trips the scripts locally; keys and production drills are Ed's call |
@@ -118,30 +118,53 @@ managed-service logs in `context/ENVIRONMENT.md` and `working/agent-browser/`.
 
 ## Agent MCP workflow
 
-PH-Navigator registers a local stdio MCP server for agents in `.mcp.json` and
-`.codex/config.toml` as `phn-local`. It runs
-`backend/scripts/mcp_agent_stdio.py`, which reuses the gitignored
-`backend/.agent-mcp-token.json` local token file, and only auto-seeds the local
-`AGENT-BROWSER` fixture / issues a fresh local token when that file is missing
-or stale after a DB reset. Agents should not ask Ed to run token scripts for
-local dev work.
+Choose the server from the data boundary, not from whichever name happens to
+be available:
 
-Use PHN MCP when a task needs live app/document data, table inspection, project
-metadata, asset lookup, or draft write flows. Start with `list_projects`,
-`get_project`, and `get_document`/`get_table`; for writes, use the latest etag
-and finish with `save_draft` or `discard_draft`. Prefer semantic write tools
-where they exist; use `replace_table` only for whole-table browser-parity
-updates. Never commit or print plaintext `phn_mcp_...` tokens.
+- **`phn-local`** is this application repo's development server. `.mcp.json`
+  and `.codex/config.toml` register `backend/scripts/mcp_agent_stdio.py`, which
+  reuses the gitignored `backend/.agent-mcp-token.json` and repairs the local
+  `AGENT-BROWSER` fixture/token after a DB reset. Use it for implementation,
+  tests, and local fixtures; agents should not ask Ed to run token scripts.
+- **`phn`** is the installed production server for real BLDGTYP project data.
+  Use it from a consulting project folder, never as a substitute for local
+  fixtures while changing this app. Claude receives it through the public
+  `bldgtyp/claude-plugins` plugin and `/bldgtyp:phn` skill; Codex receives the
+  same generated workflow through the global installer. Installation and
+  diagnostics are in `docs/MCP_AGENT_SETUP.md`.
 
-If `phn-local` is unavailable, run `make agent-browser-ready` and retry the MCP
-check.
-For HTTP-client smoke or manual config debugging, `make seed-agent-mcp` and
-`make smoke-mcp-local` are available, but the default agent path is the
-project-registered stdio MCP server. Production/Render MCP tokens are real
-infrastructure credentials: never auto-mint or store them in committed config;
-use an explicitly provided `PHN_MCP_TOKEN` or user-local MCP config. MCP does
-not replace rendered UI checks: use Playwright/browser verification for DOM,
-layout, interaction, auth, and visual state.
+In a BLDGTYP project folder, search the folder and its ancestors for
+`.phn.json`. Pass its `phn_project_id` to project-scoped calls. If the id is
+`null`, call `list_projects`, compare names/BT numbers, ask Ed to choose when
+more than one match is plausible, and update only `phn_project_id` after
+confirmation. A `project_not_found` / `refresh` result means re-resolve through
+`list_projects`; it does not prove a permission failure.
+
+Production `phn` uses the user-scoped credential at
+`~/.config/phn/credentials.json`. Missing, expired, or revoked credentials
+trigger browser device authorization; the human only approves or denies the
+displayed request. Claude can explicitly refresh with `/bldgtyp:phn-login`;
+Codex's installed global instructions contain the corresponding `phn-login`
+command. Never request, print, paste, or store the bearer token in a project
+folder. Project Settings tokens remain the manual least-privilege option when a
+credential must be restricted to one project; they are not the default agent
+setup.
+
+Use PHN MCP for project metadata, status, document/table inspection, assets,
+focused QA reports, and requested draft edits. Read before writing and use the
+latest version/draft etag. Prefer semantic write tools; use `replace_table`
+only as a whole-table browser-parity primitive. Production writes are real:
+they land in the issuing user's draft, but **never call `save_draft` or
+`save_draft_as` unless the user explicitly asks to persist it**. For a
+verification-only change, inspect the draft diff, call `discard_draft`, and
+confirm it is gone. Never autonomously hard-delete a project.
+
+If local `phn-local` is unavailable, run `make agent-browser-ready` and retry.
+`make seed-agent-mcp` and `make smoke-mcp-local` are manual debugging aids, not
+the normal agent path. MCP does not replace rendered UI checks: use the
+supported browser workflow for DOM, layout, interaction, auth, and visual
+state. The authoritative tools, scopes, draft lifecycle, and errors live in
+`context/mcp.md`.
 
 ## Planning
 

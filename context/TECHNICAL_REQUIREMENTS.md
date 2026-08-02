@@ -25,8 +25,8 @@ load only the file that matches the active implementation surface.
   draft buffer, ETags, concurrency, diff, and acceptance tests.
 - `technical-requirements/api.md` — `/api/v1` route inventory,
   idempotency, drafts, assets, HBJSON, downloads, and schema endpoints.
-- `technical-requirements/llm-mcp-schema.md` — LLM design rules, MCP tool
-  surface, typed query object, context docs, and schema-version upgrade
+- `technical-requirements/llm-mcp-schema.md` — LLM design rules, MCP auth and
+  tool surface, typed query object, context docs, and schema-version upgrade
   guarantees.
 - `technical-requirements/frontend-viewer-units.md` — app surfaces,
   editor state, table display posture, R3F HBJSON viewer, and SI/IP unit

@@ -10,9 +10,9 @@ coding standards), it belongs in `context/`. If it's an operational
 how-to/setup guide, or a running log/changelog that doesn't itself
 define a contract, it belongs here in `docs/`.
 
-- `MCP_AGENT_SETUP.md` - local/production PH-Navigator MCP setup for
-  Codex and Claude agents, including token issuance and client config
-  snippets.
+- `MCP_AGENT_SETUP.md` - when to use repo-local `phn-local` versus installed
+  production `phn`, plus Claude plugin, Codex installer, device login, project
+  marker, and safe draft-operation guidance.
 - `SCHEMA_VERSIONS.md` - running log of `ProjectDocumentV1` schema bumps.
 
 Stable product, architecture, UI, stack, table, and glossary reference

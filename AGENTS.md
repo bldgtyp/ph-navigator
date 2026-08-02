@@ -15,6 +15,16 @@ error, or an internal `data:` error URL: discard it and open the printed route
 in a fresh tab. Use `make agent-browser-check` for a non-mutating readiness
 check. Full details and logs are in `context/ENVIRONMENT.md`.
 
+## Codex PH-Navigator access
+
+The imported `CLAUDE.md` defines the shared `phn-local` versus production
+`phn` boundary and draft-safety rules. Codex-specific production setup is
+global: the `bldgtyp/claude-plugins` installer manages `mcp_servers.phn` in
+`~/.codex/config.toml`, the generated PHN workflow in `~/.codex/AGENTS.md`, and
+the credential-aware `phn-login` command. Do not duplicate that global server
+in this repo or replace the repo's `phn_local` development entry. See
+`docs/MCP_AGENT_SETUP.md` for install, verification, and refresh commands.
+
 ## graphify
 
 This project has a knowledge graph at `graphify-out/` with god nodes, community

@@ -201,7 +201,8 @@ ClimateRecord JSON contract (
 -- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
 -- MCP is read/write capable from day 1. Tokens are issued by an
 -- authenticated editor, shown once, stored only as a hash, and
--- revocable from Project Settings. Public project readability does
+-- revocable from account or Project Settings according to principal scope.
+-- Public project readability does
 -- NOT imply anonymous MCP access.
 mcp_tokens (
     id              UUID PRIMARY KEY,
@@ -212,7 +213,7 @@ mcp_tokens (
                     -- non-null = project-scoped; null = user-scoped
                     -- agent token whose per-call reach follows the issuer
     label           TEXT NOT NULL,
-                    -- user-facing label, e.g. "Claude Desktop - Foo"
+                    -- user-facing label, e.g. "Ed's workstation (Claude Code)"
     token_prefix    TEXT NOT NULL,
                     -- first 16 chars for UI identification only
     token_hash      TEXT NOT NULL UNIQUE,

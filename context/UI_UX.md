@@ -552,6 +552,7 @@ are building **plus §1 (common elements) above**. See
 | 2.11 Project settings (overflow menu) | [`ui/pages/project-settings.md`](ui/pages/project-settings.md) |
 | 2.12 Viewer public read | [`ui/pages/viewer-public.md`](ui/pages/viewer-public.md) |
 | 2.13 Admin — Users (app-level, `/admin/users`) | [`ui/pages/admin-users.md`](ui/pages/admin-users.md) |
+| 2.14 Agent access (app-level, `/approve-agent`, `/account/agent-tokens`) | [`ui/pages/agent-access.md`](ui/pages/agent-access.md) |
 ## 3. Flows (multi-page)
 
 ### 3.1 Sign-in → dashboard (US-0 → US-1)

@@ -263,6 +263,14 @@ connector.
 Render operations use the Render dashboard, Render CLI, or Render API with an
 operator-held token.
 
+The production client is distributed separately through the public
+`bldgtyp/claude-plugins` repo: a user-level Claude plugin and an idempotent
+Codex installer both register server `phn`, use browser-approved credentials,
+and carry the same generated project-resolution/draft-safety workflow. That
+client install is not a Render deploy and must not replace this repo's local
+`phn-local` entry. See `docs/MCP_AGENT_SETUP.md` for install and operating
+instructions.
+
 ## Database Recovery
 
 Three independent mechanisms cover the production Postgres

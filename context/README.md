@@ -93,8 +93,10 @@ Load these only when the task touches the relevant surface:
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `ui/pages/spaces-equipment-tab.md` when touching table behavior.
-- `mcp.md` — live MCP tool inventory, draft/save lifecycle, token scopes,
-  structured error envelope, and token issuance pointer.
+- `mcp.md` — canonical live MCP tool inventory, project- and user-token model,
+  device authorization, draft/save lifecycle, scopes, and structured errors.
+  For agent installation and the `phn-local` (app development) versus `phn`
+  (production project-folder) choice, use `docs/MCP_AGENT_SETUP.md`.
 
 ## Historical / Removed
 

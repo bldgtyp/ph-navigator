@@ -1,5 +1,5 @@
 ---
-DATE: 2026-05-12
+DATE: 2026-08-02
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
 RELATED: context/PRD.md §10, planning/archive/user-stories/50-settings-ops-llm.md
 ---
@@ -44,15 +44,24 @@ same service layer and `require_project_access(project_id,
 mode='view'|'edit')` dependency as REST routes.
 
 MCP auth is **not anonymous**, even though normal project URLs are
-public-readable in the browser. MCP clients authenticate with
-project-scoped bearer tokens from `mcp_tokens` (§6.1). Tokens are issued
-by logged-in editors, shown once, stored hashed, revocable, and
-audit-logged. Write-capable project tokens include `project:read` plus
-`project:write`; write-only project tokens are rejected. A token with
-`project:write` scope can mutate only its own `project_id`; a token
-with read-only scopes cannot call mutating tools. All tool calls are
-attributed to the issuing editor. Mutating tools obey the MCP/browser
-edit-lease rules in §8.5.
+public-readable in the browser. MCP clients authenticate with hashed,
+revocable, audit-logged rows from `mcp_tokens` (§6.1):
+
+- A **project-scoped token** is the least-privilege option for one fixed
+  project. It is issued by an editor in Project Settings and its plaintext is
+  shown once.
+- A **user-scoped agent token** has no fixed `project_id`; the same scope
+  strings apply across every project its issuer can currently access. The
+  default Claude/Codex agent path delivers this credential once through the
+  10-minute browser device-authorization flow and stores it at
+  `~/.config/phn/credentials.json` with mode `0600`.
+
+Every call is attributed to the issuing user and re-checks that user's current
+project reach. Project tokens add their fixed project boundary. Write-capable
+tokens include `project:read` plus `project:write`; read-only scopes cannot call
+mutating tools. Mutating tools obey the MCP/browser edit-lease rules in §8.5.
+The installed client workflow, project-folder marker, and `phn-local` versus
+production `phn` setup are documented in `docs/MCP_AGENT_SETUP.md`.
 
 **The authoritative shipped MCP tool inventory is `context/mcp.md`.** Do
 not maintain a second tool roster here — the one that used to live in

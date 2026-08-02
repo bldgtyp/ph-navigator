@@ -380,8 +380,9 @@ Codes introduced by this feature:
   Anonymous viewers can resolve signed URLs only for assets that are
   *currently referenced* by the version they are viewing. The backend
   enforces this "referenced by" check before issuing a signed URL.
-- **MCP** never anonymous: tokens scoped per project, `asset:read` /
-  `asset:write` required, all calls audit-logged.
+- **MCP** never anonymous: project- or user-scoped tokens require `asset:read`
+  / `asset:write`; project access is re-checked through the issuing user and
+  all calls are audit-logged.
 - **MIME sniffing on `complete-upload`**: the backend GETs the first
   4–8 KB of the uploaded object from R2 and verifies that the magic
   bytes match the claimed `content_type`. Mismatch → reject (mark
