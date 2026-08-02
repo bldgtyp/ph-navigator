@@ -12,10 +12,10 @@ RELATED:
 
 # STATUS — Units metadata & field-naming truthfulness
 
-**State:** Complete. The full PRD contract is implemented and verified on
-`codex/units-field-naming`. Simplify, docs-pass, Graphify, full CI, mounted
-localhost API/UI verification, and production-build checks all passed. Only
-archive routing and the final closeout commit remain.
+**State:** Complete / archived. The full PRD contract is implemented and
+verified on `codex/units-field-naming`. Simplify, docs-pass, Graphify, full CI,
+mounted localhost API/UI verification, and production-build checks all passed.
+Implementation commit: `ede207b1`.
 
 ## Implemented
 
@@ -49,8 +49,8 @@ archive routing and the final closeout commit remain.
 
 ## Closeout
 
-Archive this completed packet under `planning/archive/dated/2026-08-02/` and
-update the planning archive/status indexes after the implementation commit.
+Packet archived under `planning/archive/dated/2026-08-02/`; planning archive
+and status indexes updated in the final closeout commit.
 
 ## Blockers
 

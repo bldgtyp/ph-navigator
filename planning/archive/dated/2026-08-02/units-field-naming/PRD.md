@@ -9,7 +9,7 @@ RELATED:
   - ./README.md
   - ./STATUS.md
   - ./decisions.md
-  - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
+  - ../../../dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
 ---
 
 # PRD — Units metadata & field-naming truthfulness

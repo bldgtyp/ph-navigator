@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-02
 TIME: 18:54 EDT
-STATUS: Complete — v9 implementation and verification passed; archive pending
+STATUS: Complete / archived — v9 implementation and verification passed
 AUTHOR: Claude with Ed May (from the Linde 2524 mech-equipment session handoff)
 SCOPE: Make document field keys, backend field_def metadata, and display
   names agree about canonical units for heat-pump and pump fields, so no
@@ -12,9 +12,9 @@ RELATED:
   - ./STATUS.md
   - ./decisions.md
   - ./archive/HANDOFF_2026-08-02.md
-  - ../spec-status-value-unification/ (schema-bump precedent)
-  - ../../archive/dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
-  - docs/SCHEMA_VERSIONS.md
+  - ../../../../refactor/spec-status-value-unification/ (schema-bump precedent)
+  - ../../../dated/2026-06-27/beta-schema-evolution/schema-bump-checklist.md
+  - ../../../../../docs/SCHEMA_VERSIONS.md
 ---
 
 # Units metadata & field-naming truthfulness
@@ -45,9 +45,9 @@ from the app so it cannot recur.
 
 The implementation, simplify/docs-pass, Graphify update, full CI, Phius export,
 and mounted localhost API/UI verification are complete. This branch has not
-written to production project data. The packet is ready to move to the dated
-planning archive after its implementation commit. The MCP transport work
-described in the original handoff remains outside this repo.
+written to production project data. The packet was archived after implementation
+commit `ede207b1`. The MCP transport work described in the original handoff
+remains outside this repo.
 
 ## Read in this order
 
