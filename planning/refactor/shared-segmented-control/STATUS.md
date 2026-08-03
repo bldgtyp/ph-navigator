@@ -13,17 +13,18 @@ RELATED:
 
 ## Current state
 
-`Active`. Migration steps 1-3 are complete: the generic native-radio
+`Active`. Migration steps 1-4 are complete: the generic native-radio
 `SegmentedControl<T>` exists in `shared/ui`, and `MaterialDriftDialog` consumes
 it with its feature CSS removed. `ModalUnitToggle` now delegates to the same
 primitive, and its duplicated CSS is gone. The reuse review found and
 inventoried a fifth implementation in `StatusItemModal`. Both compact unit
-toggles now use the shared primitive.
+toggles and both content-scale single-select groups now use the shared
+primitive. True tablist consumers remain separate.
 
 ## Next step
 
-Execute migration step 4: move the content-scale single-select usages onto the
-shared `md` variant while retaining true `role="tablist"` controls as tabs.
+Execute migration step 5: add `SegmentedControl` to the design-system and CSS
+ownership inventories, then run final full verification.
 
 ## Blockers
 
@@ -84,3 +85,13 @@ pixel change":
   two-option configurations; this was deliberately not added because the
   controlled modal and preference-owned topbar adapters have different
   id/title/size contracts and share all behavior through `SegmentedControl`.
+- **2026-08-03** — Step 4 complete. Migrated the condensation profile-axis
+  selector and status Description Edit/Preview switch to the shared `md`
+  variant; deleted their pressed-button CSS. Kept `CondensationRiskModal` and
+  `SegmentMaterialPicker` on `.pill-tab` because both expose tablists and
+  tabpanels. Focused Vitest: 9/9 passed across the primitive, condensation
+  panels, and new status-modal coverage; `tsc -b` and `pnpm run check:all`
+  passed. Mounted status verification switched Preview in a 140×32 native
+  radiogroup and revealed the preview panel. The seeded assembly lacks climate
+  data, so the profile-axis control was verified through its focused mounted
+  component test rather than the live route.

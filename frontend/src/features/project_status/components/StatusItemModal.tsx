@@ -3,6 +3,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
 import { isStatusState, STATUS_STATE_OPTIONS } from "../lib";
 import type { StatusItem, StatusItemPayload, StatusState } from "../types";
 import { StatusDescription } from "./StatusDescription";
@@ -76,24 +77,16 @@ export function StatusItemModal({
         <div className="field-group">
           <div className="field-label-row">
             <span>Description</span>
-            <div className="segmented-control" aria-label="Description mode">
-              <button
-                type="button"
-                className={descriptionMode === "edit" ? "active" : ""}
-                aria-pressed={descriptionMode === "edit"}
-                onClick={() => setDescriptionMode("edit")}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className={descriptionMode === "preview" ? "active" : ""}
-                aria-pressed={descriptionMode === "preview"}
-                onClick={() => setDescriptionMode("preview")}
-              >
-                Preview
-              </button>
-            </div>
+            <SegmentedControl
+              value={descriptionMode}
+              onChange={setDescriptionMode}
+              ariaLabel="Description mode"
+              options={[
+                { value: "edit", label: "Edit" },
+                { value: "preview", label: "Preview" },
+              ]}
+              size="md"
+            />
           </div>
           {descriptionMode === "edit" ? (
             <textarea

@@ -83,18 +83,12 @@ describe("condensation result panels", () => {
     );
 
     expect(screen.getByRole("combobox", { name: "Profile month" })).toHaveValue("3");
-    expect(screen.getByRole("button", { name: "Real thickness" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("radio", { name: "Real thickness" })).toBeChecked();
     expect(screen.getAllByText(/Horizontal axis: thickness/)).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole("button", { name: "Vapour resistance (sd)" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Vapour resistance (sd)" }));
 
-    expect(screen.getByRole("button", { name: "Vapour resistance (sd)" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("radio", { name: "Vapour resistance (sd)" })).toBeChecked();
     expect(screen.getAllByText(/Horizontal axis: sd/)).toHaveLength(2);
     fireEvent.change(screen.getByRole("combobox", { name: "Profile month" }), {
       target: { value: "1" },

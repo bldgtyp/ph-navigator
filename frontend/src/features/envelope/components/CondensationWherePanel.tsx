@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
 import {
   buildLayerLabelMap,
   defaultProfileMonth,
@@ -53,24 +54,16 @@ export function CondensationWherePanel({
             ))}
           </select>
         </label>
-        <div className="pill-tab-list" role="group" aria-label="Profile horizontal axis">
-          <button
-            type="button"
-            className="pill-tab"
-            aria-pressed={axis === "sd"}
-            onClick={() => setAxis("sd")}
-          >
-            Vapour resistance (sd)
-          </button>
-          <button
-            type="button"
-            className="pill-tab"
-            aria-pressed={axis === "thickness"}
-            onClick={() => setAxis("thickness")}
-          >
-            Real thickness
-          </button>
-        </div>
+        <SegmentedControl
+          value={axis}
+          onChange={setAxis}
+          ariaLabel="Profile horizontal axis"
+          options={[
+            { value: "sd", label: "Vapour resistance (sd)" },
+            { value: "thickness", label: "Real thickness" },
+          ]}
+          size="md"
+        />
       </div>
       <p className="condensation-profile-note">
         The sd view reveals vapour-control layers; the thickness view shows their near-zero physical

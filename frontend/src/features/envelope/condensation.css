@@ -173,11 +173,6 @@
   outline: none;
 }
 
-.condensation-profile-controls .pill-tab[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--text-on-accent);
-}
-
 .condensation-profile-note {
   font-size: var(--fs-sm);
 }

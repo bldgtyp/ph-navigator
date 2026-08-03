@@ -312,28 +312,6 @@
   font-weight: var(--fw-semibold);
 }
 
-.segmented-control {
-  display: inline-flex;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-radius);
-  overflow: hidden;
-}
-
-.segmented-control button {
-  min-height: 30px;
-  border: 0;
-  border-radius: 0;
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  padding: 5px 10px;
-  font-size: var(--fs-sm);
-}
-
-.segmented-control button.active {
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
 .markdown-preview {
   min-height: 112px;
   border: 1px solid var(--border-subtle);
