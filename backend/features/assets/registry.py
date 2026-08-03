@@ -24,25 +24,19 @@ AssetKind = Literal[
 
 DATASHEET_CONTENT_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
 SITE_PHOTO_CONTENT_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", *HEIC_CONTENT_TYPES})
-EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "ventilators": "ervs",
-    "pumps": "pumps",
-    "fans": "fans",
-    "hot_water_heaters": "hot_water_heaters",
-    "hot_water_tanks": "hot_water_tanks",
-    "electric_heaters": "electric_heaters",
-    "appliances": "appliances",
-}
-HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "heat_pump_outdoor_equip": "outdoor_equip",
-    "heat_pump_indoor_equip": "indoor_equip",
-    "heat_pump_outdoor_units": "outdoor_units",
-    "heat_pump_indoor_units": "indoor_units",
-}
 DOCUMENTATION_ATTACHMENT_TABLE_KEYS: tuple[str, ...] = (
-    *EQUIPMENT_ATTACHMENT_TABLE_KEYS,
+    "ventilators",
+    "pumps",
+    "fans",
+    "hot_water_heaters",
+    "hot_water_tanks",
+    "electric_heaters",
+    "appliances",
     "thermal_bridges",
-    *HEAT_PUMP_ATTACHMENT_TABLE_KEYS,
+    "heat_pump_outdoor_equip",
+    "heat_pump_indoor_equip",
+    "heat_pump_outdoor_units",
+    "heat_pump_indoor_units",
 )
 
 

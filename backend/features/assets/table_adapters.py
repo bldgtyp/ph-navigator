@@ -9,9 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
+from functools import cache
 from typing import Any, Literal, cast
-
-from features.project_document.tables.registry import iter_table_contracts
 
 RawRowsReader = Callable[[dict[str, Any]], Iterable[dict[str, Any]]]
 AttachmentAdapterSource = Literal["table_contract", "irregular_project_table", "nested_flattening_adapter"]
@@ -25,9 +24,6 @@ class AttachmentTableAdapter:
     read_rows: RawRowsReader
     source: AttachmentAdapterSource
 
-    def rows(self, tables: dict[str, Any]) -> list[dict[str, Any]]:
-        return list(self.read_rows(tables))
-
     def find_row(self, tables: dict[str, Any], row_id: str) -> dict[str, Any] | None:
         return next((row for row in self.read_rows(tables) if row.get("id") == row_id), None)
 
@@ -35,12 +31,12 @@ class AttachmentTableAdapter:
 def get_attachment_table_adapter(table_key: str) -> AttachmentTableAdapter | None:
     """Return the table-shape adapter without authorizing an attachment field."""
 
-    return _ATTACHMENT_TABLE_ADAPTERS.get(table_key)
+    return _attachment_table_adapters().get(table_key)
 
 
-def iter_attachment_rows(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
+def iter_attachment_rows(tables: dict[str, Any], table_key: str) -> Iterable[dict[str, Any]]:
     adapter = get_attachment_table_adapter(table_key)
-    return adapter.rows(tables) if adapter is not None else []
+    return adapter.read_rows(tables) if adapter is not None else ()
 
 
 def find_attachment_row(tables: dict[str, Any], table_key: str, row_id: str) -> dict[str, Any] | None:
@@ -60,7 +56,12 @@ def _iter_attachment_table_rows(value: object) -> Iterator[dict[str, Any]]:
             yield cast(dict[str, Any], item)
 
 
-def _build_attachment_table_adapters() -> dict[str, AttachmentTableAdapter]:
+@cache
+def _attachment_table_adapters() -> dict[str, AttachmentTableAdapter]:
+    # Keep the asset field registry lightweight at import time; eager contract
+    # loading pulls the entire project-table/catalog stack into every caller.
+    from features.project_document.tables.registry import iter_table_contracts
+
     adapters = {
         contract.attachment_table_key or contract.name: _direct_adapter(
             contract.table_path,
@@ -114,5 +115,3 @@ _IRREGULAR_ADAPTERS: dict[str, AttachmentTableAdapter] = {
         source="nested_flattening_adapter",
     ),
 }
-
-_ATTACHMENT_TABLE_ADAPTERS = _build_attachment_table_adapters()

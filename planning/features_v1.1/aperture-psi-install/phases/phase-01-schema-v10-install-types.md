@@ -148,8 +148,9 @@ New `backend/features/project_document/apertures/edge_classification.py`:
   `aperture_install_types.{pdf_report,datasheet,photo}_asset_ids` — the
   pdf_report one clones the TB entry (`:121-130`: kind `datasheet`,
   PDF-only content types, max 5 × 25 MB).
-- Add the table to the table-key maps (`:26-45`) and the row walker
-  (`iter_rows_for_raw_tables`, `:293-313`).
+- Register the three closed attachment fields. The table's `TableContract`
+  automatically supplies its attachment adapter from `table_path`; do not add
+  a second path map or walker branch.
 - `backend/tests/test_attachment_reachability_guards.py` must pass
   unmodified — it's the guard proving the wiring.
 

@@ -1,14 +1,14 @@
 ---
 DATE: 2026-08-03
-TIME: 15:17 EDT
-STATUS: Active
+TIME: 15:43 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Unify project-document attachment row traversal and lookup behind one
   contract-derived adapter registry.
 RELATED:
   - ./STATUS.md
-  - ../../../context/DATA_STORAGE.md
-  - ../../../context/technical-requirements/attachments.md
+  - ../../../../../context/DATA_STORAGE.md
+  - ../../../../../context/technical-requirements/attachments.md
 ---
 
 # Plan — Attachment reference walker unification
@@ -31,7 +31,7 @@ RELATED:
 | --- | --- | --- |
 | 01 | Contract-derived adapter authority and irregular adapters | Complete |
 | 02 | Shared mutation row lookup and duplicate-code removal | Complete |
-| 03 | Full verification, stable docs, and archive closeout | Next |
+| 03 | Full verification, stable docs, and archive closeout | Complete |
 
 ## Required verification
 

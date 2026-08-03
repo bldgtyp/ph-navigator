@@ -192,7 +192,7 @@ def test_every_registered_attachment_field_is_reachable() -> None:
         }
         _replace_rows_at_contract_path(tables, table_key, _real_row_shape(tables, table_key, row))
 
-        rows_walked = iter_attachment_rows(tables, table_key)
+        rows_walked = list(iter_attachment_rows(tables, table_key))
         references = list_asset_references(cast(Any, _RawDocument(tables)))
 
         for field in fields:
@@ -214,7 +214,7 @@ def test_attachment_row_walker_tolerates_bare_lists_and_envelopes(table_key: str
 
     _replace_rows_at_contract_path(tables, table_key, rows_value)
 
-    walked = iter_attachment_rows(tables, table_key)
+    walked = list(iter_attachment_rows(tables, table_key))
     assert len(walked) == 1
     assert walked[0]["id"] == row["id"]
 
@@ -229,4 +229,4 @@ def test_attachment_row_lookup_returns_the_live_raw_row(table_key: str) -> None:
 
     assert found is not None
     found["photo_asset_ids"] = ["asset_mutated"]
-    assert iter_attachment_rows(tables, table_key)[0]["photo_asset_ids"] == ["asset_mutated"]
+    assert list(iter_attachment_rows(tables, table_key))[0]["photo_asset_ids"] == ["asset_mutated"]

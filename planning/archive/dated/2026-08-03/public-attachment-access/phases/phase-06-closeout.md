@@ -85,7 +85,7 @@ follow-up must also add contracts or adapters for unregistered frame/glazing
 tables, preserve explicit flattening for the registered nested assembly path,
 and consolidate the separate mutation row lookup. Deliberately out of scope for
 this bug fix; it is recorded in
-`planning/refactor/attachment-reference-walker-unification/`.
+`planning/archive/dated/2026-08-03/attachment-reference-walker-unification/`.
 
 ## Completion evidence
 
@@ -97,9 +97,9 @@ this bug fix; it is recorded in
   as a PDF-only saved-version-gated attachment.
 - `../decisions.md` records the Phase 00 evidence for keeping PDF Report
   PDF-only. The separate
-  `planning/refactor/attachment-reference-walker-unification/` packet scopes
-  registry-backed mappings, irregular adapters, and mutation lookup without
-  implementing them here.
+  `planning/archive/dated/2026-08-03/attachment-reference-walker-unification/`
+  packet records the completed registry-backed mappings, irregular adapters,
+  and unified mutation lookup.
 - Three parallel `simplify` reviews and rechecks completed with no remaining
   correctness, reuse, or efficiency findings.
 - The `docs-pass` found no additional ADR or lesson-log update was warranted;
