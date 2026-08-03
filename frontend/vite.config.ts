@@ -66,10 +66,33 @@ export default defineConfig(async ({ mode }) => {
       },
     },
     test: {
-      environment: "jsdom",
       globals: true,
-      setupFiles: ["./tests/setup.ts"],
       exclude: ["node_modules", "dist", "build", "tests/e2e/**"],
+      // jsdom boot dominates suite time, and most .test.ts files are pure
+      // logic. Route .ts to the node environment and .tsx to jsdom; a
+      // DOM-touching .ts file opts back in with a
+      // `// @vitest-environment jsdom` docblock.
+      projects: [
+        {
+          extends: true,
+          // No setupFiles: pure-logic tests need neither jest-dom matchers
+          // nor the DOM shims, and skipping them saves ~60ms per file.
+          test: {
+            name: "logic",
+            environment: "node",
+            include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: "dom",
+            environment: "jsdom",
+            include: ["src/**/*.test.tsx"],
+            setupFiles: ["./tests/setup.ts"],
+          },
+        },
+      ],
     },
   };
 });

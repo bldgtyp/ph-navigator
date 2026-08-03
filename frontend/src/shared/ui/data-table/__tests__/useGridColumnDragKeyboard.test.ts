@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { useGridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";

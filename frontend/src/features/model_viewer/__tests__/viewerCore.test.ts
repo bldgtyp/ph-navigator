@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, test } from "vitest";
 import { resolveViewerTokens } from "../lib/colors";
 import { fieldValue, inspectorConfigs } from "../lib/fieldConfigs";
@@ -442,7 +443,6 @@ function pipeElement(
     diameter: segmentList[0]?.diameter_mm ?? 0,
   };
 }
-
 function rectFace(x: number, y: number, z: number, width: number, depth: number, height: number) {
   const vertices: [number, number, number][] =
     height === 0

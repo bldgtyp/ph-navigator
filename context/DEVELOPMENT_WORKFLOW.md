@@ -70,8 +70,10 @@ Setup it depends on (already provisioned; re-create if services are rebuilt):
   per-service deploy-hook URLs from the Render dashboard.
 - Auto-deploy off on both Render services (Blueprint + dashboard setting).
 
-GitHub Actions CI still runs on every push and pull request
-(`.github/workflows/ci.yml`); that is verification, not deployment.
+GitHub Actions CI still runs on every pull request and on pushes to `main`
+(`.github/workflows/ci.yml`); that is verification, not deployment. Pushes to
+other branches only run CI through their PR, and a newer push to the same PR
+branch cancels the in-flight run.
 
 ## Build-Minute Discipline
 

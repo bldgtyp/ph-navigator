@@ -1,4 +1,5 @@
 // @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
+// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { useGridEdit } from "../hooks/useGridEdit";
