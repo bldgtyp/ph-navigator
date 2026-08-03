@@ -1,6 +1,6 @@
 DATE: 2026-08-03
 TIME: 12:51 EDT
-STATUS: Complete — ready to archive
+STATUS: Complete — archived
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -81,17 +81,18 @@ skipped; frontend 2,393 passed; production build and static gates green.
 
 ## Next step
 
-Archive this completed packet under `planning/archive/dated/2026-08-03/`.
+None. The packet is archived at
+`planning/archive/dated/2026-08-03/status-ux-unification/`.
 
 ## Blockers
 
 None. Coordinate Phase 02's CSS alias retirement with
-`../spec-status-value-unification/` Phase 07 if that adapter cleanup is
+`planning/refactor/spec-status-value-unification/` Phase 07 if that adapter cleanup is
 still open when Phase 02 starts.
 
 ## Sequencing (Ed, 2026-08-03)
 
-- Run **serial** with `../shared-segmented-control/` (either order). The
+- Run **serial** with `planning/refactor/shared-segmented-control/` (either order). The
   packets are functionally disjoint — status selects/pills and filter chips
   are explicitly out of the segmented-control scope — but both edit the
   `context/DESIGN_SYSTEM.md` component inventory, so don't run them
