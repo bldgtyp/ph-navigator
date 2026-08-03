@@ -13,6 +13,7 @@ type HeatPumpAttachmentColumnArgs<TRow extends HeatPumpAttachmentRow> = {
   projectId: string;
   isEditor: boolean;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   fieldKey: string;
   onChange: (row: TRow, next: string[]) => void | Promise<void>;
 };

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 10:40 EDT
-STATUS: Active — Phases 00-04 complete; Phase 05 next
+TIME: 11:03 EDT
+STATUS: Active — Phases 00-05 complete; Phase 06 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,7 +17,7 @@ RELATED:
 
 ## Current state
 
-**Phases 00-04 complete. The row walker reaches all 31 registered attachment
+**Phases 00-05 complete. The row walker reaches all 31 registered attachment
 fields, including `thermal_bridges.pdf_report_asset_ids`, and structural guards
 now prevent either defect from shipping silently again.**
 
@@ -33,8 +33,9 @@ code in `backend/.venv`, not by reading:
    validation, attach/detach, bulk download, and orphan protection.
 3. **Raw download navigation — fixed in Phase 04.** User actions preflight the
    signed URL, keep failures in the app, and isolate the storage navigation.
-4. `AttachmentCell` has no unavailable state, so an unresolvable asset renders as
-   a plausible empty file.
+4. **False-normal unresolved attachments — fixed in Phase 05.** Pending URL
+   resolution, settled missing assets, and resolved assets now render as three
+   explicit states across editor and viewer surfaces.
 
 Reachability matrix and method: [research.md](./research.md).
 
@@ -45,8 +46,8 @@ completed packet.
 
 ## Next step
 
-**[Phase 05](./phases/phase-05-unavailable-state.md) — explicit unavailable
-state** for assets that cannot resolve.
+**[Phase 06](./phases/phase-06-durable-docs-and-handoff.md) — durable docs and
+handoff** before the completed packet is archived.
 
 ## Blockers / decisions needed from Ed
 
@@ -183,6 +184,26 @@ remediation is required before Phase 01.
   passed`; formatting, lint, types, boundaries, contract checks, and production
   build passed.
 
+## Phase 05 verification
+
+- Pending URL resolution, settled missing assets, and resolved assets now have
+  distinct rendering. The unavailable modal contains no raw asset id and no
+  impossible Download/Open actions.
+- External URL maps require an explicit pending status at the type boundary;
+  all shared producers pass it. The Documentation viewer now reuses the shared
+  read-only `AttachmentCell` rather than bypassing the state contract.
+- Focused frontend bundle `29 passed`: the four planned availability cases,
+  shared-map loading regression, asset error mapping, and DataTable adapter.
+- Signed-out local browser: a temporarily soft-deleted Thermal Bridges PDF
+  showed the unavailable tile/message; the exact row was immediately restored
+  and verified. The restored PDF retained its tile, iframe, Download, and Open
+  actions.
+- Three parallel `simplify` reviews and final rechecks completed with no
+  remaining findings. `graphify update .` completed.
+- Full `make ci` green: backend `1830 passed, 7 skipped`; frontend `2389
+  passed`; formatting, lint, types, boundaries, contract checks, and production
+  build passed.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
@@ -255,3 +276,6 @@ Frontend:
 - **2026-08-03 10:40 EDT** — Phase 04 completed. Focused tests, signed-out
   failure/success browser acceptance, three-way simplify review, docs-pass, and
   full `make ci` passed. Phase 05 next.
+- **2026-08-03 11:03 EDT** — Phase 05 completed implementation, focused tests,
+  signed-out unavailable/restored-PDF browser acceptance, three-way simplify
+  rechecks, Graphify, docs-pass, and full `make ci`. Phase 06 next.

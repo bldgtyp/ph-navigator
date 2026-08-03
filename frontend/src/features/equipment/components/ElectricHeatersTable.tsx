@@ -148,6 +148,7 @@ export function ElectricHeatersTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (heater) => heater.datasheet_asset_ids,
@@ -161,6 +162,7 @@ export function ElectricHeatersTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (heater) => heater.photo_asset_ids,
@@ -174,6 +176,7 @@ export function ElectricHeatersTable({
     [
       customColumns,
       attachmentUrlById,
+      attachmentUrls.isPending,
       fieldDefByKey,
       isEditor,
       onWrite,

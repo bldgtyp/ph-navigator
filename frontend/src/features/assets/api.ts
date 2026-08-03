@@ -161,6 +161,15 @@ const DOWNLOAD_ERROR_MESSAGES: Record<string, string> = {
   not_authenticated: "Your session expired. Sign in again to download.",
 };
 
+export function assetDownloadMessage(
+  errorCode: string | null,
+  requestId: string | null = null,
+): string {
+  const mapped = errorCode ? DOWNLOAD_ERROR_MESSAGES[errorCode] : undefined;
+  const fallback = "Could not download this file. Try again or contact support.";
+  return mapped ?? `${fallback}${requestId ? ` (Request ID: ${requestId})` : ""}`;
+}
+
 export class AssetDownloadError extends Error {
   errorCode: string | null;
   requestId: string | null;
@@ -181,11 +190,11 @@ export async function downloadAsset(projectId: string, assetId: string): Promise
     downloadUrl(urls.download_url, "", "_blank");
   } catch (error) {
     if (error instanceof ApiRequestError) {
-      const mapped = error.errorCode ? DOWNLOAD_ERROR_MESSAGES[error.errorCode] : undefined;
-      const fallback = "Could not download this file. Try again or contact support.";
-      const message =
-        mapped ?? `${fallback}${error.requestId ? ` (Request ID: ${error.requestId})` : ""}`;
-      throw new AssetDownloadError(message, error.errorCode, error.requestId);
+      throw new AssetDownloadError(
+        assetDownloadMessage(error.errorCode, error.requestId),
+        error.errorCode,
+        error.requestId,
+      );
     }
     throw new AssetDownloadError("Could not download this file. Try again.", null, null);
   }

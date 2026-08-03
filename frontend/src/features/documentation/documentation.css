@@ -355,14 +355,6 @@
   padding-top: var(--space-12);
 }
 
-.documentation-readonly-attachments {
-  --attachment-tile-size: 56px;
-}
-
-.documentation-readonly-thumb {
-  cursor: default;
-}
-
 .documentation-cell {
   min-width: 0;
 }

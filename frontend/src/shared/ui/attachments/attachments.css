@@ -145,6 +145,18 @@
   border-color: color-mix(in oklab, var(--accent) 45%, var(--border-subtle));
 }
 
+.attachment-unavailable {
+  background: color-mix(in oklab, var(--phn-danger) 8%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--phn-danger) 38%, var(--border-subtle));
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--phn-danger);
+}
+
+.attachment-unavailable:hover {
+  border-color: var(--phn-danger);
+}
+
 .attachment-thumb img {
   height: 100%;
   object-fit: cover;
@@ -292,4 +304,19 @@
 .attachment-file-panel {
   color: var(--text-secondary);
   text-align: center;
+}
+
+.attachment-file-panel--unavailable {
+  align-items: center;
+  color: var(--phn-danger);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 32rem;
+  padding: var(--space-20);
+}
+
+.attachment-file-panel--unavailable p {
+  color: var(--text-secondary);
+  margin: 0;
 }

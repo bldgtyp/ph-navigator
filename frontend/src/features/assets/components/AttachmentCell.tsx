@@ -1,9 +1,25 @@
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, Paperclip, Plus } from "lucide-react";
+import { assetDownloadMessage } from "../api";
 import { uploadAsset, useAssetDownload, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
 import type { AssetUrls, AttachmentFieldConfig } from "../types";
+
+type AttachmentCellProps = {
+  projectId: string;
+  value: string[];
+  config: AttachmentFieldConfig;
+  readOnly: boolean;
+  onChange: (next: string[]) => Promise<void> | void;
+  showInlineEmptyButton?: boolean;
+  /** "cell" = compact tiles for dense tables; "card" = roomier tiles for
+   * spec-card / expansion surfaces where there is vertical room. */
+  variant?: "cell" | "card";
+} & (
+  | { assetUrlById?: undefined; assetUrlsPending?: never }
+  | { assetUrlById: ReadonlyMap<string, AssetUrls>; assetUrlsPending: boolean }
+);
 
 export function AttachmentCell({
   projectId,
@@ -12,20 +28,10 @@ export function AttachmentCell({
   readOnly,
   onChange,
   assetUrlById,
+  assetUrlsPending: externalAssetUrlsPending = false,
   showInlineEmptyButton = false,
   variant = "cell",
-}: {
-  projectId: string;
-  value: string[];
-  config: AttachmentFieldConfig;
-  readOnly: boolean;
-  onChange: (next: string[]) => Promise<void> | void;
-  assetUrlById?: ReadonlyMap<string, AssetUrls>;
-  showInlineEmptyButton?: boolean;
-  /** "cell" = compact tiles for dense tables; "card" = roomier tiles for
-   * spec-card / expansion surfaces where there is vertical room. */
-  variant?: "cell" | "card";
-}) {
+}: AttachmentCellProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
@@ -35,6 +41,7 @@ export function AttachmentCell({
   // highlight steady instead of flickering as the cursor crosses children.
   const dragDepth = useRef(0);
   const urls = useAssetUrls(projectId, assetUrlById ? [] : value);
+  const assetUrlsPending = assetUrlById ? externalAssetUrlsPending : urls.isPending;
   const urlById = useMemo(
     () => assetUrlById ?? new Map((urls.data ?? []).map((item) => [item.asset_id, item])),
     [assetUrlById, urls.data],
@@ -161,36 +168,42 @@ export function AttachmentCell({
         <div className="attachment-strip">
           {value.map((assetId, index) => {
             const asset = urlById.get(assetId);
+            if (assetUrlsPending) {
+              return (
+                <AttachmentPendingTile key={`${assetId}-${index}`} label="Loading attachment" />
+              );
+            }
+            const unavailable = !asset;
             return (
               <button
                 type="button"
                 key={`${assetId}-${index}`}
-                className="attachment-thumb"
-                title={asset ? `${asset.original_filename} · ${asset.content_type}` : assetId}
+                className={`attachment-thumb${unavailable ? " attachment-unavailable" : ""}`}
+                title={
+                  asset
+                    ? `${asset.original_filename} · ${asset.content_type}`
+                    : assetDownloadMessage("asset_not_found")
+                }
+                aria-label={unavailable ? "Unavailable attachment" : undefined}
                 onClick={() => setModalIndex(index)}
               >
-                {asset?.thumbnail_url ? (
+                {unavailable ? (
+                  <AlertTriangle size={16} aria-hidden="true" />
+                ) : asset.thumbnail_url ? (
                   <img src={asset.thumbnail_url} alt="" />
                 ) : (
                   <span
                     className="attachment-doc-thumb"
-                    data-kind={fileGlyph(asset?.content_type).toLowerCase()}
+                    data-kind={fileGlyph(asset.content_type).toLowerCase()}
                   >
-                    <span>{fileGlyph(asset?.content_type)}</span>
+                    <span>{fileGlyph(asset.content_type)}</span>
                   </span>
                 )}
               </button>
             );
           })}
           {pending.map((name) => (
-            <span
-              className="attachment-pending"
-              key={name}
-              title={`Uploading ${name}…`}
-              aria-label={`Uploading ${name}`}
-            >
-              <Loader2 className="attachment-spinner" size={16} aria-hidden="true" />
-            </span>
+            <AttachmentPendingTile key={name} label={`Uploading ${name}`} />
           ))}
           {failed.map((name) => (
             <button
@@ -240,6 +253,14 @@ export function AttachmentCell({
   );
 }
 
+function AttachmentPendingTile({ label }: { label: string }) {
+  return (
+    <span className="attachment-pending" title={`${label}…`} aria-label={label} role="status">
+      <Loader2 className="attachment-spinner" size={16} aria-hidden="true" />
+    </span>
+  );
+}
+
 function AttachmentModal({
   projectId,
   assetId,
@@ -264,24 +285,30 @@ function AttachmentModal({
   const replaceRef = useRef<HTMLInputElement | null>(null);
   const { download, downloadError } = useAssetDownload();
   const isImage = asset?.content_type.startsWith("image/");
+  const unavailable = !asset;
   return (
     <div className="attachment-modal" role="dialog" aria-modal="true">
       <div className="attachment-modal-panel">
         <header>
-          <strong>{asset?.original_filename ?? assetId}</strong>
+          <strong>{asset?.original_filename ?? "Unavailable attachment"}</strong>
           <button type="button" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
         <div className="attachment-preview">
-          {isImage && asset?.preview_url ? (
+          {unavailable ? (
+            <div className="attachment-file-panel attachment-file-panel--unavailable">
+              <AlertTriangle size={24} aria-hidden="true" />
+              <p>{assetDownloadMessage("asset_not_found")}</p>
+            </div>
+          ) : isImage && asset.preview_url ? (
             <img src={asset.preview_url} alt={asset.original_filename} />
-          ) : asset?.content_type === "application/pdf" && asset.preview_url ? (
+          ) : asset.content_type === "application/pdf" && asset.preview_url ? (
             <iframe title={asset.original_filename} src={asset.preview_url} />
           ) : (
             <div className="attachment-file-panel">
-              <span>{fileGlyph(asset?.content_type)}</span>
-              <p>{asset?.content_type ?? "File"}</p>
+              <span>{fileGlyph(asset.content_type)}</span>
+              <p>{asset.content_type}</p>
             </div>
           )}
         </div>
@@ -297,9 +324,11 @@ function AttachmentModal({
           <button type="button" onClick={onNext} aria-label="Next">
             →
           </button>
-          <button type="button" onClick={() => void download(projectId, assetId)}>
-            Download
-          </button>
+          {!unavailable ? (
+            <button type="button" onClick={() => void download(projectId, assetId)}>
+              Download
+            </button>
+          ) : null}
           {asset?.preview_url ? (
             <a href={asset.preview_url} target="_blank" rel="noreferrer">
               Open in new tab

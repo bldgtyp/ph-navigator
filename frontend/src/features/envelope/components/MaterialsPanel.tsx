@@ -346,6 +346,7 @@ export function MaterialsPanel({
                     config={DATASHEET_ATTACHMENT_CONFIG}
                     readOnly={!canEdit || material.specification_status === "na" || busy}
                     assetUrlById={assetUrlById}
+                    assetUrlsPending={assetUrls.isPending}
                     variant="card"
                     showInlineEmptyButton={canEdit && material.specification_status !== "na"}
                     onChange={(nextAssetIds) =>
@@ -380,6 +381,7 @@ export function MaterialsPanel({
                             whereLabel={group.whereLabel}
                             projectId={projectId}
                             assetUrlById={assetUrlById}
+                            assetUrlsPending={assetUrls.isPending}
                             canEdit={canEdit}
                             canEditNote={group.canEditNotes}
                             busy={busy}

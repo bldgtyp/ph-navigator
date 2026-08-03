@@ -208,6 +208,7 @@ export function FansTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (fan) => fan.datasheet_asset_ids,
@@ -221,6 +222,7 @@ export function FansTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (fan) => fan.photo_asset_ids,
@@ -234,6 +236,7 @@ export function FansTable({
     [
       customColumns,
       attachmentUrlById,
+      attachmentUrls.isPending,
       fieldDefByKey,
       isEditor,
       onWrite,

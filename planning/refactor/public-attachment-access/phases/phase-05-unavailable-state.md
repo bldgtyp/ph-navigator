@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 11:03 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Give AttachmentCell an explicit unavailable state instead of rendering an
   unresolvable asset as a plausible-looking empty file.
@@ -94,6 +94,32 @@ inside `AttachmentCell`.
   and the modal explains it.
 - Manual: a normal PDF attachment is unchanged — thumbnail, iframe preview,
   Download, Open in new tab.
+
+## Completion evidence
+
+- `AttachmentCell` now distinguishes pending URL resolution, a settled missing
+  asset, and a resolved asset. The unavailable tile and modal reuse the Phase 04
+  error copy, expose no raw asset id, and suppress impossible Download/Open
+  actions.
+- External URL maps and their pending status are a type-enforced pair. Every
+  shared-map producer passes `isPending`; the Documentation viewer now reuses
+  the same read-only `AttachmentCell` instead of maintaining a second renderer.
+- Component/API/DataTable focused bundle: `29 passed`, including all four tests
+  listed above and the external-map loading regression.
+- Signed-out local browser: a temporarily soft-deleted Thermal Bridges PDF
+  rendered `Unavailable attachment`; its modal showed the mapped message with
+  no Download/Open actions and no raw id. The exact database row was restored
+  immediately and verified.
+- Signed-out local browser after restore: the PDF tile, iframe, Download, and
+  Open in new tab remained unchanged.
+- Three parallel `simplify` reviews and rechecks completed with no remaining
+  correctness, reuse, or efficiency findings.
+- `graphify update .` completed. The docs pass found no new architectural rule
+  requiring a context doc or ADR; this phase refines the established attachment
+  presentation contract.
+- Full `make ci` green: backend `1830 passed, 7 skipped`; frontend `2389
+  passed`; formatting, lint, types, boundaries, contract checks, and production
+  build passed.
 
 ## Risks
 

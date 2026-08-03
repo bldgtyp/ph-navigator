@@ -125,7 +125,8 @@ type AttachmentCellProps<TConfig, TAssetUrl> = {
   config: TConfig;
   readOnly: boolean;
   onChange: (next: string[]) => Promise<void> | void;
-  assetUrlById?: ReadonlyMap<string, TAssetUrl>;
+  assetUrlById: ReadonlyMap<string, TAssetUrl>;
+  assetUrlsPending: boolean;
 };
 
 export function attachmentColumn<TRow, TConfig, TAssetUrl>({
@@ -135,6 +136,7 @@ export function attachmentColumn<TRow, TConfig, TAssetUrl>({
   projectId,
   isEditor,
   assetUrlById,
+  assetUrlsPending,
   config,
   AttachmentCell,
   getAssetIds,
@@ -150,6 +152,7 @@ export function attachmentColumn<TRow, TConfig, TAssetUrl>({
   projectId: string;
   isEditor: boolean;
   assetUrlById: ReadonlyMap<string, TAssetUrl>;
+  assetUrlsPending: boolean;
   config: TConfig;
   AttachmentCell: ComponentType<AttachmentCellProps<TConfig, TAssetUrl>>;
   getAssetIds: (row: TRow) => string[];
@@ -171,6 +174,7 @@ export function attachmentColumn<TRow, TConfig, TAssetUrl>({
         config={config}
         readOnly={!isEditor}
         assetUrlById={assetUrlById}
+        assetUrlsPending={assetUrlsPending}
         onChange={async (next) => {
           if (sameOrderedStrings(getAssetIds(row), next)) return;
           if (onChange) return onChange(row, next);

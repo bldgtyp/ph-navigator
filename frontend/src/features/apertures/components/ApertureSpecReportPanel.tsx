@@ -306,6 +306,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                     config={DATASHEET_ATTACHMENT_CONFIG}
                     readOnly={!canEdit || row.specification_status === "na" || busy}
                     assetUrlById={assetUrlById}
+                    assetUrlsPending={assetUrls.isPending}
                     variant="card"
                     showInlineEmptyButton={canEdit && row.specification_status !== "na"}
                     onChange={(nextAssetIds) =>
@@ -327,6 +328,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                     config={SITE_PHOTO_ATTACHMENT_CONFIG}
                     readOnly={!canEdit || row.specification_status === "na" || busy}
                     assetUrlById={assetUrlById}
+                    assetUrlsPending={assetUrls.isPending}
                     variant="card"
                     showInlineEmptyButton={canEdit && row.specification_status !== "na"}
                     onChange={(nextAssetIds) =>

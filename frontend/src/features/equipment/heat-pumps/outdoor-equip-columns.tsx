@@ -113,6 +113,7 @@ export function outdoorEquipColumnDefs({
   projectId,
   isEditor,
   assetUrlById,
+  assetUrlsPending,
   onDatasheetChange,
   onPhotoChange,
   outdoorUnits = [],
@@ -124,6 +125,7 @@ export function outdoorEquipColumnDefs({
   projectId: string;
   isEditor: boolean;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   onPhotoChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
@@ -224,6 +226,7 @@ export function outdoorEquipColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
       onChange: onDatasheetChange,
     }),
@@ -231,6 +234,7 @@ export function outdoorEquipColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: OUTDOOR_EQUIP_PHOTO_FIELD_KEY,
       onChange: onPhotoChange,
     }),

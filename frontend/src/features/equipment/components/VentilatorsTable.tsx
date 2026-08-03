@@ -274,6 +274,7 @@ export function VentilatorsTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (ventilator) => ventilator.datasheet_asset_ids,
@@ -287,6 +288,7 @@ export function VentilatorsTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (ventilator) => ventilator.photo_asset_ids,
@@ -321,6 +323,7 @@ export function VentilatorsTable({
     [
       customColumns,
       attachmentUrlById,
+      attachmentUrls.isPending,
       fieldDefByKey,
       incomingIndoorUnitIdsByVentilatorId,
       inverseLinkFields,

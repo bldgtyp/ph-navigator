@@ -36,10 +36,12 @@ export function DocumentationSummaryView({
   project,
   summary,
   assetUrlById,
+  assetUrlsPending,
 }: {
   project: ProjectDetail;
   summary: ProjectDocumentationSummary;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
 }) {
   const location = useLocation();
   const [activeFilters, setActiveFilters] = useState<Set<DocumentationAxis>>(() => new Set());
@@ -198,6 +200,7 @@ export function DocumentationSummaryView({
                     section={section}
                     activeFilters={activeFilters}
                     assetUrlById={assetUrlById}
+                    assetUrlsPending={assetUrlsPending}
                     canEdit={canEdit}
                     isRecordWriting={isRecordWriting}
                     expandedGroups={expandedGroups}
@@ -295,6 +298,7 @@ function DocumentationSectionBody({
   section,
   activeFilters,
   assetUrlById,
+  assetUrlsPending,
   canEdit,
   isRecordWriting,
   expandedGroups,
@@ -310,6 +314,7 @@ function DocumentationSectionBody({
   section: DocumentationSection;
   activeFilters: ReadonlySet<DocumentationAxis>;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   canEdit: boolean;
   isRecordWriting: (record: DocumentationRecord) => boolean;
   expandedGroups: ReadonlySet<string>;
@@ -345,6 +350,7 @@ function DocumentationSectionBody({
           group={group}
           activeFilters={activeFilters}
           assetUrlById={assetUrlById}
+          assetUrlsPending={assetUrlsPending}
           canEdit={canEdit}
           isRecordWriting={isRecordWriting}
           expanded={expandedGroups.has(documentationGroupKey(section.key, group.key))}
@@ -366,6 +372,7 @@ function DocumentationGroupView({
   group,
   activeFilters,
   assetUrlById,
+  assetUrlsPending,
   canEdit,
   isRecordWriting,
   expanded,
@@ -381,6 +388,7 @@ function DocumentationGroupView({
   group: DocumentationGroup;
   activeFilters: ReadonlySet<DocumentationAxis>;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   canEdit: boolean;
   isRecordWriting: (record: DocumentationRecord) => boolean;
   expanded: boolean;
@@ -426,6 +434,7 @@ function DocumentationGroupView({
                   projectId={projectId}
                   record={record}
                   assetUrlById={assetUrlById}
+                  assetUrlsPending={assetUrlsPending}
                   canEdit={canEdit}
                   writing={isRecordWriting(record)}
                   expanded={expandedRecords.has(documentationRecordKey(record))}

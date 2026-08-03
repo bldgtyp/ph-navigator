@@ -186,6 +186,7 @@ export function HotWaterTanksTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (tank) => tank.datasheet_asset_ids,
@@ -199,6 +200,7 @@ export function HotWaterTanksTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (tank) => tank.photo_asset_ids,
@@ -224,6 +226,7 @@ export function HotWaterTanksTable({
     [
       customColumns,
       attachmentUrlById,
+      attachmentUrls.isPending,
       fieldDefByKey,
       isEditor,
       onWrite,

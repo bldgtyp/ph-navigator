@@ -11,6 +11,7 @@ export function UseSiteRow({
   whereLabel,
   projectId,
   assetUrlById,
+  assetUrlsPending,
   canEdit,
   canEditNote = true,
   busy,
@@ -24,6 +25,7 @@ export function UseSiteRow({
   whereLabel?: string;
   projectId: string;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   canEdit: boolean;
   canEditNote?: boolean;
   busy: boolean;
@@ -55,6 +57,7 @@ export function UseSiteRow({
           config={SITE_PHOTO_ATTACHMENT_CONFIG}
           readOnly={!canEdit || busy}
           assetUrlById={assetUrlById}
+          assetUrlsPending={assetUrlsPending}
           variant="card"
           showInlineEmptyButton={canEdit}
           onChange={onPhotoChange}

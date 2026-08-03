@@ -33,9 +33,25 @@ const SECOND_ASSET: AssetUrls = {
   original_filename: "second.pdf",
   display_name: "second.pdf",
 };
+const GENERIC_ASSET: AssetUrls = {
+  ...ASSET,
+  original_filename: "model.bin",
+  display_name: "model.bin",
+  content_type: "application/octet-stream",
+  thumbnail_url: null,
+  thumbnail_status: null,
+  thumbnail_expires_at: null,
+};
+const CONFIG = {
+  assetKind: "datasheet" as const,
+  allowedTypes: ["application/pdf"],
+  maxCount: 5,
+  maxFileSizeMb: 25,
+};
 
 afterEach(() => {
   vi.mocked(downloadAsset).mockReset();
+  vi.unstubAllGlobals();
 });
 
 describe("AttachmentCell downloads", () => {
@@ -50,12 +66,7 @@ describe("AttachmentCell downloads", () => {
         <AttachmentCell
           projectId="project-1"
           value={["asset-1", "asset-2"]}
-          config={{
-            assetKind: "datasheet",
-            allowedTypes: ["application/pdf"],
-            maxCount: 5,
-            maxFileSizeMb: 25,
-          }}
+          config={CONFIG}
           readOnly
           onChange={vi.fn()}
           assetUrlById={
@@ -64,6 +75,7 @@ describe("AttachmentCell downloads", () => {
               ["asset-2", SECOND_ASSET],
             ])
           }
+          assetUrlsPending={false}
         />
       </QueryClientProvider>,
     );
@@ -94,12 +106,7 @@ describe("AttachmentCell downloads", () => {
         <AttachmentCell
           projectId="project-1"
           value={["asset-1", "asset-2"]}
-          config={{
-            assetKind: "datasheet",
-            allowedTypes: ["application/pdf"],
-            maxCount: 5,
-            maxFileSizeMb: 25,
-          }}
+          config={CONFIG}
           readOnly
           onChange={vi.fn()}
           assetUrlById={
@@ -108,6 +115,7 @@ describe("AttachmentCell downloads", () => {
               ["asset-2", SECOND_ASSET],
             ])
           }
+          assetUrlsPending={false}
         />
       </QueryClientProvider>,
     );
@@ -119,5 +127,122 @@ describe("AttachmentCell downloads", () => {
 
     expect(await screen.findByText("second.pdf")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("AttachmentCell availability", () => {
+  it("renders a settled missing asset as unavailable instead of a FILE tile", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AttachmentCell
+          projectId="project-1"
+          value={["asset-missing"]}
+          config={CONFIG}
+          readOnly
+          onChange={vi.fn()}
+          assetUrlById={new Map()}
+          assetUrlsPending={false}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Unavailable attachment" })).toHaveClass(
+      "attachment-unavailable",
+    );
+    expect(screen.queryByText("FILE")).not.toBeInTheDocument();
+  });
+
+  it("renders a loading affordance while asset URLs are pending", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AttachmentCell
+          projectId="project-1"
+          value={["asset-pending"]}
+          config={CONFIG}
+          readOnly
+          onChange={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("status", { name: "Loading attachment" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Unavailable attachment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders a loading affordance while a shared asset URL map is pending", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AttachmentCell
+          projectId="project-1"
+          value={["asset-pending"]}
+          config={CONFIG}
+          readOnly
+          onChange={vi.fn()}
+          assetUrlById={new Map()}
+          assetUrlsPending
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("status", { name: "Loading attachment" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Unavailable attachment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("explains an unavailable asset and suppresses impossible actions", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AttachmentCell
+          projectId="project-1"
+          value={["asset-missing"]}
+          config={CONFIG}
+          readOnly
+          onChange={vi.fn()}
+          assetUrlById={new Map()}
+          assetUrlsPending={false}
+        />
+      </QueryClientProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Unavailable attachment" }));
+
+    expect(screen.getByText("Unavailable attachment")).toBeInTheDocument();
+    expect(screen.getByText("This file is no longer available.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Download" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open in new tab" })).not.toBeInTheDocument();
+    expect(screen.queryByText("asset-missing")).not.toBeInTheDocument();
+  });
+
+  it("keeps a resolved generic file on the normal FILE path with working actions", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AttachmentCell
+          projectId="project-1"
+          value={["asset-1"]}
+          config={CONFIG}
+          readOnly
+          onChange={vi.fn()}
+          assetUrlById={new Map([["asset-1", GENERIC_ASSET]])}
+          assetUrlsPending={false}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText("FILE")).toBeInTheDocument();
+    await userEvent.click(screen.getByTitle("model.bin · application/octet-stream"));
+    expect(screen.getByRole("button", { name: "Download" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open in new tab" })).toBeInTheDocument();
   });
 });

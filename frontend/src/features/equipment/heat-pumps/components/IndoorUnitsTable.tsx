@@ -130,6 +130,7 @@ export function IndoorUnitsTable({
         rooms,
         ventilators,
         assetUrlById,
+        assetUrlsPending: assetUrls.isPending,
         onDatasheetChange: (row, next) =>
           replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next }),
         onPhotoChange: (row, next) =>
@@ -140,6 +141,7 @@ export function IndoorUnitsTable({
     });
   }, [
     assetUrlById,
+    assetUrls.isPending,
     controller.onWrite,
     leafSlice.rows_computed,
     projectId,

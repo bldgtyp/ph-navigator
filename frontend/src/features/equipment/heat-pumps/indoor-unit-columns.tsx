@@ -65,6 +65,7 @@ export function indoorUnitColumnDefs({
   rooms,
   ventilators,
   assetUrlById,
+  assetUrlsPending,
   onDatasheetChange,
   onPhotoChange,
 }: {
@@ -75,6 +76,7 @@ export function indoorUnitColumnDefs({
   rooms: readonly RoomRow[];
   ventilators: readonly VentilatorRow[];
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   onDatasheetChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
   onPhotoChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpIndoorUnitRow>[] {
@@ -139,6 +141,7 @@ export function indoorUnitColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: INDOOR_UNIT_DATASHEET_FIELD_KEY,
       onChange: onDatasheetChange,
     }),
@@ -146,6 +149,7 @@ export function indoorUnitColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: INDOOR_UNIT_PHOTO_FIELD_KEY,
       onChange: onPhotoChange,
     }),

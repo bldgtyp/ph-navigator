@@ -27,7 +27,8 @@ type TestAttachmentCellProps = {
   config: { maxCount: number };
   readOnly: boolean;
   onChange: (next: string[]) => void;
-  assetUrlById?: ReadonlyMap<string, { asset_id: string }>;
+  assetUrlById: ReadonlyMap<string, { asset_id: string }>;
+  assetUrlsPending: boolean;
 };
 
 const fields = new Map<string, FieldDef>([
@@ -234,6 +235,7 @@ describe("shared data-table column builders", () => {
       projectId: "proj_1",
       isEditor: true,
       assetUrlById: new Map(),
+      assetUrlsPending: false,
       config: { maxCount: 5 },
       AttachmentCell,
       getAssetIds: (row) => row.assetIds,
@@ -271,6 +273,7 @@ describe("shared data-table column builders", () => {
       projectId: "proj_1",
       isEditor: true,
       assetUrlById: new Map(),
+      assetUrlsPending: false,
       config: { maxCount: 5 },
       AttachmentCell,
       getAssetIds: (row) => row.assetIds,

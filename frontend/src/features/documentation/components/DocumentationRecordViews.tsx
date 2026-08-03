@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { StatusSelect } from "../../../shared/ui";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
-import type { AssetUrls, AttachmentFieldConfig } from "../../assets/types";
+import type { AssetUrls } from "../../assets/types";
 import type { DocumentationFieldChange } from "../hooks";
 import {
   EVIDENCE_STATUS_OPTIONS,
@@ -18,6 +18,7 @@ export function DocumentationRecordRow({
   projectId,
   record,
   assetUrlById,
+  assetUrlsPending,
   canEdit,
   writing,
   expanded,
@@ -29,6 +30,7 @@ export function DocumentationRecordRow({
   projectId: string;
   record: DocumentationRecord;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   canEdit: boolean;
   writing: boolean;
   expanded: boolean;
@@ -119,6 +121,7 @@ export function DocumentationRecordRow({
               record={record}
               axis="datasheet"
               assetUrlById={assetUrlById}
+              assetUrlsPending={assetUrlsPending}
               canEdit={canEdit}
               writing={writing}
               variant="cell"
@@ -136,6 +139,7 @@ export function DocumentationRecordRow({
               record={record}
               axis="photo"
               assetUrlById={assetUrlById}
+              assetUrlsPending={assetUrlsPending}
               canEdit={canEdit}
               writing={writing}
               variant="cell"
@@ -178,6 +182,7 @@ function DocumentationEvidenceAttachmentControl({
   record,
   axis,
   assetUrlById,
+  assetUrlsPending,
   canEdit,
   writing,
   variant,
@@ -188,6 +193,7 @@ function DocumentationEvidenceAttachmentControl({
   record: DocumentationRecord;
   axis: "datasheet" | "photo";
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   canEdit: boolean;
   writing: boolean;
   variant: "cell" | "card";
@@ -211,13 +217,23 @@ function DocumentationEvidenceAttachmentControl({
             : onPhotoChange(record, nextAssetIds)
         }
         assetUrlById={assetUrlById}
+        assetUrlsPending={assetUrlsPending}
         showInlineEmptyButton
         variant={variant}
       />
     );
   }
   return (
-    <ReadOnlyAttachmentStrip assetIds={assetIds} assetUrlById={assetUrlById} variant={variant} />
+    <AttachmentCell
+      projectId={projectId}
+      value={assetIds}
+      config={config}
+      readOnly
+      onChange={() => undefined}
+      assetUrlById={assetUrlById}
+      assetUrlsPending={assetUrlsPending}
+      variant={variant}
+    />
   );
 }
 
@@ -251,72 +267,4 @@ function AxisStatusCell<TValue extends string>({
       />
     </div>
   );
-}
-
-function ReadOnlyAttachmentStrip({
-  assetIds,
-  assetUrlById,
-  variant,
-}: {
-  assetIds: readonly string[];
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-  variant: "cell" | "card";
-}) {
-  return (
-    <div
-      className={`attachment-cell attachment-cell--${variant} documentation-readonly-attachments`}
-    >
-      <div className="attachment-strip">
-        {assetIds.map((assetId, index) => {
-          const asset = assetUrlById.get(assetId);
-          const glyph = fileGlyph(asset?.content_type);
-          return (
-            <span
-              key={`${assetId}-${index}`}
-              className="attachment-thumb documentation-readonly-thumb"
-              title={asset ? `${asset.original_filename} · ${asset.content_type}` : assetId}
-            >
-              {asset?.thumbnail_url ? (
-                <img src={asset.thumbnail_url} alt="" />
-              ) : (
-                <span className="attachment-doc-thumb" data-kind={glyph.toLowerCase()}>
-                  <span>{glyph}</span>
-                </span>
-              )}
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function ReadOnlyAttachmentCell({
-  projectId,
-  assetIds,
-  config,
-  assetUrlById,
-}: {
-  projectId: string;
-  assetIds: string[];
-  config: AttachmentFieldConfig;
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-}) {
-  return (
-    <AttachmentCell
-      projectId={projectId}
-      value={assetIds}
-      config={config}
-      readOnly
-      onChange={() => undefined}
-      assetUrlById={assetUrlById}
-      variant="card"
-    />
-  );
-}
-
-function fileGlyph(contentType: string | undefined | null): string {
-  if (contentType === "application/pdf") return "PDF";
-  if (contentType?.includes("json")) return "JSON";
-  return "FILE";
 }

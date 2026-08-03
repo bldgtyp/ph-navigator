@@ -187,6 +187,7 @@ export function OutdoorUnitsTable({
         projectId,
         isEditor: !readOnly,
         assetUrlById,
+        assetUrlsPending: assetUrls.isPending,
         onDatasheetChange: async (row, next) => {
           await replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next });
         },
@@ -203,6 +204,7 @@ export function OutdoorUnitsTable({
     });
   }, [
     assetUrlById,
+    assetUrls.isPending,
     controller.onWrite,
     incomingIndoorUnitIdsByRowId,
     indoorUnits,

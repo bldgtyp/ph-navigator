@@ -130,6 +130,7 @@ export function IndoorEquipTable({
         projectId,
         isEditor: !readOnly,
         assetUrlById,
+        assetUrlsPending: assetUrls.isPending,
         onDatasheetChange: (row, next) =>
           replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next }),
         onPhotoChange: (row, next) =>
@@ -144,6 +145,7 @@ export function IndoorEquipTable({
     });
   }, [
     assetUrlById,
+    assetUrls.isPending,
     controller.onWrite,
     incomingIndoorUnitIdsByRowId,
     indoorUnits,

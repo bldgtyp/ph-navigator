@@ -199,6 +199,7 @@ export function AppliancesTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (appliance) => appliance.datasheet_asset_ids,
@@ -212,6 +213,7 @@ export function AppliancesTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (appliance) => appliance.photo_asset_ids,
@@ -232,6 +234,7 @@ export function AppliancesTable({
     [
       customColumns,
       attachmentUrlById,
+      attachmentUrls.isPending,
       fieldDefByKey,
       isEditor,
       onWrite,

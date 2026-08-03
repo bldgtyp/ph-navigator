@@ -47,6 +47,7 @@ export function outdoorUnitColumnDefs({
   projectId,
   isEditor,
   assetUrlById,
+  assetUrlsPending,
   onDatasheetChange,
   onPhotoChange,
   indoorUnits = [],
@@ -57,6 +58,7 @@ export function outdoorUnitColumnDefs({
   projectId: string;
   isEditor: boolean;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
   onPhotoChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
@@ -85,6 +87,7 @@ export function outdoorUnitColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
       onChange: onDatasheetChange,
     }),
@@ -92,6 +95,7 @@ export function outdoorUnitColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: OUTDOOR_UNIT_PHOTO_FIELD_KEY,
       onChange: onPhotoChange,
     }),

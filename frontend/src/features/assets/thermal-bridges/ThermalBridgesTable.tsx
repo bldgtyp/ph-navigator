@@ -154,6 +154,7 @@ export function ThermalBridgesTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: PDF_REPORT_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (row) => row.pdf_report_asset_ids,
@@ -168,6 +169,7 @@ export function ThermalBridgesTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (row) => row.photo_asset_ids,
@@ -192,6 +194,7 @@ export function ThermalBridgesTable({
       onWrite,
       projectId,
       attachmentUrlById,
+      attachmentUrls.isPending,
       slice.rows_computed,
     ],
   );

@@ -65,6 +65,7 @@ export function indoorEquipColumnDefs({
   projectId,
   isEditor,
   assetUrlById,
+  assetUrlsPending,
   onDatasheetChange,
   onPhotoChange,
   indoorUnits = [],
@@ -75,6 +76,7 @@ export function indoorEquipColumnDefs({
   projectId: string;
   isEditor: boolean;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  assetUrlsPending: boolean;
   onDatasheetChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
   onPhotoChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
@@ -143,6 +145,7 @@ export function indoorEquipColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
       onChange: onDatasheetChange,
     }),
@@ -150,6 +153,7 @@ export function indoorEquipColumnDefs({
       projectId,
       isEditor,
       assetUrlById,
+      assetUrlsPending,
       fieldKey: INDOOR_EQUIP_PHOTO_FIELD_KEY,
       onChange: onPhotoChange,
     }),

@@ -269,6 +269,7 @@ export function PumpsTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: DATASHEET_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (pump) => pump.datasheet_asset_ids,
@@ -282,6 +283,7 @@ export function PumpsTable({
         projectId,
         isEditor,
         assetUrlById: attachmentUrlById,
+        assetUrlsPending: attachmentUrls.isPending,
         config: SITE_PHOTO_ATTACHMENT_CONFIG,
         AttachmentCell,
         getAssetIds: (pump) => pump.photo_asset_ids,
@@ -308,6 +310,7 @@ export function PumpsTable({
   }, [
     customColumns,
     attachmentUrlById,
+    attachmentUrls.isPending,
     fieldDefByKey,
     isEditor,
     onInversePillClick,

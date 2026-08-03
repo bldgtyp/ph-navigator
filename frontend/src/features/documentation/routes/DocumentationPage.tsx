@@ -55,6 +55,11 @@ export function DocumentationPage({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <DocumentationSummaryView project={project} summary={query.data} assetUrlById={assetUrlById} />
+    <DocumentationSummaryView
+      project={project}
+      summary={query.data}
+      assetUrlById={assetUrlById}
+      assetUrlsPending={assetUrls.isPending}
+    />
   );
 }
