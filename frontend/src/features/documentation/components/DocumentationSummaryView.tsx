@@ -1,6 +1,6 @@
 import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ProgressBar } from "../../../shared/ui";
 import type { AssetUrls } from "../../assets/types";
 import type { ProjectDetail } from "../../projects/types";
@@ -49,7 +49,9 @@ export function DocumentationSummaryView({
   assetUrlsPending: boolean;
 }) {
   const location = useLocation();
-  const [activeFilters, setActiveFilters] = useState<Set<DocumentationAxis>>(() => new Set());
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeFilters = useMemo(() => needsFilters(searchParams), [searchParams]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => new Set());
@@ -91,12 +93,22 @@ export function DocumentationSummaryView({
   }, [location.hash, summary.sections, summary.version_etag, summary.draft_etag]);
 
   const toggleFilter = (axis: DocumentationAxis) => {
-    setActiveFilters((current) => {
-      const next = new Set(current);
-      if (next.has(axis)) next.delete(axis);
-      else next.add(axis);
-      return next;
-    });
+    const nextFilters = setWithToggledValue(activeFilters, axis);
+    const nextParams = new URLSearchParams(searchParams);
+    const value = AXIS_FILTERS.filter(({ axis: candidate }) => nextFilters.has(candidate))
+      .map(({ axis: candidate }) => candidate)
+      .join(",");
+    if (value) nextParams.set("needs", value);
+    else nextParams.delete("needs");
+    const search = nextParams.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: search ? `?${search}` : "",
+        hash: location.hash,
+      },
+      { replace: true, state: location.state },
+    );
   };
   const toggleSection = (sectionKey: string) => {
     setExpandedSections((current) => setWithToggledValue(current, sectionKey));
@@ -239,6 +251,11 @@ export function DocumentationSummaryView({
   );
 }
 
+function needsFilters(searchParams: URLSearchParams): Set<DocumentationAxis> {
+  const requested = new Set(searchParams.get("needs")?.split(",") ?? []);
+  return new Set(AXIS_FILTERS.map(({ axis }) => axis).filter((axis) => requested.has(axis)));
+}
+
 function documentationRecordKey(record: DocumentationRecord): string {
   return `${record.table_key}:${record.record_id}`;
 }
@@ -247,7 +264,7 @@ function documentationGroupKey(sectionKey: string, groupKey: string): string {
   return `${sectionKey}:${groupKey}`;
 }
 
-function setWithToggledValue(current: Set<string>, key: string, force?: boolean): Set<string> {
+function setWithToggledValue<T>(current: Set<T>, key: T, force?: boolean): Set<T> {
   const hasKey = current.has(key);
   const shouldAdd = force ?? !hasKey;
   if (hasKey === shouldAdd) return current;

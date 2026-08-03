@@ -1,6 +1,6 @@
 DATE: 2026-08-03
 TIME: 11:25 EDT
-STATUS: Active — Phase 02 complete; Phase 03 next
+STATUS: Active — Phase 03 complete; Phase 04 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -50,9 +50,18 @@ Simplify review findings were reconciled; the docs pass updated the established
 design-system/token inventories. Full CI passed: backend 1,830 passed / 7
 skipped; frontend 2,391 passed; production build and static gates green.
 
+Phase 03 now derives Documentation filters from `?needs=` and writes canonical
+filter state with replace navigation while explicitly preserving hashes.
+Focused RTL passed (8 tests), the production build passed, and browser smoke of
+`?needs=datasheet#equipment` showed Equipment expanded/scrolled with only the
+datasheet chip active. Three-lens simplify review reconciled the reusable
+query-param setter; docs-pass updated the durable route contract. Full CI
+passed: backend 1,830 passed / 7 skipped; frontend 2,395 passed; production
+build and static gates green.
+
 ## Next step
 
-Pick up **Phase 03** (Documentation URL-addressable filters).
+Pick up **Phase 04** (Overview rename, rollup endpoint, and meters).
 
 ## Blockers
 
@@ -79,6 +88,6 @@ still open when Phase 02 starts.
 | --- | --- | --- |
 | 01 Vocabulary, labels, tooltips, legend | Complete | O-1 recorded; mounted surfaces verified; CI green |
 | 02 One control + CSS tokens | Complete | five surfaces visually inspected; CI green |
-| 03 Documentation `?needs=` filters | Not started | PRD §6.3 browser smoke; CI green |
+| 03 Documentation `?needs=` filters | Complete | PRD §6.3 browser smoke; CI green |
 | 04 Overview rename + meters | Not started | PRD §6.4/§6.5 smoke; redirect verified; CI green |
 | 05 Retire status_summary + docs sync | Not started | consumer sweep clean; context docs rewritten; packet archived |
