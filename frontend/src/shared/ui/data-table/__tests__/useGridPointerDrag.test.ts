@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

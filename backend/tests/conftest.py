@@ -46,6 +46,14 @@ def _route_database_url_for_worker() -> None:
     # limiter's own boundary test re-enables it via monkeypatch.
     os.environ.setdefault("GH_API_RATE_LIMIT_ENABLED", "false")
     os.environ.setdefault("LOGIN_RATE_LIMIT_ENABLED", "false")
+    # Minimal Argon2 work factors: production-strength hashing (t=3,
+    # m=64MiB) costs ~35-100ms per hash/verify, and signed-in test
+    # clients pay it twice per login across hundreds of tests. Hash
+    # strength is not under test anywhere; verification reads its
+    # parameters from the stored hash, so mixed-cost hashes coexist.
+    os.environ.setdefault("PASSWORD_ARGON2_TIME_COST", "1")
+    os.environ.setdefault("PASSWORD_ARGON2_MEMORY_COST", "1024")
+    os.environ.setdefault("PASSWORD_ARGON2_PARALLELISM", "1")
     worker = os.environ.get("PYTEST_XDIST_WORKER")
     if not worker or worker == "master":
         return
@@ -96,6 +104,7 @@ import pytest  # noqa: E402
 
 from config import settings  # noqa: E402
 from database import transaction  # noqa: E402
+from features.project_location.derive import DerivedLocationGeodata  # noqa: E402
 
 _TEST_DB_PATTERN = re.compile(r"_test(?:_gw\d+)?$")
 
@@ -111,6 +120,31 @@ def _refuse_to_truncate_dev_db() -> None:
             "Backend tests TRUNCATE every table — they must run against "
             "a *_test (or *_test_gw<N>) database."
         )
+
+
+def synthetic_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
+    """No-network geodata default so a Set Location write never hits external APIs."""
+    return DerivedLocationGeodata(
+        county="Test County",
+        county_fips="00000",
+        state="TS",
+        country="US",
+        elevation_m=None,
+        climate_zone=None,
+        geodata_provenance={},
+    )
+
+
+@pytest.fixture(autouse=True)
+def _stub_location_geodata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the suite off the live Census/USGS geodata APIs.
+
+    `PUT /projects/{id}/location` re-derives county/elevation/zone through
+    `derive_location_geodata`, which makes two real federal-API round-trips
+    (~2.4s, and a CI flake source). Tests asserting specific derived values
+    monkeypatch their own stub, which takes precedence over this one.
+    """
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", synthetic_geodata)
 
 
 @pytest.fixture()

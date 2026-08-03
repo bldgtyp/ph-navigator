@@ -1,4 +1,5 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
+// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { describe, expect, test, vi } from "vitest";

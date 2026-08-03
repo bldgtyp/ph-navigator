@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderHook } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import { reorderColumnIds, useGridColumns } from "../hooks/useGridColumns";

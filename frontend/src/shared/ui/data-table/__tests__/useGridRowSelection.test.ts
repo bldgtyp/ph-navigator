@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import { useGridRowSelection } from "../hooks/useGridRowSelection";

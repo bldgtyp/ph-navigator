@@ -40,26 +40,12 @@ from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_c
 __all__ = ["clean_climate_tables", "clean_mcp_tables"]
 
 
-def _default_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
-    """No-network geodata default so a Set Location write never hits external APIs.
-
-    Tests asserting specific derived values override this with their own stub.
-    """
-    return DerivedLocationGeodata(
-        county="Test County",
-        county_fips="00000",
-        state="TS",
-        country="US",
-        elevation_m=None,
-        climate_zone=None,
-        geodata_provenance={},
-    )
-
-
 @pytest.fixture(autouse=True)
 def stub_location_external_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    # `derive_location_geodata` is already stubbed suite-wide by conftest's
+    # `_stub_location_geodata`; tests asserting specific derived values
+    # install their own stub on top.
     monkeypatch.setattr("features.project_location.service.prepare_weather_source", lambda **_kwargs: (None, {}, []))
-    monkeypatch.setattr("features.project_location.service.derive_location_geodata", _default_geodata)
 
 
 def issue_mcp_token(client: TestClient, project_id: str) -> str:
