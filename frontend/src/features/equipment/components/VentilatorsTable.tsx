@@ -304,7 +304,7 @@ export function VentilatorsTable({
         onPillClick: onIncomingIndoorUnitOpen,
         onActivateEdit: isEditor ? onIncomingIndoorUnitsLinkEdit : undefined,
       }),
-      statusColumn<VentilatorRow>(fieldDefByKey),
+      statusColumn<VentilatorRow>(),
       ...customColumns,
       ...(inverseLinkFields ?? []).map((field) =>
         incomingLinkColumn<VentilatorRow>({

@@ -151,7 +151,7 @@
     120deg,
     color-mix(in oklab, var(--accent) 18%, var(--bg-elev)),
     var(--bg-elev) 58%,
-    color-mix(in oklab, var(--report-status-missing) 16%, var(--bg-elev))
+    color-mix(in oklab, var(--attention-amber) 16%, var(--bg-elev))
   );
 }
 

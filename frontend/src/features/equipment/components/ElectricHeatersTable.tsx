@@ -170,7 +170,7 @@ export function ElectricHeatersTable({
         onWrite,
         measureLabel: "site photos",
       }),
-      statusColumn<ElectricHeaterRow>(fieldDefByKey),
+      statusColumn<ElectricHeaterRow>(),
       ...customColumns,
     ],
     [

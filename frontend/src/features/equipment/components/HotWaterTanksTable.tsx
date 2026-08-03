@@ -220,7 +220,7 @@ export function HotWaterTanksTable({
         accessor: (tank) => tank.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
-      statusColumn<HotWaterTankRow>(fieldDefByKey),
+      statusColumn<HotWaterTankRow>(),
       ...customColumns,
     ],
     [

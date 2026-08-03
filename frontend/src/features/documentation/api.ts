@@ -1,6 +1,6 @@
 import { fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders, type BaseTableSlice } from "../project_document/table-slice";
-import type { ProjectDocumentationSummary } from "./types";
+import type { ProjectDocumentationRollup, ProjectDocumentationSummary } from "./types";
 
 export type DocumentationDraftTableSlice = BaseTableSlice & Record<string, unknown>;
 
@@ -17,6 +17,17 @@ export async function fetchDocumentationSummary(
   const source = accessMode === "editor" ? "draft" : "document";
   return fetchJson<ProjectDocumentationSummary>(
     `/api/v1/projects/${projectId}/versions/${versionId}/${source}/documentation-summary`,
+  );
+}
+
+export async function fetchDocumentationRollup(
+  projectId: string,
+  versionId: string,
+  accessMode: "editor" | "viewer",
+): Promise<ProjectDocumentationRollup> {
+  const source = accessMode === "editor" ? "draft" : "document";
+  return fetchJson<ProjectDocumentationRollup>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/${source}/documentation-rollup`,
   );
 }
 

@@ -15,8 +15,11 @@ from features.project_document.aperture_commands.service import (
 )
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.documentation_summary import (
+    ProjectDocumentationRollupResponse,
     ProjectDocumentationSummaryResponse,
+    get_draft_documentation_rollup,
     get_draft_documentation_summary,
+    get_saved_documentation_rollup,
     get_saved_documentation_summary,
 )
 from features.project_document.models import (
@@ -45,11 +48,6 @@ from features.project_document.service import (
     save_draft,
     save_draft_as,
     table_download_body,
-)
-from features.project_document.status_summary import (
-    ProjectStatusSummaryResponse,
-    get_draft_status_summary,
-    get_saved_status_summary,
 )
 from features.project_document.tables import RegisteredTableResponse
 from features.project_document.tables.apertures import AperturesSliceResponse
@@ -87,20 +85,20 @@ def get_document(
     return get_saved_document_or_read_safe(version_id, access, request_id=request_id(request))
 
 
-@router.get("/document/status-summary", response_model=ProjectStatusSummaryResponse)
-def get_saved_status_summary_route(
-    version_id: UUID,
-    access: ProjectViewAccess,
-) -> ProjectStatusSummaryResponse:
-    return get_saved_status_summary(version_id, access)
-
-
 @router.get("/document/documentation-summary", response_model=ProjectDocumentationSummaryResponse)
 def get_saved_documentation_summary_route(
     version_id: UUID,
     access: ProjectViewAccess,
 ) -> ProjectDocumentationSummaryResponse:
     return get_saved_documentation_summary(version_id, access)
+
+
+@router.get("/document/documentation-rollup", response_model=ProjectDocumentationRollupResponse)
+def get_saved_documentation_rollup_route(
+    version_id: UUID,
+    access: ProjectViewAccess,
+) -> ProjectDocumentationRollupResponse:
+    return get_saved_documentation_rollup(version_id, access)
 
 
 @router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
@@ -126,20 +124,20 @@ def get_draft_tables_batch_route(
     return get_draft_tables_batch(version_id, names, access)
 
 
-@router.get("/draft/status-summary", response_model=ProjectStatusSummaryResponse)
-def get_draft_status_summary_route(
-    version_id: UUID,
-    access: ProjectEditAccess,
-) -> ProjectStatusSummaryResponse:
-    return get_draft_status_summary(version_id, access)
-
-
 @router.get("/draft/documentation-summary", response_model=ProjectDocumentationSummaryResponse)
 def get_draft_documentation_summary_route(
     version_id: UUID,
     access: ProjectEditAccess,
 ) -> ProjectDocumentationSummaryResponse:
     return get_draft_documentation_summary(version_id, access)
+
+
+@router.get("/draft/documentation-rollup", response_model=ProjectDocumentationRollupResponse)
+def get_draft_documentation_rollup_route(
+    version_id: UUID,
+    access: ProjectEditAccess,
+) -> ProjectDocumentationRollupResponse:
+    return get_draft_documentation_rollup(version_id, access)
 
 
 @router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)

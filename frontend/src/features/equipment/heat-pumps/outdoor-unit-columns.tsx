@@ -15,7 +15,8 @@ import {
   incomingIndoorUnitsFieldDef,
 } from "./link-fields";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusColumn } from "../lib/statusColumn";
+import { statusFieldDef } from "./status-column";
 import { type HeatPumpOutdoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
@@ -33,8 +34,8 @@ export function outdoorUnitFieldDefs(options: HeatPumpsSlice["single_select_opti
       target_table_path: HEAT_PUMP_LINK_TARGETS.outdoorEquip,
       max_links: 1,
     }),
-    heatPumpAttachmentField(OUTDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
-    heatPumpAttachmentField(OUTDOOR_UNIT_PHOTO_FIELD_KEY, "Site photos"),
+    heatPumpAttachmentField(OUTDOOR_UNIT_DATASHEET_FIELD_KEY, "datasheet"),
+    heatPumpAttachmentField(OUTDOOR_UNIT_PHOTO_FIELD_KEY, "photo"),
     incomingIndoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
@@ -112,6 +113,6 @@ export function outdoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpOutdoorUnitRow>(),
+    statusColumn<HeatPumpOutdoorUnitRow>(),
   ];
 }

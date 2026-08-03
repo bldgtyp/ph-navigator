@@ -10,9 +10,10 @@ import {
   heatPumpTextField,
 } from "./field-defs";
 import { roomLabel, ventilatorLabel } from "./lib";
+import { statusColumn } from "../lib/statusColumn";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusFieldDef } from "./status-column";
 import { type HeatPumpIndoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
@@ -50,8 +51,8 @@ export function indoorUnitFieldDefs(options: HeatPumpsSlice["single_select_optio
       target_table_path: HEAT_PUMP_LINK_TARGETS.ventilators,
       max_links: 1,
     }),
-    heatPumpAttachmentField(INDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
-    heatPumpAttachmentField(INDOOR_UNIT_PHOTO_FIELD_KEY, "Site photos"),
+    heatPumpAttachmentField(INDOOR_UNIT_DATASHEET_FIELD_KEY, "datasheet"),
+    heatPumpAttachmentField(INDOOR_UNIT_PHOTO_FIELD_KEY, "photo"),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
   ];
@@ -160,6 +161,6 @@ export function indoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpIndoorUnitRow>(),
+    statusColumn<HeatPumpIndoorUnitRow>(),
   ];
 }

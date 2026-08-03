@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-03
 
+- `status-ux-unification` - Unified status vocabulary and controls across
+  Documentation, DataTables, report panes, and Aperture editors; added
+  URL-addressable Documentation evidence filters; replaced the Status record
+  tree with counts-only Overview meters and deep links; and retired the
+  duplicate backend/frontend status-summary stack. Browser acceptance,
+  three-way simplify reviews, docs-pass, Graphify, and full CI passed (backend
+  1,822 passed / 7 skipped; frontend 2,393 passed).
 - `public-attachment-access` - Restored anonymous attachment reachability for
   all 31 registered fields by making the row walker list/envelope tolerant and
   registering Thermal Bridge PDF Report. Schema-derived guards cover registry

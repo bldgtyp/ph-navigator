@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  EVIDENCE_STATUSES,
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
+  needAttentionLabel,
   normalizeSpecificationStatus,
   normalizeSpecificationStatusRecord,
+  resolvedLabel,
   serializeSpecificationStatus,
 } from "./specification-status";
 
 describe("specification-status response compatibility", () => {
+  it("owns the three-axis labels, tooltips, and rollup phrases", () => {
+    expect(STATUS_AXIS_LABELS).toEqual({
+      spec: { column: "Spec. Status", meter: "Spec. Status", filter: "Needs spec" },
+      datasheet: { column: "Datasheet", meter: "Datasheets", filter: "Needs datasheet" },
+      photo: { column: "Site Photos", meter: "Site Photos", filter: "Needs site photos" },
+    });
+    expect(STATUS_AXIS_TOOLTIPS.spec).toContain("Design specification");
+    expect(STATUS_AXIS_TOOLTIPS.datasheet).toContain("Manufacturer datasheet PDF");
+    expect(STATUS_AXIS_TOOLTIPS.photo).toContain("Installed-condition photos");
+    expect(EVIDENCE_STATUSES).toEqual(["needed", "complete", "na"]);
+    expect(needAttentionLabel(3)).toBe("3 need attention");
+    expect(resolvedLabel(2, 3)).toBe("2 of 3 resolved");
+  });
+
   it.each([
     ["needed", "needed"],
     ["missing", "needed"],

@@ -12,7 +12,8 @@ Documentation
 (current tab set — see `frontend/src/features/projects/lib.ts`'s
 `PROJECT_TABS`; matches `../../UI_UX.md` §1's tab list).
 
-**Default landing:** `/projects/{id}/status` (the Status tab).
+**Default landing:** `/projects/{id}/overview` (the Overview tab). Legacy
+`/projects/{id}/status/*` routes redirect while preserving suffix, search, and hash.
 Dashboard click goes here.
 
 **Layout:** global header (§1.1) → project header bar → tab bar →
@@ -82,7 +83,7 @@ because the screen lacks a secondary information model.
   (overflow menu).
 - Selected tab shows an active-state underline / fill.
 - Tab selection updates the URL:
-  `/projects/{id}/status`, `/projects/{id}/climate`,
+  `/projects/{id}/overview`, `/projects/{id}/climate`,
   `/projects/{id}/apertures`, `/projects/{id}/envelope`,
   `/projects/{id}/spaces`, `/projects/{id}/equipment`,
   `/projects/{id}/thermal-bridges`, `/projects/{id}/model`,

@@ -46,7 +46,7 @@ compatibility adapters, truthful production evidence, and durable context docs.
    - `save-versioning.md` if needed;
    - `envelope-hbjson-import.md` / export docs;
    - `context/ui/pages/envelope-tab.md`;
-   - `context/ui/pages/status-tab.md`;
+   - `context/ui/pages/overview-tab.md`;
    - design-system/token docs.
 7. Update packet `STATUS.md` with exact test, production, schema, and rollback
    evidence. Distinguish logical upgrade from physically persisted v8 per
@@ -79,7 +79,7 @@ Done now, because none of it depends on the observation window:
   the production run: `technical-requirements/data-model.md`, `data-table.md`,
   `api.md`, `save-versioning.md`, `llm-mcp-schema.md`,
   `envelope-hbjson-import.md`, `envelope-hbjson-export.md`,
-  `ui/pages/envelope-tab.md`, `ui/pages/status-tab.md`, `DESIGN_SYSTEM.md`, and
+  `ui/pages/envelope-tab.md`, `ui/pages/overview-tab.md`, `DESIGN_SYSTEM.md`, and
   `frontend/src/styles/README.md`. Three stale "schema is 6" claims that
   predated this packet were corrected in passing.
 - New durable doc: `context/PRODUCTION_DEPLOYMENT.md` -> "Database Recovery"

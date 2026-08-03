@@ -1171,8 +1171,8 @@
    app's "needs attention" tone (same token the report tables use), not the
    magenta highlight — drift is a work item, not a brand accent. */
 .material-drift-badge {
-  background: color-mix(in oklab, var(--report-status-missing) 16%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--report-status-missing) 50%, var(--border-subtle));
+  background: color-mix(in oklab, var(--attention-amber) 16%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 50%, var(--border-subtle));
   color: var(--text-primary);
   font-weight: var(--fw-semibold);
 }
@@ -1259,8 +1259,8 @@
 
 .material-drift-flag {
   align-items: center;
-  background: color-mix(in oklab, var(--report-status-missing) 18%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--report-status-missing) 55%, var(--border-subtle));
+  background: color-mix(in oklab, var(--attention-amber) 18%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 55%, var(--border-subtle));
   border-radius: var(--radius-pill);
   color: var(--text-primary);
   display: inline-flex;

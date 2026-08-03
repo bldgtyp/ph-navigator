@@ -1,6 +1,6 @@
 DATE: 2026-08-03
-TIME: 11:25 EDT
-STATUS: Active — planning accepted, implementation not started
+TIME: 12:53 EDT
+STATUS: Complete — archived
 AUTHOR: Claude with Ed May
 SCOPE: Unify the fragmented "status" UX — one vocabulary, one control, one
   taxonomy, URL-addressable Documentation filters, and a restructured
@@ -12,11 +12,11 @@ RELATED:
   - ./STATUS.md
   - ./decisions.md
   - ./research.md
-  - ../spec-status-value-unification/README.md
-  - ../../../context/ui/pages/status-tab.md
-  - ../../../context/ui/pages/documentation-tab.md
-  - ../../../context/UI_UX.md
-  - ../../../context/GLOSSARY.md
+  - ../../../../refactor/spec-status-value-unification/README.md
+  - ../../../../../context/ui/pages/overview-tab.md
+  - ../../../../../context/ui/pages/documentation-tab.md
+  - ../../../../../context/UI_UX.md
+  - ../../../../../context/GLOSSARY.md
 ---
 
 # Status UX unification
@@ -76,7 +76,7 @@ Phase files are authored under `phases/` when a phase is picked up;
 
 ## Constraints inherited from prior work
 
-- `../spec-status-value-unification/` (shipped 2026-07-19): the stored
+- `planning/refactor/spec-status-value-unification/` (shipped 2026-07-19): the stored
   DataTable option-id family (`opt_status_needed` etc.) must remain
   untouched (its D-2); the Honeybee `needed ↔ MISSING` adapters are
   permanent; its Phase 07 cached-client adapter retirement may still be

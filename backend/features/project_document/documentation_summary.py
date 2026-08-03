@@ -20,10 +20,7 @@ from features.project_document.envelope_models import (
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
-    STATUS_OPTION_COMPLETE,
-    STATUS_OPTION_NA,
-    STATUS_OPTION_NEEDED,
-    STATUS_OPTION_QUESTION,
+    STATUS_BY_OPTION_ID,
 )
 from features.project_document.tables.contracts import read_table_envelope
 from features.project_document.validation import document_etag
@@ -95,6 +92,37 @@ class ProjectDocumentationSummaryResponse(BaseModel):
     draft_etag: str | None
     counts: DocumentationAxisCounts
     sections: list[DocumentationSection]
+
+
+class DocumentationRollupGroup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    title: str
+    anchor: str
+    counts: DocumentationAxisCounts
+
+
+class DocumentationRollupSection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    title: str
+    anchor: str
+    counts: DocumentationAxisCounts
+    groups: list[DocumentationRollupGroup]
+
+
+class ProjectDocumentationRollupResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    version_etag: str
+    draft_etag: str | None
+    counts: DocumentationAxisCounts
+    sections: list[DocumentationRollupSection]
 
 
 @dataclass(frozen=True)
@@ -210,13 +238,6 @@ DOCUMENTATION_TABLES: tuple[DocumentationTable, ...] = (
     _thermal_bridge_table(),
 )
 
-_STATUS_BY_OPTION_ID: dict[str, DocumentationSpecStatus] = {
-    STATUS_OPTION_NEEDED: "needed",
-    STATUS_OPTION_QUESTION: "question",
-    STATUS_OPTION_COMPLETE: "complete",
-    STATUS_OPTION_NA: "na",
-}
-
 
 def get_draft_documentation_summary(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationSummaryResponse:
     from features.project_document.store import get_current_document_view
@@ -237,6 +258,46 @@ def get_saved_documentation_summary(version_id: UUID, access: ProjectAccess) -> 
             draft_etag=None,
             body=body,
         )
+    )
+
+
+def get_draft_documentation_rollup(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationRollupResponse:
+    return documentation_rollup(get_draft_documentation_summary(version_id, access))
+
+
+def get_saved_documentation_rollup(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationRollupResponse:
+    return documentation_rollup(get_saved_documentation_summary(version_id, access))
+
+
+def documentation_rollup(summary: ProjectDocumentationSummaryResponse) -> ProjectDocumentationRollupResponse:
+    sections = [
+        DocumentationRollupSection(
+            key=section.key,
+            title=section.title,
+            anchor=section.anchor,
+            counts=section.counts,
+            groups=[
+                DocumentationRollupGroup(
+                    key=group.key,
+                    title=group.title,
+                    anchor=group.anchor,
+                    counts=group.counts,
+                )
+                for group in section.groups
+                if group.counts.spec_total > 0
+            ],
+        )
+        for section in summary.sections
+        if section.counts.spec_total > 0
+    ]
+    return ProjectDocumentationRollupResponse(
+        project_id=summary.project_id,
+        version_id=summary.version_id,
+        source=summary.source,
+        version_etag=summary.version_etag,
+        draft_etag=summary.draft_etag,
+        counts=summary.counts,
+        sections=sections,
     )
 
 
@@ -444,7 +505,11 @@ def _record(
 
 def _custom_status(custom_values: Mapping[str, object]) -> DocumentationSpecStatus:
     raw_status = custom_values.get("status")
-    return _STATUS_BY_OPTION_ID.get(raw_status, "unknown") if isinstance(raw_status, str) else "unknown"
+    return (
+        cast("DocumentationSpecStatus", STATUS_BY_OPTION_ID.get(raw_status, "unknown"))
+        if isinstance(raw_status, str)
+        else "unknown"
+    )
 
 
 def _row_spec_status(row: object) -> DocumentationSpecStatus:

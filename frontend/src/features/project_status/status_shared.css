@@ -1,0 +1,55 @@
+.status-section-heading h2,
+.status-section-heading p {
+  margin: 0;
+}
+
+.status-section-heading p {
+  margin-top: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.status-section-empty {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.status-section-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border: 1px solid var(--phn-danger);
+  border-radius: var(--radius-sm);
+}
+
+.status-section-error p {
+  margin: 0;
+}
+
+.roadmap-skeleton {
+  display: grid;
+  gap: var(--space-10);
+}
+
+.status-skeleton-line {
+  height: 42px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elev);
+  animation: status-skeleton-pulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes status-skeleton-pulse {
+  from {
+    opacity: 0.52;
+  }
+  to {
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-skeleton-line {
+    animation: none;
+  }
+}

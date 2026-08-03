@@ -1209,7 +1209,7 @@ describe("EnvelopePage", () => {
     ) as HTMLElement | null;
     if (!woodFiberRow) throw new Error("Expected Wood fiber board row.");
 
-    const statusSelect = within(woodFiberRow).getByLabelText("Status");
+    const statusSelect = within(woodFiberRow).getByLabelText("Spec. Status");
     expect(statusSelect.tagName).toBe("SELECT");
     // Unified with the Documentation vocabulary: "missing" is labelled "Needed".
     expect(within(statusSelect).getByRole("option", { name: "Needed" })).toBeInTheDocument();

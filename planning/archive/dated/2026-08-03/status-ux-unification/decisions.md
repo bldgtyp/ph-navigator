@@ -75,16 +75,24 @@ RELATED:
   section** — rejected for now; per-table groups are sufficient and the
   section meters make the split unnecessary.
 
-## Open items (to resolve during implementation)
+- **D-11 — Filter chip strings accepted** (Ed, 2026-08-03): `Needs spec` /
+  `Needs datasheet` / `Needs site photos`.
 
-- **O-1 — Where does the DataTable column header rename land?** If built-in
-  FieldDef `display_name` is code-derived at read time, change
-  `STATUS_DISPLAY_NAME` backend-side; if it is persisted into saved
-  documents, override at the frontend display layer instead and leave the
-  stored/API name alone. Verify in Phase 01; also check gh_api exports for
-  display-name coupling.
-- **O-2 — Exact chip strings** (`Needs spec` / `Needs datasheet` /
-  `Needs site photos`) are Claude's proposal; Ed may adjust wording at
-  Phase 01 review without re-planning.
-- **O-3 — Whether Overview section rows get the optional per-group meter
-  disclosure in v1** or ship sections-only first.
+- **D-12 — Overview section rows include the per-group meter disclosure in
+  v1** (Ed, 2026-08-03): expanding a section reveals per-group meter rows
+  with the same axis deep links (group anchors). Still counts-only — no
+  record rows on Overview.
+
+## Resolved implementation questions
+
+- **O-1 — The built-in FieldDef `display_name` is persisted.** Resolved in
+  Phase 01 on 2026-08-03. Built-in definitions are copied into
+  `tables.*.field_defs`, and the backend drift audit compares those saved
+  definitions against current seeds. The stable backend/API display name and
+  description therefore remain unchanged; mounted DataTables receive the
+  canonical `Spec. Status` label and exact tooltip through the frontend
+  field-render overlay. Changing either stored definition produced a schema
+  fingerprint delta and fixture drift, conflicting with this packet's explicit
+  no-schema-change invariant. No `gh_api` export couples behavior to the
+  visible label. This avoids document/schema churn while presenting one
+  vocabulary.

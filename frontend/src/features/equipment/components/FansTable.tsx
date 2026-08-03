@@ -230,7 +230,7 @@ export function FansTable({
         onWrite,
         measureLabel: "site photos",
       }),
-      statusColumn<FanRow>(fieldDefByKey),
+      statusColumn<FanRow>(),
       ...customColumns,
     ],
     [

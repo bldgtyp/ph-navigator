@@ -38,7 +38,7 @@ export function StatusItemModal({
     };
     void onSubmit(payload)
       .catch((submitError: unknown) => {
-        setError(errorMessage(submitError, "Could not save status item."));
+        setError(errorMessage(submitError, "Could not save milestone."));
       })
       .finally(() => setIsSubmitting(false));
   };
@@ -114,7 +114,7 @@ export function StatusItemModal({
         <DialogActions
           busy={isSubmitting}
           error={error}
-          submitLabel={isSubmitting ? "Saving…" : "Save item"}
+          submitLabel={isSubmitting ? "Saving…" : "Save milestone"}
           onClose={onCancel}
           submitDisabled={itemTitle.trim().length === 0}
         />

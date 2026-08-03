@@ -15,7 +15,7 @@ from features.project_document.document import (
     PumpRow,
     PumpsTableEnvelope,
 )
-from features.project_document.documentation_summary import project_documentation_summary
+from features.project_document.documentation_summary import documentation_rollup, project_documentation_summary
 from features.project_document.models import ProjectDocumentView
 from features.project_document.rows import SingleSelectOption
 from features.project_document.tables._status_field import STATUS_OPTION_NA, STATUS_OPTION_NEEDED
@@ -232,7 +232,7 @@ def test_documentation_summary_keeps_heat_pump_leaf_grouping_and_option_sublabel
     assert record.sub_label == "Mitsubishi · MXZ-SM48"
 
 
-def test_documentation_summary_routes_match_status_summary_access(clean_document_tables: None) -> None:
+def test_documentation_summary_routes_enforce_draft_and_saved_access(clean_document_tables: None) -> None:
     editor = signed_in_client()
     project = create_project(editor)
     project_id = project["id"]
@@ -246,6 +246,49 @@ def test_documentation_summary_routes_match_status_summary_access(clean_document
     viewer = TestClient(app)
     saved = viewer.get(f"/api/v1/projects/{project_id}/versions/{version_id}/document/documentation-summary")
     draft_as_viewer = viewer.get(f"/api/v1/projects/{project_id}/versions/{version_id}/draft/documentation-summary")
+
+    assert saved.status_code == 200
+    assert saved.json()["source"] == "version"
+    assert draft_as_viewer.status_code in {401, 403}
+
+
+def test_documentation_rollup_is_counts_only_and_hides_empty_groups() -> None:
+    base = empty_project_document(
+        CreateProjectRequest(name="Documentation summary", bt_number="doc-summary", cert_programs=[])
+    )
+    equipment = base.tables.equipment.model_copy(
+        update={
+            "pumps": PumpsTableEnvelope(
+                rows=[PumpRow(id="pmp_1", custom_values={"name": "Pump 1", "status": STATUS_OPTION_NEEDED})]
+            )
+        }
+    )
+    summary = project_documentation_summary(_view(base.tables.model_copy(update={"equipment": equipment})))
+
+    payload = documentation_rollup(summary).model_dump(mode="json")
+
+    assert "records" not in str(payload)
+    assert [section["key"] for section in payload["sections"]] == ["equipment"]
+    assert [group["key"] for group in payload["sections"][0]["groups"]] == ["pumps"]
+    assert payload["sections"][0]["counts"] == next(
+        section.counts.model_dump() for section in summary.sections if section.key == "equipment"
+    )
+
+
+def test_documentation_rollup_routes_match_summary_access(clean_document_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(editor, project_id, version_id)
+
+    draft = editor.get(f"/api/v1/projects/{project_id}/versions/{version_id}/draft/documentation-rollup")
+    assert draft.status_code == 200
+    assert draft.json()["source"] == "draft"
+
+    viewer = TestClient(app)
+    saved = viewer.get(f"/api/v1/projects/{project_id}/versions/{version_id}/document/documentation-rollup")
+    draft_as_viewer = viewer.get(f"/api/v1/projects/{project_id}/versions/{version_id}/draft/documentation-rollup")
 
     assert saved.status_code == 200
     assert saved.json()["source"] == "version"

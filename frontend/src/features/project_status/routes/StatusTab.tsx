@@ -1,5 +1,6 @@
 import "../project_status.css";
-import "../status_summary.css";
+import "../documentation_progress.css";
+import "../status_shared.css";
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
@@ -7,7 +8,7 @@ import { StatusEmptyState } from "../components/StatusEmptyState";
 import { StatusDeleteDialog } from "../components/StatusDeleteDialog";
 import { StatusItemModal } from "../components/StatusItemModal";
 import { StatusItemRow } from "../components/StatusItemRow";
-import { RecordStatusSummary } from "../components/RecordStatusSummary";
+import { DocumentationProgress } from "../components/DocumentationProgress";
 import {
   useApplyDefaultStatusTemplateMutation,
   useCreateStatusItemMutation,
@@ -159,19 +160,19 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
               </div>
             )}
           </section>
-          <RecordStatusSummary project={project} />
+          <DocumentationProgress project={project} />
         </div>
       </div>
       {isAdding ? (
         <StatusItemModal
-          title="Add status item"
+          title="Add milestone"
           onCancel={() => setIsAdding(false)}
           onSubmit={addItem}
         />
       ) : null}
       {editingItem ? (
         <StatusItemModal
-          title="Edit status item"
+          title="Edit milestone"
           item={editingItem}
           onCancel={() => setEditingItem(null)}
           onSubmit={(payload) => patchItem(editingItem.id, payload)}

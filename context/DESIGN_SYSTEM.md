@@ -104,8 +104,8 @@ greys above — the greys are what actually renders.)*
 | `--phn-success` (+ `-bg`) | derived from `--accent-dark` | success |
 | `--phn-warning` (+ `-bg`) | warm amber (from `--highlight-text`) | warning |
 | `--phn-danger` (+ `-bg`) | crimson-derived | danger / destructive |
-| `--report-status-needed` | `#d97706` (amber) | report cell: specification status Needed |
-| `--report-status-missing` | alias of `--report-status-needed` | non-status amber: Climate data gaps, Documentation write errors/zero meters |
+| `--attention-amber` | `#d97706` (amber) | non-status attention: Climate data gaps, Documentation write errors/zero meters |
+| `--report-status-needed` | alias of `--attention-amber` | status controls/pills: Needed |
 | `--report-status-question` | `#0ea5b7` (cyan) | report cell: open question |
 | `--report-status-complete` | `#16a34a` (green) | report cell: complete |
 | `--report-status-na` | `#9ca3af` (grey) | report cell: N/A |
@@ -204,7 +204,7 @@ the spec to reproduce.
 | Pill tabs / sub-tabs | `.pill-tab` / `.pill-tab-list`, `.app-subtabs` | in-page section switching |
 | Empty state | `.empty-state` | zero-data placeholder w/ heading + copy |
 | Autocomplete select | `AutocompleteSelect` / `.autocomplete-select*` | typeahead single-select |
-| Status select | `StatusSelect` / `.status-select` | documentation-status pill dropdown (editable `<select>` / read-only span), tone-colored via `--report-status-*` |
+| Status control | `StatusSelect` / `StatusPill` / `.status-select` | editable pill-select and shared read-only pill, including built-in DataTable status cells; tone-colored via `--report-status-*` |
 | Menus | `.app-menu*` / `.account-menu*` / `.catalog-menu*` | topbar dropdown menus |
 | Forms | `.auth-form`, `.project-form`, `.settings-*`, `.form-error/-note` | labeled field stacks + validation |
 | Modal | `ModalDialog` / `DialogActions`; `.modal-backdrop/-panel/-header` | dialogs |

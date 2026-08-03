@@ -13,6 +13,12 @@ import {
   type DocumentationStatusOption,
 } from "../lib";
 import type { DocumentationEvidenceStatus, DocumentationRecord } from "../types";
+import { StatusAxisHeader } from "../../project_document/StatusVocabulary";
+import {
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
+  type DocumentationStatusAxis,
+} from "../../project_document/specification-status";
 
 export function DocumentationRecordRow({
   projectId,
@@ -85,7 +91,7 @@ export function DocumentationRecordRow({
           </div>
         </div>
         <AxisStatusCell
-          label="Spec"
+          axis="spec"
           value={documentationSpecStatusValue(record)}
           options={SPEC_STATUS_OPTIONS}
           canEdit={canEdit}
@@ -93,7 +99,7 @@ export function DocumentationRecordRow({
           onChange={(value) => onFieldChange({ record, field: "spec_status", value })}
         />
         <AxisStatusCell
-          label="Datasheet"
+          axis="datasheet"
           value={documentationEvidenceStatusValue(record, "datasheet")}
           options={EVIDENCE_STATUS_OPTIONS}
           canEdit={canEdit && !specNa}
@@ -101,7 +107,7 @@ export function DocumentationRecordRow({
           onChange={(value) => onFieldChange({ record, field: "datasheet_status", value })}
         />
         <AxisStatusCell
-          label="Photos"
+          axis="photo"
           value={documentationEvidenceStatusValue(record, "photo")}
           options={EVIDENCE_STATUS_OPTIONS}
           canEdit={canEdit && !specNa}
@@ -130,7 +136,7 @@ export function DocumentationRecordRow({
             />
           </EvidenceCell>
           <EvidenceCell
-            label="Photos"
+            label="Site Photos"
             status={documentationEvidenceStatusValue(record, "photo")}
             assetIds={record.photo_asset_ids}
           >
@@ -238,29 +244,33 @@ function DocumentationEvidenceAttachmentControl({
 }
 
 function AxisStatusCell<TValue extends string>({
-  label,
+  axis,
   value,
   options,
   canEdit,
   disabled,
   onChange,
 }: {
-  label: string;
+  axis: DocumentationStatusAxis;
   value: TValue;
   options: Array<DocumentationStatusOption<TValue>>;
   canEdit: boolean;
   disabled: boolean;
   onChange: (value: TValue) => Promise<void>;
 }) {
+  const label = STATUS_AXIS_LABELS[axis].column;
   // A <div> (not <label>) wrapper: clicking the cell's non-select area should
   // toggle the row's expansion, not get forwarded into the select.
   return (
     <div className="documentation-cell documentation-spec-cell">
-      <span className="documentation-cell-label">{label}</span>
+      <span className="documentation-cell-label">
+        <StatusAxisHeader axis={axis} />
+      </span>
       <StatusSelect
         value={value}
         options={options}
         ariaLabel={label}
+        title={STATUS_AXIS_TOOLTIPS[axis]}
         disabled={disabled}
         readOnly={!canEdit}
         onChange={(next) => void onChange(next)}

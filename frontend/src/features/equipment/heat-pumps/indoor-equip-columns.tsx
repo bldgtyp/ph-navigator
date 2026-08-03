@@ -16,7 +16,8 @@ import {
 } from "./link-fields";
 import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "./types";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusColumn } from "../lib/statusColumn";
+import { statusFieldDef } from "./status-column";
 import { HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY } from "../types";
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
@@ -42,8 +43,8 @@ export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_opti
     heatPumpNumberField("seer", "SEER"),
     heatPumpNumberField("eer", "EER"),
     heatPumpNumberField("hspf", "HSPF"),
-    heatPumpAttachmentField(INDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
-    heatPumpAttachmentField(INDOOR_EQUIP_PHOTO_FIELD_KEY, "Site photos"),
+    heatPumpAttachmentField(INDOOR_EQUIP_DATASHEET_FIELD_KEY, "datasheet"),
+    heatPumpAttachmentField(INDOOR_EQUIP_PHOTO_FIELD_KEY, "photo"),
     incomingIndoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY] ?? []),
@@ -170,6 +171,6 @@ export function indoorEquipColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpIndoorEquipRow>(),
+    statusColumn<HeatPumpIndoorEquipRow>(),
   ];
 }

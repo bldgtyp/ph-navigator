@@ -59,16 +59,9 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
       invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateCondensationQueries(queryClient, projectId, slice.version_id, variables.command);
-      if (statusSummaryInvalidationCommands.has(variables.command.kind)) {
+      if (documentationSummaryInvalidationCommands.has(variables.command.kind)) {
         queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.statusSummary(projectId, slice.version_id, "editor"),
-        });
-        queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.documentationSummary(
-            projectId,
-            slice.version_id,
-            "editor",
-          ),
+          queryKey: projectDocumentQueryKeys.documentation(projectId),
         });
       }
       if (slice.draft_etag !== variables.current.draft_etag) {
@@ -256,7 +249,7 @@ export function useEnvelopeAttachmentMutation({
         queryKey: envelopeQueryKeys.read(projectId, versionId, "draft"),
       });
       await queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationSummary(projectId, versionId, "editor"),
+        queryKey: projectDocumentQueryKeys.documentation(projectId),
       });
     },
     onError: (error) => {
@@ -359,7 +352,7 @@ const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "import_envelope_constructions",
 ]);
 
-const statusSummaryInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+const documentationSummaryInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "pick_catalog_material",
   "hand_enter_material",
   "update_project_material",

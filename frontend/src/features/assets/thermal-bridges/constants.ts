@@ -19,6 +19,11 @@ import {
   THERMAL_BRIDGE_TYPE_OPTION_KEY,
   type ThermalBridgesSlice,
 } from "../../equipment/types";
+import { STATUS_DESCRIPTION } from "../../../shared/ui/data-table/status";
+import {
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
+} from "../../project_document/specification-status";
 
 export const THERMAL_BRIDGE_ID_PREFIX = "tb";
 
@@ -108,12 +113,16 @@ export function thermalBridgesFieldOverlay(
       locked: ALL_FIELD_LOCKS,
     },
     [THERMAL_BRIDGE_PHOTO_FIELD_KEY]: {
+      description: STATUS_AXIS_TOOLTIPS.photo,
+      display_name: STATUS_AXIS_LABELS.photo.column,
       locked: ALL_FIELD_LOCKS,
     },
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     [STATUS_FIELD_KEY]: {
+      description: STATUS_DESCRIPTION,
+      display_name: STATUS_DISPLAY_NAME,
       options: slice.single_select_options[THERMAL_BRIDGES_STATUS_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },

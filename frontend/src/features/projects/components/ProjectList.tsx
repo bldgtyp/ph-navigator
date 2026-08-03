@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { formatProjectDateTime, formatRelativeProjectDate } from "../../../shared/lib/dates";
-import { projectStatusPath } from "../lib";
+import { projectOverviewPath } from "../lib";
 import type { ProjectSummary } from "../types";
 
 export function ProjectList({
@@ -138,7 +138,7 @@ export function ProjectList({
                 <Link
                   aria-label={`${project.bt_number} - ${project.display_name}`}
                   className="project-name-link"
-                  to={projectStatusPath(project.id)}
+                  to={projectOverviewPath(project.id)}
                 >
                   <strong>{project.display_name}</strong>
                 </Link>

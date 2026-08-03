@@ -45,11 +45,14 @@ same attachment ids stored on the owning record.
 The page opens as an overview-first disclosure shell. The selected version and
 active tab are already identified by the project workspace chrome. The
 Documentation header and each section/group header render three compact progress
-meters: `Spec N/M`, `Datasheets N/M`, and `Photos N/M`.
+meters: `Spec. Status N/M`, `Datasheets N/M`, and `Site Photos N/M`.
 
-Below the header, per-axis filter chips show only records missing specs,
-datasheets, or photos. Filter chips are button toggles with text labels and
-`aria-pressed`; missing state is a work item, not an application error.
+Below the header, the `Needs spec`, `Needs datasheet`, and `Needs site photos`
+chips filter records requiring work on those axes. They are URL state:
+`?needs=spec,datasheet,photo`, with any subset accepted in any order and unknown
+values ignored. Chip changes replace the current history entry, the empty set
+removes `needs`, and an existing section/group hash is preserved. Filter chips
+use `aria-pressed`; needed evidence is a work item, not an application error.
 
 Sections follow the documentation summary order, which matches the nav-bar tab
 order:
@@ -59,11 +62,12 @@ order:
 - Equipment;
 - Thermal Bridges.
 
-Each section has an anchor id, section-level rollups, a copy-link control, and
-a labeled "Photo Guide" button that opens the "How to photograph" modal. Complete sections may render collapsed as
-one-line stubs with an expand control. Incomplete sections remain collapsed by
-default but advertise that they need review; expansion state is local to the
-current browser session and hash navigation expands the matching section/group.
+Each section has an anchor id, section-level rollups, and a labeled "Photo
+Guide" button that opens the "How to photograph" modal. Complete sections may
+render collapsed as one-line stubs with an expand control. Incomplete sections
+remain collapsed by default but advertise that they need review; expansion
+state is local to the current browser session and hash navigation expands the
+matching section/group.
 
 Groups with no records are omitted. If filters hide every record in a populated
 group, the group remains visible with a "No records match the active filters"

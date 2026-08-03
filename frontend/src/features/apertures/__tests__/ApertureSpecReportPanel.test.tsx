@@ -142,7 +142,11 @@ function renderGlazings(rows: ProjectGlazingRead[], options: { isViewer?: boolea
 
 function renderFrames(
   rows: ProjectFrameRead[],
-  options: { canEdit?: boolean; onAttachmentChange?: ReturnType<typeof vi.fn> } = {},
+  options: {
+    canEdit?: boolean;
+    onAttachmentChange?: ReturnType<typeof vi.fn>;
+    onCommand?: ReturnType<typeof vi.fn>;
+  } = {},
 ) {
   render(
     <UnitStub>
@@ -157,7 +161,7 @@ function renderFrames(
         canEdit={options.canEdit ?? false}
         busy={false}
         driftEntries={DRIFT_ENTRIES}
-        onCommand={vi.fn()}
+        onCommand={options.onCommand ?? vi.fn()}
         onAttachmentChange={options.onAttachmentChange ?? vi.fn()}
         onRefreshEntry={vi.fn()}
       />
@@ -224,7 +228,7 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByRole("heading", { name: "In scope" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "N/A" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Unused" })).toBeInTheDocument();
-    expect(screen.getByText("2/3 resolved")).toBeInTheDocument();
+    expect(screen.getByText("2 of 3 resolved")).toBeInTheDocument();
 
     const activeRow = screen.getByRole("row", { name: /Triple Pane A/ });
     expect(within(activeRow).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();
@@ -328,6 +332,25 @@ describe("ApertureSpecReportPanel", () => {
         currentAssetIds: ["asset_photo_1"],
         nextAssetIds: [],
       });
+    });
+  });
+
+  it("edits specification status through the shared status select", () => {
+    const onCommand = vi.fn();
+    renderFrames([frame()], { canEdit: true, onCommand });
+
+    const statusSelect = screen.getByRole("combobox", { name: "Spec. Status" });
+    expect(statusSelect).toHaveClass("status-select");
+    expect(statusSelect).toHaveAttribute(
+      "title",
+      "Design specification: is the product selected and are its performance values confirmed? Datasheets and site photos are tracked separately.",
+    );
+    fireEvent.change(statusSelect, { target: { value: "complete" } });
+
+    expect(onCommand).toHaveBeenCalledWith({
+      kind: "update_project_frame",
+      project_frame_id: "frm_1",
+      specification_status: "complete",
     });
   });
 

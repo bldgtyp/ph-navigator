@@ -33,7 +33,7 @@ describe("UValueReportPanel", () => {
     expect(screen.getAllByText("Synthetic Window").length).toBeGreaterThan(0);
     const footer = screen.getByText(formatWindowUValue(1.2, "si"));
     expect(footer).toHaveTextContent("Window U-Value: 1.20 W/m²K");
-    expect(screen.getByText("Includes 1 unfinished element as U = 0.")).toBeVisible();
+    expect(screen.getByText("Includes 1 element needing attention as U = 0.")).toBeVisible();
     const unfinishedRow = screen.getByText("Unfinished Element").closest('[role="row"]');
     expect(unfinishedRow).not.toBeNull();
     const unfinishedCells = within(unfinishedRow as HTMLElement).getAllByRole("cell");

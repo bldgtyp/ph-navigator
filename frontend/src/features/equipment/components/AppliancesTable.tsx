@@ -228,7 +228,7 @@ export function AppliancesTable({
         accessor: (appliance) => appliance.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
-      statusColumn<ApplianceRow>(fieldDefByKey),
+      statusColumn<ApplianceRow>(),
       ...customColumns,
     ],
     [

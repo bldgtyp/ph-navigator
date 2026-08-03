@@ -1,8 +1,6 @@
-/* Shared status pill-select (see StatusSelect.tsx). Matches the app status
-   pill (`.single-select-pill--status`): a soft --option-color fill with
-   coloured text and no border. --option-color is set per tone below, all from
-   the shared --report-status-* tokens so every status dropdown reads the same
-   across pages. */
+/* Shared editable StatusSelect and read-only StatusPill surface: a soft
+   --option-color fill with colored text and no border. The data-tone rules
+   below map both controls onto the shared --report-status-* tokens. */
 .status-select {
   align-items: center;
   background-color: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));

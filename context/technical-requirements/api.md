@@ -684,6 +684,12 @@ POST   /api/v1/projects/{project_id}/status-items/apply-default-template
 PATCH  /api/v1/projects/{project_id}/status-items/{item_id}
 DELETE /api/v1/projects/{project_id}/status-items/{item_id}
 
+# project_document Documentation projections
+GET    /api/v1/projects/{project_id}/versions/{version_id}/draft/documentation-summary
+GET    /api/v1/projects/{project_id}/versions/{version_id}/document/documentation-summary
+GET    /api/v1/projects/{project_id}/versions/{version_id}/draft/documentation-rollup
+GET    /api/v1/projects/{project_id}/versions/{version_id}/document/documentation-rollup
+
 # table_views — backend/features/table_views/routes.py
 GET    /api/v1/projects/{project_id}/table-views
 GET    /api/v1/projects/{project_id}/table-views/{table_key}

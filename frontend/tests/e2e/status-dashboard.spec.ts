@@ -3,7 +3,7 @@ import { createProject, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
-test("Status dashboard cold-loads independently for editors and public viewers", async ({
+test("Overview cold-loads independently for editors and public viewers", async ({
   page,
   browser,
   context,
@@ -16,32 +16,28 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   });
 
   await expect(page.getByRole("heading", { name: "Roadmap" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Project status" })).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Record status" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Documentation progress" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Roadmap" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Mechanical No records" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Domestic Hot Water No records" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Envelope No records" })).toBeVisible();
   await page.getByRole("button", { name: "Apply BLDGTYP default template" }).click();
   await expect(page.getByText("CAD files received")).toBeVisible();
 
   const coldPage = await context.newPage();
-  let editorSummaryRequests = 0;
+  let editorRollupRequests = 0;
   coldPage.on("request", (request) => {
-    if (request.url().includes("/status-summary")) editorSummaryRequests += 1;
+    if (request.url().includes("/documentation-rollup")) editorRollupRequests += 1;
   });
-  const summaryResponse = coldPage.waitForResponse(
+  const rollupResponse = coldPage.waitForResponse(
     (response) =>
-      response.url().includes("/status-summary") && response.request().method() === "GET",
+      response.url().includes("/documentation-rollup") && response.request().method() === "GET",
   );
-  await coldPage.goto(`/projects/${projectId}/status`);
-  const response = await summaryResponse;
+  await coldPage.goto(`/projects/${projectId}/overview`);
+  const response = await rollupResponse;
   expect(response.status()).toBe(200);
-  expect(response.url()).toContain("/draft/status-summary");
+  expect(response.url()).toContain("/draft/documentation-rollup");
   expect(Buffer.byteLength(await response.body())).toBeLessThan(100_000);
   await expect(coldPage.getByRole("heading", { name: "Roadmap" })).toBeVisible();
   await expect(coldPage.getByText("CAD files received")).toBeVisible();
-  expect(editorSummaryRequests).toBe(1);
+  expect(editorRollupRequests).toBe(1);
 
   const firstMilestone = coldPage.locator(".status-item").first();
   await firstMilestone.focus();
@@ -52,11 +48,13 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   await expect(coldPage.locator(".status-title-button").nth(1)).toHaveText("CAD files received");
 
   await coldPage.setViewportSize({ width: 800, height: 900 });
-  const recordBox = await coldPage.getByRole("region", { name: "Record status" }).boundingBox();
+  const progressBox = await coldPage
+    .getByRole("region", { name: "Documentation progress" })
+    .boundingBox();
   const roadmapBox = await coldPage.getByRole("region", { name: "Roadmap" }).boundingBox();
-  expect(recordBox).not.toBeNull();
+  expect(progressBox).not.toBeNull();
   expect(roadmapBox).not.toBeNull();
-  expect(recordBox!.y).toBeGreaterThan(roadmapBox!.y + roadmapBox!.height - 1);
+  expect(progressBox!.y).toBeGreaterThan(roadmapBox!.y + roadmapBox!.height - 1);
 
   await coldPage.emulateMedia({ reducedMotion: "reduce" });
   expect(
@@ -72,7 +70,7 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   });
   try {
     const touchPage = await touchContext.newPage();
-    await touchPage.goto(`/projects/${projectId}/status`);
+    await touchPage.goto(`/projects/${projectId}/overview`);
     const touchMenu = touchPage.locator(".status-row-menu").first();
     await expect(touchMenu).toBeVisible();
     expect(await touchMenu.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
@@ -86,11 +84,11 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   const publicContext = await browser.newContext();
   try {
     const publicPage = await publicContext.newPage();
-    const viewerSummaryResponse = publicPage.waitForResponse((viewerResponse) =>
-      viewerResponse.url().includes("/status-summary"),
+    const viewerRollupResponse = publicPage.waitForResponse((viewerResponse) =>
+      viewerResponse.url().includes("/documentation-rollup"),
     );
-    await publicPage.goto(`/projects/${projectId}/status`);
-    expect((await viewerSummaryResponse).url()).toContain("/document/status-summary");
+    await publicPage.goto(`/projects/${projectId}/overview`);
+    expect((await viewerRollupResponse).url()).toContain("/document/documentation-rollup");
     await expect(publicPage.getByRole("heading", { name: "Roadmap" })).toBeVisible();
     await expect(publicPage.getByText("CAD files received")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Add milestone" })).toHaveCount(0);

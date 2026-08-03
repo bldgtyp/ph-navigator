@@ -43,8 +43,10 @@ Key edits:
 - Add header tooltips (shared `Tooltip`) and select `title`/aria wiring for
   the three axes; add the legend popover component and mount it on
   Documentation and both report panels (Overview gets it in 04).
-- Backend: update the built-in status FieldDef `description`
-  (`_status_field.py:85`) to the Spec. Status tooltip text.
+- Backend description check: the built-in status FieldDef `description`
+  (`_status_field.py:85`) is persisted and fingerprinted, so changing it would
+  violate this packet's no-schema-change invariant. Keep it stable and supply
+  the Spec. Status tooltip through the frontend render overlay (O-1).
 - **O-1 verification (do first):** trace whether built-in FieldDef
   `display_name` is persisted in saved documents or code-derived at read
   time. Code-derived → rename `STATUS_DISPLAY_NAME` to "Spec. Status"
@@ -125,8 +127,8 @@ Frontend:
 - Replace `RecordStatusSummary` usage in `StatusTab.tsx` with the new
   meters pane (per PRD §4.1): section rows, three meters each, attention
   count, deep links `/documentation?needs={axis}#{anchor}`, hidden empty
-  sections, legend affordance, optional per-group disclosure (O-3 — decide
-  at pickup). New TanStack Query hook on the rollup endpoint; keep Roadmap
+  sections, legend affordance, and per-group meter disclosure (D-12).
+  New TanStack Query hook on the rollup endpoint; keep Roadmap
   and meters requests independent with separate skeleton/error states.
 - Session-storage keys for disclosure state: new keys; no migration needed.
 

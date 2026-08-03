@@ -30,7 +30,8 @@ import {
   type HeatPumpsSlice,
 } from "./types";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusColumn } from "../lib/statusColumn";
+import { statusFieldDef } from "./status-column";
 import { HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY } from "../types";
 
 // The data-type dropdowns are hard-coded enums, not user-editable lists —
@@ -99,8 +100,8 @@ export function outdoorEquipFieldDefs({
       "Holds either the legacy SEER rating or the AHRI-2023 SEER2 rating; which one is determined by Cooling Data Type.",
     ),
     heatPumpNumberField("ieer", "IEER"),
-    heatPumpAttachmentField(OUTDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
-    heatPumpAttachmentField(OUTDOOR_EQUIP_PHOTO_FIELD_KEY, "Site photos"),
+    heatPumpAttachmentField(OUTDOOR_EQUIP_DATASHEET_FIELD_KEY, "datasheet"),
+    heatPumpAttachmentField(OUTDOOR_EQUIP_PHOTO_FIELD_KEY, "photo"),
     incomingOutdoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
     statusFieldDef(options[HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY] ?? []),
@@ -251,6 +252,6 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpOutdoorEquipRow>(),
+    statusColumn<HeatPumpOutdoorEquipRow>(),
   ];
 }

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { uploadAsset } from "../../assets/hooks";
 import type { ProjectDetail } from "../../projects/types";
@@ -43,9 +43,7 @@ describe("DocumentationPage", () => {
     renderDocumentation(PROJECT, "/projects/proj_1/documentation");
 
     expect(await screen.findByRole("heading", { name: "Documentation status" })).toBeVisible();
-    expect(
-      screen.getByText("1 spec, 1 datasheet, and 1 photo still need attention."),
-    ).toBeVisible();
+    expect(screen.getByText("3 need attention.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Equipment" })).toHaveAttribute(
       "aria-expanded",
       "false",
@@ -61,8 +59,8 @@ describe("DocumentationPage", () => {
       "aria-expanded",
       "false",
     );
-    expect(screen.getAllByRole("progressbar", { name: "Spec 2/3" })[0]).toBeVisible();
-    expect(screen.getAllByRole("progressbar", { name: "Photos 2/3" })[0]).toBeVisible();
+    expect(screen.getAllByRole("progressbar", { name: "Spec. Status 2/3" })[0]).toBeVisible();
+    expect(screen.getAllByRole("progressbar", { name: "Site Photos 2/3" })[0]).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "How to photograph - Equipment" }));
     const directionsDialog = await screen.findByRole("dialog", {
@@ -80,9 +78,9 @@ describe("DocumentationPage", () => {
       expect(screen.queryByRole("dialog", { name: "How to photograph - Equipment" })).toBeNull(),
     );
 
-    expect(screen.getByRole("button", { name: "Needed specs" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Needs spec" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Missing specs" })).not.toBeInTheDocument();
-    const missingPhotosFilter = screen.getByRole("button", { name: "Missing photos" });
+    const missingPhotosFilter = screen.getByRole("button", { name: "Needs site photos" });
     expect(missingPhotosFilter).toHaveAttribute("aria-pressed", "false");
 
     await user.click(screen.getByRole("button", { name: "Ventilators" }));
@@ -104,6 +102,74 @@ describe("DocumentationPage", () => {
       "/api/v1/projects/proj_1/versions/ver_1/draft/documentation-summary",
       expect.objectContaining({ credentials: "include" }),
     );
+  });
+
+  test("hydrates filter chips from an order-insensitive needs param", async () => {
+    stubDocumentationSummaryFetch();
+    renderDocumentation(PROJECT, "/projects/proj_1/documentation?needs=photo,spec");
+
+    expect(await screen.findByRole("button", { name: "Needs spec" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Needs site photos" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Needs datasheet" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  test("writes chip toggles to the needs param with replace navigation", async () => {
+    const user = userEvent.setup();
+    stubDocumentationSummaryFetch();
+    renderDocumentation(PROJECT, "/projects/proj_1/documentation");
+
+    const photos = await screen.findByRole("button", { name: "Needs site photos" });
+    const spec = screen.getByRole("button", { name: "Needs spec" });
+    await user.click(photos);
+    await user.click(spec);
+    expect(screen.getByTestId("router-state")).toHaveTextContent("?needs=spec%2Cphoto");
+    expect(screen.getByTestId("router-state")).toHaveAttribute("data-navigation-type", "REPLACE");
+
+    await user.click(spec);
+    await user.click(photos);
+    expect(screen.getByTestId("router-state")).toHaveTextContent(/^$/);
+  });
+
+  test("ignores unknown needs values", async () => {
+    stubDocumentationSummaryFetch();
+    renderDocumentation(PROJECT, "/projects/proj_1/documentation?needs=unknown,photo,nope");
+
+    expect(await screen.findByRole("button", { name: "Needs site photos" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Needs spec" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Needs datasheet" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  test("composes needs filters with hash expansion and preserves the hash on toggle", async () => {
+    const user = userEvent.setup();
+    stubDocumentationSummaryFetch();
+    renderDocumentation(PROJECT, "/projects/proj_1/documentation?needs=datasheet#equipment");
+
+    expect(await screen.findByRole("button", { name: "Equipment" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    const datasheet = screen.getByRole("button", { name: "Needs datasheet" });
+    expect(datasheet).toHaveAttribute("aria-pressed", "true");
+    await user.click(datasheet);
+    expect(screen.getByTestId("router-state")).toHaveTextContent("#equipment");
   });
 
   test("viewer reads the saved document and exposes no upload affordances", async () => {
@@ -136,13 +202,13 @@ describe("DocumentationPage", () => {
     expect(screen.queryByRole("button", { name: "Drop files here" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add file" })).not.toBeInTheDocument();
     expect(
-      within(ventilatorToggle.closest("article") as HTMLElement).queryByLabelText("Spec"),
+      within(ventilatorToggle.closest("article") as HTMLElement).queryByLabelText("Spec. Status"),
     ).toBeNull();
     expect(
       within(ventilatorToggle.closest("article") as HTMLElement).queryByLabelText("Datasheet"),
     ).toBeNull();
     expect(
-      within(ventilatorToggle.closest("article") as HTMLElement).queryByLabelText("Photos"),
+      within(ventilatorToggle.closest("article") as HTMLElement).queryByLabelText("Site Photos"),
     ).toBeNull();
   });
 
@@ -237,7 +303,10 @@ describe("DocumentationPage", () => {
     );
     await user.click(pumpToggle);
 
-    await user.selectOptions(within(pumpRow as HTMLElement).getByLabelText("Spec"), "complete");
+    await user.selectOptions(
+      within(pumpRow as HTMLElement).getByLabelText("Spec. Status"),
+      "complete",
+    );
     await waitFor(() =>
       expect(putBodies).toContainEqual(
         expect.objectContaining({
@@ -275,7 +344,7 @@ describe("DocumentationPage", () => {
         }),
       ),
     );
-    await user.selectOptions(within(pumpRow as HTMLElement).getByLabelText("Photos"), "na");
+    await user.selectOptions(within(pumpRow as HTMLElement).getByLabelText("Site Photos"), "na");
     await waitFor(() =>
       expect(putBodies).toContainEqual(
         expect.objectContaining({
@@ -325,21 +394,21 @@ describe("DocumentationPage", () => {
     const pumpRow = pumpToggle.closest("article");
     expect(pumpRow).not.toBeNull();
     await user.click(pumpToggle);
-    const photoStatus = within(pumpRow as HTMLElement).getByLabelText("Photos");
+    const photoStatus = within(pumpRow as HTMLElement).getByLabelText("Site Photos");
     expect(photoStatus).toHaveValue("na");
 
     await user.selectOptions(photoStatus, "needed");
     expect(photoStatus).toHaveValue("needed");
-    expect(within(pumpRow as HTMLElement).getByLabelText("Spec")).toBeDisabled();
+    expect(within(pumpRow as HTMLElement).getByLabelText("Spec. Status")).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Ventilators" }));
     const ventilatorToggle = screen.getByRole("button", { name: "Ventilator ERV-01" });
     await user.click(ventilatorToggle);
     const ventilatorRow = ventilatorToggle.closest("article");
     expect(ventilatorRow).not.toBeNull();
-    expect(within(ventilatorRow as HTMLElement).getByLabelText("Spec")).toBeEnabled();
+    expect(within(ventilatorRow as HTMLElement).getByLabelText("Spec. Status")).toBeEnabled();
     expect(within(ventilatorRow as HTMLElement).getByLabelText("Datasheet")).toBeEnabled();
-    expect(within(ventilatorRow as HTMLElement).getByLabelText("Photos")).toBeEnabled();
+    expect(within(ventilatorRow as HTMLElement).getByLabelText("Site Photos")).toBeEnabled();
 
     resolvePut?.(jsonResponse({ ...pumpsSliceFixture(), draft_etag: "d2" }));
   });
@@ -353,6 +422,7 @@ function renderDocumentation(
   render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
+        <RouterStateProbe />
         <Routes>
           <Route
             path="/projects/:projectId/documentation"
@@ -361,6 +431,33 @@ function renderDocumentation(
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
+  );
+}
+
+function RouterStateProbe() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  return (
+    <output data-testid="router-state" data-navigation-type={navigationType}>
+      {location.search}
+      {location.hash}
+    </output>
+  );
+}
+
+function stubDocumentationSummaryFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/draft/documentation-summary")) {
+        return Promise.resolve(jsonResponse(summaryFixture()));
+      }
+      if (url.startsWith("/api/v1/projects/proj_1/assets/bulk-urls")) {
+        return Promise.resolve(jsonResponse({ items: assetUrlsFixture() }));
+      }
+      return Promise.resolve(jsonResponse({}, 404));
+    }),
   );
 }
 

@@ -291,7 +291,7 @@ export function PumpsTable({
         onWrite,
         measureLabel: "site photos",
       }),
-      statusColumn<PumpRow>(fieldDefByKey),
+      statusColumn<PumpRow>(),
     ];
     const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map((field) =>
       incomingLinkColumn({

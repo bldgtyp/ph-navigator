@@ -14,6 +14,7 @@ import {
   uValueUnitLabel,
 } from "../../catalogs/components/unit-labels";
 import { ReportTable, type ReportTableColumn } from "../../../shared/ui/report-table";
+import { needAttentionLabel } from "../../project_document/specification-status";
 import { formatWindowUValue } from "../format-u-value";
 import type {
   ApertureUValueReport,
@@ -101,11 +102,13 @@ export function UValueReportPanel({
     },
     {
       key: "status",
-      header: "Status",
+      header: "Completeness",
       width: "120px",
       render: (row) =>
         row.unfinished_count > 0 ? (
-          <span className="u-value-report__warning">{row.unfinished_count} unfinished</span>
+          <span className="u-value-report__warning">
+            {needAttentionLabel(row.unfinished_count)}
+          </span>
         ) : (
           <span className="u-value-report__complete">Complete</span>
         ),
@@ -154,8 +157,8 @@ export function UValueReportPanel({
               </div>
               {section.unfinished_count > 0 ? (
                 <p role="note">
-                  Includes {section.unfinished_count} unfinished element
-                  {section.unfinished_count === 1 ? "" : "s"} as U = 0.
+                  Includes {section.unfinished_count} element
+                  {section.unfinished_count === 1 ? "" : "s"} needing attention as U = 0.
                 </p>
               ) : null}
             </header>

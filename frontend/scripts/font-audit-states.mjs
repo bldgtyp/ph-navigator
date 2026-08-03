@@ -27,7 +27,11 @@ export function buildStates(projectId) {
   return [
     { label: "sign-in", route: "/sign-in", noSignin: true },
     { label: "dashboard", route: "/dashboard" },
-    { label: "dashboard-new-project-modal", route: "/dashboard", clicks: ["text=Add New Project +"] },
+    {
+      label: "dashboard-new-project-modal",
+      route: "/dashboard",
+      clicks: ["text=Add New Project +"],
+    },
     { label: "admin-users", route: "/admin/users" },
     { label: "admin-invite-modal", route: "/admin/users", clicks: ["text=Invite user"] },
     { label: "catalog-materials", route: "/catalog/materials" },
@@ -41,11 +45,11 @@ export function buildStates(projectId) {
     { label: "catalog-glazing-types", route: "/catalog/glazing-types" },
     // Every project state below dismisses the draft prompt via DISMISS_DRAFT;
     // its own typography is captured here, before the dismissal.
-    { label: "project-recovered-draft-modal", route: `${P}/status` },
-    { label: "project-status", route: `${P}/status`, clicks: [DISMISS_DRAFT] },
+    { label: "project-recovered-draft-modal", route: `${P}/overview` },
+    { label: "project-overview", route: `${P}/overview`, clicks: [DISMISS_DRAFT] },
     {
-      label: "project-status-add-modal",
-      route: `${P}/status`,
+      label: "project-overview-add-modal",
+      route: `${P}/overview`,
       clicks: [DISMISS_DRAFT, ".status-add-milestone"],
     },
     { label: "project-climate", route: `${P}/climate`, clicks: [DISMISS_DRAFT] },
