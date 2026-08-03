@@ -8,7 +8,7 @@ SCOPE: Fold accepted decisions into context/, run the repo closeout gate, and
 RELATED:
   - ../PRD.md
   - ../STATUS.md
-  - ../../../../CLAUDE.md
+  - ../../../../../../CLAUDE.md
 ---
 
 # Phase 06 — Closeout

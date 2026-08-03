@@ -8,7 +8,7 @@ SCOPE: Give AttachmentCell an explicit unavailable state instead of rendering an
 RELATED:
   - ../PRD.md
   - ./phase-04-download-error-ux.md
-  - ../../../../context/DESIGN_SYSTEM.md
+  - ../../../../../../context/DESIGN_SYSTEM.md
 ---
 
 # Phase 05 — Explicit unavailable state

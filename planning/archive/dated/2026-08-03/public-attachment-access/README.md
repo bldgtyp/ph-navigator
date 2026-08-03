@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Researched and scoped — ready for implementation handoff
+TIME: 11:24 EDT
+STATUS: Complete — all seven phases green locally; production deploy pending Ed
 AUTHOR: Claude with Ed May
 SCOPE: Repair the attachment-reference resolver so every attachment column in
   the project document is reachable, restoring anonymous viewing, orphan-sweep
@@ -14,8 +14,8 @@ RELATED:
   - ./STATUS.md
   - ./research.md
   - ./phases/
-  - ../../../context/DATA_STORAGE.md
-  - ../../archive/dated/2026-06-27/access-capability-model/PRD.md
+  - ../../../../../context/DATA_STORAGE.md
+  - ../../2026-06-27/access-capability-model/PRD.md
 ---
 
 # Public attachment access
@@ -89,10 +89,19 @@ The raw error string is separate and pre-existing: download controls are plain
 Phases 00→03 are one coherent backend bundle and should land together.
 04 and 05 are independently shippable.
 
+## Completion
+
+All seven phases are complete on `main`. Production inventory found zero stored
+violations; the backend resolver/registry fixes, structural guards, download
+error containment, explicit unavailable state, durable docs, simplify reviews,
+browser acceptance, and full CI are green. This packet's archive records local
+implementation completion only: no deployment or production write occurred,
+and deployment remains Ed's explicit action.
+
 ## Read this before touching anything
 
 **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`
-against any project that has Thermal Bridges or Heat Pump attachments until
-Phase 01 has shipped.** The sweeper would move those R2 objects to the orphan
-prefix and delete the originals. There is no scheduler — the risk is manual
-only. See PRD §5.
+against any production project that has Thermal Bridges or Heat Pump attachments
+until this completed packet is deployed.** The local code protects those assets,
+but the production resolver remains unchanged. There is no scheduler — the risk
+is manual only. See PRD §5.

@@ -3,6 +3,18 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-08-03
+
+- `public-attachment-access` - Restored anonymous attachment reachability for
+  all 31 registered fields by making the row walker list/envelope tolerant and
+  registering Thermal Bridge PDF Report. Schema-derived guards cover registry
+  and real-shape reachability; download failures stay in-app; unresolved files
+  have explicit loading/unavailable states. Read-only production inventory found
+  seven valid references and zero violations. Signed-out browser acceptance,
+  three-way simplify reviews, docs-pass, Graphify, and full CI passed (backend
+  1,830 passed / 7 skipped; frontend 2,389 passed). Archived as locally
+  complete; no deployment or production write occurred.
+
 ## 2026-08-02
 
 - `units-field-naming` - Shipped project-document schema v9 so heat-pump

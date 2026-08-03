@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 11:22 EDT
-STATUS: Complete locally — Phases 00-06 green; production deploy pending Ed
+TIME: 11:24 EDT
+STATUS: Complete / archived locally — production deploy pending Ed
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -50,9 +50,9 @@ packet.
 
 ## Next step
 
-Run the `implement-loop` final archive cleanup. After handoff, Ed may deploy via
-the **Deploy Production** GitHub Actions workflow and verify the Linde public
-viewer; no agent deployment is authorized.
+Ed may deploy via the **Deploy Production** GitHub Actions workflow and verify
+the Linde public viewer; no agent deployment is authorized. Until then, retain
+the production sweeper warning below.
 
 ## Blockers / decisions needed from Ed
 

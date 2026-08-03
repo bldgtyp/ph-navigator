@@ -7,7 +7,7 @@ SCOPE: Remove hand-maintained attachment row traversal without losing support
   for irregular project-document tables.
 RELATED:
   - ../../../context/DATA_STORAGE.md
-  - ../public-attachment-access/STATUS.md
+  - ../../archive/dated/2026-08-03/public-attachment-access/STATUS.md
 ---
 
 # Status — Attachment reference walker unification
