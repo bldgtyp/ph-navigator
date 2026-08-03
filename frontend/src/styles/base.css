@@ -558,61 +558,8 @@ a:focus-visible {
   order: 3;
 }
 
-.topbar-unit-toggle {
-  position: relative;
-  align-items: center;
-  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
-  border: 0;
-  border-radius: var(--radius-pill);
-  display: inline-flex;
-  font-family: var(--font-mono);
-  overflow: hidden;
+.topbar-global-actions > .phn-segmented-control {
   order: 2;
-  padding: 3px;
-}
-
-.topbar-unit-toggle::before {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  z-index: var(--z-base);
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-dark);
-  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 18%, transparent);
-  transition: transform 0.16s var(--ease);
-}
-
-.topbar-unit-toggle:has(button:nth-child(2).active)::before {
-  transform: translateX(32px);
-}
-
-.topbar-unit-toggle button {
-  position: relative;
-  z-index: var(--z-base-elevated);
-  background: transparent;
-  border: 0;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--tracking-caps);
-  line-height: var(--lh-solid);
-  min-height: 32px;
-  text-transform: uppercase;
-  min-width: 32px;
-  padding: 0;
-  transition: color 0.16s var(--ease);
-}
-
-.topbar-unit-toggle button.active {
-  color: #ffffff;
-}
-
-.topbar-unit-toggle button:hover:not(.active) {
-  color: var(--text-primary);
 }
 
 .dashboard-page,

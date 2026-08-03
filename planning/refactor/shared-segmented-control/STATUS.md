@@ -13,16 +13,17 @@ RELATED:
 
 ## Current state
 
-`Active`. Migration steps 1-2 are complete: the generic native-radio
+`Active`. Migration steps 1-3 are complete: the generic native-radio
 `SegmentedControl<T>` exists in `shared/ui`, and `MaterialDriftDialog` consumes
 it with its feature CSS removed. `ModalUnitToggle` now delegates to the same
 primitive, and its duplicated CSS is gone. The reuse review found and
-inventoried a fifth implementation in `StatusItemModal`.
+inventoried a fifth implementation in `StatusItemModal`. Both compact unit
+toggles now use the shared primitive.
 
 ## Next step
 
-Execute migration step 3: move `TopbarUnitToggle` onto the shared primitive,
-then run the rendered typography sweep because it appears on every page.
+Execute migration step 4: move the content-scale single-select usages onto the
+shared `md` variant while retaining true `role="tablist"` controls as tabs.
 
 ## Blockers
 
@@ -70,3 +71,16 @@ pixel change":
   the same 56×30 geometry, selected SI state, and visual appearance; screenshots:
   `/tmp/shared-segmented-control-before-modal-unit.png` and
   `/tmp/shared-segmented-control-after-modal-unit.png`.
+- **2026-08-03** — Step 3 complete. `TopbarUnitToggle` now uses the shared
+  32px equal-width variant; removed the old selector family except for the
+  topbar parent's narrow `order: 2` layout rule. Mounted verification preserved
+  70×38 geometry, flex order, SI selection, and appearance; screenshots:
+  `/tmp/shared-segmented-control-before-topbar.png` and
+  `/tmp/shared-segmented-control-after-topbar.png`. `make typography-eval`
+  collected 22/22 states and held at 28/29 site-wide variants. Native radio
+  labels extended an already-blessed variant into the inferred label role, so
+  the documented role-reach budget moved 5→6; the evaluator and static guards
+  pass. Simplify's reuse review suggested a unit-specific wrapper for the two
+  two-option configurations; this was deliberately not added because the
+  controlled modal and preference-owned topbar adapters have different
+  id/title/size contracts and share all behavior through `SegmentedControl`.

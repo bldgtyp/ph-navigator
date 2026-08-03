@@ -1,4 +1,5 @@
 import { useUnitPreference, type UnitSystem } from "../../lib/units";
+import { SegmentedControl } from "./SegmentedControl";
 
 const UNIT_OPTIONS: UnitSystem[] = ["IP", "SI"];
 
@@ -11,25 +12,17 @@ const UNIT_OPTIONS: UnitSystem[] = ["IP", "SI"];
 export function TopbarUnitToggle() {
   const { unitSystem, setUnitSystem, error } = useUnitPreference();
   return (
-    <div
-      className="topbar-unit-toggle"
-      role="radiogroup"
-      aria-label="Display units"
+    <SegmentedControl
+      value={unitSystem}
+      onChange={setUnitSystem}
+      ariaLabel="Display units"
       title={error ?? undefined}
-    >
-      {UNIT_OPTIONS.map((option) => (
-        <button
-          key={option}
-          type="button"
-          role="radio"
-          aria-label={`Set display units to ${option}`}
-          aria-checked={unitSystem === option}
-          className={unitSystem === option ? "active" : ""}
-          onClick={() => setUnitSystem(option)}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
+      options={UNIT_OPTIONS.map((option) => ({
+        value: option,
+        label: option,
+        ariaLabel: `Set display units to ${option}`,
+      }))}
+      equalWidth
+    />
   );
 }
