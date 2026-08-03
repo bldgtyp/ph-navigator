@@ -12,6 +12,15 @@ const EXPAND_ROW = {
   clicks: ["[aria-label='Expand row 1']"],
 };
 
+// The fixture's dirty draft pops the "Recovered draft found" modal on every
+// project-tab load, which both pollutes the base-page data and blocks further
+// clicks, so project states dismiss it first. Keep, never discard: discarding
+// would delete the draft and change every state after it. Matched by
+// accessible name (the app's own tests use the same getByRole name) rather
+// than a bare text= — this used to click a header "Close" that vanished when
+// ModalDialog's `showHeaderClose` default flipped to false.
+const DISMISS_DRAFT = 'role=button[name="Restore draft"]';
+
 /** @type {(projectId: string) => {label: string, route: string, hovers?: string[], clicks?: string[], noSignin?: boolean}[]} */
 export function buildStates(projectId) {
   const P = `/projects/${projectId}`;
@@ -30,33 +39,31 @@ export function buildStates(projectId) {
       clicks: ["[aria-label='Add frame type']"],
     },
     { label: "catalog-glazing-types", route: "/catalog/glazing-types" },
-    // Project states click "Close" first: the fixture's dirty draft pops the
-    // "Recovered draft found" modal on every project-tab load, which both
-    // pollutes the base-page data and blocks further clicks. (Its own
-    // typography is captured separately by project-recovered-draft-modal.)
+    // Every project state below dismisses the draft prompt via DISMISS_DRAFT;
+    // its own typography is captured here, before the dismissal.
     { label: "project-recovered-draft-modal", route: `${P}/status` },
-    { label: "project-status", route: `${P}/status`, clicks: ["text=Close"] },
+    { label: "project-status", route: `${P}/status`, clicks: [DISMISS_DRAFT] },
     {
       label: "project-status-add-modal",
       route: `${P}/status`,
-      clicks: ["text=Close", ".status-add-milestone"],
+      clicks: [DISMISS_DRAFT, ".status-add-milestone"],
     },
-    { label: "project-climate", route: `${P}/climate`, clicks: ["text=Close"] },
-    { label: "project-apertures", route: `${P}/apertures`, clicks: ["text=Close"] },
-    { label: "project-envelope", route: `${P}/envelope`, clicks: ["text=Close"] },
-    { label: "project-spaces-types", route: `${P}/spaces/space-types`, clicks: ["text=Close"] },
+    { label: "project-climate", route: `${P}/climate`, clicks: [DISMISS_DRAFT] },
+    { label: "project-apertures", route: `${P}/apertures`, clicks: [DISMISS_DRAFT] },
+    { label: "project-envelope", route: `${P}/envelope`, clicks: [DISMISS_DRAFT] },
+    { label: "project-spaces-types", route: `${P}/spaces/space-types`, clicks: [DISMISS_DRAFT] },
     // NOTE: no spaces/equipment record-modal states — those fixture tables are
     // empty (no row to expand); the shared RecordDetailModal shell is covered
     // by catalog-materials-record-modal.
-    { label: "project-spaces-rooms", route: `${P}/spaces/rooms`, clicks: ["text=Close"] },
-    { label: "project-equipment", route: `${P}/equipment`, clicks: ["text=Close"] },
+    { label: "project-spaces-rooms", route: `${P}/spaces/rooms`, clicks: [DISMISS_DRAFT] },
+    { label: "project-equipment", route: `${P}/equipment`, clicks: [DISMISS_DRAFT] },
     {
       label: "project-equipment-heat-pumps",
       route: `${P}/equipment?tab=heat-pumps`,
-      clicks: ["text=Close"],
+      clicks: [DISMISS_DRAFT],
     },
-    { label: "project-thermal-bridges", route: `${P}/thermal-bridges`, clicks: ["text=Close"] },
-    { label: "project-model", route: `${P}/model`, clicks: ["text=Close"] },
+    { label: "project-thermal-bridges", route: `${P}/thermal-bridges`, clicks: [DISMISS_DRAFT] },
+    { label: "project-model", route: `${P}/model`, clicks: [DISMISS_DRAFT] },
   ];
 }
 

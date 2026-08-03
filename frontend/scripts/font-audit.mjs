@@ -24,11 +24,13 @@
  *   --click <selector> click in order before collecting (repeatable; opens modals)
  *   --wait <selector>  wait for selector before collecting (repeatable)
  *   --settle <ms>      wait after actions before collecting (default 800)
+ *   --storage-state <path>  reuse one signed-in session across runs: load it
+ *                      when the file exists, else sign in and write it
  *   --base/--email/--password/--no-signin/--timeout  as in agent-browser.mjs
  *
  * Output: JSON file with the full variant list + a markdown summary on stdout.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import { formatExtras, formatWeight, isOffScale, top } from "./font-audit-lib.mjs";
@@ -45,6 +47,7 @@ function parseArgs(argv) {
     hovers: [],
     clicks: [],
     signin: true,
+    storageState: null,
     timeout: 15000,
     settle: 800,
   };
@@ -59,6 +62,7 @@ function parseArgs(argv) {
     else if (arg === "--wait") opts.waits.push(rest.shift());
     else if (arg === "--hover") opts.hovers.push(rest.shift());
     else if (arg === "--click") opts.clicks.push(rest.shift());
+    else if (arg === "--storage-state") opts.storageState = rest.shift();
     else if (arg === "--timeout") opts.timeout = Number(rest.shift());
     else if (arg === "--settle") opts.settle = Number(rest.shift());
     else if (arg === "--no-signin") opts.signin = false;
@@ -273,8 +277,17 @@ async function main() {
   const outPath = resolve(opts.out);
   mkdirSync(dirname(outPath), { recursive: true });
 
+  // Session reuse: the public login route is rate limited per account/IP
+  // (Settings.login_rate_limit_*), and a full sweep would otherwise burn one
+  // login per state and get 429'd partway through. The first run signs in and
+  // writes the storage state; every later run restores it and skips sign-in.
+  const sessionPath = opts.storageState ? resolve(opts.storageState) : null;
+  const cachedSession = sessionPath !== null && existsSync(sessionPath);
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    ...(cachedSession ? { storageState: sessionPath } : {}),
+  });
   context.setDefaultTimeout(opts.timeout);
   const page = await context.newPage();
 
@@ -287,7 +300,15 @@ async function main() {
   page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`));
 
   try {
-    if (opts.signin) await signIn(page, opts);
+    if (opts.signin && !cachedSession) {
+      await signIn(page, opts);
+      if (sessionPath) {
+        // --storage-state takes an arbitrary path, so make its directory
+        // rather than assuming it shares one with --out.
+        mkdirSync(dirname(sessionPath), { recursive: true });
+        await context.storageState({ path: sessionPath });
+      }
+    }
     await page.goto(`${opts.base}${opts.route}`, { waitUntil: "networkidle" });
     for (const selector of opts.waits) {
       await page.locator(selector).first().waitFor({ state: "visible" });

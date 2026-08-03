@@ -10,12 +10,14 @@
  *   node scripts/font-audit-sweep.mjs [--only <label-substring>]
  */
 import { spawnSync } from "node:child_process";
+import { rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildStates } from "./font-audit-states.mjs";
 import { readJson } from "./lib/guard-utils.mjs";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const FRONTEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = path.resolve(FRONTEND_ROOT, "..");
 
 // Fixture discovery: env override > the manifest written by
 // `make agent-browser-ready` (working/agent-browser/fixture.json at the repo
@@ -28,6 +30,14 @@ const EMAIL = process.env.PHN_AUDIT_EMAIL ?? FIXTURE.email ?? "codex@example.com
 
 const STATES = buildStates(PROJECT_ID);
 
+// One sign-in for the whole sweep — see `--storage-state` in font-audit.mjs
+// for why. Always start from a clean file so a stale session can't poison a
+// later run. It lives OUTSIDE working/font-audit/: that directory is the
+// aggregator's state-JSON input and the CI artifact, and this file is a
+// session cookie.
+const SESSION_STATE = path.join(FRONTEND_ROOT, "working", "font-audit-session.json");
+rmSync(SESSION_STATE, { force: true });
+
 const only = (() => {
   const i = process.argv.indexOf("--only");
   return i === -1 ? null : process.argv[i + 1];
@@ -38,7 +48,7 @@ for (const state of STATES) {
   if (only && !state.label.includes(only)) continue;
   const args = ["scripts/font-audit.mjs", state.route, "--label", state.label];
   if (state.noSignin) args.push("--no-signin");
-  else args.push("--email", state.email ?? EMAIL);
+  else args.push("--email", state.email ?? EMAIL, "--storage-state", SESSION_STATE);
   for (const h of state.hovers ?? []) args.push("--hover", h);
   for (const c of state.clicks ?? []) args.push("--click", c);
 

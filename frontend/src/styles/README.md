@@ -133,6 +133,12 @@ down from the 55-variant 2026-07-17 audit baseline). It runs on a scheduled/
 manual GitHub Actions workflow (`typography-eval.yml`) and is the required
 local closeout gate for typography-affecting work.
 
+Ceilings and role budgets are **ratchets**: lower them as consolidation lands,
+never raise them to make a red run go green. The one legitimate raise is role
+reach — an already-blessed variant showing up under a new inferred role while
+the site-wide variant count holds. A raise that moves the total is new debt;
+consolidate instead.
+
 ---
 
 ## Shared-class catalog (which sheet owns what)
