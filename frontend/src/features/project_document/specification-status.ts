@@ -1,5 +1,33 @@
 export type SpecificationStatus = "complete" | "needed" | "question" | "na";
 
+export type DocumentationStatusAxis = "spec" | "datasheet" | "photo";
+
+export const STATUS_AXIS_LABELS: Record<
+  DocumentationStatusAxis,
+  { column: string; meter: string; filter: string }
+> = {
+  spec: { column: "Spec. Status", meter: "Spec. Status", filter: "Needs spec" },
+  datasheet: { column: "Datasheet", meter: "Datasheets", filter: "Needs datasheet" },
+  photo: { column: "Site Photos", meter: "Site Photos", filter: "Needs site photos" },
+};
+
+export const STATUS_AXIS_TOOLTIPS: Record<DocumentationStatusAxis, string> = {
+  spec: "Design specification: is the product selected and are its performance values confirmed? Datasheets and site photos are tracked separately.",
+  datasheet: "Manufacturer datasheet PDF on file for this product.",
+  photo: "Installed-condition photos from the site.",
+};
+
+export const STATUS_LEGEND_RESOLVED_COPY =
+  "A record is resolved when its status is Complete or N/A.";
+
+export function needAttentionLabel(count: number): string {
+  return `${count} need attention`;
+}
+
+export function resolvedLabel(resolved: number, total: number): string {
+  return `${resolved} of ${total} resolved`;
+}
+
 /**
  * The canonical status vocabulary, in the order status controls display it.
  *
@@ -20,6 +48,33 @@ export const SPECIFICATION_STATUS_LABELS: Record<SpecificationStatus, string> = 
   question: "Question",
   complete: "Complete",
   na: "N/A",
+};
+
+export const STATUS_LEGEND_ITEMS = [
+  { label: SPECIFICATION_STATUS_LABELS.needed, description: "work remains; follow up." },
+  {
+    label: SPECIFICATION_STATUS_LABELS.question,
+    description: "open question; see the record's Notes. (Spec. Status only)",
+  },
+  { label: SPECIFICATION_STATUS_LABELS.complete, description: "confirmed and on file." },
+  {
+    label: SPECIFICATION_STATUS_LABELS.na,
+    description: "requirement intentionally does not apply.",
+  },
+] as const;
+
+export type EvidenceStatus = Exclude<SpecificationStatus, "question">;
+
+export const EVIDENCE_STATUSES = [
+  "needed",
+  "complete",
+  "na",
+] as const satisfies readonly EvidenceStatus[];
+
+export const EVIDENCE_STATUS_LABELS: Record<EvidenceStatus, string> = {
+  needed: SPECIFICATION_STATUS_LABELS.needed,
+  complete: SPECIFICATION_STATUS_LABELS.complete,
+  na: SPECIFICATION_STATUS_LABELS.na,
 };
 
 export type SpecificationStatusOption = {

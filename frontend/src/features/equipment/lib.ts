@@ -96,6 +96,7 @@ import {
   VENTILATORS_TARGET_TABLE_PATH,
   VENTILATORS_STATUS_OPTION_KEY,
 } from "./types";
+import { STATUS_DESCRIPTION } from "../../shared/ui/data-table/status";
 import type {
   BuildEmptyRow,
   DataTableColumnDef,
@@ -108,6 +109,7 @@ import type {
   TableFieldDef,
 } from "../../shared/ui/data-table";
 import type { NumberUnitsConfig } from "../../lib/units";
+import { STATUS_AXIS_LABELS, STATUS_AXIS_TOOLTIPS } from "../project_document/specification-status";
 import {
   ALL_FIELD_LOCKS,
   DEFAULT_BUILT_IN_LOCKS,
@@ -828,7 +830,21 @@ const ROOMS_COLUMN_ID_BY_FIELD_KEY: Record<string, string> = {
 };
 
 const STATUS_OPTION_LOCK_OVERLAY: TableFieldRenderOverlay = {
+  description: STATUS_DESCRIPTION,
+  display_name: STATUS_DISPLAY_NAME,
   locked: ["field_type", "options", "delete", "duplicate"],
+};
+
+const DATASHEET_LOCK_OVERLAY: TableFieldRenderOverlay = {
+  description: STATUS_AXIS_TOOLTIPS.datasheet,
+  display_name: STATUS_AXIS_LABELS.datasheet.column,
+  locked: ALL_FIELD_LOCKS,
+};
+
+const SITE_PHOTO_LOCK_OVERLAY: TableFieldRenderOverlay = {
+  description: STATUS_AXIS_TOOLTIPS.photo,
+  display_name: STATUS_AXIS_LABELS.photo.column,
+  locked: ALL_FIELD_LOCKS,
 };
 
 export function roomsTableColumnsForSanitize(
@@ -900,12 +916,8 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
       // URL validator runs at the cell-write boundary; retype would lose it.
       locked: ["field_type", "delete", "duplicate"],
     },
-    [PUMP_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [PUMP_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [PUMP_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [PUMP_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -971,12 +983,8 @@ export function ventilatorsFieldOverlay(
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    [VENTILATOR_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [VENTILATOR_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [VENTILATOR_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [VENTILATOR_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1057,12 +1065,8 @@ export function fansFieldOverlay(fansSlice: FansSlice): Record<string, TableFiel
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    [FAN_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [FAN_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [FAN_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [FAN_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1131,12 +1135,8 @@ export function hotWaterHeatersFieldOverlay(
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    [HOT_WATER_HEATER_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [HOT_WATER_HEATER_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [HOT_WATER_HEATER_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [HOT_WATER_HEATER_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1196,12 +1196,8 @@ export function hotWaterTanksFieldOverlay(
     heat_loss_rate_w_k: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    [HOT_WATER_TANK_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [HOT_WATER_TANK_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [HOT_WATER_TANK_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [HOT_WATER_TANK_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     url: {
       locked: ["field_type", "delete", "duplicate"],
     },
@@ -1249,12 +1245,8 @@ export function electricHeatersFieldOverlay(): Record<string, TableFieldRenderOv
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    [ELECTRIC_HEATER_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [ELECTRIC_HEATER_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [ELECTRIC_HEATER_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [ELECTRIC_HEATER_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
@@ -1316,12 +1308,8 @@ export function appliancesFieldOverlay(
     url: {
       locked: ["field_type", "delete", "duplicate"],
     },
-    [APPLIANCE_DATASHEET_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
-    [APPLIANCE_PHOTO_FIELD_KEY]: {
-      locked: ALL_FIELD_LOCKS,
-    },
+    [APPLIANCE_DATASHEET_FIELD_KEY]: DATASHEET_LOCK_OVERLAY,
+    [APPLIANCE_PHOTO_FIELD_KEY]: SITE_PHOTO_LOCK_OVERLAY,
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },

@@ -1,6 +1,6 @@
 DATE: 2026-08-03
 TIME: 11:25 EDT
-STATUS: Active — planning accepted 2026-08-03; implementation not started
+STATUS: Active — Phase 01 complete; Phase 02 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -16,27 +16,33 @@ RELATED:
 
 ## Current state
 
-Planning complete and accepted by Ed on 2026-08-03: unified vocabulary
+Planning was accepted by Ed on 2026-08-03. Phase 01 now implements the unified vocabulary
 (PRD §2, labels `Spec. Status` / `Datasheet` / `Site Photos`), one control
 set, URL-addressable Documentation filters, Status tab renamed **Overview**
 with its record pane replaced by three-axis meters deep-linking into
 Documentation, and retirement of the duplicate `status_summary.py`
-projection. No code written yet.
+projection.
 
 Deep-link feasibility verified against source 2026-08-03: Documentation
 hash anchors already expand + scroll; axis filters are local state only, so
 the `?needs=` param is net-new (Phase 03).
 
-2026-08-03 follow-up review resolved the open items: chip strings accepted
-(D-11), per-group meter disclosure is in v1 (D-12); O-1 approach approved
-with the code check remaining the first Phase 01 action.
+Phase 01 resolved O-1: built-in FieldDef display names are persisted and
+drift-audited, so the backend/API display-name constant stays stable while
+frontend field overlays present `Spec. Status`. Focused Vitest passed (9 files,
+212 tests), the production frontend build passed, and the isolated browser
+fixture showed the canonical labels on Documentation, an Equipment DataTable,
+and the Status report pane. The first full-CI attempt proved that changing the persisted
+backend FieldDef description alters the schema fingerprint and fixture drift;
+that trial change was reverted and the exact tooltip remains a frontend render
+overlay, preserving the accepted no-schema-change invariant. Simplify review
+findings were reconciled; the docs pass found the packet itself was the correct
+durable home. Final CI passed: backend 1,830 passed / 7 skipped; frontend 2,390
+passed; production build and static gates green.
 
 ## Next step
 
-Pick up **Phase 01** (vocabulary/labels/tooltips/legend) on a feature
-branch. First action inside the phase: resolve **O-1** in `decisions.md`
-(is built-in FieldDef `display_name` persisted or code-derived?) before
-renaming the DataTable column header.
+Pick up **Phase 02** (one status control and CSS-token consolidation).
 
 ## Blockers
 
@@ -61,7 +67,7 @@ still open when Phase 02 starts.
 
 | Phase | State | Exit gate |
 | --- | --- | --- |
-| 01 Vocabulary, labels, tooltips, legend | Not started | retired-spelling grep clean; O-1 recorded; CI green |
+| 01 Vocabulary, labels, tooltips, legend | Complete | O-1 recorded; mounted surfaces verified; CI green |
 | 02 One control + CSS tokens | Not started | five surfaces visually unified; CI green |
 | 03 Documentation `?needs=` filters | Not started | PRD §6.3 browser smoke; CI green |
 | 04 Overview rename + meters | Not started | PRD §6.4/§6.5 smoke; redirect verified; CI green |

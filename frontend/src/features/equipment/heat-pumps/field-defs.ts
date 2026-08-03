@@ -1,4 +1,9 @@
 import { ALL_FIELD_LOCKS, type FieldDef, type FieldOption } from "../../../shared/ui/data-table";
+import {
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
+  type DocumentationStatusAxis,
+} from "../../project_document/specification-status";
 
 export const HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY = "record_id";
 
@@ -76,12 +81,16 @@ export function heatPumpSelectField(
   };
 }
 
-export function heatPumpAttachmentField(field_key: string, display_name: string): FieldDef {
+export function heatPumpAttachmentField(
+  field_key: string,
+  axis: Exclude<DocumentationStatusAxis, "spec">,
+): FieldDef {
   return {
     field_key,
     field_type: "attachment",
     custom_field_type: "long_text",
-    display_name,
+    display_name: STATUS_AXIS_LABELS[axis].column,
+    description: STATUS_AXIS_TOOLTIPS[axis],
     built_in: true,
     locked: ALL_FIELD_LOCKS,
   };

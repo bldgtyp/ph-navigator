@@ -15,7 +15,7 @@ import {
   densityUnitLabel,
   specificHeatUnitLabel,
 } from "../../catalogs/components/unit-labels";
-import { StatusSelect, type StatusSelectOption } from "../../../shared/ui";
+import { StatusSelect } from "../../../shared/ui";
 import {
   AttachmentChipCell,
   ReportTable,
@@ -50,9 +50,10 @@ import {
   SPECIFICATION_STATUSES,
   SPECIFICATION_STATUS_LABELS,
   SPECIFICATION_STATUS_OPTIONS,
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
 } from "../../project_document/specification-status";
-
-const STATUS_OPTIONS: StatusSelectOption<SpecificationStatus>[] = SPECIFICATION_STATUS_OPTIONS;
+import { StatusAxisHeader, StatusRollupSummary } from "../../project_document/StatusVocabulary";
 
 export function MaterialsPanel({
   materials,
@@ -107,8 +108,7 @@ export function MaterialsPanel({
     [driftByMaterialId, visibleMaterials],
   );
 
-  // Refreshing the last drifted material empties the review filter; drop back
-  // to the full list rather than leaving the user staring at an empty table.
+  // Drop the review filter when refreshing the last drifted material empties it.
   const reviewFilterActive = reviewOnly && reviewCount > 0;
 
   const filteredMaterials = useMemo(() => {
@@ -221,13 +221,13 @@ export function MaterialsPanel({
     },
     {
       key: "datasheet",
-      header: "Datasheet",
+      header: <StatusAxisHeader axis="datasheet" />,
       width: "80px",
       render: (m) => <AttachmentChipCell count={m.datasheet_asset_ids.length} noun="datasheet" />,
     },
     {
       key: "photos",
-      header: "Photos",
+      header: <StatusAxisHeader axis="photo" />,
       width: "80px",
       render: (m) => (
         <AttachmentChipCell count={countGroupedUseSitePhotos(m.use_sites)} noun="photo" />
@@ -235,13 +235,14 @@ export function MaterialsPanel({
     },
     {
       key: "status",
-      header: "Status",
+      header: <StatusAxisHeader axis="spec" />,
       width: "minmax(120px, 1fr)",
       render: (m) => (
         <StatusSelect
-          ariaLabel="Status"
+          ariaLabel={STATUS_AXIS_LABELS.spec.column}
+          title={STATUS_AXIS_TOOLTIPS.spec}
           value={m.specification_status}
-          options={STATUS_OPTIONS}
+          options={SPECIFICATION_STATUS_OPTIONS}
           disabled={busy}
           readOnly={!canEdit}
           onChange={(nextStatus) =>
@@ -339,7 +340,7 @@ export function MaterialsPanel({
             <div className="spec-expansion__columns">
               <div className="spec-expansion__left">
                 <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
-                  <h3>Datasheets</h3>
+                  <h3>Datasheet</h3>
                   <AttachmentCell
                     projectId={projectId}
                     value={material.datasheet_asset_ids}
@@ -366,7 +367,7 @@ export function MaterialsPanel({
               </div>
               <div className="spec-expansion__right">
                 <section className="spec-evidence" aria-label={`${material.name} site photos`}>
-                  <h3>Site photos</h3>
+                  <h3>Site Photos</h3>
                   {material.use_sites.length === 0 ? (
                     <p className="spec-evidence__empty">Not used by an assembly.</p>
                   ) : (
@@ -432,7 +433,7 @@ export function MaterialsPanel({
         options={filterOptions}
         value={statusFilter}
         onChange={setStatusFilter}
-        summary={`${resolvedCount}/${totalCount} resolved`}
+        summary={<StatusRollupSummary resolved={resolvedCount} total={totalCount} />}
       />
       <div className="materials-panel__sections">
         {showActiveSection ? (

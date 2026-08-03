@@ -18,8 +18,19 @@
 }
 
 .documentation-header {
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: var(--space-16);
+}
+
+.documentation-header__status {
+  align-items: center;
+  display: flex;
+  gap: var(--space-8);
+  min-width: min(480px, 50%);
+}
+
+.documentation-header__status .documentation-rollup {
+  flex: 1;
 }
 
 .documentation-header h1,

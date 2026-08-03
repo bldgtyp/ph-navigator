@@ -49,6 +49,7 @@ export type TableFieldRenderOverlay = Partial<
     FieldDef,
     | "colorCodeOptions"
     | "defaultOptionId"
+    | "description"
     | "display_name"
     | "locked"
     | "numberPrecision"

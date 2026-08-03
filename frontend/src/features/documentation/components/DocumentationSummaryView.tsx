@@ -25,11 +25,16 @@ import type {
 } from "../types";
 import { DirectionsModal } from "./DocumentationModals";
 import { DocumentationRecordRow } from "./DocumentationRecordViews";
+import { StatusLegend } from "../../project_document/StatusVocabulary";
+import {
+  STATUS_AXIS_LABELS,
+  needAttentionLabel,
+} from "../../project_document/specification-status";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
-  { axis: "spec", label: "Needed specs" },
-  { axis: "datasheet", label: "Missing datasheets" },
-  { axis: "photo", label: "Missing photos" },
+  { axis: "spec", label: STATUS_AXIS_LABELS.spec.filter },
+  { axis: "datasheet", label: STATUS_AXIS_LABELS.datasheet.filter },
+  { axis: "photo", label: STATUS_AXIS_LABELS.photo.filter },
 ];
 
 export function DocumentationSummaryView({
@@ -126,6 +131,10 @@ export function DocumentationSummaryView({
             the model.
           </p>
           <p className="documentation-attention-line">{attentionLine(summary.counts)}</p>
+        </div>
+        <div className="documentation-header__status">
+          <AxisRollup counts={summary.counts} />
+          <StatusLegend />
         </div>
       </header>
       {project.active_version?.locked ? (
@@ -252,22 +261,27 @@ function attentionLine(counts: DocumentationAxisCounts): string {
   const specs = counts.spec_total - counts.spec_done;
   const datasheets = counts.ds_total - counts.ds_done;
   const photos = counts.photo_total - counts.photo_done;
-  return `${pluralCount(specs, "spec")}, ${pluralCount(datasheets, "datasheet")}, and ${pluralCount(
-    photos,
-    "photo",
-  )} still need attention.`;
-}
-
-function pluralCount(count: number, label: string): string {
-  return `${count} ${label}${count === 1 ? "" : "s"}`;
+  return `${needAttentionLabel(specs + datasheets + photos)}.`;
 }
 
 function AxisRollup({ counts }: { counts: DocumentationAxisCounts }) {
   return (
     <div className="documentation-rollup">
-      <AxisMeter label="Spec" done={counts.spec_done} total={counts.spec_total} />
-      <AxisMeter label="Datasheets" done={counts.ds_done} total={counts.ds_total} />
-      <AxisMeter label="Photos" done={counts.photo_done} total={counts.photo_total} />
+      <AxisMeter
+        label={STATUS_AXIS_LABELS.spec.meter}
+        done={counts.spec_done}
+        total={counts.spec_total}
+      />
+      <AxisMeter
+        label={STATUS_AXIS_LABELS.datasheet.meter}
+        done={counts.ds_done}
+        total={counts.ds_total}
+      />
+      <AxisMeter
+        label={STATUS_AXIS_LABELS.photo.meter}
+        done={counts.photo_done}
+        total={counts.photo_total}
+      />
     </div>
   );
 }

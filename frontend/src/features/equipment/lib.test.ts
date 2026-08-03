@@ -1620,7 +1620,7 @@ describe("built-in status field", () => {
       const statusDef = fieldDefs.find((field) => field.field_key === STATUS_FIELD_KEY);
       expect(statusDef?.field_type).toBe("single_select");
       expect(statusDef?.origin).toBe("built_in");
-      expect(statusDef?.display_name).toBe("Specification Status");
+      expect(statusDef?.display_name).toBe("Spec. Status");
       expect(statusDef?.config.default_option_id).toBe(STATUS_DEFAULT_OPTION_ID);
     }
   });

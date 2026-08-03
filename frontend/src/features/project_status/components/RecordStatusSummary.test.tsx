@@ -73,14 +73,14 @@ test("keeps groups collapsed and bounds attention and resolved disclosure", asyn
   );
   renderSummary();
 
-  expect(await screen.findByText("12 needed")).toBeInTheDocument();
+  expect((await screen.findAllByText("12 need attention")).length).toBeGreaterThan(0);
   const pumpsToggle = screen.getByRole("button", { name: /Pumps/ });
   expect(pumpsToggle).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByText("Pump 1")).toBeNull();
 
   await user.click(pumpsToggle);
   const pumpsLeafToggle = screen.getByRole("button", {
-    name: "Pumps 12 need attention 1 resolved",
+    name: "Pumps 12 need attention 1 of 13 resolved",
   });
   expect(pumpsLeafToggle).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByText("Pump 1")).toBeNull();
@@ -114,8 +114,8 @@ test("recovers from a section-scoped load error through Retry", async () => {
 
   await user.click(await screen.findByRole("button", { name: "Retry" }));
 
-  const region = screen.getByRole("region", { name: "Record status" });
-  expect(await within(region).findByText("12 needed")).toBeVisible();
+  const region = screen.getByRole("region", { name: "Spec. Status" });
+  expect((await within(region).findAllByText("12 need attention")).length).toBeGreaterThan(0);
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 

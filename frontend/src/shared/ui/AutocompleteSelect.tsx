@@ -25,6 +25,7 @@ export function AutocompleteSelect({
   id,
   label,
   ariaLabel,
+  title,
   "aria-label": ariaLabelAttribute,
   value,
   options,
@@ -41,6 +42,7 @@ export function AutocompleteSelect({
   id?: string;
   label?: string;
   ariaLabel?: string;
+  title?: string;
   "aria-label"?: string;
   value: string;
   options: readonly AutocompleteSelectOption[];
@@ -295,6 +297,7 @@ export function AutocompleteSelect({
           aria-controls={listboxId}
           aria-activedescendant={open ? activeOptionId : undefined}
           aria-label={label ? undefined : effectiveAriaLabel}
+          title={title}
           value={displayValue}
           disabled={disabled}
           placeholder={placeholder}

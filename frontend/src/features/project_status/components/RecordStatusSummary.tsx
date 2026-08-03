@@ -5,6 +5,11 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ProgressBar, Tooltip } from "../../../shared/ui";
 import type { ProjectDetail } from "../../projects/types";
 import {
+  STATUS_AXIS_LABELS,
+  needAttentionLabel,
+  resolvedLabel,
+} from "../../project_document/specification-status";
+import {
   statusSummaryDestinationPath,
   useProjectStatusSummaryQuery,
   type StatusSummaryCounts,
@@ -139,7 +144,7 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
 function SummaryHeading() {
   return (
     <h2 className="sr-only" id="record-status-title">
-      Record status
+      {STATUS_AXIS_LABELS.spec.column}
     </h2>
   );
 }
@@ -152,15 +157,13 @@ function SummaryCounts({ counts }: { counts: StatusSummaryCounts }) {
   return (
     <div className="record-status-overview" aria-label="Record status totals">
       <div className="record-status-progress-copy">
-        <span>
-          <strong>{resolved}</strong> of {total} records resolved
-        </span>
-        <span className="record-status-attention">{attention} need attention</span>
+        <span>{resolvedLabel(resolved, total)}</span>
+        <span className="record-status-attention">{needAttentionLabel(attention)}</span>
       </div>
       <ProgressBar
         className="record-status-progress"
         value={progress}
-        label={`${resolved} of ${total} records resolved`}
+        label={resolvedLabel(resolved, total)}
       />
     </div>
   );
@@ -173,10 +176,8 @@ function GroupCounts({ counts }: { counts: StatusSummaryCounts }) {
   const attention = counts.needed + counts.question + counts.unknown;
   return (
     <span className="record-status-group-counts">
-      {attention > 0 ? <span className="needed">{counts.needed} needed</span> : null}
-      <span className="record-status-group-progress-copy">
-        {resolved} / {total} resolved
-      </span>
+      {attention > 0 ? <span className="needed">{needAttentionLabel(attention)}</span> : null}
+      <span className="record-status-group-progress-copy">{resolvedLabel(resolved, total)}</span>
       <ProgressBar
         className="record-status-progress"
         value={(resolved / total) * 100}
@@ -193,8 +194,8 @@ function LeafCounts({ counts }: { counts: StatusSummaryCounts }) {
   const attention = counts.needed + counts.question + counts.unknown;
   return (
     <span className="record-status-leaf-counts">
-      {attention > 0 ? <span className="needed">{attention} need attention</span> : null}
-      <span>{resolved} resolved</span>
+      {attention > 0 ? <span className="needed">{needAttentionLabel(attention)}</span> : null}
+      <span>{resolvedLabel(resolved, total)}</span>
     </span>
   );
 }

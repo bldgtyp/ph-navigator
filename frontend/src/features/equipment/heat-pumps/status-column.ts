@@ -1,5 +1,6 @@
 import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/ui/data-table";
 import { STATUS_DEFAULT_OPTION_ID, STATUS_DISPLAY_NAME, STATUS_FIELD_KEY } from "../types";
+import { STATUS_DESCRIPTION } from "../../../shared/ui/data-table/status";
 import { HEAT_PUMP_SELECT_LOCKS, readCustomStringValue } from "./field-defs";
 
 // The built-in `status` single-select is shared by all four Heat-Pump
@@ -15,6 +16,7 @@ export function statusFieldDef(options: readonly FieldOption[] = []): FieldDef {
     field_type: "single_select",
     custom_field_type: "single_select",
     display_name: STATUS_DISPLAY_NAME,
+    description: STATUS_DESCRIPTION,
     options: [...options],
     defaultOptionId: STATUS_DEFAULT_OPTION_ID,
     built_in: true,

@@ -46,8 +46,11 @@ import type {
 import {
   SPECIFICATION_STATUSES,
   SPECIFICATION_STATUS_LABELS,
+  STATUS_AXIS_LABELS,
+  STATUS_AXIS_TOOLTIPS,
   isSpecificationStatus,
 } from "../../project_document/specification-status";
+import { StatusAxisHeader, StatusRollupSummary } from "../../project_document/StatusVocabulary";
 
 type ApertureSpecProduct = ProjectGlazingRead | ProjectFrameRead;
 type ApertureUseSite = ProjectGlazingUseSite | ProjectFrameUseSite;
@@ -299,7 +302,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
             <div className="spec-expansion__columns">
               <div className="spec-expansion__left">
                 <section className="spec-evidence" aria-label={`${row.name} datasheets`}>
-                  <h3>Datasheets</h3>
+                  <h3>Datasheet</h3>
                   <AttachmentCell
                     projectId={projectId}
                     value={row.datasheet_asset_ids}
@@ -321,7 +324,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                   />
                 </section>
                 <section className="spec-evidence" aria-label={`${row.name} site photos`}>
-                  <h3>Site photos</h3>
+                  <h3>Site Photos</h3>
                   <AttachmentCell
                     projectId={projectId}
                     value={row.photo_asset_ids}
@@ -426,7 +429,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
         options={filterOptions}
         value={statusFilter}
         onChange={setStatusFilter}
-        summary={`${resolvedCount}/${totalCount} resolved`}
+        summary={<StatusRollupSummary resolved={resolvedCount} total={totalCount} />}
       />
       {kind === "frame" ? (
         <FrameGroupingToolbar grouping={frameGrouping} onChange={setFrameGrouping} />
@@ -667,7 +670,7 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
     ...numeric,
     {
       key: "datasheet",
-      header: "Datasheet",
+      header: <StatusAxisHeader axis="datasheet" />,
       width: "80px",
       render: (row) => (
         <AttachmentChipCell count={row.datasheet_asset_ids.length} noun="datasheet" />
@@ -675,13 +678,13 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
     },
     {
       key: "site_photos",
-      header: "Site photos",
+      header: <StatusAxisHeader axis="photo" />,
       width: "80px",
       render: (row) => <AttachmentChipCell count={row.photo_asset_ids.length} noun="site photo" />,
     },
     {
       key: "status",
-      header: "Status",
+      header: <StatusAxisHeader axis="spec" />,
       width: "minmax(120px, 1fr)",
       render: (row) => renderStatus(row, kind, canEdit, busy, onCommand),
     },
@@ -791,7 +794,8 @@ function renderStatus(
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, width: "100%" }}>
       <StatusDot status={row.specification_status} />
       <AutocompleteSelect
-        ariaLabel="Status"
+        ariaLabel={STATUS_AXIS_LABELS.spec.column}
+        title={STATUS_AXIS_TOOLTIPS.spec}
         value={row.specification_status}
         disabled={busy}
         compact

@@ -83,12 +83,16 @@ RELATED:
   with the same axis deep links (group anchors). Still counts-only — no
   record rows on Overview.
 
-## Open items (to resolve during implementation)
+## Resolved implementation questions
 
-- **O-1 — Where does the DataTable column header rename land?** Approach
-  approved (Ed, 2026-08-03); the code check remains the first Phase 01
-  action. If built-in FieldDef `display_name` is code-derived at read
-  time, change `STATUS_DISPLAY_NAME` backend-side; if it is persisted into
-  saved documents, override at the frontend display layer instead and
-  leave the stored/API name alone. Also check gh_api exports for
-  display-name coupling. Record the finding here.
+- **O-1 — The built-in FieldDef `display_name` is persisted.** Resolved in
+  Phase 01 on 2026-08-03. Built-in definitions are copied into
+  `tables.*.field_defs`, and the backend drift audit compares those saved
+  definitions against current seeds. The stable backend/API display name and
+  description therefore remain unchanged; mounted DataTables receive the
+  canonical `Spec. Status` label and exact tooltip through the frontend
+  field-render overlay. Changing either stored definition produced a schema
+  fingerprint delta and fixture drift, conflicting with this packet's explicit
+  no-schema-change invariant. No `gh_api` export couples behavior to the
+  visible label. This avoids document/schema churn while presenting one
+  vocabulary.

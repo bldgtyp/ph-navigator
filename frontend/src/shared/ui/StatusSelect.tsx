@@ -22,6 +22,7 @@ export function StatusSelect<TValue extends string>({
   value,
   options,
   ariaLabel,
+  title,
   disabled = false,
   readOnly = false,
   onChange,
@@ -29,6 +30,7 @@ export function StatusSelect<TValue extends string>({
   value: TValue;
   options: ReadonlyArray<StatusSelectOption<TValue>>;
   ariaLabel: string;
+  title?: string;
   disabled?: boolean;
   readOnly?: boolean;
   onChange?: (value: TValue) => void;
@@ -39,7 +41,7 @@ export function StatusSelect<TValue extends string>({
     // Plain display text — the visible label conveys the value, so no
     // aria-label (which would otherwise expose a spurious labelled control).
     return (
-      <span className="status-select" data-tone={tone}>
+      <span className="status-select" data-tone={tone} title={title}>
         {selected?.label ?? value}
       </span>
     );
@@ -49,6 +51,7 @@ export function StatusSelect<TValue extends string>({
       className="status-select"
       data-tone={tone}
       aria-label={ariaLabel}
+      title={title}
       value={value}
       disabled={disabled}
       onChange={(event) => onChange?.(event.target.value as TValue)}

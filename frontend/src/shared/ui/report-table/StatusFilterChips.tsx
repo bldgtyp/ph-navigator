@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ReportStatusKey } from "./StatusPill";
 import { StatusDot } from "./StatusPill";
 
@@ -19,7 +20,7 @@ export function StatusFilterChips<K extends ReportStatusKey>({
   options: StatusFilterOption<K>[];
   value: StatusFilterValue<K>;
   onChange: (next: StatusFilterValue<K>) => void;
-  summary?: string;
+  summary?: ReactNode;
 }) {
   return (
     <div className="report-status-filters">
@@ -41,7 +42,7 @@ export function StatusFilterChips<K extends ReportStatusKey>({
           );
         })}
       </div>
-      {summary ? <span className="report-status-filters__summary">{summary}</span> : null}
+      {summary ? <div className="report-status-filters__summary">{summary}</div> : null}
     </div>
   );
 }

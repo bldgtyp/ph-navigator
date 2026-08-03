@@ -224,7 +224,7 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByRole("heading", { name: "In scope" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "N/A" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Unused" })).toBeInTheDocument();
-    expect(screen.getByText("2/3 resolved")).toBeInTheDocument();
+    expect(screen.getByText("2 of 3 resolved")).toBeInTheDocument();
 
     const activeRow = screen.getByRole("row", { name: /Triple Pane A/ });
     expect(within(activeRow).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();

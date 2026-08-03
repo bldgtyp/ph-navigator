@@ -7,6 +7,8 @@ import type {
   DocumentationSpecStatus,
 } from "./types";
 import {
+  EVIDENCE_STATUSES,
+  EVIDENCE_STATUS_LABELS,
   SPECIFICATION_STATUS_LABELS,
   SPECIFICATION_STATUS_OPTIONS,
 } from "../project_document/specification-status";
@@ -26,11 +28,11 @@ export const SPEC_STATUS_OPTIONS: Array<DocumentationStatusOption<DocumentationS
 
 export const EVIDENCE_STATUS_OPTIONS: Array<
   DocumentationStatusOption<DocumentationEvidenceStatus>
-> = [
-  { value: "needed", label: "Needed", tone: "needed" },
-  { value: "complete", label: "Complete", tone: "complete" },
-  { value: "na", label: "N/A", tone: "na" },
-];
+> = EVIDENCE_STATUSES.map((status) => ({
+  value: status,
+  label: EVIDENCE_STATUS_LABELS[status],
+  tone: status,
+}));
 
 export function allDocumentationAssetIds(sections: readonly DocumentationSection[]): string[] {
   const ids = new Set<string>();

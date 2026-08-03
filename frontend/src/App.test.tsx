@@ -557,7 +557,7 @@ describe("App", () => {
     expect(screen.queryByRole("button", { name: /More actions for/ })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Drag CAD files received/)).not.toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Record status" })).getByRole("button", {
+      within(screen.getByRole("region", { name: "Spec. Status" })).getByRole("button", {
         name: "Retry",
       }),
     ).toBeVisible();

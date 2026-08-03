@@ -164,14 +164,14 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
       </div>
       {isAdding ? (
         <StatusItemModal
-          title="Add status item"
+          title="Add milestone"
           onCancel={() => setIsAdding(false)}
           onSubmit={addItem}
         />
       ) : null}
       {editingItem ? (
         <StatusItemModal
-          title="Edit status item"
+          title="Edit milestone"
           item={editingItem}
           onCancel={() => setEditingItem(null)}
           onSubmit={(payload) => patchItem(editingItem.id, payload)}

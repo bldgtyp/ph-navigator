@@ -2,6 +2,7 @@ import { attachmentColumn, type DataTableColumnDef } from "../../../shared/ui/da
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import type { AssetUrls } from "../../assets/types";
+import { STATUS_AXIS_LABELS } from "../../project_document/specification-status";
 
 type HeatPumpAttachmentRow = {
   id: string;
@@ -24,7 +25,7 @@ export function heatPumpDatasheetColumn<TRow extends HeatPumpAttachmentRow>(
   return attachmentColumn({
     ...args,
     id: args.fieldKey,
-    header: "Datasheet",
+    header: STATUS_AXIS_LABELS.datasheet.column,
     config: DATASHEET_ATTACHMENT_CONFIG,
     AttachmentCell,
     getAssetIds: (row) => row.datasheet_asset_ids,
@@ -38,7 +39,7 @@ export function heatPumpPhotoColumn<TRow extends HeatPumpAttachmentRow>(
   return attachmentColumn({
     ...args,
     id: args.fieldKey,
-    header: "Site photos",
+    header: STATUS_AXIS_LABELS.photo.column,
     config: SITE_PHOTO_ATTACHMENT_CONFIG,
     AttachmentCell,
     getAssetIds: (row) => row.photo_asset_ids,
