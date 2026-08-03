@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 11:13 EDT
-STATUS: Deferred — scoped follow-up; no implementation started
+TIME: 15:35 EDT
+STATUS: Active — Phase 01 complete; Phase 02 next
 AUTHOR: Codex with Ed May
 SCOPE: Remove hand-maintained attachment row traversal without losing support
   for irregular project-document tables.
@@ -38,5 +38,33 @@ has a separate row-lookup path in `features.assets.downloads.find_row`.
 - Anonymous reads, reference validation, orphan protection, bulk download, and
   attach/detach share the same table-shape authority.
 
-No work is authorized in this packet; it is the durable follow-up for the next
-time attachment traversal or table contracts change.
+## Implementation sequence
+
+1. **Phase 01 — Adapter authority:** derive ordinary table paths from
+   `TableContract`, add explicit irregular adapters, and retain the registered
+   attachment-field reachability and list/envelope guards.
+2. **Phase 02 — Mutation unification:** route attach/detach row lookup through
+   the same adapter authority and remove the duplicate lookup in bulk-download
+   code.
+3. **Phase 03 — Verification and closeout:** run focused and repository gates,
+   fold the stable contract into `context/`, and archive this packet.
+
+The `implement-loop` invocation on 2026-08-03 authorized this packet for
+implementation.
+
+## Verification log
+
+### Phase 01
+
+- `uv run pytest tests/test_assets_registry.py tests/test_attachment_reachability_guards.py -q`
+  — `56 passed`.
+- Focused Ruff and ty checks passed for the adapter, registry, contract, heat
+  pump, and reachability-guard changes.
+- `make format` and `make ci` passed: backend `1824 passed, 7 skipped`; frontend
+  `2396 passed` across `263` files; production build passed. Existing warning
+  output remained non-failing.
+- `graphify update .` completed; generated graph output was already current.
+- `simplify` removed redundant adapter identity state, preserved lazy nested
+  lookup, and eliminated a duplicate heat-pump alias derivation in tests.
+- `docs-pass` found no stable-context update appropriate before mutation lookup
+  is unified in Phase 02.

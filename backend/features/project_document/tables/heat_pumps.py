@@ -742,6 +742,7 @@ _INDOOR_UNITS_DEPENDENT_LINKS: tuple[DependentLink, ...] = ()
 
 heat_pumps_outdoor_equip_contract = TableContract(
     name=HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME,
+    attachment_table_key="heat_pump_outdoor_equip",
     schema_slug="heat_pump_outdoor_equip",
     schema_model=HeatPumpOutdoorEquipRow,
     replace_request_model=OutdoorEquipReplaceRequest,
@@ -789,6 +790,7 @@ heat_pumps_outdoor_equip_contract = TableContract(
 
 heat_pumps_indoor_equip_contract = TableContract(
     name=HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME,
+    attachment_table_key="heat_pump_indoor_equip",
     schema_slug="heat_pump_indoor_equip",
     schema_model=HeatPumpIndoorEquipRow,
     replace_request_model=IndoorEquipReplaceRequest,
@@ -836,6 +838,7 @@ heat_pumps_indoor_equip_contract = TableContract(
 
 heat_pumps_outdoor_units_contract = TableContract(
     name=HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME,
+    attachment_table_key="heat_pump_outdoor_units",
     schema_slug="heat_pump_outdoor_unit",
     schema_model=HeatPumpOutdoorUnitRow,
     replace_request_model=OutdoorUnitsReplaceRequest,
@@ -873,6 +876,7 @@ heat_pumps_outdoor_units_contract = TableContract(
 
 heat_pumps_indoor_units_contract = TableContract(
     name=HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME,
+    attachment_table_key="heat_pump_indoor_units",
     schema_slug="heat_pump_indoor_unit",
     schema_model=HeatPumpIndoorUnitRow,
     replace_request_model=IndoorUnitsReplaceRequest,
