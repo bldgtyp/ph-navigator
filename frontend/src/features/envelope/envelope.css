@@ -1350,65 +1350,6 @@
   font-weight: var(--fw-semibold);
 }
 
-/* Same visual family as `.modal-unit-toggle` (accent-tinted pill track, mono
-   caps labels, solid accent on the active option) — the two sit inches apart
-   in this dialog. It does not reuse that class because the unit toggle's
-   sliding indicator assumes two equal 26px cells, and these are three
-   text-width options. */
-.drift-choice {
-  align-items: center;
-  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
-  border-radius: var(--radius-pill);
-  display: inline-flex;
-  font-family: var(--font-mono);
-  padding: var(--space-2);
-  width: fit-content;
-}
-
-.drift-choice__option {
-  cursor: pointer;
-  position: relative;
-}
-
-/* The radio stays in the a11y tree and keeps arrow-key radiogroup behavior;
-   the visible control is its sibling span. */
-.drift-choice__option input {
-  height: 100%;
-  inset: 0;
-  margin: 0;
-  min-height: auto;
-  opacity: 0;
-  position: absolute;
-  width: 100%;
-}
-
-.drift-choice__option span {
-  border-radius: var(--radius-pill);
-  color: var(--text-secondary);
-  display: block;
-  font-size: var(--fs-2xs);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-caps);
-  line-height: var(--lh-solid);
-  padding: var(--space-8) var(--space-12);
-  text-transform: uppercase;
-  transition: color var(--transition-fast) var(--ease);
-}
-
-.drift-choice__option:hover span {
-  color: var(--text-primary);
-}
-
-.drift-choice__option input:checked + span {
-  background: var(--accent-dark);
-  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 14%, transparent);
-  color: var(--text-on-accent);
-}
-
-.drift-choice__option input:focus-visible + span {
-  box-shadow: var(--phn-focus);
-}
-
 .drift-field__input {
   justify-self: start;
   min-width: 200px;

@@ -12,6 +12,7 @@ export * from "./DialogActions";
 export * from "./InlineHeaderNameEditor";
 export * from "./ModalDialog";
 export * from "./ProgressBar";
+export * from "./SegmentedControl";
 export * from "./ShellMessage";
 export * from "./StatusSelect";
 export * from "./TopbarUnitToggle";

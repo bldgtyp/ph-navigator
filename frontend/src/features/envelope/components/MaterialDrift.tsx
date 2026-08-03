@@ -17,6 +17,7 @@ import {
 } from "../../../lib/units";
 import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
 import {
   parseOptionalNumber,
   parseOptionalUnitNumber,
@@ -178,25 +179,19 @@ export function MaterialDriftDialog({
                       </span>
                     </span>
                   </div>
-                  <div
-                    className="drift-choice"
-                    role="radiogroup"
-                    aria-label={`${fieldLabel(field.key)} value to keep`}
-                  >
-                    {(["keep_mine", "take_catalog", "use_value"] as const).map((action) => (
-                      <label key={action} className="drift-choice__option">
-                        <input
-                          type="radio"
-                          name={`drift-${field.key}`}
-                          checked={actions[field.key] === action}
-                          onChange={() =>
-                            setActions((current) => ({ ...current, [field.key]: action }))
-                          }
-                        />
-                        <span>{ACTION_LABELS[action]}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    value={
+                      actions[field.key] ?? (field.is_overridden ? "keep_mine" : "take_catalog")
+                    }
+                    onChange={(action) =>
+                      setActions((current) => ({ ...current, [field.key]: action }))
+                    }
+                    ariaLabel={`${fieldLabel(field.key)} value to keep`}
+                    options={(["keep_mine", "take_catalog", "use_value"] as const).map(
+                      (action) => ({ value: action, label: ACTION_LABELS[action] }),
+                    )}
+                    size="xs"
+                  />
                   {actions[field.key] === "use_value" ? (
                     <input
                       className="drift-field__input"

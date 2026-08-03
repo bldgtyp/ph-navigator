@@ -4,7 +4,7 @@ TIME: 09:16 EDT
 STATUS: Deferred — scoped, not started
 AUTHOR: Claude with Ed May
 SCOPE: Contract for a shared `SegmentedControl` primitive and the migration of
-  the four existing implementations onto it.
+  the five existing implementations onto it.
 RELATED:
   - ./README.md
   - ./STATUS.md
@@ -15,7 +15,7 @@ RELATED:
 
 ## The problem in one line
 
-Four implementations of "pick one of N, inline, mutually exclusive" exist on
+Five implementations of "pick one of N, inline, mutually exclusive" exist on
 the same token set, and the design system names none of them.
 
 ## What varies today (and what must survive)
@@ -40,6 +40,10 @@ Two genuinely different things are hiding in this table:
 The primitive should serve the first cleanly and *may* absorb the second
 behind a `size`/`variant` prop — see Q1.
 
+A fifth implementation, the Edit/Preview switch in `StatusItemModal`, was
+found during the phase-1 reuse review. It is a content-scale single-select and
+belongs in the shared primitive after the compact chrome consumers migrate.
+
 ## Proposed API
 
 ```tsx
@@ -62,13 +66,12 @@ Requirements:
 1. **Generic over the value type** — `SegmentedControl<T extends string>`, so
    `UnitSystem` and `ProjectMaterialRefreshChoice["action"]` both type-check
    without casts.
-2. **One a11y story.** `role="radiogroup"` + `aria-checked` on options, arrow-key
-   roving focus. Real `<input type="radio">` (as #4 uses) gets keyboard
-   behavior from the browser for free and is the recommended internal markup;
-   verify against a screen reader before committing to it.
-3. **Sliding indicator is opt-in, not assumed.** It requires equal-width cells.
-   Variable-width options fall back to filling the active cell — that is what
-   #4 does today and it reads fine.
+2. **One a11y story.** `role="radiogroup"` with real named radio inputs. Native
+   radios provide arrow-key selection and roving focus without a second
+   JavaScript interaction model.
+3. **Filled active cells, no sliding pseudo-element.** This preserves the
+   selected-state appearance while removing a duplicated animation and the
+   two-equal-cell assumption.
 4. **Disabled state** — `#3` consumers use `:disabled`; the primitive must
    support per-option and whole-control disabled.
 5. **Zero feature CSS.** The class lives in `shared/ui/`; features pick the
@@ -86,12 +89,13 @@ Ordered so each step is independently shippable and verifiable:
 3. **`TopbarUnitToggle` (#1).** App chrome — visible on every page, so verify
    with the rendered-typography sweep (`make typography-eval`) as well as
    screenshots.
-4. **`.pill-tab` (#3)** — only if Q1 resolves toward absorbing it. 4+ consumers
-   across envelope condensation panels and the material picker.
+4. **Content-scale single-selects.** Migrate the `role="group"` `.pill-tab`
+   consumers and the project-status Edit/Preview switch. Keep true
+   `role="tablist"` controls as tabs.
 5. **Design system.** Add `SegmentedControl` to the component inventory table
    in `context/DESIGN_SYSTEM.md` and the ownership table in
    `frontend/src/styles/README.md`. Until this step lands, the refactor has not
-   actually prevented a fifth implementation.
+   actually prevented a sixth implementation.
 
 ## Open questions
 
@@ -107,10 +111,20 @@ Ordered so each step is independently shippable and verifiable:
   like `StatusSelect.css`) or `styles/base.css`? Follow whatever
   `frontend/src/styles/README.md` says owns shared component CSS.
 
+## Decisions — 2026-08-03
+
+- **Q1:** absorb content-scale single-select groups, but not true tabs. A
+  radiogroup primitive must not replace `role="tablist"` semantics.
+- **Q2:** remove the sliding pseudo-element. The shared primitive fills the
+  selected cell for both fixed- and variable-width options.
+- **Q3:** co-locate the CSS at `shared/ui/SegmentedControl.css` and load it once
+  through `App.css`, matching the styling guide's shared-component rule.
+
 ## Done means
 
-- One implementation. `git grep` for `unit-toggle`, `pill-tab`, `drift-choice`
-  returns only the migrated call sites (or nothing).
+- One segmented-control implementation. `git grep` for `unit-toggle`,
+  `drift-choice`, and the project-status `.segmented-control` returns nothing;
+  `.pill-tab` remains only on true tablist consumers.
 - `SegmentedControl` is in the design-system component inventory.
 - `make ci` green, including `check:typography` and the rendered sweep.
 - Screenshots of the topbar toggle, a modal unit toggle, and the drift dialog
