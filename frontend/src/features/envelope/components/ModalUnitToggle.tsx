@@ -1,5 +1,5 @@
 import type { UnitSystem } from "../../../lib/units";
-import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
+import { SegmentedControl } from "../../../shared/ui";
 
 const UNIT_OPTIONS: UnitSystem[] = ["IP", "SI"];
 

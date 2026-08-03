@@ -158,6 +158,7 @@ into these shared sheets:
 | `shared/ui/report-table/ReportTable.css` | report tables + status pills/chips |
 | `shared/ui/info-tooltip/InfoTooltip.css` | the `ⓘ` hover tooltip |
 | `shared/ui/InlineHeaderNameEditor.css` | the inline rename header control; a feature reveals the edit affordance by putting `data-reveal-edit-on-hover` on its header element |
+| `shared/ui/SegmentedControl.css` | `.phn-segmented-control*`: native-radio inline single-selects in compact chrome and content-pill sizes |
 | `shared/ui/canvas/*.css` | shared apertures/envelope canvas chrome |
 | `shared/ui/dimensions/DimensionChrome.css` | shared dimension delete affordance |
 | `shared/ui/attachments/attachments.css` | the shared attachment chips/cells/panel (used by assets, envelope, equipment) |

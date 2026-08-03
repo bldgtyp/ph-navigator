@@ -694,10 +694,7 @@ describe("EnvelopePage", () => {
     });
     expect(within(dialog).getByLabelText(/Density/)).toHaveValue("10");
     expect(within(dialog).getByLabelText(/Specific heat/)).toHaveValue("0.502");
-    expect(within(dialog).getByRole("radio", { name: "Set display units to IP" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
+    expect(within(dialog).getByRole("radio", { name: "Set display units to IP" })).toBeChecked();
 
     await userEvent.click(within(dialog).getByRole("radio", { name: "Set display units to SI" }));
 

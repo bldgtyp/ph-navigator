@@ -1,9 +1,11 @@
 import { type FormEvent, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
-import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
-import { DialogActions } from "../../../shared/ui/DialogActions";
-import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
+import {
+  AutocompleteSelect,
+  DialogActions,
+  ModalDialog,
+  SegmentedControl,
+} from "../../../shared/ui";
 import { isStatusState, STATUS_STATE_OPTIONS } from "../lib";
 import type { StatusItem, StatusItemPayload, StatusState } from "../types";
 import { StatusDescription } from "./StatusDescription";

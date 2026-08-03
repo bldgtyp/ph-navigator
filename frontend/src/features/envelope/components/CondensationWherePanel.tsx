@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
+import { SegmentedControl } from "../../../shared/ui";
 import {
   buildLayerLabelMap,
   defaultProfileMonth,

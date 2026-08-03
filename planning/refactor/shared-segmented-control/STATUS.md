@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: Active
+STATUS: In review
 AUTHOR: Claude with Ed May
 SCOPE: State ledger for the shared segmented-control extraction.
 RELATED:
@@ -13,7 +13,7 @@ RELATED:
 
 ## Current state
 
-`Active`. Migration steps 1-4 are complete: the generic native-radio
+`In review`. All five migration/design-system steps are complete: the generic native-radio
 `SegmentedControl<T>` exists in `shared/ui`, and `MaterialDriftDialog` consumes
 it with its feature CSS removed. `ModalUnitToggle` now delegates to the same
 primitive, and its duplicated CSS is gone. The reuse review found and
@@ -23,8 +23,8 @@ primitive. True tablist consumers remain separate.
 
 ## Next step
 
-Execute migration step 5: add `SegmentedControl` to the design-system and CSS
-ownership inventories, then run final full verification.
+Run the implement-loop final completion cleanup: mark the packet complete,
+archive it, update planning indexes, and verify no stale active links remain.
 
 ## Blockers
 
@@ -95,3 +95,11 @@ pixel change":
   radiogroup and revealed the preview panel. The seeded assembly lacks climate
   data, so the profile-axis control was verified through its focused mounted
   component test rather than the live route.
+- **2026-08-03** — Step 5 complete. Registered `SegmentedControl` in
+  `context/DESIGN_SYSTEM.md` and `shared/ui/SegmentedControl.css` in the style
+  ownership table; normalized feature consumers to the documented `shared/ui`
+  barrel. Full `make ci` passed after updating one stale `aria-checked`
+  assertion to the native-radio `toBeChecked()` contract: backend 1,822 passed
+  / 7 skipped; frontend 2,396 passed; production build and all static gates
+  passed. `graphify update .` completed. Final grep leaves `.pill-tab` only in
+  `CondensationRiskModal` and `SegmentMaterialPicker`, both true tablists.

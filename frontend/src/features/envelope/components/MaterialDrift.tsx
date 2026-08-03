@@ -15,9 +15,7 @@ import {
   useUnitPreference,
   type UnitFormatOptions,
 } from "../../../lib/units";
-import { DialogActions } from "../../../shared/ui/DialogActions";
-import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
+import { DialogActions, ModalDialog, SegmentedControl } from "../../../shared/ui";
 import {
   parseOptionalNumber,
   parseOptionalUnitNumber,

@@ -202,6 +202,7 @@ the spec to reproduce.
 | Chip | `.chip` + `.chip--sm/--md/--outline/--interactive` | compact labels/tags; pill radius |
 | Read-only pill | `.read-only-pill` | mono uppercase "read-only" warning badge |
 | Pill tabs / sub-tabs | `.pill-tab` / `.pill-tab-list`, `.app-subtabs` | in-page section switching |
+| Segmented control | `SegmentedControl` / `.phn-segmented-control*` | mutually exclusive inline single-select; native radio semantics; `xs`/`sm` compact chrome and `md` content pills |
 | Empty state | `.empty-state` | zero-data placeholder w/ heading + copy |
 | Autocomplete select | `AutocompleteSelect` / `.autocomplete-select*` | typeahead single-select |
 | Status control | `StatusSelect` / `StatusPill` / `.status-select` | editable pill-select and shared read-only pill, including built-in DataTable status cells; tone-colored via `--report-status-*` |
@@ -216,7 +217,7 @@ the spec to reproduce.
 | Element sidebar | `shared/ui/element-sidebar` (`<ElementSidebar>`) | shared object-list rail (Envelope Assemblies, Aperture Types) — "1A Quiet List": ghost header with a Sort-order menu (`AppMenu`), neutral hover / teal-only selection, hover-reveal grip + ghost action cluster, groups-as-dividers with drag-between-groups + a top add-group divider |
 | Attachments | `shared/ui/attachments` | file chips/cells/panel (assets, envelope, equipment) |
 | Breadcrumbs / page heading / topbar | `.breadcrumbs` / `.page-heading` / `.topbar` | app chrome |
-| Unit toggle | `.topbar-unit-toggle` | SI ⇄ IP animated toggle |
+| Unit toggle | `TopbarUnitToggle` / `SegmentedControl` | global SI ⇄ IP preference toggle; modal adapters use the same shared primitive |
 
 ---
 
