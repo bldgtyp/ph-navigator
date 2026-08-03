@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 10:03 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Enroll thermal_bridges.pdf_report_asset_ids in the attachment field
   registry and route its FieldDef through the shared attachment seam.
@@ -132,3 +132,23 @@ comprehension would obscure that.
 - Tests 1–6 pass.
 - A signed-out viewer can open a Thermal Bridges PDF report on a real project.
 - `make ci` green.
+
+## Completion evidence
+
+- Registry red proof failed before the entry existed; the completed focused
+  backend bundle passes `55` tests across all six required behaviors.
+- `thermal_bridges.pdf_report_asset_ids` is registered as a PDF-only datasheet
+  field with maximum count `5` and maximum size `25 MB`.
+- The shared FieldDef helper preserves every serialized field and the exact
+  Thermal Bridges schema fingerprint
+  `073fd4d1300f69585b714e731f451530d8cff3d326e0cc7cd057b616d2967475`.
+- The research probe reports `31/31 registered fields reachable`.
+- Signed out against the isolated local project fixture, the PDF Report cell
+  rendered its thumbnail; the modal rendered the signed PDF in an iframe and
+  exposed the same URL in an `_blank` “Open in new tab” link; Download returned
+  `200 application/pdf` with the expected 646-byte fixture.
+- Production was read-only throughout. Phase 00's five production PDF Report
+  references remain the compatibility evidence for the PDF-only policy;
+  production behavior will not change until Ed deploys the completed packet.
+- `make ci` passes: backend `1795 passed, 7 skipped`; frontend tests and build,
+  formatting, lint, types, and repository boundary checks are green.

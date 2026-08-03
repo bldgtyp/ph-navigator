@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:50 EDT
-STATUS: Active — Phases 00-01 complete; Phase 02 next
+TIME: 10:03 EDT
+STATUS: Active — Phases 00-02 complete; Phase 03 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,8 +17,8 @@ RELATED:
 
 ## Current state
 
-**Phases 00 and 01 complete. The row walker now reaches all 30 registered
-attachment fields; `pdf_report_asset_ids` remains unregistered until Phase 02.**
+**Phases 00-02 complete. The row walker reaches all 31 registered attachment
+fields, including `thermal_bridges.pdf_report_asset_ids`.**
 
 Two independent backend defects and two UI defects, all confirmed by executing
 code in `backend/.venv`, not by reading:
@@ -27,8 +27,9 @@ code in `backend/.venv`, not by reading:
    the list/envelope-tolerant reader. All **30 of 30 registered fields are
    reachable**, restoring anonymous visibility, sweeper protection, validation,
    bulk download, and attach/detach for Thermal Bridges and Heat Pumps.
-2. **`thermal_bridges.pdf_report_asset_ids` is not registered at all** — the
-   column Ed originally reported. Independent of (1); both fixes are required.
+2. **Missing `thermal_bridges.pdf_report_asset_ids` registration — fixed in
+   Phase 02.** The PDF-only field is now covered by public reads, write
+   validation, attach/detach, bulk download, and orphan protection.
 3. Download controls navigate to the API origin, so any non-2xx becomes the page.
 4. `AttachmentCell` has no unavailable state, so an unresolvable asset renders as
    a plausible empty file.
@@ -36,17 +37,15 @@ code in `backend/.venv`, not by reading:
 Reachability matrix and method: [research.md](./research.md).
 
 Reproduced from Ed's screenshots against production `2524 - Linde Home`. Phase
-00 found no stored-data violations. Phase 01 is implemented and fully green in
+00 found no stored-data violations. Phases 01-02 are implemented and green in
 the local checkout; production behavior remains unchanged until Ed deploys the
 completed packet.
 
 ## Next step
 
-**[Phase 02](./phases/phase-02-register-pdf-report.md) — register
-`thermal_bridges.pdf_report_asset_ids`.** Route its FieldDef through the shared
-attachment seam without moving the seed fingerprint, then prove public access,
-validation, sweeper protection, and attach/detach for the originally reported
-column.
+**[Phase 03](./phases/phase-03-reachability-guard.md) — make the registration and
+row-walker guarantees structural.** Add and falsify both schema-derived guards
+so future attachment fields cannot become unregistered or unreachable silently.
 
 ## Blockers / decisions needed from Ed
 
@@ -112,6 +111,28 @@ remediation is required before Phase 01.
   with zero console errors. The fixture has no attachment rows, so the
   file-bearing browser acceptance check remains for Phase 02.
 
+## Phase 02 verification
+
+- Red proof: the registry assertion failed before implementation because
+  `get_attachment_field("thermal_bridges", "pdf_report_asset_ids")` returned
+  `None`.
+- Focused backend bundle: `55 passed`, covering registry policy, anonymous
+  list/URL/download, attach/detach, PDF-only write validation, orphan protection,
+  bulk ZIP inclusion, and seed identity.
+- Seed identity: serialized `TableFieldDef` unchanged and Thermal Bridges schema
+  fingerprint remains
+  `073fd4d1300f69585b714e731f451530d8cff3d326e0cc7cd057b616d2967475`.
+- Reachability probe: `31/31 registered fields reachable`.
+- Signed-out local browser fixture: real thumbnail rendered; modal iframe and
+  `_blank` “Open in new tab” shared the signed PDF URL; Download returned
+  `200 application/pdf` and 646 bytes. The fixture was saved locally only;
+  production remained read-only.
+- `simplify`: three parallel reviews completed; duplicate field constants and
+  multi-field test-row construction were consolidated. No correctness or
+  efficiency findings remained.
+- `make ci` green: backend `1795 passed, 7 skipped`; frontend tests and
+  production build plus all formatting, lint, type, and boundary checks passed.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
@@ -173,3 +194,7 @@ Frontend:
 - **2026-08-03 09:50 EDT** — Phase 01 completed. Red envelope tests reproduced
   all five misses; the fix reached 30/30 fields and all workflow regressions.
   Full `make ci` green. Phase 02 next.
+- **2026-08-03 10:03 EDT** — Phase 02 completed locally. PDF Report became the
+  31st registered field without moving the Thermal Bridges schema fingerprint;
+  focused backend and signed-out file-bearing browser checks passed. Phase 03
+  next; deployment remains Ed's call.

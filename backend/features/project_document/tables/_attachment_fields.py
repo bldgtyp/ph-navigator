@@ -6,6 +6,7 @@ from features.project_document.custom_fields import CustomFieldType, TableFieldD
 from features.project_document.tables._built_in_seeds import built_in_field_def
 
 DATASHEET_FIELD_KEY = "datasheet_asset_ids"
+PDF_REPORT_FIELD_KEY = "pdf_report_asset_ids"
 PHOTO_FIELD_KEY = "photo_asset_ids"
 
 
@@ -14,6 +15,15 @@ def datasheet_field_def() -> TableFieldDef:
     return built_in_field_def(
         field_key=DATASHEET_FIELD_KEY,
         display_name="Datasheet",
+        field_type=CustomFieldType.long_text,
+    )
+
+
+def pdf_report_field_def() -> TableFieldDef:
+    """Return the shared built-in PDF Report attachment FieldDef."""
+    return built_in_field_def(
+        field_key=PDF_REPORT_FIELD_KEY,
+        display_name="PDF Report",
         field_type=CustomFieldType.long_text,
     )
 

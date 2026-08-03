@@ -11,6 +11,11 @@ from typing import Any, Literal, cast
 
 from features.assets.heic_types import HEIC_CONTENT_TYPES, HEIC_FILE_EXTENSIONS
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.tables._attachment_fields import (
+    DATASHEET_FIELD_KEY,
+    PDF_REPORT_FIELD_KEY,
+    PHOTO_FIELD_KEY,
+)
 
 AssetKind = Literal[
     "datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "stat", "ddy", "other"
@@ -18,9 +23,6 @@ AssetKind = Literal[
 
 DATASHEET_CONTENT_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
 SITE_PHOTO_CONTENT_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", *HEIC_CONTENT_TYPES})
-DATASHEET_FIELD_KEY = "datasheet_asset_ids"
-PHOTO_FIELD_KEY = "photo_asset_ids"
-
 EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
     "ventilators": "ervs",
     "pumps": "pumps",
@@ -114,6 +116,16 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
         allowed_content_types=SITE_PHOTO_CONTENT_TYPES,
         allowed_extensions=HEIC_FILE_EXTENSIONS,
         max_count=10,
+        max_file_size_mb=25,
+    ),
+    AttachmentFieldConfig(
+        key=f"thermal_bridges.{PDF_REPORT_FIELD_KEY}",
+        table_key="thermal_bridges",
+        field_key=PDF_REPORT_FIELD_KEY,
+        asset_kinds=frozenset({"datasheet"}),
+        allowed_content_types=frozenset({"application/pdf"}),
+        allowed_extensions=frozenset(),
+        max_count=5,
         max_file_size_mb=25,
     ),
     *(

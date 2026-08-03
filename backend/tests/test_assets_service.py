@@ -26,6 +26,11 @@ from tests.builders.assets import (
 from tests.project_document_helpers import draft_table_url, replace_draft_table_rows
 from tests.test_project_document import ORIGIN, create_project, save_url, signed_in_client
 
+_ATTACHMENT_FIELD_TEST_CASES = (
+    *((case, "datasheet_asset_ids") for case in ENVELOPE_ATTACHMENT_TEST_CASES),
+    (THERMAL_BRIDGES_ATTACHMENT_CASE, "pdf_report_asset_ids"),
+)
+
 
 class FakeR2Client:
     bucket = "test-assets"
@@ -212,8 +217,9 @@ def _put_attachment_test_row(
     *,
     case: AttachmentTableTestCase,
     asset_ids: list[str],
+    field_key: str = "datasheet_asset_ids",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    row = case.row(asset_ids)
+    row = case.row(asset_ids, field_key=field_key)
     response = replace_draft_table_rows(
         client,
         project_id,
@@ -233,6 +239,7 @@ def _save_attachment_test_row(
     *,
     case: AttachmentTableTestCase,
     asset_ids: list[str],
+    field_key: str = "datasheet_asset_ids",
 ) -> None:
     draft, _row = _put_attachment_test_row(
         client,
@@ -240,6 +247,7 @@ def _save_attachment_test_row(
         version_id,
         case=case,
         asset_ids=asset_ids,
+        field_key=field_key,
     )
     saved = client.post(
         save_url(project_id, version_id),
@@ -301,6 +309,39 @@ def test_thermal_bridges_replace_rejects_missing_attachment_asset(clean_document
     assert response.status_code == 422
     assert response.json()["error_code"] == "asset_not_found"
     assert response.json()["details"]["field_key"] == "thermal_bridges.datasheet_asset_ids"
+
+
+def test_thermal_bridge_pdf_report_rejects_non_pdf_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    insert_project_asset(
+        project_id=project_id,
+        asset_id="asset_report_image",
+        content_type="image/png",
+        original_filename="report.png",
+    )
+    current = client.get(draft_table_url(project_id, version_id, "thermal_bridges")).json()
+
+    response = client.put(
+        draft_table_url(project_id, version_id, "thermal_bridges"),
+        headers={"Origin": ORIGIN, "If-Match-Version": current["version_etag"]},
+        json={
+            "field_defs": current["field_defs"],
+            "thermal_bridges": [
+                THERMAL_BRIDGES_ATTACHMENT_CASE.row(
+                    ["asset_report_image"],
+                    field_key="pdf_report_asset_ids",
+                )
+            ],
+            "single_select_options": current["single_select_options"],
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "asset_mime_not_allowed"
+    assert response.json()["details"]["field_key"] == "thermal_bridges.pdf_report_asset_ids"
 
 
 def test_pumps_replace_rejects_cross_project_attachment_asset(clean_document_tables: None) -> None:
@@ -390,10 +431,15 @@ def test_anonymous_asset_registry_only_lists_referenced_assets(clean_document_ta
     assert items[0]["original_filename"] == "referenced-datasheet.pdf"
 
 
-@pytest.mark.parametrize("case", ENVELOPE_ATTACHMENT_TEST_CASES, ids=lambda case: case.table_key)
+@pytest.mark.parametrize(
+    ("case", "field_key"),
+    _ATTACHMENT_FIELD_TEST_CASES,
+    ids=lambda value: value.table_key if isinstance(value, AttachmentTableTestCase) else value,
+)
 def test_anonymous_access_resolves_envelope_table_references(
     clean_document_tables: None,
     case: AttachmentTableTestCase,
+    field_key: str,
 ) -> None:
     fake_r2 = FakeR2Client()
     _install_fake_asset_service(fake_r2)
@@ -402,7 +448,7 @@ def test_anonymous_access_resolves_envelope_table_references(
         project = create_project(editor)
         project_id = project["id"]
         version_id = project["active_version_id"]
-        asset_id = f"asset_{case.table_key}"
+        asset_id = f"asset_{case.table_key}_{field_key}"
         insert_project_asset(project_id=project_id, asset_id=asset_id)
         _save_attachment_test_row(
             editor,
@@ -410,6 +456,7 @@ def test_anonymous_access_resolves_envelope_table_references(
             version_id,
             case=case,
             asset_ids=[asset_id],
+            field_key=field_key,
         )
 
         viewer = TestClient(app)
@@ -550,16 +597,21 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
         _clear_fake_asset_service()
 
 
-@pytest.mark.parametrize("case", ENVELOPE_ATTACHMENT_TEST_CASES, ids=lambda case: case.table_key)
+@pytest.mark.parametrize(
+    ("case", "field_key"),
+    _ATTACHMENT_FIELD_TEST_CASES,
+    ids=lambda value: value.table_key if isinstance(value, AttachmentTableTestCase) else value,
+)
 def test_attach_and_detach_find_rows_in_envelope_tables(
     clean_document_tables: None,
     case: AttachmentTableTestCase,
+    field_key: str,
 ) -> None:
     client = signed_in_client()
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
-    asset_id = f"asset_attach_{case.table_key}"
+    asset_id = f"asset_attach_{case.table_key}_{field_key}"
     insert_project_asset(project_id=project_id, asset_id=asset_id)
     draft, row = _put_attachment_test_row(
         client,
@@ -567,6 +619,7 @@ def test_attach_and_detach_find_rows_in_envelope_tables(
         version_id,
         case=case,
         asset_ids=[],
+        field_key=field_key,
     )
 
     attach = client.post(
@@ -576,7 +629,7 @@ def test_attach_and_detach_find_rows_in_envelope_tables(
             "version_id": version_id,
             "table_key": case.table_key,
             "row_id": row["id"],
-            "field_key": "datasheet_asset_ids",
+            "field_key": field_key,
             "if_match": draft["draft_etag"],
             "if_match_version": draft["version_etag"],
         },
@@ -591,7 +644,7 @@ def test_attach_and_detach_find_rows_in_envelope_tables(
             "version_id": version_id,
             "table_key": case.table_key,
             "row_id": row["id"],
-            "field_key": "datasheet_asset_ids",
+            "field_key": field_key,
             "if_match": attach.json()["draft_etag"],
             "if_match_version": attach.json()["version_etag"],
         },

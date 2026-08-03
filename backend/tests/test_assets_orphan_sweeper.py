@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
+from features.project_document.tables._attachment_fields import DATASHEET_FIELD_KEY, PDF_REPORT_FIELD_KEY
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
 from tests.builders.assets import (
@@ -157,18 +158,25 @@ def test_sweep_dry_run_protects_envelope_table_references(clean_document_tables:
         project_id = project["id"]
         version_id = project["active_version_id"]
         thermal_asset = "asset_thermal_bridge"
+        pdf_report_asset = "asset_thermal_bridge_report"
         heat_pump_asset = "asset_heat_pump"
         orphan_asset = "asset_orphan"
-        for asset_id in (thermal_asset, heat_pump_asset, orphan_asset):
+        for asset_id in (thermal_asset, pdf_report_asset, heat_pump_asset, orphan_asset):
             insert_project_asset(project_id=project_id, asset_id=asset_id)
 
+        thermal_row = THERMAL_BRIDGES_ATTACHMENT_CASE.row(
+            attachment_fields={
+                DATASHEET_FIELD_KEY: [thermal_asset],
+                PDF_REPORT_FIELD_KEY: [pdf_report_asset],
+            }
+        )
         draft = replace_draft_table_rows(
             client,
             project_id,
             version_id,
             table_name=THERMAL_BRIDGES_ATTACHMENT_CASE.table_name,
             rows_attr=THERMAL_BRIDGES_ATTACHMENT_CASE.rows_attr,
-            rows=[THERMAL_BRIDGES_ATTACHMENT_CASE.row([thermal_asset])],
+            rows=[thermal_row],
             origin=ORIGIN,
         )
         replace_draft_table_rows(

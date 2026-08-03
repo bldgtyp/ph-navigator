@@ -12,6 +12,8 @@ from features.project_document.document import (
     ProjectDocumentV1,
     ThermalBridgeRow,
 )
+from features.project_document.tables._attachment_fields import PDF_REPORT_FIELD_KEY, pdf_report_field_def
+from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from tests.project_document_helpers import empty_required_tables, empty_thermal_bridges_table
 from tests.status_field_helpers import (
@@ -73,6 +75,27 @@ def test_thermal_bridge_quantity_field_is_seeded() -> None:
 
     assert quantity.display_name == "Quantity"
     assert quantity.default == 1
+
+
+def test_pdf_report_attachment_helper_preserves_seed_bytes_and_fingerprint() -> None:
+    field = next(item for item in THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS if item.field_key == PDF_REPORT_FIELD_KEY)
+
+    assert field == pdf_report_field_def()
+    assert field.model_dump(mode="json") == {
+        "field_key": "pdf_report_asset_ids",
+        "display_name": "PDF Report",
+        "field_type": "long_text",
+        "config": {},
+        "description": None,
+        "default": None,
+        "origin": "built_in",
+        "created_at": "2026-05-26T00:00:00Z",
+        "created_by": None,
+    }
+    assert (
+        compute_table_schema_fingerprint(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS)
+        == "073fd4d1300f69585b714e731f451530d8cff3d326e0cc7cd057b616d2967475"
+    )
 
 
 def test_document_rejects_missing_thermal_bridge_type_option() -> None:

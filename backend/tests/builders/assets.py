@@ -10,17 +10,17 @@ from typing import Any
 from database import transaction
 from features.heat_pumps.models import HeatPumpOutdoorEquipRow
 from features.project_document.rows import ThermalBridgeRow
+from features.project_document.tables._attachment_fields import DATASHEET_FIELD_KEY
 
 
-def _thermal_bridge_attachment_row(asset_ids: list[str]) -> dict[str, Any]:
-    return ThermalBridgeRow(id="tb_1", datasheet_asset_ids=asset_ids).model_dump(mode="json")
+def _thermal_bridge_attachment_row() -> dict[str, Any]:
+    return ThermalBridgeRow(id="tb_1").model_dump(mode="json")
 
 
-def _heat_pump_outdoor_equip_attachment_row(asset_ids: list[str]) -> dict[str, Any]:
+def _heat_pump_outdoor_equip_attachment_row() -> dict[str, Any]:
     return HeatPumpOutdoorEquipRow(
         id="hpoe_01HX0000000000000000000001",
         tag="OE-1",
-        datasheet_asset_ids=asset_ids,
     ).model_dump(mode="json")
 
 
@@ -29,10 +29,17 @@ class AttachmentTableTestCase:
     table_name: str
     table_key: str
     rows_attr: str
-    row_factory: Callable[[list[str]], dict[str, Any]]
+    row_factory: Callable[[], dict[str, Any]]
 
-    def row(self, asset_ids: list[str]) -> dict[str, Any]:
-        return self.row_factory(asset_ids)
+    def row(
+        self,
+        asset_ids: list[str] | None = None,
+        *,
+        field_key: str = DATASHEET_FIELD_KEY,
+        attachment_fields: dict[str, list[str]] | None = None,
+    ) -> dict[str, Any]:
+        values = attachment_fields if attachment_fields is not None else {field_key: asset_ids or []}
+        return {**self.row_factory(), **values}
 
 
 THERMAL_BRIDGES_ATTACHMENT_CASE = AttachmentTableTestCase(

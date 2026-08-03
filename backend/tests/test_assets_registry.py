@@ -88,6 +88,18 @@ def test_pumps_datasheet_field_is_registered() -> None:
     assert field.max_file_size_mb == 25
 
 
+def test_thermal_bridge_pdf_report_field_is_registered() -> None:
+    field = get_attachment_field("thermal_bridges", "pdf_report_asset_ids")
+
+    assert field is not None
+    assert field.key == "thermal_bridges.pdf_report_asset_ids"
+    assert field.asset_kinds == frozenset({"datasheet"})
+    assert field.allowed_content_types == frozenset({"application/pdf"})
+    assert field.allowed_extensions == frozenset()
+    assert field.max_count == 5
+    assert field.max_file_size_mb == 25
+
+
 def test_ventilators_datasheet_field_is_registered() -> None:
     field = get_attachment_field("ventilators", "datasheet_asset_ids")
 

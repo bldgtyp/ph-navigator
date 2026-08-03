@@ -23,6 +23,7 @@ from uuid import UUID
 from fastapi.testclient import TestClient
 
 from features.assets.storage_r2 import asset_object_key
+from features.project_document.tables._attachment_fields import DATASHEET_FIELD_KEY, PDF_REPORT_FIELD_KEY
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from tests.builders.assets import THERMAL_BRIDGES_ATTACHMENT_CASE
 from tests.project_document_helpers import replace_draft_table_rows
@@ -244,13 +245,20 @@ def test_bulk_download_includes_thermal_bridge_attachments(clean_document_tables
         project_id = project["id"]
         version_id = project["active_version_id"]
         asset_id = _upload_pdf(client, project_id, fake_r2, PDF_MAGIC + b"thermal", "thermal.pdf")
+        report_asset_id = _upload_pdf(client, project_id, fake_r2, PDF_MAGIC + b"report", "report.pdf")
+        thermal_row = THERMAL_BRIDGES_ATTACHMENT_CASE.row(
+            attachment_fields={
+                DATASHEET_FIELD_KEY: [asset_id],
+                PDF_REPORT_FIELD_KEY: [report_asset_id],
+            }
+        )
         draft = replace_draft_table_rows(
             client,
             project_id,
             version_id,
             table_name=THERMAL_BRIDGES_ATTACHMENT_CASE.table_name,
             rows_attr=THERMAL_BRIDGES_ATTACHMENT_CASE.rows_attr,
-            rows=[THERMAL_BRIDGES_ATTACHMENT_CASE.row([asset_id])],
+            rows=[thermal_row],
             origin=ORIGIN,
         )
         saved = client.post(
@@ -263,7 +271,12 @@ def test_bulk_download_includes_thermal_bridge_attachments(clean_document_tables
 
         assert job["status"] == "completed", job
         bundle = _open_bundle(fake_r2, project_id, job["result_asset_id"])
-        assert bundle.namelist() == ["thermal_bridges/tb_1__thermal.pdf", "MANIFEST.csv"]
+        assert bundle.namelist() == [
+            "thermal_bridges/tb_1__report.pdf",
+            "thermal_bridges/tb_1__thermal.pdf",
+            "MANIFEST.csv",
+        ]
+        assert bundle.read("thermal_bridges/tb_1__report.pdf") == PDF_MAGIC + b"report"
         assert bundle.read("thermal_bridges/tb_1__thermal.pdf") == PDF_MAGIC + b"thermal"
     finally:
         _clear_fake_asset_service()
