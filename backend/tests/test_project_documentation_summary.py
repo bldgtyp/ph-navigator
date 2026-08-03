@@ -232,7 +232,7 @@ def test_documentation_summary_keeps_heat_pump_leaf_grouping_and_option_sublabel
     assert record.sub_label == "Mitsubishi · MXZ-SM48"
 
 
-def test_documentation_summary_routes_match_status_summary_access(clean_document_tables: None) -> None:
+def test_documentation_summary_routes_enforce_draft_and_saved_access(clean_document_tables: None) -> None:
     editor = signed_in_client()
     project = create_project(editor)
     project_id = project["id"]

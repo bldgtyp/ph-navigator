@@ -171,11 +171,14 @@ resolves to a **Principal**, which maps to a **Capability** set —
 - **"Owner"** is both the dashboard filter and the primary signed-in project
   reach relationship. A non-owner needs `projects.access.all`; team membership
   and share ACLs remain deferred.
-- **"Tab"** in this product means a workspace section (Status/Climate/Apertures/Envelope/Spaces/Equipment/Thermal Bridges/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
+- **"Tab"** in this product means a workspace section (Overview/Climate/Apertures/Envelope/Spaces/Equipment/Thermal Bridges/Model/Documentation), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
 - **"Editor"/"Viewer"** are informal shorthand, not distinct account types —
   see **Principal**/**Capability** in People & access. Every signed-in User holds
   Editor-equivalent `MEMBER_CAPS`, but those global capabilities do not bypass
   owner-or-`projects.access.all` project reach. Team/share membership remains
   deferred to Phase 5.
 - **"Snapshot"** appears as both (a) a Version `kind` (`'snapshot'`) and (b) loose talk for any saved Version. Prefer **Version** for the general concept; reserve **snapshot** for the specific `kind`.
-- **"Status"** is the workspace **Tab** name *and* the project-lifecycle tracker (`project_status_items`). The two are aligned (the Tab renders the tracker), but "Status" alone is ambiguous in code — prefer `project_status_items` or "Status tab" depending on context.
+- **"Overview"** is the default workspace tab. It combines the project
+  lifecycle Roadmap (`project_status_items`) with counts-only Documentation
+  progress. **"Status"** names individual field values or the Roadmap API; it
+  is not a workspace-tab label.

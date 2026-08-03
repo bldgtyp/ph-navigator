@@ -13,7 +13,7 @@ RELATED:
   - ./decisions.md
   - ./research.md
   - ../spec-status-value-unification/README.md
-  - ../../../context/ui/pages/status-tab.md
+  - ../../../context/ui/pages/overview-tab.md
   - ../../../context/ui/pages/documentation-tab.md
   - ../../../context/UI_UX.md
   - ../../../context/GLOSSARY.md

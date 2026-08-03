@@ -115,17 +115,7 @@ export function useApertureProductCommandMutation(projectId: string, versionId: 
       const resolvedVersionId = result.version_id || variables.current.version_id;
       if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
       queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
-      });
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationSummary(
-          projectId,
-          resolvedVersionId,
-          "editor",
-        ),
-      });
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+        queryKey: projectDocumentQueryKeys.documentation(projectId),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
@@ -151,17 +141,7 @@ export function useApertureReportRefreshMutation(projectId: string, versionId: s
       const resolvedVersionId = result.version_id || variables.current.version_id;
       if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
       queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
-      });
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationSummary(
-          projectId,
-          resolvedVersionId,
-          "editor",
-        ),
-      });
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+        queryKey: projectDocumentQueryKeys.documentation(projectId),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
@@ -224,14 +204,7 @@ export function useApertureReportAttachmentMutation({
         markLocalDraftTouched(projectId, resolvedVersionId, draftEtag);
       }
       queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationSummary(
-          projectId,
-          resolvedVersionId,
-          "editor",
-        ),
-      });
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+        queryKey: projectDocumentQueryKeys.documentation(projectId),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },

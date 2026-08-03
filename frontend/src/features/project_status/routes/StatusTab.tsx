@@ -1,6 +1,6 @@
 import "../project_status.css";
-import "../status_summary.css";
 import "../documentation_progress.css";
+import "../status_shared.css";
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";

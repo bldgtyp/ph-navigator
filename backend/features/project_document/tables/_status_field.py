@@ -64,16 +64,18 @@ STATUS_TABLE_NAMES: tuple[str, ...] = (
     "heat_pumps_indoor_units",
 )
 
-# `(option_id, label, color)` in display order. Colors mirror the
+# `(option_id, value, label, color)` in display order. Colors mirror the
 # Materials / report-status semantic palette (frontend `--report-status-*`
 # tokens); "Needed" uses the same amber as the typed Materials/Glazings/Frames
 # `needed` status, because it is the same state in the other storage family.
-_STATUS_OPTIONS: tuple[tuple[str, str, str], ...] = (
-    (STATUS_OPTION_COMPLETE, "Complete", "#16a34a"),
-    (STATUS_OPTION_NEEDED, "Needed", "#d97706"),
-    (STATUS_OPTION_QUESTION, "Question", "#0ea5b7"),
-    (STATUS_OPTION_NA, "N/A", "#9ca3af"),
+_STATUS_OPTIONS: tuple[tuple[str, str, str, str], ...] = (
+    (STATUS_OPTION_COMPLETE, "complete", "Complete", "#16a34a"),
+    (STATUS_OPTION_NEEDED, "needed", "Needed", "#d97706"),
+    (STATUS_OPTION_QUESTION, "question", "Question", "#0ea5b7"),
+    (STATUS_OPTION_NA, "na", "N/A", "#9ca3af"),
 )
+
+STATUS_BY_OPTION_ID: dict[str, str] = {option_id: value for option_id, value, _label, _color in _STATUS_OPTIONS}
 
 
 def status_field_def() -> TableFieldDef:
@@ -91,7 +93,7 @@ def status_option_list() -> list[SingleSelectOption]:
     """Return the four shared status options, in display order."""
     return [
         SingleSelectOption(id=option_id, label=label, color=color, order=order)
-        for order, (option_id, label, color) in enumerate(_STATUS_OPTIONS)
+        for order, (option_id, _value, label, color) in enumerate(_STATUS_OPTIONS)
     ]
 
 

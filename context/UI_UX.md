@@ -541,7 +541,7 @@ are building **plus §1 (common elements) above**. See
 | 2.2 Dashboard (`/dashboard`) | [`ui/pages/dashboard.md`](ui/pages/dashboard.md) |
 | 2.3 Catalog landing (`/catalog/{table_slug}`) | [`ui/pages/catalog.md`](ui/pages/catalog.md) |
 | 2.4 Project workspace — header, tab bar, version picker | [`ui/pages/project-workspace.md`](ui/pages/project-workspace.md) |
-| 2.5 Status tab (default landing) | [`ui/pages/status-tab.md`](ui/pages/status-tab.md) |
+| 2.5 Overview tab (default landing) | [`ui/pages/overview-tab.md`](ui/pages/overview-tab.md) |
 | 2.6 Apertures tab — builder, glazings report, frames report, U-values audit | [`ui/pages/apertures-tab.md`](ui/pages/apertures-tab.md) |
 | 2.7 Envelope tab — assemblies + materials (airtightness planned/unbuilt; site photos absorbed into Documentation) | [`ui/pages/envelope-tab.md`](ui/pages/envelope-tab.md) |
 | 2.8 Spaces & Equipment tabs | [`ui/pages/spaces-equipment-tab.md`](ui/pages/spaces-equipment-tab.md) |
@@ -571,7 +571,7 @@ are building **plus §1 (common elements) above**. See
 3. User clicks "Create project".
 4. Backend INSERTs project row + initial "Working" version + sets
    active_version_id.
-5. Frontend redirects to `/projects/{new_id}` (Status tab default).
+5. Frontend redirects to `/projects/{new_id}` (Overview tab default).
 
 ### 3.3 Pin / reorder projects (US-1.1)
 
@@ -593,7 +593,7 @@ are building **plus §1 (common elements) above**. See
 
 ### 3.5 Open project → switch tab (US-3)
 
-- Click a project row → land on `/projects/{id}/status`.
+- Click a project row → land on `/projects/{id}/overview`.
 - Click "Model" in the tab bar → URL becomes
   `/projects/{id}/model`; back/forward buttons work.
 
@@ -663,7 +663,7 @@ content review.
 | Project workspace shell (header + tab bar) | Drafted | MVP |
 | Version dropdown picker (header) | Drafted | MVP |
 | Locked-version edit lockout banner | Drafted | MVP |
-| Status tab (`/projects/{id}/status`) | Placeholder | MVP |
+| Overview tab (`/projects/{id}/overview`) | Shipped | MVP |
 | Apertures tab (`/projects/{id}/apertures`) — Builder, Glazings, Frames, U-Values | Shipped | MVP |
 | Envelope tab (`/projects/{id}/envelope`) — sub-tab structure + Assemblies + Materials | Drafted | MVP |
 | Envelope · Airtightness sub-tab | Placeholder | MVP |

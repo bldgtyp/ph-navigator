@@ -369,13 +369,7 @@ function acknowledgeDocumentationWrite(
       queryKey: projectDocumentQueryKeys.draftSummary(projectId, current.version_id),
     }),
     queryClient.invalidateQueries({
-      queryKey: documentationQueryKeys.summaries(projectId),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: projectDocumentQueryKeys.statusSummaries(projectId),
+      queryKey: projectDocumentQueryKeys.documentation(projectId),
     }),
     invalidateProjectDocumentEditorTableSlices(queryClient, projectId, current.version_id, {
       refetchActiveSlices: false,

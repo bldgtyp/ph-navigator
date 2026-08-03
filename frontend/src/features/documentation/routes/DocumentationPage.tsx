@@ -1,5 +1,5 @@
 import "../documentation.css";
-import "../../project_status/status_summary.css";
+import "../../project_status/status_shared.css";
 import { useMemo } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";

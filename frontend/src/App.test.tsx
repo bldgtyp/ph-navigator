@@ -1389,7 +1389,7 @@ describe("App", () => {
     expect(window.location.pathname).toBe("/catalog/glazing-types");
   });
 
-  test("applies the default status template from the empty Status tab", async () => {
+  test("applies the default roadmap template from the empty Overview tab", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {

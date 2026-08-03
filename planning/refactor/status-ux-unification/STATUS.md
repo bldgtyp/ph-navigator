@@ -1,6 +1,6 @@
 DATE: 2026-08-03
-TIME: 11:25 EDT
-STATUS: Active — Phase 04 complete; Phase 05 next
+TIME: 12:51 EDT
+STATUS: Complete — ready to archive
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -69,10 +69,19 @@ session state, and owning-surface cache invalidation. Docs-pass updated the
 mounted route contracts. Full CI passed: backend 1,832 passed / 7 skipped;
 frontend 2,397 passed; production build and static gates green.
 
+Phase 05 removes the duplicate backend/frontend status-summary stack and moves
+the option-id normalization map into the shared status-field contract. The
+Overview E2E now exercises the counts-only rollup, and durable route/page docs
+use Overview. The aperture-psi packet was re-read and still has no
+implementation, so its conditional status-summary additions are skipped.
+Three-lens simplify review reconciled the canonical option metadata and unified
+Documentation query-key invalidation; docs-pass removed stale route and record-
+pane claims. Graphify was refreshed. Full CI passed: backend 1,822 passed / 7
+skipped; frontend 2,393 passed; production build and static gates green.
+
 ## Next step
 
-Pick up **Phase 05** (retire the duplicate status-summary projection and sync
-the remaining durable docs).
+Archive this completed packet under `planning/archive/dated/2026-08-03/`.
 
 ## Blockers
 
@@ -101,4 +110,4 @@ still open when Phase 02 starts.
 | 02 One control + CSS tokens | Complete | five surfaces visually inspected; CI green |
 | 03 Documentation `?needs=` filters | Complete | PRD §6.3 browser smoke; CI green |
 | 04 Overview rename + meters | Complete | PRD §6.4/§6.5 smoke; redirect verified; CI green |
-| 05 Retire status_summary + docs sync | Not started | consumer sweep clean; context docs rewritten; packet archived |
+| 05 Retire status_summary + docs sync | Complete | consumer sweep clean; context docs rewritten; CI green |

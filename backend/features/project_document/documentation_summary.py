@@ -20,10 +20,7 @@ from features.project_document.envelope_models import (
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
-    STATUS_OPTION_COMPLETE,
-    STATUS_OPTION_NA,
-    STATUS_OPTION_NEEDED,
-    STATUS_OPTION_QUESTION,
+    STATUS_BY_OPTION_ID,
 )
 from features.project_document.tables.contracts import read_table_envelope
 from features.project_document.validation import document_etag
@@ -240,13 +237,6 @@ DOCUMENTATION_TABLES: tuple[DocumentationTable, ...] = (
     _aperture_table("project_frames", "Frames", "frames"),
     _thermal_bridge_table(),
 )
-
-_STATUS_BY_OPTION_ID: dict[str, DocumentationSpecStatus] = {
-    STATUS_OPTION_NEEDED: "needed",
-    STATUS_OPTION_QUESTION: "question",
-    STATUS_OPTION_COMPLETE: "complete",
-    STATUS_OPTION_NA: "na",
-}
 
 
 def get_draft_documentation_summary(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationSummaryResponse:
@@ -515,7 +505,11 @@ def _record(
 
 def _custom_status(custom_values: Mapping[str, object]) -> DocumentationSpecStatus:
     raw_status = custom_values.get("status")
-    return _STATUS_BY_OPTION_ID.get(raw_status, "unknown") if isinstance(raw_status, str) else "unknown"
+    return (
+        cast("DocumentationSpecStatus", STATUS_BY_OPTION_ID.get(raw_status, "unknown"))
+        if isinstance(raw_status, str)
+        else "unknown"
+    )
 
 
 def _row_spec_status(row: object) -> DocumentationSpecStatus:

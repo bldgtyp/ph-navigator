@@ -62,7 +62,7 @@ export async function createProject(
   await page.getByRole("checkbox", { name: "PHI", exact: true }).check();
   await expect(page.getByText("BT number available")).toBeVisible();
   await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+\/status/);
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+\/overview/);
   const match = page.url().match(/\/projects\/([0-9a-f-]+)\//);
   if (!match?.[1]) throw new Error(`Could not extract project id from URL: ${page.url()}`);
   return match[1];

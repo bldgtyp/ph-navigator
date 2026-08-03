@@ -78,15 +78,12 @@ and operator results remain in the gitignored worksheet and audit artifacts.
 ## Deferred to Phase 07
 
 `context/` is now fully synced: the backend-contract docs plus the UI-page and
-normalization prose (`ui/pages/envelope-tab.md`, `ui/pages/status-tab.md`,
+normalization prose (`ui/pages/envelope-tab.md`, `ui/pages/overview-tab.md`,
 `technical-requirements/data-table.md`, `DESIGN_SYSTEM.md`, and the frontend
 styles README).
 
-One deliberate carry-forward: `--report-status-missing` remains as an alias of
-`--report-status-needed` for its non-status consumers (Climate data gaps,
-Documentation write errors and zero meters). Renaming it to something neutral is
-CSS-architecture work that D-8 and the Phase 03 stop conditions exclude from
-this rollout. See the Phase 03 as-built notes.
+The later status-UX unification retired `--report-status-missing`; non-status
+amber consumers now use `--attention-amber`.
 
 ## Open operator inputs
 

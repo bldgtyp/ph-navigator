@@ -267,19 +267,15 @@ cell write via a `status → setCustomValue` seam because the value lives in
 New rows default to `opt_status_needed`; duplicate preserves the source
 row's status.
 
-The Status landing page reads this cross-table contract through compact
-project-document projections rather than mounting the owning table slices:
-`GET /projects/{project_id}/versions/{version_id}/draft/status-summary`
-(editor-only current view) and
-`GET /projects/{project_id}/versions/{version_id}/document/status-summary`
-(view-safe saved version). Both load the selected document once and return only
-aggregate counts plus each record's id, Display Name/Tag fallback, normalized
-status, notes, and owning-route metadata. Missing or invalid legacy status
-values normalize to `unknown`; they are never silently counted as Needed.
-The same projection also includes the project-owned Aperture Glazings, Aperture
-Frames, and Envelope Materials report records. Those tables retain their
-existing `specification_status` and `comments` fields, which since schema v8
-are the canonical `needed | question | complete | na` and map straight through.
+The Overview landing page reads this cross-table contract through the
+counts-only Documentation rollup rather than mounting owning table slices:
+`GET /projects/{project_id}/versions/{version_id}/draft/documentation-rollup`
+(editor current draft) and
+`GET /projects/{project_id}/versions/{version_id}/document/documentation-rollup`
+(view-safe saved version). The payload contains section/group counts and
+anchors only; record-level statuses, notes, and evidence remain on
+Documentation. Missing or invalid legacy status values count unresolved but
+are never silently rewritten as Needed.
 
 On the shared frontend renderer, only the built-in `field_key === "status"`
 single-select gets semantic status-chip treatment: Complete and Needed

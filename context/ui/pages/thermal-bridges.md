@@ -46,6 +46,6 @@ locked banner and the grid is read-only. A restored local draft surfaces a
 
 ## Status linkage
 
-Each row's `specification_status` feeds the Status tab (§2.5); the Status
-tab's thermal-bridge record links deep-link back here with `?focus={row_id}`
-so the grid scrolls to and focuses that row.
+Each row's `specification_status` feeds Overview's Documentation meters (§2.5).
+Record-level links live in Documentation and deep-link back here with
+`?focus={row_id}` so the grid scrolls to and focuses that row.
