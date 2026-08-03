@@ -7,6 +7,7 @@ import io
 from typing import Any
 from uuid import UUID
 
+import pytest
 from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -16,7 +17,13 @@ from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
-from tests.builders.assets import insert_project_asset
+from tests.builders.assets import (
+    ENVELOPE_ATTACHMENT_TEST_CASES,
+    THERMAL_BRIDGES_ATTACHMENT_CASE,
+    AttachmentTableTestCase,
+    insert_project_asset,
+)
+from tests.project_document_helpers import draft_table_url, replace_draft_table_rows
 from tests.test_project_document import ORIGIN, create_project, save_url, signed_in_client
 
 
@@ -198,6 +205,49 @@ def _create_project_with_pump(client: TestClient) -> tuple[dict[str, object], di
     return project, response.json()
 
 
+def _put_attachment_test_row(
+    client: TestClient,
+    project_id: object,
+    version_id: object,
+    *,
+    case: AttachmentTableTestCase,
+    asset_ids: list[str],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    row = case.row(asset_ids)
+    response = replace_draft_table_rows(
+        client,
+        project_id,
+        version_id,
+        table_name=case.table_name,
+        rows_attr=case.rows_attr,
+        rows=[row],
+        origin=ORIGIN,
+    )
+    return response, row
+
+
+def _save_attachment_test_row(
+    client: TestClient,
+    project_id: object,
+    version_id: object,
+    *,
+    case: AttachmentTableTestCase,
+    asset_ids: list[str],
+) -> None:
+    draft, _row = _put_attachment_test_row(
+        client,
+        project_id,
+        version_id,
+        case=case,
+        asset_ids=asset_ids,
+    )
+    saved = client.post(
+        save_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": draft["version_etag"]},
+    )
+    assert saved.status_code == 200, saved.text
+
+
 def _save_pump_with_datasheet(client: TestClient, project_id: object, version_id: object, asset_id: str) -> None:
     initial = client.get(_draft_pumps_url(project_id, version_id)).json()
     payload = _pump_payload()
@@ -231,6 +281,26 @@ def test_pumps_replace_rejects_missing_attachment_asset(clean_document_tables: N
     assert response.status_code == 422
     assert response.json()["error_code"] == "asset_not_found"
     assert response.json()["details"]["field_key"] == "pumps.datasheet_asset_ids"
+
+
+def test_thermal_bridges_replace_rejects_missing_attachment_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    current = client.get(draft_table_url(project["id"], project["active_version_id"], "thermal_bridges")).json()
+
+    response = client.put(
+        draft_table_url(project["id"], project["active_version_id"], "thermal_bridges"),
+        headers={"Origin": ORIGIN, "If-Match-Version": current["version_etag"]},
+        json={
+            "field_defs": current["field_defs"],
+            "thermal_bridges": [THERMAL_BRIDGES_ATTACHMENT_CASE.row(["asset_missing"])],
+            "single_select_options": current["single_select_options"],
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "asset_not_found"
+    assert response.json()["details"]["field_key"] == "thermal_bridges.datasheet_asset_ids"
 
 
 def test_pumps_replace_rejects_cross_project_attachment_asset(clean_document_tables: None) -> None:
@@ -320,6 +390,44 @@ def test_anonymous_asset_registry_only_lists_referenced_assets(clean_document_ta
     assert items[0]["original_filename"] == "referenced-datasheet.pdf"
 
 
+@pytest.mark.parametrize("case", ENVELOPE_ATTACHMENT_TEST_CASES, ids=lambda case: case.table_key)
+def test_anonymous_access_resolves_envelope_table_references(
+    clean_document_tables: None,
+    case: AttachmentTableTestCase,
+) -> None:
+    fake_r2 = FakeR2Client()
+    _install_fake_asset_service(fake_r2)
+    try:
+        editor = signed_in_client()
+        project = create_project(editor)
+        project_id = project["id"]
+        version_id = project["active_version_id"]
+        asset_id = f"asset_{case.table_key}"
+        insert_project_asset(project_id=project_id, asset_id=asset_id)
+        _save_attachment_test_row(
+            editor,
+            project_id,
+            version_id,
+            case=case,
+            asset_ids=[asset_id],
+        )
+
+        viewer = TestClient(app)
+        listed = viewer.get(_assets_url(project_id))
+        item = viewer.get(_asset_url(project_id, asset_id))
+        urls = viewer.get(_asset_url(project_id, asset_id, "/url"))
+        download = viewer.get(_asset_url(project_id, asset_id, "/download"), follow_redirects=False)
+
+        assert listed.status_code == 200
+        assert [asset["id"] for asset in listed.json()] == [asset_id]
+        assert item.status_code == 200
+        assert urls.status_code == 200
+        assert download.status_code == 307
+        assert download.headers["location"] == urls.json()["download_url"]
+    finally:
+        _clear_fake_asset_service()
+
+
 def test_anonymous_asset_registry_hides_unreferenced_item(clean_document_tables: None) -> None:
     editor = signed_in_client()
     project = create_project(editor)
@@ -338,6 +446,10 @@ def test_anonymous_asset_registry_hides_unreferenced_item(clean_document_tables:
     blocked = viewer.get(_asset_url(project_id, "asset_unreferenced_datasheet"))
     assert blocked.status_code == 404
     assert blocked.json()["error_code"] == "asset_not_found"
+
+    blocked_url = viewer.get(_asset_url(project_id, "asset_unreferenced_datasheet", "/url"))
+    assert blocked_url.status_code == 403
+    assert blocked_url.json()["error_code"] == "asset_not_referenced"
 
 
 def test_signed_in_asset_registry_still_lists_project_assets(clean_document_tables: None) -> None:
@@ -436,6 +548,56 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
         assert detached_slice["pumps"][0]["datasheet_asset_ids"] == []
     finally:
         _clear_fake_asset_service()
+
+
+@pytest.mark.parametrize("case", ENVELOPE_ATTACHMENT_TEST_CASES, ids=lambda case: case.table_key)
+def test_attach_and_detach_find_rows_in_envelope_tables(
+    clean_document_tables: None,
+    case: AttachmentTableTestCase,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    asset_id = f"asset_attach_{case.table_key}"
+    insert_project_asset(project_id=project_id, asset_id=asset_id)
+    draft, row = _put_attachment_test_row(
+        client,
+        project_id,
+        version_id,
+        case=case,
+        asset_ids=[],
+    )
+
+    attach = client.post(
+        _asset_url(project_id, asset_id, "/attach"),
+        headers={"Origin": ORIGIN},
+        json={
+            "version_id": version_id,
+            "table_key": case.table_key,
+            "row_id": row["id"],
+            "field_key": "datasheet_asset_ids",
+            "if_match": draft["draft_etag"],
+            "if_match_version": draft["version_etag"],
+        },
+    )
+    assert attach.status_code == 200, attach.text
+    assert attach.json()["asset_ids"] == [asset_id]
+
+    detach = client.post(
+        _asset_url(project_id, asset_id, "/detach"),
+        headers={"Origin": ORIGIN},
+        json={
+            "version_id": version_id,
+            "table_key": case.table_key,
+            "row_id": row["id"],
+            "field_key": "datasheet_asset_ids",
+            "if_match": attach.json()["draft_etag"],
+            "if_match_version": attach.json()["version_etag"],
+        },
+    )
+    assert detach.status_code == 200, detach.text
+    assert detach.json()["asset_ids"] == []
 
 
 def test_complete_upload_marks_magic_mismatch_failed(clean_document_tables: None) -> None:

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:32 EDT
-STATUS: Active — Phase 00 complete; Phase 01 next
+TIME: 09:50 EDT
+STATUS: Active — Phases 00-01 complete; Phase 02 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,16 +17,16 @@ RELATED:
 
 ## Current state
 
-**Phase 00 production inventory complete. No code written yet.**
+**Phases 00 and 01 complete. The row walker now reaches all 30 registered
+attachment fields; `pdf_report_asset_ids` remains unregistered until Phase 02.**
 
 Two independent backend defects and two UI defects, all confirmed by executing
 code in `backend/.venv`, not by reading:
 
-1. **Row walker cannot read five tables.** `iter_rows_for_raw_tables` reads
-   `thermal_bridges` and the four heat-pump sub-tables with a bare-list reader
-   though they are `{field_defs, rows}` envelopes. **10 of 30 registered
-   attachment fields are unreachable.** Affects anonymous visibility, the orphan
-   sweeper, write validation, bulk download, and attach/detach.
+1. **Row walker defect — fixed in Phase 01.** Every direct table branch now uses
+   the list/envelope-tolerant reader. All **30 of 30 registered fields are
+   reachable**, restoring anonymous visibility, sweeper protection, validation,
+   bulk download, and attach/detach for Thermal Bridges and Heat Pumps.
 2. **`thermal_bridges.pdf_report_asset_ids` is not registered at all** — the
    column Ed originally reported. Independent of (1); both fixes are required.
 3. Download controls navigate to the API origin, so any non-2xx becomes the page.
@@ -36,15 +36,17 @@ code in `backend/.venv`, not by reading:
 Reachability matrix and method: [research.md](./research.md).
 
 Reproduced from Ed's screenshots against production `2524 - Linde Home`. Phase
-00 found no stored-data violations, so Phase 01 can safely activate validation
-for the previously unreachable tables. The browser symptom is not yet
-reproduced against the local `AGENT-BROWSER` fixture.
+00 found no stored-data violations. Phase 01 is implemented and fully green in
+the local checkout; production behavior remains unchanged until Ed deploys the
+completed packet.
 
 ## Next step
 
-**[Phase 01](./phases/phase-01-row-walker.md) — fix the row walker.** Add the red
-regression coverage, make every branch tolerate list and `{field_defs, rows}`
-shapes, and prove the anonymous gate remains closed to unreferenced assets.
+**[Phase 02](./phases/phase-02-register-pdf-report.md) — register
+`thermal_bridges.pdf_report_asset_ids`.** Route its FieldDef through the shared
+attachment seam without moving the seed fingerprint, then prove public access,
+validation, sweeper protection, and attach/detach for the originally reported
+column.
 
 ## Blockers / decisions needed from Ed
 
@@ -96,16 +98,29 @@ heat-pump datasheet is intentionally referenced by two rows.
 Therefore Phase 02 can keep the PDF-only allowlist, and no production
 remediation is required before Phase 01.
 
+## Phase 01 verification
+
+- Red proof: the envelope-walker regression failed for `thermal_bridges` and
+  all four heat-pump keys before the fix (`5 failed, 2 passed`).
+- Fixed proof: direct walker suite `7 passed`; research probe `30/30 registered
+  fields reachable`.
+- Workflow bundle `60 passed`: anonymous list/item/URL/download, unchanged
+  404/403 gate, write validation, attach/detach, orphan sweeper, and bulk ZIP.
+- `make ci` green: backend `1790 passed, 7 skipped`; frontend `2374 passed`;
+  formatting, lint, boundaries, types, and production build all green.
+- Mounted route: local Thermal Bridges grid loaded after fixture draft recovery
+  with zero console errors. The fixture has no attachment rows, so the
+  file-bearing browser acceptance check remains for Phase 02.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
   against any project holding Thermal Bridges or Heat Pump attachments until
-  Phase 01 ships. Those assets are live GC candidates: the sweeper would copy the
-  R2 object to the orphan prefix and delete the original. No scheduler runs it —
-  the risk is manual only, and Phase 00 confirms nothing has been swept already.
-- **Phase 01 activates write validation** on two whole tables' worth of
-  previously unvalidated references. A bad stored id becomes a 422 rejecting the
-  entire table save. This is what Phase 00 is for.
+  the completed fix is deployed. The local code now protects them, but
+  production still runs the old resolver. No scheduler runs it, and Phase 00
+  confirms nothing has been swept already.
+- **Write validation is now active locally** on the previously unreachable
+  tables. Phase 00 proved all production references satisfy that contract.
 - **The Phase 02 FieldDef refactor must be byte-identical** — the built-in seed
   is fingerprinted. If the fingerprint moves, stop.
 - **Guard tests must be falsified** (Phase 03). An unfalsified guard is not a
@@ -155,3 +170,6 @@ Frontend:
 - **2026-08-03 09:32 EDT** — Phase 00 completed read-only across all four
   production projects and 20 scoped table reads. Seven references found; zero
   validation violations and zero orphan-moved markers. Phase 01 unblocked.
+- **2026-08-03 09:50 EDT** — Phase 01 completed. Red envelope tests reproduced
+  all five misses; the fix reached 30/30 fields and all workflow regressions.
+  Full `make ci` green. Phase 02 next.

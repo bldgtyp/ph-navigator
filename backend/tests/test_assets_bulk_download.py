@@ -24,6 +24,8 @@ from fastapi.testclient import TestClient
 
 from features.assets.storage_r2 import asset_object_key
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
+from tests.builders.assets import THERMAL_BRIDGES_ATTACHMENT_CASE
+from tests.project_document_helpers import replace_draft_table_rows
 from tests.test_assets_service import (
     FakeR2Client,
     _asset_url,
@@ -31,7 +33,7 @@ from tests.test_assets_service import (
     _draft_pumps_url,
     _install_fake_asset_service,
 )
-from tests.test_project_document import ORIGIN, create_project, signed_in_client
+from tests.test_project_document import ORIGIN, create_project, save_url, signed_in_client
 
 PDF_MAGIC = b"%PDF-1.4\n"
 
@@ -229,6 +231,40 @@ def test_bulk_download_can_omit_manifest(clean_document_tables: None) -> None:
         assert job["status"] == "completed", job
         bundle = _open_bundle(fake_r2, project_id, job["result_asset_id"])
         assert "MANIFEST.csv" not in bundle.namelist()
+    finally:
+        _clear_fake_asset_service()
+
+
+def test_bulk_download_includes_thermal_bridge_attachments(clean_document_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    _install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = project["id"]
+        version_id = project["active_version_id"]
+        asset_id = _upload_pdf(client, project_id, fake_r2, PDF_MAGIC + b"thermal", "thermal.pdf")
+        draft = replace_draft_table_rows(
+            client,
+            project_id,
+            version_id,
+            table_name=THERMAL_BRIDGES_ATTACHMENT_CASE.table_name,
+            rows_attr=THERMAL_BRIDGES_ATTACHMENT_CASE.rows_attr,
+            rows=[THERMAL_BRIDGES_ATTACHMENT_CASE.row([asset_id])],
+            origin=ORIGIN,
+        )
+        saved = client.post(
+            save_url(project_id, version_id),
+            headers={"Origin": ORIGIN, "If-Match": draft["version_etag"]},
+        )
+        assert saved.status_code == 200, saved.text
+
+        job = _bulk_download(client, project_id, {"filter": {"table_key": "thermal_bridges"}})
+
+        assert job["status"] == "completed", job
+        bundle = _open_bundle(fake_r2, project_id, job["result_asset_id"])
+        assert bundle.namelist() == ["thermal_bridges/tb_1__thermal.pdf", "MANIFEST.csv"]
+        assert bundle.read("thermal_bridges/tb_1__thermal.pdf") == PDF_MAGIC + b"thermal"
     finally:
         _clear_fake_asset_service()
 

@@ -20,6 +20,12 @@ from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
+from tests.builders.assets import (
+    HEAT_PUMP_OUTDOOR_EQUIP_ATTACHMENT_CASE,
+    THERMAL_BRIDGES_ATTACHMENT_CASE,
+    insert_project_asset,
+)
+from tests.project_document_helpers import replace_draft_table_rows
 from tests.test_assets_service import FakeR2Client, NoopThumbnailer
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
@@ -137,5 +143,47 @@ def test_sweep_dry_run_protects_saved_and_draft_references(clean_document_tables
         assert orphan_entry["to"] == f"projects/_orphaned/{project_id}/{asset_orphan}/file.pdf"
         # The original object is untouched in dry-run mode.
         assert fake_r2.objects, "dry-run must not move objects"
+    finally:
+        app.dependency_overrides.pop(get_asset_service, None)
+
+
+def test_sweep_dry_run_protects_envelope_table_references(clean_document_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    service = AssetService(fake_r2, NoopThumbnailer())
+    app.dependency_overrides[get_asset_service] = lambda: service
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = project["id"]
+        version_id = project["active_version_id"]
+        thermal_asset = "asset_thermal_bridge"
+        heat_pump_asset = "asset_heat_pump"
+        orphan_asset = "asset_orphan"
+        for asset_id in (thermal_asset, heat_pump_asset, orphan_asset):
+            insert_project_asset(project_id=project_id, asset_id=asset_id)
+
+        draft = replace_draft_table_rows(
+            client,
+            project_id,
+            version_id,
+            table_name=THERMAL_BRIDGES_ATTACHMENT_CASE.table_name,
+            rows_attr=THERMAL_BRIDGES_ATTACHMENT_CASE.rows_attr,
+            rows=[THERMAL_BRIDGES_ATTACHMENT_CASE.row([thermal_asset])],
+            origin=ORIGIN,
+        )
+        replace_draft_table_rows(
+            client,
+            project_id,
+            version_id,
+            table_name=HEAT_PUMP_OUTDOOR_EQUIP_ATTACHMENT_CASE.table_name,
+            rows_attr=HEAT_PUMP_OUTDOOR_EQUIP_ATTACHMENT_CASE.rows_attr,
+            rows=[HEAT_PUMP_OUTDOOR_EQUIP_ATTACHMENT_CASE.row([heat_pump_asset])],
+            origin=ORIGIN,
+        )
+        _save(client, project_id, version_id, draft["version_etag"])
+
+        report = cast(dict[str, Any], service.sweep_orphaned_assets(UUID(str(project_id)), dry_run=True))
+
+        assert {entry["asset_id"] for entry in report["moved"]} == {orphan_asset}
     finally:
         app.dependency_overrides.pop(get_asset_service, None)

@@ -9,6 +9,39 @@ from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
 
 
+def draft_table_url(project_id: object, version_id: object, table_name: str) -> str:
+    return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/{table_name}"
+
+
+def replace_draft_table_rows(
+    client: Any,
+    project_id: object,
+    version_id: object,
+    *,
+    table_name: str,
+    rows_attr: str,
+    rows: list[dict[str, Any]],
+    origin: str,
+) -> dict[str, Any]:
+    current = client.get(draft_table_url(project_id, version_id, table_name)).json()
+    headers = (
+        {"Origin": origin, "If-Match": current["draft_etag"]}
+        if current["draft_etag"]
+        else {"Origin": origin, "If-Match-Version": current["version_etag"]}
+    )
+    response = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers=headers,
+        json={
+            "field_defs": current["field_defs"],
+            rows_attr: rows,
+            "single_select_options": current["single_select_options"],
+        },
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
 def custom_fields_from_slice(slice_body: dict[str, Any]) -> list[dict[str, Any]]:
     return [field for field in slice_body["field_defs"] if field["origin"] == "custom"]
 

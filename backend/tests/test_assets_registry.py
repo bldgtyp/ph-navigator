@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from features.assets.registry import (
+    HEAT_PUMP_ATTACHMENT_TABLE_KEYS,
     asset_matches_field,
     asset_referenced_by_document,
     get_attachment_field,
+    iter_rows_for_raw_tables,
     list_asset_references,
 )
 from features.project_document.document import ProjectDocumentV1
@@ -102,6 +106,32 @@ def test_project_aperture_product_datasheet_fields_are_registered() -> None:
     assert frame is not None
     assert frame.key == "project_frames.datasheet_asset_ids"
     assert frame.asset_kinds == frozenset({"datasheet"})
+
+
+@pytest.mark.parametrize("table_key", ["thermal_bridges", *HEAT_PUMP_ATTACHMENT_TABLE_KEYS])
+def test_attachment_row_walker_reads_field_def_envelopes(table_key: str) -> None:
+    row = {"id": f"{table_key}_1", "datasheet_asset_ids": ["asset_pdf_1"]}
+    if table_key == "thermal_bridges":
+        tables: dict[str, Any] = {table_key: {"field_defs": [], "rows": [row]}}
+    else:
+        heat_pump_key = HEAT_PUMP_ATTACHMENT_TABLE_KEYS[table_key]
+        tables = {"equipment": {"heat_pumps": {heat_pump_key: {"field_defs": [], "rows": [row]}}}}
+
+    assert iter_rows_for_raw_tables(tables, table_key) == [row]
+
+
+@pytest.mark.parametrize(
+    ("table_key", "tables"),
+    [
+        ("project_materials", {"project_materials": [{"id": "pmat_1"}]}),
+        ("pumps", {"equipment": {"pumps": {"field_defs": [], "rows": [{"id": "pmp_1"}]}}}),
+    ],
+)
+def test_attachment_row_walker_preserves_list_and_equipment_rows(
+    table_key: str,
+    tables: dict[str, Any],
+) -> None:
+    assert len(iter_rows_for_raw_tables(tables, table_key)) == 1
 
 
 def test_site_photo_fields_are_registered_for_documentation_scope() -> None:

@@ -14,7 +14,12 @@ from features.project_document.tables.heat_pumps import (
     INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
     OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
 )
-from tests.project_document_helpers import empty_required_tables, field_defs_fingerprint
+from tests.project_document_helpers import (
+    draft_table_url,
+    empty_required_tables,
+    field_defs_fingerprint,
+    replace_draft_table_rows,
+)
 from tests.status_field_helpers import (
     assert_status_field_def,
     assert_status_options,
@@ -40,10 +45,6 @@ HEAT_PUMP_POWER_FIELD_KEYS = frozenset(
 def heat_pumps_url(project_id: object) -> str:
     """Heat-pumps equipment URL prefix (the `export-phius` route hangs off it)."""
     return f"/api/v1/projects/{project_id}/equipment/heat-pumps"
-
-
-def draft_table_url(project_id: object, version_id: object, table_name: str) -> str:
-    return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/{table_name}"
 
 
 def mutate_table_url(project_id: object, version_id: object, table_name: str) -> str:
@@ -143,23 +144,16 @@ def seed_leaf_rows(
     Echoes the leaf's current field_defs + option lists unchanged and returns the
     new draft_etag so callers can seed several leaves in sequence.
     """
-    current = client.get(draft_table_url(project_id, version_id, table_name)).json()
-    headers = (
-        {"Origin": ORIGIN, "If-Match": current["draft_etag"]}
-        if current["draft_etag"]
-        else {"Origin": ORIGIN, "If-Match-Version": current["version_etag"]}
+    response = replace_draft_table_rows(
+        client,
+        project_id,
+        version_id,
+        table_name=table_name,
+        rows_attr=rows_attr,
+        rows=rows,
+        origin=ORIGIN,
     )
-    response = client.put(
-        draft_table_url(project_id, version_id, table_name),
-        headers=headers,
-        json={
-            "field_defs": current["field_defs"],
-            rows_attr: rows,
-            "single_select_options": current["single_select_options"],
-        },
-    )
-    assert response.status_code == 200, response.text
-    return response.json()["draft_etag"]
+    return response["draft_etag"]
 
 
 def add_field_mutation(*, table_key: str, fingerprint: str) -> dict[str, Any]:

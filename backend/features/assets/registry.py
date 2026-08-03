@@ -279,18 +279,14 @@ def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[st
 
 
 def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
-    if table_key == "project_materials":
-        return _dict_rows(tables.get("project_materials"))
-    if table_key == "project_glazings":
-        return _dict_rows(tables.get("project_glazings"))
-    if table_key == "project_frames":
-        return _dict_rows(tables.get("project_frames"))
-    if table_key == "thermal_bridges":
-        return _dict_rows(tables.get("thermal_bridges"))
+    # Table rows may migrate from a bare list to a {field_defs, rows}
+    # envelope; every table branch must tolerate both document shapes.
+    if table_key in ("project_materials", "project_glazings", "project_frames", "thermal_bridges"):
+        return attachment_table_rows(tables.get(table_key))
     if equipment_key := EQUIPMENT_ATTACHMENT_TABLE_KEYS.get(table_key):
         return attachment_table_rows(tables.get("equipment", {}).get(equipment_key))
     if heat_pump_key := HEAT_PUMP_ATTACHMENT_TABLE_KEYS.get(table_key):
-        return _dict_rows(tables.get("equipment", {}).get("heat_pumps", {}).get(heat_pump_key))
+        return attachment_table_rows(tables.get("equipment", {}).get("heat_pumps", {}).get(heat_pump_key))
     if table_key == "assembly_segments":
         rows: list[dict[str, Any]] = []
         for assembly in _dict_rows(tables.get("assemblies")):

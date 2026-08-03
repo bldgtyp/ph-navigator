@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 09:50 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Make iter_rows_for_raw_tables read {field_defs, rows} envelopes for
   thermal_bridges and the four heat-pump sub-tables.
@@ -131,3 +131,27 @@ New or extended:
 - All 30 registered fields are reachable, proven by the Phase 03 guard.
 - Tests 1–8 pass; test 4 in particular.
 - `make ci` green.
+
+## Completion evidence
+
+Completed 2026-08-03:
+
+- A deliberately red regression test returned zero rows for
+  `thermal_bridges` and all four heat-pump table keys before the fix; all five
+  pass after routing the branches through `attachment_table_rows`.
+- API coverage proves anonymous list/item/URL/download access for Thermal
+  Bridges and Heat Pump references, plus the unchanged 404/403 negative gate.
+- Write validation, attach/detach, orphan-sweep protection, and Thermal Bridge
+  bulk download are each pinned through their real service path.
+- The reachability probe reports `30/30 registered fields reachable`.
+- Focused backend bundle: `60 passed`.
+- `make ci`: backend `1790 passed, 7 skipped`; frontend `2374 passed`; format,
+  lint, type, boundary, and production-build gates green.
+- Local `AGENT-BROWSER` Thermal Bridges route mounted after draft recovery with
+  the expected grid and zero console errors. The generated fixture contains no
+  attachment rows, so the file-bearing signed-out check remains paired with
+  Phase 02; Phase 01's exact public asset behavior is covered by the anonymous
+  API integration tests.
+
+The permanent schema-derived reachability guards and their falsification are
+still Phase 03; this phase supplies the direct regression and workflow tests.
