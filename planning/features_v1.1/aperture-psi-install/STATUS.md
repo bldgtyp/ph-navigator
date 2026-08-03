@@ -1,52 +1,45 @@
 # STATUS — aperture-psi-install
 
-**State:** 🟡 Researched + design drafted (2026-08-03) — **blocked on Ed's UX
-decision** (PRD §7). No implementation started; not yet phased.
+**State:** 🟢 Active — design accepted by Ed 2026-08-03; phased implementation
+plans written for coding-agent handoff. **No implementation started.**
 
-**What exists:**
-- `research.md` — full cross-package code survey (honeybee_ph, PHX writers,
-  both GH plugins, PHN), program defaults verified against the phius-rules
-  corpus, upstream bug list.
-- `PRD.md` — draft design: `aperture_install_types` project table +
-  per-element-edge assignment + derived mulled-edge zeros + Installs-modal UX
-  proposal + route-3 contract + GH-client sequencing note.
+**Next step:** Pick up `phases/phase-01-schema-v10-install-types.md` on a
+feature branch. Status UX unification is complete; skip the retired
+`status_summary.py` and frontend destination work described by D-9.
 
-**Origin (unchanged):** `HBPH+ - PH-Nav Get Apertures` (route 3) returned
-`psi_install_w_mk: null` on ~196 frames of project 2524; the GH client falls
-back to a fabricated 0.04 W/mK.
+**Accepted design:** `decisions.md` (D-1…D-10) is the authority; PRD.md holds
+the rationale + wireframe; research.md holds all code citations.
 
-## Decisions — resolved by research (2026-08-03)
+## Phase ledger
 
-- [x] **Granularity: per-edge** (per aperture-element side). Downstream is
-      per-edge end-to-end; `ProjectFrame` dedup makes per-frame storage
-      unable to express head-vs-sill. (research.md §2–§5)
-- [x] **Data source: shared install-type library** (project table), not
-      hand-entered numbers per edge. Matches both personas and the proven
-      AirTable precedent. (PRD §1, research.md §4.2)
-- [x] **Default policy: PHN resolves and emits effective values** (program-
-      aware Default row; interior mull edges derived Ψ=0). Route 3 stops
-      emitting null; the GH 0.04 fallback becomes dead code. (PRD §3–§4)
-- [x] **Verified program defaults:** Phius 0.030 IP ≈ 0.052 W/m·K (NOT 0.04);
-      0.020/0.015 IP mid-wall tiers; 0 at mulled sides (§1.4.4.6). 0.04 W/mK
-      is the PHI-side convention. (research.md §1)
+| Phase | Repo | State | Evidence |
+| --- | --- | --- | --- |
+| 01 Schema v10: table, slots, classification | PHN backend | Not started | — |
+| 02 Resolution, commands, route 3 | PHN backend | Not started | — |
+| 03 Installs sub-tab | PHN frontend | Not started | — |
+| 04 Effective-value display | PHN frontend | Not started | — |
+| 05 Installs modal (⏸ Ed UI review after exit gate) | PHN frontend | Not started | — |
+| 06 Documentation integration + docs sync | PHN both | Not started | — |
+| 07 GH client per-edge fidelity | honeybee_grasshopper_ph_plus | Not started — gated on 02 deployed | — |
 
-## Decisions — awaiting Ed (PRD §7)
+## Coordination
 
-- [ ] UX: Installs **modal with key view** (recommended) vs table-matrix vs
-      canvas mode.
-- [ ] Sub-tab name ("Installs"?) as 5th Apertures sub-tab.
-- [ ] Default-row semantics (editable? program-change behavior?).
-- [ ] Void-adjacent edges: perimeter or separate category.
-- [ ] Documentation-page evidence axis: extend axes (recommended) / reuse
-      datasheet field / Status-only.
-- [ ] Delete-blocking (recommended) vs clear-to-default for referenced types.
+- **status-ux-unification** (completed and archived 2026-08-03):
+  `status_summary.py` and its frontend destination are retired; do not
+  recreate them in phases 01/03. No new evidence axes (D-7 here defers the
+  pdf_report axis).
+- **phx-bug-handoff.md**: 8 upstream PHX/honeybee_ph bugs found during
+  research — Ed hands to the PHX-agent; not tracked in this packet's phases.
+- Route 3 is never broken mid-rollout (D-5): old GH clients get uniform
+  program-aware defaults; per-edge fidelity arrives with phase 07.
 
-## Then (once decided)
+## Resolved history (2026-08-03 research)
 
-- [ ] Phase plan: schema v9→v10 (table + `ApertureElementInstalls` + seeds),
-      commands, route-3 emission, Installs tab, modal, Status/Documentation
-      wiring. (Checklist skeleton in research.md §5.3.)
-- [ ] Coordinated `honeybee_grasshopper_ph_plus` change: apply psi-install
-      per-edge after frame-element dedup. **Must land before PHN emits
-      varying per-edge values** (uniform-default emission is safe first).
-- [ ] File upstream PHX/honeybee_ph bugs from research.md §3.6 in their repos.
+- Granularity per-edge; library-table source; PHN resolves + emits effective
+  values (GH 0.04 fallback becomes dead code).
+- Program defaults verified: Phius 0.030 IP ≈ 0.052 W/m·K (mid-wall tiers
+  0.020/0.015 IP; 0 at mulled sides, §1.4.4.6); 0.04 W/m·K is the PHI-side
+  convention. Seed rule: D-4.
+- Origin regression case: project 2524, 196 null `psi_install_w_mk` frames
+  via route 3 (`HBPH+ - PH-Nav Get Apertures`) — phase-07 verification
+  target.

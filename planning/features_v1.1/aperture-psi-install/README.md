@@ -1,7 +1,7 @@
 # Feature: Aperture Psi-Install (`psi_install_w_mk`)
 
 ```
-STATUS:  Researched + design drafted — awaiting Ed's UX decision. Not scoped into phases.
+STATUS:  Active — design accepted 2026-08-03; 7 phases written for coding-agent handoff.
 ORIGIN:  honeybee_grasshopper_ph_plus (GH plugin, PH-Nav V1 client — Get Apertures)
 DATE:    2026-07-05 (need filed) / 2026-08-03 (research + PRD draft)
 AUTHOR:  Ed + Claude
@@ -23,15 +23,22 @@ fabricates 0.04 W/mK — which is not even the Phius default (0.052).
 
 ## Read order
 
-1. **`STATUS.md`** — current state, decision checklist.
-2. **`PRD.md`** — draft design: install-types table, per-edge assignment,
-   derived mulled-edge zeros, the "Installs modal with key view" UX proposal,
-   Status/Documentation integration, export contract. Contains the open
-   decision list (§7).
-3. **`research.md`** — the grounding: how psi-install is handled today in
+1. **`STATUS.md`** — current state, phase ledger, coordination notes.
+2. **`decisions.md`** — the accepted design in 10 decisions (D-1…D-10);
+   supersedes PRD recommendations where they differ (D-7 evidence axes,
+   D-5 route-3 contract).
+3. **`PLAN.md`** — phase map, ordering constraints, status-ux-unification
+   coordination.
+4. **`phases/phase-01…07`** — coding-agent handoff plans (01–06 PHN,
+   07 honeybee_grasshopper_ph_plus).
+5. **`PRD.md`** — rationale, personas, UX wireframe (kept as accepted-design
+   background; decisions.md wins on conflicts).
+6. **`research.md`** — the grounding: how psi-install is handled today in
    honeybee_ph, PHX (WUFI/PHPP/METr/PPP writers), both GH plugins, and PHN
    itself, with file:line citations; program default values verified against
    the phius-rules corpus; upstream bug list found along the way.
+7. **`phx-bug-handoff.md`** — self-contained upstream bug list for the
+   PHX-agent (Ed delivers; outside this packet's phases).
 
 ## The shape of the answer (summary of PRD)
 
