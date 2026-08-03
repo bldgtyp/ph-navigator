@@ -184,7 +184,7 @@ export function ThermalBridgesTable({
         accessor: (row) => row.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
-      statusColumn<ThermalBridgeRow>(fieldDefByKey),
+      statusColumn<ThermalBridgeRow>(),
       ...customColumns,
     ],
     [

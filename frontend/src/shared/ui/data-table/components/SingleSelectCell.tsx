@@ -1,5 +1,5 @@
-import { CheckCircle2, CircleAlert } from "lucide-react";
 import type { CSSProperties } from "react";
+import { StatusPill, type ReportStatusKey } from "../../report-table";
 import { singleSelectOption } from "../lib/rows/format";
 import {
   STATUS_FIELD_KEY,
@@ -10,7 +10,7 @@ import {
 } from "../status";
 import type { FieldDef, FieldOption } from "../types";
 
-type StatusOptionKind = "complete" | "needed" | "question" | "na" | "other";
+type StatusOptionKind = ReportStatusKey | "other";
 
 function statusOptionKind(option: FieldOption): StatusOptionKind {
   switch (option.id) {
@@ -25,24 +25,6 @@ function statusOptionKind(option: FieldOption): StatusOptionKind {
     default:
       return "other";
   }
-}
-
-function statusIcon(kind: StatusOptionKind) {
-  if (kind === "complete") {
-    return (
-      <span className="single-select-pill__status-icon" data-status-chip-icon="complete">
-        <CheckCircle2 aria-hidden size={12} strokeWidth={2.4} />
-      </span>
-    );
-  }
-  if (kind === "needed") {
-    return (
-      <span className="single-select-pill__status-icon" data-status-chip-icon="needed">
-        <CircleAlert aria-hidden size={12} strokeWidth={2.4} />
-      </span>
-    );
-  }
-  return null;
 }
 
 export function SingleSelectCell({
@@ -69,16 +51,8 @@ export function SingleSelectCell({
 
 function SingleSelectStatusPill({ option }: { option: FieldOption }) {
   const kind = statusOptionKind(option);
-  return (
-    <span
-      className="single-select-pill single-select-pill--status"
-      data-status-option={kind}
-      style={{ "--option-color": option.color } as CSSProperties}
-    >
-      {statusIcon(kind)}
-      <span className="single-select-pill__label">{option.label}</span>
-    </span>
-  );
+  if (kind === "other") return <SingleSelectPill option={option} />;
+  return <StatusPill status={kind}>{option.label}</StatusPill>;
 }
 
 export function SingleSelectPill({

@@ -1,6 +1,6 @@
 DATE: 2026-08-03
 TIME: 11:25 EDT
-STATUS: Active — Phase 01 complete; Phase 02 next
+STATUS: Active — Phase 02 complete; Phase 03 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -40,9 +40,19 @@ findings were reconciled; the docs pass found the packet itself was the correct
 durable home. Final CI passed: backend 1,830 passed / 7 skipped; frontend 2,390
 passed; production build and static gates green.
 
+Phase 02 now consolidates Aperture editors on `StatusSelect`, all report and
+DataTable read-only statuses on `StatusPill`, the two DataTable status-column
+builders into one, and non-status amber consumers on `--attention-amber`.
+Focused tests and the production build pass. Browser screenshots covered all
+five named surface classes; the isolated fixture has empty report datasets,
+while a local draft Equipment row visibly exercised the shared Needed pill.
+Simplify review findings were reconciled; the docs pass updated the established
+design-system/token inventories. Full CI passed: backend 1,830 passed / 7
+skipped; frontend 2,391 passed; production build and static gates green.
+
 ## Next step
 
-Pick up **Phase 02** (one status control and CSS-token consolidation).
+Pick up **Phase 03** (Documentation URL-addressable filters).
 
 ## Blockers
 
@@ -68,7 +78,7 @@ still open when Phase 02 starts.
 | Phase | State | Exit gate |
 | --- | --- | --- |
 | 01 Vocabulary, labels, tooltips, legend | Complete | O-1 recorded; mounted surfaces verified; CI green |
-| 02 One control + CSS tokens | Not started | five surfaces visually unified; CI green |
+| 02 One control + CSS tokens | Complete | five surfaces visually inspected; CI green |
 | 03 Documentation `?needs=` filters | Not started | PRD §6.3 browser smoke; CI green |
 | 04 Overview rename + meters | Not started | PRD §6.4/§6.5 smoke; redirect verified; CI green |
 | 05 Retire status_summary + docs sync | Not started | consumer sweep clean; context docs rewritten; packet archived |

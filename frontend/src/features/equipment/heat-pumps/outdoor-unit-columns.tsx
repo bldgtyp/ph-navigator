@@ -15,7 +15,8 @@ import {
   incomingIndoorUnitsFieldDef,
 } from "./link-fields";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusColumn } from "../lib/statusColumn";
+import { statusFieldDef } from "./status-column";
 import { type HeatPumpOutdoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
@@ -112,6 +113,6 @@ export function outdoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpOutdoorUnitRow>(),
+    statusColumn<HeatPumpOutdoorUnitRow>(),
   ];
 }

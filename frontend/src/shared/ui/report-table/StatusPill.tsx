@@ -11,7 +11,7 @@ export function StatusDot({ status }: { status: ReportStatusKey }) {
 
 export function StatusPill({ status, children }: { status: ReportStatusKey; children: ReactNode }) {
   return (
-    <span className="report-status-pill">
+    <span className="status-select report-status-pill" data-tone={status}>
       <StatusDot status={status} />
       {children}
     </span>

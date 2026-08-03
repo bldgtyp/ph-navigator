@@ -10,9 +10,10 @@ import {
   heatPumpTextField,
 } from "./field-defs";
 import { roomLabel, ventilatorLabel } from "./lib";
+import { statusColumn } from "../lib/statusColumn";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
 import { displayNameColumnDef, displayNameFieldDef } from "./name-column";
-import { statusColumnDef, statusFieldDef } from "./status-column";
+import { statusFieldDef } from "./status-column";
 import { type HeatPumpIndoorUnitRow, type HeatPumpsSlice } from "./types";
 import { HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
@@ -160,6 +161,6 @@ export function indoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
-    statusColumnDef<HeatPumpIndoorUnitRow>(),
+    statusColumn<HeatPumpIndoorUnitRow>(),
   ];
 }

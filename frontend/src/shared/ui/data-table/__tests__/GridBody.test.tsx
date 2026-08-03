@@ -466,15 +466,15 @@ describe("GridBody — single-select chevron (plan 05)", () => {
       ],
     });
 
-    const completePill = getSelectCell(0, 0).querySelector(".single-select-pill");
-    const neededPill = getSelectCell(1, 0).querySelector(".single-select-pill");
+    const completePill = getSelectCell(0, 0).querySelector(".report-status-pill");
+    const neededPill = getSelectCell(1, 0).querySelector(".report-status-pill");
 
-    expect(completePill).toHaveClass("single-select-pill--status");
-    expect(completePill).toHaveAttribute("data-status-option", "complete");
-    expect(completePill?.querySelector("[data-status-chip-icon='complete']")).not.toBeNull();
-    expect(neededPill).toHaveClass("single-select-pill--status");
-    expect(neededPill).toHaveAttribute("data-status-option", "needed");
-    expect(neededPill?.querySelector("[data-status-chip-icon='needed']")).not.toBeNull();
+    expect(completePill).toHaveClass("status-select");
+    expect(completePill).toHaveAttribute("data-tone", "complete");
+    expect(completePill?.querySelector("[data-status='complete']")).not.toBeNull();
+    expect(neededPill).toHaveClass("status-select");
+    expect(neededPill).toHaveAttribute("data-tone", "needed");
+    expect(neededPill?.querySelector("[data-status='needed']")).not.toBeNull();
   });
 
   test("writable single-select cells render the chevron (visibility gated by CSS hover/active)", () => {

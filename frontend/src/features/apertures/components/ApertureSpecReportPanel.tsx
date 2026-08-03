@@ -7,12 +7,11 @@ import {
   formatUValueFromWm2K,
   useUnitPreference,
 } from "../../../lib/units";
-import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { StatusSelect } from "../../../shared/ui";
 import { naturalSortByName } from "../../../shared/lib/sort";
 import {
   AttachmentChipCell,
   ReportTable,
-  StatusDot,
   StatusFilterChips,
   StatusPill,
   type ReportStatusKey,
@@ -45,10 +44,10 @@ import type {
 } from "../types";
 import {
   SPECIFICATION_STATUSES,
+  SPECIFICATION_STATUS_OPTIONS,
   SPECIFICATION_STATUS_LABELS,
   STATUS_AXIS_LABELS,
   STATUS_AXIS_TOOLTIPS,
-  isSpecificationStatus,
 } from "../../project_document/specification-status";
 import { StatusAxisHeader, StatusRollupSummary } from "../../project_document/StatusVocabulary";
 
@@ -791,26 +790,16 @@ function renderStatus(
     );
   }
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, width: "100%" }}>
-      <StatusDot status={row.specification_status} />
-      <AutocompleteSelect
-        ariaLabel={STATUS_AXIS_LABELS.spec.column}
-        title={STATUS_AXIS_TOOLTIPS.spec}
-        value={row.specification_status}
-        disabled={busy}
-        compact
-        listboxPlacement="portal"
-        options={STATUSES.map((status) => ({
-          value: status,
-          label: STATUS_LABEL[status],
-        }))}
-        onChange={(nextStatus) => {
-          if (isSpecificationStatus(nextStatus)) {
-            onCommand(PRODUCT_CONFIG[kind].makeUpdateCommand(row.id, nextStatus));
-          }
-        }}
-      />
-    </span>
+    <StatusSelect
+      ariaLabel={STATUS_AXIS_LABELS.spec.column}
+      title={STATUS_AXIS_TOOLTIPS.spec}
+      value={row.specification_status}
+      disabled={busy}
+      options={SPECIFICATION_STATUS_OPTIONS}
+      onChange={(nextStatus) =>
+        onCommand(PRODUCT_CONFIG[kind].makeUpdateCommand(row.id, nextStatus))
+      }
+    />
   );
 }
 

@@ -65,10 +65,10 @@
 }
 
 .documentation-write-error {
-  background: color-mix(in oklab, var(--report-status-missing) 9%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--report-status-missing) 36%, var(--border-subtle));
+  background: color-mix(in oklab, var(--attention-amber) 9%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 36%, var(--border-subtle));
   border-radius: var(--radius-md);
-  color: color-mix(in oklab, var(--report-status-missing) 74%, black);
+  color: color-mix(in oklab, var(--attention-amber) 74%, black);
   font-size: var(--fs-sm);
   margin: 0;
   padding: var(--space-10) var(--space-12);
@@ -117,7 +117,7 @@
 }
 
 .documentation-axis-meter[data-zero="true"] .documentation-axis-meter-count {
-  color: color-mix(in oklab, var(--report-status-missing) 72%, black);
+  color: color-mix(in oklab, var(--attention-amber) 72%, black);
 }
 
 .documentation-axis-meter-track {

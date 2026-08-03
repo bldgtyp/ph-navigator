@@ -2688,31 +2688,6 @@ td.data-table-cell-editing {
   white-space: nowrap;
 }
 
-.single-select-pill--status {
-  gap: var(--space-4);
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
-  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
-}
-
-.single-select-pill--status[data-status-option="question"] {
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
-}
-
-.single-select-pill--status[data-status-option="na"] {
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
-  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 70%, var(--text-secondary));
-}
-
-.single-select-pill__status-icon {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-.single-select-pill__status-icon svg {
-  display: block;
-}
-
 .single-select-pill.missing {
   border-color: var(--phn-danger);
   background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));

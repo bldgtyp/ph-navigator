@@ -244,7 +244,7 @@ export function HotWaterHeatersTable({
         onWrite,
         measureLabel: "site photos",
       }),
-      statusColumn<HotWaterHeaterRow>(fieldDefByKey),
+      statusColumn<HotWaterHeaterRow>(),
       ...customColumns,
     ],
     [
