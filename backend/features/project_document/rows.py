@@ -437,6 +437,43 @@ class ThermalBridgesTableEnvelope(BaseModel):
     rows: list[ThermalBridgeRow] = Field(default_factory=list)
 
 
+class ApertureInstallTypeRow(RowWithCustomFields):
+    """A window-install Psi-value library record for the project document.
+
+    Mirrors `ThermalBridgeRow`: the numeric `psi_w_mk`, `name`, `source`,
+    and `status` are seeded FieldDefs stored in `custom_values` so the
+    DataTable/units/CSV machinery stays uniform; only the attachment and
+    evidence columns are typed.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^apit_[A-Za-z0-9_-]+$", max_length=80)
+    pdf_report_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
+    datasheet_not_required: bool = False
+    photo_not_required: bool = False
+    notes: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def strip_optional_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+
+class ApertureInstallTypesTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[ApertureInstallTypeRow] = Field(default_factory=list)
+
+
 class EmptyEquipmentTables(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -29,6 +29,7 @@ from features.project_document._validators import (
 )
 from features.project_document.custom_fields import normalize_display_name
 from features.project_document.document import (
+    APERTURE_INSTALL_TYPE_OPTION_KEYS,
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
     APPLIANCE_OPTION_KEYS,
     APPLIANCE_TYPE_OPTION_KEY,
@@ -55,6 +56,8 @@ from features.project_document.document import (
 if TYPE_CHECKING:
     from features.project_document.document import ProjectDocumentV1
 
+_APERTURE_ELEMENT_SIDES: tuple[str, ...] = ("top", "right", "bottom", "left")
+
 
 def validate_document_references(document: ProjectDocumentV1) -> ProjectDocumentV1:
     for key in ROOM_OPTION_KEYS:
@@ -73,6 +76,7 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         document.single_select_options.setdefault(key, [])
     for key in THERMAL_BRIDGE_OPTION_KEYS:
         document.single_select_options.setdefault(key, [])
+    _heal_aperture_install_type_seed(document)
     for key in HEAT_PUMP_VISIBLE_OPTION_KEYS:
         document.single_select_options.setdefault(key, [])
 
@@ -344,6 +348,18 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         target_row_ids=target_row_ids,
     )
 
+    install_types = document.tables.aperture_install_types.rows
+    _validate_min_zero(install_types, "psi_w_mk", "Aperture install type psi_w_mk must be zero or greater: {row_id}")
+    validate_generic_table(
+        table_label="aperture_install_types",
+        row_label="aperture install type",
+        table_path=("aperture_install_types",),
+        field_defs=document.tables.aperture_install_types.field_defs,
+        rows=install_types,
+        single_select_options=document.single_select_options,
+        target_row_ids=target_row_ids,
+    )
+
     ventilators = document.tables.equipment.ervs.rows
     inside_outside_ids = {option.id for option in document.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
     frost_protection_ids = {
@@ -373,6 +389,7 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
     aperture_names: set[str] = set()
     project_glazing_ids = {glazing.id for glazing in document.tables.project_glazings}
     project_frame_ids = {frame.id for frame in document.tables.project_frames}
+    install_type_ids = {install_type.id for install_type in install_types}
     validate_unique_ids("project glazing", [glazing.id for glazing in document.tables.project_glazings])
     validate_unique_ids("project frame", [frame.id for frame in document.tables.project_frames])
     for aperture in document.tables.apertures:
@@ -387,14 +404,51 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         for element in aperture.elements:
             if element.glazing_id is not None and element.glazing_id not in project_glazing_ids:
                 raise ValueError(f"Unknown glazing_id {element.glazing_id!r} on aperture element {element.id}")
-            for side, frame_id in element.frames.model_dump(mode="python").items():
+            for side in _APERTURE_ELEMENT_SIDES:
+                frame_id = getattr(element.frames, side)
                 if frame_id is not None and frame_id not in project_frame_ids:
                     raise ValueError(f"Unknown frame_id {frame_id!r} on aperture element {element.id} side {side}")
+                install_type_id = getattr(element.installs, side)
+                if install_type_id is not None and install_type_id not in install_type_ids:
+                    raise ValueError(
+                        f"Unknown install type {install_type_id!r} on aperture element {element.id} side {side}"
+                    )
 
     validate_envelope_references(document.tables.project_materials, document.tables.assemblies)
     _validate_document_formula_graph(document)
 
     return document
+
+
+def _heal_aperture_install_type_seed(document: ProjectDocumentV1) -> None:
+    """Restore the canonical install-types seed where it is absent.
+
+    Unlike every other table, `aperture_install_types` ships with seeded
+    content: the source/status option lists plus the program-aware Default
+    row (`apit_default`, D-4) that phase-02 resolution treats as the
+    inherited fallback. The template and the v9→v10 migration both write
+    the seed, and the replace path delete-blocks the Default row — so a
+    body missing part of it (hand-built test fixture, buggy external
+    write) has the invariant restored here rather than tolerated or
+    rejected. An explicitly supplied option list — even an empty one —
+    always wins; the Default row is only appended when no row carries its
+    well-known id.
+    """
+    from features.project_document.tables._status_field import status_option_list
+    from features.project_document.tables.aperture_install_types import (
+        APERTURE_INSTALL_DEFAULT_TYPE_ID,
+        APERTURE_INSTALL_SOURCE_OPTIONS,
+        default_install_type_row,
+    )
+
+    source_key, status_key = APERTURE_INSTALL_TYPE_OPTION_KEYS
+    if source_key not in document.single_select_options:
+        document.single_select_options[source_key] = list(APERTURE_INSTALL_SOURCE_OPTIONS)
+    if status_key not in document.single_select_options:
+        document.single_select_options[status_key] = status_option_list()
+    rows = document.tables.aperture_install_types.rows
+    if all(row.id != APERTURE_INSTALL_DEFAULT_TYPE_ID for row in rows):
+        rows.append(default_install_type_row(is_phius="phius" in document.project.cert_programs))
 
 
 def _validate_heat_pump_option(

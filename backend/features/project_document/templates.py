@@ -10,6 +10,7 @@ from features.heat_pumps.models import (
     HeatPumpsTableSlice,
 )
 from features.project_document.document import (
+    APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY,
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
     APPLIANCE_TYPE_OPTION_KEY,
     FAN_TYPE_OPTION_KEY,
@@ -20,6 +21,7 @@ from features.project_document.document import (
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
     VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+    ApertureInstallTypesTableEnvelope,
     AppliancesTableEnvelope,
     ElectricHeatersTableEnvelope,
     EmptyEquipmentTables,
@@ -40,6 +42,11 @@ from features.project_document.tables._status_field import (
     STATUS_TABLE_NAMES,
     status_option_key,
     status_option_list,
+)
+from features.project_document.tables.aperture_install_types import (
+    APERTURE_INSTALL_SOURCE_OPTIONS,
+    APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS,
+    default_install_type_row,
 )
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
@@ -77,6 +84,10 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
             phius_dropbox_url=payload.phius_dropbox_url,
         ),
         tables=ProjectDocumentTables(
+            aperture_install_types=ApertureInstallTypesTableEnvelope(
+                field_defs=list(APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS),
+                rows=[default_install_type_row(is_phius="phius" in payload.cert_programs)],
+            ),
             rooms=RoomsTableEnvelope(field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS)),
             space_types=SpaceTypesTableEnvelope(field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS)),
             thermal_bridges=ThermalBridgesTableEnvelope(field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS)),
@@ -104,6 +115,7 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 SingleSelectOption(id="opt_tb_perimeter", label="16-Perimeter", color="#f97316", order=1),
                 SingleSelectOption(id="opt_tb_below_grade", label="17-Below-Grade", color="#64748b", order=2),
             ],
+            APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY: list(APERTURE_INSTALL_SOURCE_OPTIONS),
             "pumps.device_type": [
                 SingleSelectOption(
                     id="opt_pump_heat_circulation", label="4-Heat Circulation Pump", color="#0ea5e9", order=0

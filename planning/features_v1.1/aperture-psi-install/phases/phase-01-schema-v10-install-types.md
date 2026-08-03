@@ -3,7 +3,8 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Not started
+STATUS:  ✅ Complete 2026-08-03 — implemented on feature/aperture-psi-install;
+         `make ci` green; as-built amendments at the end of this file
 AUTHOR:  Ed + Claude
 SCOPE:   Backend only. New `aperture_install_types` table + seeds, per-element
          install slots, edge-classification helper, v9→v10 migration,
@@ -173,3 +174,30 @@ New `backend/features/project_document/apertures/edge_classification.py`:
   asserts.
 - Closeout: `simplify` → `docs-pass` → `make format` → `make ci` green.
 - Exit gate: all above + STATUS.md phase ledger updated with evidence.
+
+## As-built amendments (2026-08-03)
+
+- **§6 "exactly one `apit_default`" became self-healing, not a hard
+  reject.** Hand-built bodies aside, a v10 document can only lose the
+  Default row through a bug (the replace path delete-blocks it), so
+  `document_validation._heal_aperture_install_type_seed` restores the
+  canonical seed — source/status option lists when the keys are absent,
+  and the program-aware Default row when no row carries
+  `APERTURE_INSTALL_DEFAULT_TYPE_ID` — instead of rejecting or silently
+  tolerating the state. One strategy for the whole seed; duplicates are
+  still impossible via the unique-row-id guard.
+- **§7 mixed adjacency rule:** a side abutting BOTH glazed and void cells
+  classifies as `perimeter` — only a fully mulled (all-glazed-neighbour)
+  side is `interior`. Void elements are classified too (all sides
+  perimeter) so callers need no kind branch.
+- **§3 delete-block payload** reuses `DependentRef.as_dict()` for the
+  `referenced_by` entries plus a `usage_counts` map, keyed by the shared
+  `dependent_link_delete_blocked` error code; the preview path gets it for
+  free because `preview_table_replace` calls `contract.apply_replace`.
+- **Migration corpus:** two v9 inputs frozen pre-bump
+  (`v9/inputs/empty_phi_project.json`,
+  `v9/inputs/phius_project_with_aperture.json` — the latter includes a
+  2×2 aperture with a void element); all expected snapshots +
+  `schema_fingerprint.json` regenerated via the reviewed migration.
+- `scripts/seed_dev_db.py` carries the template-seeded install-types
+  envelope through its starter-tables rebuild.

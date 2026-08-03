@@ -63,8 +63,8 @@ def _v8_body() -> dict[str, Any]:
 def test_v8_to_v9_renames_unit_fields_and_converts_only_legacy_btuh_value() -> None:
     result = upgrade_project_document(_v8_body())
 
-    assert result.applied_steps == ("_upgrade_v8_to_v9",)
-    assert result.document.schema_version == 9
+    assert result.applied_steps == ("_upgrade_v8_to_v9", "_upgrade_v9_to_v10")
+    assert result.document.schema_version == 10
     indoor = result.document.tables.equipment.heat_pumps.indoor_equip
     row = indoor.rows[0]
     assert row.cooling_cap_kw == 8.79

@@ -19,6 +19,7 @@ from features.project_document.document import (
     CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
+    ApertureInstallTypesTableEnvelope,
     ProjectDocumentProject,
     ProjectDocumentV1,
     RoomRow,
@@ -27,6 +28,7 @@ from features.project_document.document import (
     SpaceTypesTableEnvelope,
     ThermalBridgesTableEnvelope,
 )
+from features.project_document.tables.aperture_install_types import APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
@@ -73,6 +75,10 @@ def _body_with_default_field() -> ProjectDocumentV1:
                 ).model_dump(mode="json"),
                 "thermal_bridges": ThermalBridgesTableEnvelope(
                     field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
+                    rows=[],
+                ).model_dump(mode="json"),
+                "aperture_install_types": ApertureInstallTypesTableEnvelope(
+                    field_defs=list(APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS),
                     rows=[],
                 ).model_dump(mode="json"),
                 "equipment": {

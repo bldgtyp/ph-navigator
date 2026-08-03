@@ -11,6 +11,7 @@ from features.envelope.table_contracts import (
     project_materials_contract,
 )
 from features.project_document.tables._status_field import STATUS_FIELD_KEY, STATUS_TABLE_NAMES
+from features.project_document.tables.aperture_install_types import aperture_install_types_contract
 from features.project_document.tables.apertures import apertures_contract
 from features.project_document.tables.appliances import appliances_contract
 from features.project_document.tables.contracts import TableContract
@@ -84,6 +85,7 @@ _TABLES: dict[str, TableContract] = {
     electric_heaters_contract.name: electric_heaters_contract,
     thermal_bridges_contract.name: thermal_bridges_contract,
     apertures_contract.name: apertures_contract,
+    aperture_install_types_contract.name: aperture_install_types_contract,
 }
 
 

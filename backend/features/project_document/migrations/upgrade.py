@@ -501,6 +501,73 @@ def _upgrade_v8_to_v9(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v9_to_v10(raw: dict[str, object]) -> dict[str, object]:
+    """Seed the `aperture_install_types` library table and per-element install slots.
+
+    aperture-psi-install Phase 01: the new table starts with the seeded
+    FieldDefs plus the well-known program-aware Default row (`apit_default`,
+    D-4) — 0.052 W/m·K when the project certifies under Phius, else the
+    PHI-side 0.04 convention. Every aperture element gains explicit all-None
+    `installs` slots (None inherits the Default).
+    """
+
+    from features.project_document.document import (
+        APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY,
+        ApertureInstallTypesTableEnvelope,
+    )
+    from features.project_document.tables._status_field import status_option_key, status_option_list
+    from features.project_document.tables.aperture_install_types import (
+        APERTURE_INSTALL_SOURCE_OPTIONS,
+        APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS,
+        APERTURE_INSTALL_TYPES_TABLE_NAME,
+        default_install_type_row,
+    )
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    project = _mapping(upgraded.get("project"), "project")
+    cert_programs = project.get("cert_programs")
+    is_phius = isinstance(cert_programs, list) and "phius" in cert_programs
+
+    tables[APERTURE_INSTALL_TYPES_TABLE_NAME] = ApertureInstallTypesTableEnvelope(
+        field_defs=list(APERTURE_INSTALL_TYPES_BUILT_IN_FIELD_DEFS),
+        rows=[default_install_type_row(is_phius=is_phius)],
+    ).model_dump(mode="json")
+
+    apertures: list[object] = []
+    for aperture in _list(tables.get("apertures"), "tables.apertures"):
+        if not isinstance(aperture, Mapping):
+            apertures.append(aperture)
+            continue
+        aperture_mapping = dict(cast(Mapping[str, object], aperture))
+        elements: list[object] = []
+        for element in _list(aperture_mapping.get("elements"), "tables.apertures.elements"):
+            if not isinstance(element, Mapping):
+                elements.append(element)
+                continue
+            element_mapping = dict(cast(Mapping[str, object], element))
+            element_mapping.setdefault("installs", {"top": None, "right": None, "bottom": None, "left": None})
+            elements.append(element_mapping)
+        aperture_mapping["elements"] = elements
+        apertures.append(aperture_mapping)
+    tables["apertures"] = apertures
+
+    options = dict(_mapping(upgraded.get("single_select_options"), "single_select_options"))
+    options.setdefault(
+        APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY,
+        [option.model_dump(mode="json") for option in APERTURE_INSTALL_SOURCE_OPTIONS],
+    )
+    options.setdefault(
+        status_option_key(APERTURE_INSTALL_TYPES_TABLE_NAME),
+        [option.model_dump(mode="json") for option in status_option_list()],
+    )
+
+    upgraded["tables"] = tables
+    upgraded["single_select_options"] = options
+    upgraded["schema_version"] = 10
+    return upgraded
+
+
 def _rename_field_def_keys(value: object, renames: Mapping[str, str], *, path: str) -> list[object]:
     renamed: list[object] = []
     for field in _list(value, path):
@@ -555,6 +622,7 @@ UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     6: _upgrade_v6_to_v7,
     7: _upgrade_v7_to_v8,
     8: _upgrade_v8_to_v9,
+    9: _upgrade_v9_to_v10,
 }
 
 
