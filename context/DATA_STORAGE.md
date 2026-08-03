@@ -298,13 +298,13 @@ per-cell `max_count`, and per-file size cap.
 
 Registered document tables can migrate from a bare row list to a
 `{field_defs, rows}` envelope when they gain FieldDefs. Any code that walks
-table rows must tolerate both shapes. `list_asset_references` delegates this
-normalization to `iter_rows_for_raw_tables`; reachability guards prove every
-registered attachment field yields rows in both forms. The remaining structural
-follow-up is tracked in
-`planning/refactor/attachment-reference-walker-unification/`: derive mappings
-for contract-backed tables, define explicit adapters for irregular tables, and
-consolidate the separate mutation row lookup.
+table rows must tolerate both shapes. `features.assets.table_adapters` is the
+single row-shape authority for reference reads and attach/detach mutation:
+ordinary table keys and paths derive from `TableContract`; explicit adapters
+cover unregistered `project_frames` / `project_glazings` and flattened nested
+`assembly_segments`. `ATTACHMENT_FIELDS` remains the closed field allowlist, so
+adapter discovery does not widen asset visibility. Reachability guards prove
+every registered attachment field yields rows in both forms.
 
 ### 4.4 Upload flow — direct-to-store, three steps
 
@@ -323,14 +323,13 @@ min with a `Content-Disposition` attachment header) plus a thumbnail URL.
 An anonymous viewer can resolve an asset only when an attachment column in the
 project's active saved version references it. The separate
 `project_location.epw_asset_id` allowance covers project weather/location
-assets. `list_asset_references` and `iter_rows_for_raw_tables` implement the
+assets. `list_asset_references` plus the attachment table adapters implement the
 document reference gate used by anonymous reads, orphan sweeping, write-time
-reference validation, and bulk download. Attach/detach share the field registry
-and use the same row walker for direct tables; nested assembly segments retain
-their dedicated row lookup. A missed registry entry or direct-table row shape
-can therefore hide a public file, incorrectly expose it to garbage collection,
-and break edit/download workflows—not merely omit a thumbnail. MCP access
-instead requires `asset:read`.
+reference validation, and bulk download. Attach/detach use the same adapters,
+including the explicit nested assembly-segment adapter. A missed field-registry
+entry or table adapter can therefore hide a public file, incorrectly expose it
+to garbage collection, and break edit/download workflows—not merely omit a
+thumbnail. MCP access instead requires `asset:read`.
 
 ### 4.6 Delete, orphans, and the 90-day sweep
 

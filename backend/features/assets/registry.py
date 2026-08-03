@@ -7,9 +7,10 @@ only backend source for which document paths may hold asset id arrays.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 from features.assets.heic_types import HEIC_CONTENT_TYPES, HEIC_FILE_EXTENSIONS
+from features.assets.table_adapters import iter_attachment_rows
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.tables._attachment_fields import (
     DATASHEET_FIELD_KEY,
@@ -23,25 +24,19 @@ AssetKind = Literal[
 
 DATASHEET_CONTENT_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
 SITE_PHOTO_CONTENT_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", *HEIC_CONTENT_TYPES})
-EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "ventilators": "ervs",
-    "pumps": "pumps",
-    "fans": "fans",
-    "hot_water_heaters": "hot_water_heaters",
-    "hot_water_tanks": "hot_water_tanks",
-    "electric_heaters": "electric_heaters",
-    "appliances": "appliances",
-}
-HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
-    "heat_pump_outdoor_equip": "outdoor_equip",
-    "heat_pump_indoor_equip": "indoor_equip",
-    "heat_pump_outdoor_units": "outdoor_units",
-    "heat_pump_indoor_units": "indoor_units",
-}
 DOCUMENTATION_ATTACHMENT_TABLE_KEYS: tuple[str, ...] = (
-    *EQUIPMENT_ATTACHMENT_TABLE_KEYS,
+    "ventilators",
+    "pumps",
+    "fans",
+    "hot_water_heaters",
+    "hot_water_tanks",
+    "electric_heaters",
+    "appliances",
     "thermal_bridges",
-    *HEAT_PUMP_ATTACHMENT_TABLE_KEYS,
+    "heat_pump_outdoor_equip",
+    "heat_pump_indoor_equip",
+    "heat_pump_outdoor_units",
+    "heat_pump_indoor_units",
 )
 
 
@@ -262,7 +257,7 @@ def list_asset_references(
     for field in field_configs:
         fields_by_table.setdefault(field.table_key, []).append(field)
     for table, fields in fields_by_table.items():
-        for row in iter_rows_for_raw_tables(tables, table):
+        for row in iter_attachment_rows(tables, table):
             for field in fields:
                 values = row.get(field.field_key)
                 if not isinstance(values, list):
@@ -283,45 +278,3 @@ def list_asset_references(
                         }
                     )
     return references
-
-
-def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[str, Any]]:
-    tables = body.model_dump(mode="json")["tables"]
-    return iter_rows_for_raw_tables(tables, table_key)
-
-
-def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
-    # Table rows may migrate from a bare list to a {field_defs, rows}
-    # envelope; every table branch must tolerate both document shapes.
-    if table_key in ("project_materials", "project_glazings", "project_frames", "thermal_bridges"):
-        return attachment_table_rows(tables.get(table_key))
-    if equipment_key := EQUIPMENT_ATTACHMENT_TABLE_KEYS.get(table_key):
-        return attachment_table_rows(tables.get("equipment", {}).get(equipment_key))
-    if heat_pump_key := HEAT_PUMP_ATTACHMENT_TABLE_KEYS.get(table_key):
-        return attachment_table_rows(tables.get("equipment", {}).get("heat_pumps", {}).get(heat_pump_key))
-    if table_key == "assembly_segments":
-        rows: list[dict[str, Any]] = []
-        for assembly in attachment_table_rows(tables.get("assemblies")):
-            for layer in attachment_table_rows(assembly.get("layers")):
-                for segment in attachment_table_rows(layer.get("segments")):
-                    row = dict(segment)
-                    row.setdefault("assembly_id", assembly.get("id"))
-                    row.setdefault("layer_id", layer.get("id"))
-                    row.setdefault("name", segment.get("name") or segment.get("id"))
-                    rows.append(row)
-        return rows
-    return []
-
-
-def _dict_rows(value: object) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
-    return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)]
-
-
-def attachment_table_rows(value: object) -> list[dict[str, Any]]:
-    if isinstance(value, dict):
-        envelope = cast(dict[str, Any], value)
-        if isinstance(envelope.get("rows"), list):
-            return _dict_rows(envelope["rows"])
-    return _dict_rows(value)

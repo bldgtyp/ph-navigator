@@ -275,6 +275,10 @@ class TableContract:
     # JSON document path, e.g. ("equipment", "ervs"). Generic routes
     # read this without branching on `name`.
     table_path: tuple[str, ...] = ()
+    # Public attachment table key when it intentionally differs from `name`.
+    # Ordinary contracts need no entry: attachment row adapters derive their
+    # key and document path directly from `name` and `table_path`.
+    attachment_table_key: str | None = None
     # None on tables that have not opted into the field registry.
     field_registry: TableFieldRegistry | None = None
     # Non-persisted frontend hints for PHN-defined physical fields.

@@ -15,13 +15,16 @@ from pydantic import BaseModel
 from features.assets.registry import (
     ATTACHMENT_FIELDS,
     AttachmentFieldConfig,
-    iter_rows_for_raw_tables,
     list_asset_references,
+)
+from features.assets.table_adapters import (
+    find_attachment_row,
+    get_attachment_table_adapter,
+    iter_attachment_rows,
 )
 from features.project_document import envelope_models, rows
 from features.project_document.document import ProjectDocumentTables
 from features.project_document.envelope_models import AssemblySegment, ProjectFrame, ProjectGlazing
-from features.project_document.tables.contracts import TableContract
 from features.project_document.tables.registry import iter_table_contracts
 from features.project_document.templates import empty_project_document
 from features.projects.models import CreateProjectRequest
@@ -41,15 +44,9 @@ _IRREGULAR_ATTACHMENT_SCHEMAS = (
 )
 
 
-def _attachment_table_key(contract: TableContract) -> str:
-    if contract.table_path[:2] == ("equipment", "heat_pumps"):
-        return f"heat_pump_{contract.table_path[-1]}"
-    return contract.name
-
-
 def _attachment_schemas() -> tuple[AttachmentSchema, ...]:
     contract_schemas = (
-        AttachmentSchema(_attachment_table_key(contract), contract.schema_model, contract.table_path)
+        AttachmentSchema(contract.attachment_table_key or contract.name, contract.schema_model, contract.table_path)
         for contract in iter_table_contracts()
         if any(key.endswith("_asset_ids") for key in contract.schema_model.model_fields)
     )
@@ -57,7 +54,6 @@ def _attachment_schemas() -> tuple[AttachmentSchema, ...]:
 
 
 _ATTACHMENT_SCHEMAS = _attachment_schemas()
-_TABLE_PATH_BY_KEY = {schema.table_key: schema.table_path for schema in _ATTACHMENT_SCHEMAS}
 _BASE_TABLES = empty_project_document(CreateProjectRequest(name="attachment guard", bt_number="0000")).model_dump(
     mode="json"
 )["tables"]
@@ -97,7 +93,9 @@ def _assert_attachment_columns_registered(configs: Iterable[AttachmentFieldConfi
 
 
 def _table_path(table_key: str) -> tuple[str, ...]:
-    return _TABLE_PATH_BY_KEY[table_key]
+    adapter = get_attachment_table_adapter(table_key)
+    assert adapter is not None
+    return adapter.table_path
 
 
 def _replace_rows_at_contract_path(
@@ -154,6 +152,31 @@ def test_every_document_attachment_column_is_registered() -> None:
     _assert_attachment_columns_registered(ATTACHMENT_FIELDS)
 
 
+def test_contract_backed_attachment_adapters_derive_registered_table_paths() -> None:
+    irregular = {schema.table_key for schema in _IRREGULAR_ATTACHMENT_SCHEMAS}
+    contracts = {contract.attachment_table_key or contract.name: contract for contract in iter_table_contracts()}
+
+    for table_key in {field.table_key for field in ATTACHMENT_FIELDS} - irregular:
+        adapter = get_attachment_table_adapter(table_key)
+        assert adapter is not None
+        assert adapter.source == "table_contract"
+        assert adapter.table_path == contracts[table_key].table_path
+
+
+def test_irregular_attachment_adapters_are_explicit() -> None:
+    expected = {
+        "project_frames": (("project_frames",), "irregular_project_table"),
+        "project_glazings": (("project_glazings",), "irregular_project_table"),
+        "assembly_segments": (("assemblies", "layers", "segments"), "nested_flattening_adapter"),
+    }
+
+    for table_key, (table_path, source) in expected.items():
+        adapter = get_attachment_table_adapter(table_key)
+        assert adapter is not None
+        assert adapter.table_path == table_path
+        assert adapter.source == source
+
+
 def test_every_registered_attachment_field_is_reachable() -> None:
     fields_by_table: dict[str, list[AttachmentFieldConfig]] = defaultdict(list)
     for field in ATTACHMENT_FIELDS:
@@ -169,7 +192,7 @@ def test_every_registered_attachment_field_is_reachable() -> None:
         }
         _replace_rows_at_contract_path(tables, table_key, _real_row_shape(tables, table_key, row))
 
-        rows_walked = iter_rows_for_raw_tables(tables, table_key)
+        rows_walked = list(iter_attachment_rows(tables, table_key))
         references = list_asset_references(cast(Any, _RawDocument(tables)))
 
         for field in fields:
@@ -191,6 +214,19 @@ def test_attachment_row_walker_tolerates_bare_lists_and_envelopes(table_key: str
 
     _replace_rows_at_contract_path(tables, table_key, rows_value)
 
-    walked = iter_rows_for_raw_tables(tables, table_key)
+    walked = list(iter_attachment_rows(tables, table_key))
     assert len(walked) == 1
     assert walked[0]["id"] == row["id"]
+
+
+@pytest.mark.parametrize("table_key", ["pumps", "project_frames", "assembly_segments"])
+def test_attachment_row_lookup_returns_the_live_raw_row(table_key: str) -> None:
+    tables = copy.deepcopy(_BASE_TABLES)
+    row = {"id": f"row_mutation_{table_key}", "photo_asset_ids": []}
+    _replace_rows_at_contract_path(tables, table_key, _real_row_shape(tables, table_key, row))
+
+    found = find_attachment_row(tables, table_key, row["id"])
+
+    assert found is not None
+    found["photo_asset_ids"] = ["asset_mutated"]
+    assert list(iter_attachment_rows(tables, table_key))[0]["photo_asset_ids"] == ["asset_mutated"]

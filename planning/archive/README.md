@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-03
 
+- `attachment-reference-walker-unification` - Derived ordinary attachment row
+  paths from `TableContract`, retained explicit adapters for irregular frame,
+  glazing, and nested assembly shapes, and routed reference reads plus
+  attach/detach mutation through one lazy cached authority. The closed
+  attachment-field allowlist remains the anonymous-access boundary. Focused
+  coverage, three-way simplify review, docs-pass, Graphify, and full CI passed
+  (backend 1,821 passed / 7 skipped; frontend 2,396 passed).
 - `shared-segmented-control` - Replaced five bespoke inline single-selects with
   generic native-radio `SegmentedControl<T>` compact/content variants while
   preserving true tablists as `.pill-tab`. Added focused primitive and consumer

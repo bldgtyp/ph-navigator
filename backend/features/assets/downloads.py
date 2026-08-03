@@ -7,7 +7,6 @@ import hashlib
 import io
 import re
 import zipfile
-from typing import cast
 from uuid import UUID
 
 from starlette import status
@@ -17,7 +16,7 @@ from features.assets import repository
 from features.assets.base import AssetStorage, generated_asset_id, generated_job_id
 from features.assets.mapping import asset_rows, job_response, job_response_or_none
 from features.assets.models import AssetRow, BulkDownloadFilter, BulkDownloadRequest, JobResponse
-from features.assets.registry import iter_rows_for_raw_tables, list_asset_references
+from features.assets.registry import list_asset_references
 from features.assets.storage_r2 import asset_object_key
 from features.project_document.store import get_saved_document
 from features.projects.access import ProjectAccess, require_editor_user
@@ -169,31 +168,6 @@ class AssetBulkDownloadWorkflow:
             )
             repository.mark_asset_uploaded(conn, access.project_id, asset_id, r2_etag="")
         return asset_id
-
-
-def find_row(document: dict[str, object], table_key: str, row_id: str) -> dict[str, object]:
-    tables = cast(dict[str, object], document["tables"])
-    if not isinstance(tables, dict):
-        raise ValueError("invalid_tables")
-    if table_key == "assembly_segments":
-        for assembly in dict_rows(tables.get("assemblies")):
-            for layer in dict_rows(assembly.get("layers")):
-                for segment in dict_rows(layer.get("segments")):
-                    if segment.get("id") == row_id:
-                        return segment
-        rows = []
-    else:
-        rows = iter_rows_for_raw_tables(tables, table_key)
-    for row in rows:
-        if row.get("id") == row_id:
-            return row
-    raise api_error(status.HTTP_404_NOT_FOUND, "document_row_not_found", "Document row not found.")
-
-
-def dict_rows(value: object) -> list[dict[str, object]]:
-    if not isinstance(value, list):
-        return []
-    return [cast(dict[str, object], item) for item in value if isinstance(item, dict)]
 
 
 def _sanitize_path_part(value: object) -> str:
