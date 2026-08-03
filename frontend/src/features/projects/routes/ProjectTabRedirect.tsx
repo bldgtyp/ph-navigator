@@ -1,7 +1,7 @@
 import { Navigate, useParams } from "react-router-dom";
-import { projectStatusPath } from "../lib";
+import { projectOverviewPath } from "../lib";
 
 export function ProjectTabRedirect() {
   const { projectId } = useParams();
-  return <Navigate to={projectStatusPath(projectId ?? "")} replace />;
+  return <Navigate to={projectOverviewPath(projectId ?? "")} replace />;
 }

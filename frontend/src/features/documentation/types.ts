@@ -54,3 +54,11 @@ export type ProjectDocumentationSummary = {
   counts: DocumentationAxisCounts;
   sections: DocumentationSection[];
 };
+
+export type DocumentationRollupGroup = Omit<DocumentationGroup, "records">;
+export type DocumentationRollupSection = Omit<DocumentationSection, "groups" | "records"> & {
+  groups: DocumentationRollupGroup[];
+};
+export type ProjectDocumentationRollup = Omit<ProjectDocumentationSummary, "sections"> & {
+  sections: DocumentationRollupSection[];
+};

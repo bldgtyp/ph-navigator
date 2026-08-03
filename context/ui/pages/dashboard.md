@@ -102,7 +102,7 @@ modal. No pinned section appears at all.
   - **Phius number** — optional.
 - Buttons: Cancel, Create project (primary, disabled when name is
   empty or BT number is empty / unchecked / not-available).
-- On submit, redirects to `/projects/{new_id}/status`.
+- On submit, redirects to `/projects/{new_id}/overview`.
 - On race-condition 409 (`error_code='bt_number_taken'`), inline
   error appears on the BT number field; user picks a different one
   and retries.

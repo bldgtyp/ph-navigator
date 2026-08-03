@@ -1,6 +1,6 @@
 DATE: 2026-08-03
 TIME: 11:25 EDT
-STATUS: Active — Phase 03 complete; Phase 04 next
+STATUS: Active — Phase 04 complete; Phase 05 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, and phase ledger for the status UX
   unification.
@@ -59,9 +59,20 @@ query-param setter; docs-pass updated the durable route contract. Full CI
 passed: backend 1,830 passed / 7 skipped; frontend 2,395 passed; production
 build and static gates green.
 
+Phase 04 makes `overview` the default project tab, preserves legacy Status URL
+suffix/search/hash state, and replaces the record tree with counts-only
+Documentation meters backed by draft/saved rollup endpoints. Editor counts
+matched Documentation exactly (`0/1` on all three Equipment axes); the
+anonymous saved view was read-only, and group disclosure/deep links were
+verified. Three-lens simplify review reconciled helper reuse, safe keyed
+session state, and owning-surface cache invalidation. Docs-pass updated the
+mounted route contracts. Full CI passed: backend 1,832 passed / 7 skipped;
+frontend 2,397 passed; production build and static gates green.
+
 ## Next step
 
-Pick up **Phase 04** (Overview rename, rollup endpoint, and meters).
+Pick up **Phase 05** (retire the duplicate status-summary projection and sync
+the remaining durable docs).
 
 ## Blockers
 
@@ -89,5 +100,5 @@ still open when Phase 02 starts.
 | 01 Vocabulary, labels, tooltips, legend | Complete | O-1 recorded; mounted surfaces verified; CI green |
 | 02 One control + CSS tokens | Complete | five surfaces visually inspected; CI green |
 | 03 Documentation `?needs=` filters | Complete | PRD §6.3 browser smoke; CI green |
-| 04 Overview rename + meters | Not started | PRD §6.4/§6.5 smoke; redirect verified; CI green |
+| 04 Overview rename + meters | Complete | PRD §6.4/§6.5 smoke; redirect verified; CI green |
 | 05 Retire status_summary + docs sync | Not started | consumer sweep clean; context docs rewritten; packet archived |

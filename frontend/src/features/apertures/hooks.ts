@@ -124,6 +124,9 @@ export function useApertureProductCommandMutation(projectId: string, versionId: 
           "editor",
         ),
       });
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+      });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
   });
@@ -156,6 +159,9 @@ export function useApertureReportRefreshMutation(projectId: string, versionId: s
           resolvedVersionId,
           "editor",
         ),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
@@ -223,6 +229,9 @@ export function useApertureReportAttachmentMutation({
           resolvedVersionId,
           "editor",
         ),
+      });
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
       });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },

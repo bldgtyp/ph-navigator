@@ -271,7 +271,7 @@ describe("App", () => {
     );
   });
 
-  test("creates a project and opens its Status tab", async () => {
+  test("creates a project and opens its Overview tab", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -319,11 +319,12 @@ describe("App", () => {
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
     expect(within(projectTabs).getByRole("link", { name: "Thermal Bridges" })).toBeVisible();
     expect(within(projectTabs).getByRole("link", { name: "Documentation" })).toBeVisible();
-    expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
+    expect(within(projectTabs).getByRole("link", { name: "Overview" })).toBeVisible();
+    expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/overview`);
   });
 
   test("renders Spaces in the project tab list instead of Rooms", async () => {
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -345,6 +346,31 @@ describe("App", () => {
       spacesRoomsPath(projectPayload.id),
     );
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
+  });
+
+  test("redirects legacy Status URLs to Overview without dropping search or hash", async () => {
+    window.history.pushState(
+      {},
+      "",
+      `/projects/${projectPayload.id}/status/detail?version=${projectPayload.active_version_id}#roadmap`,
+    );
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftSummaryUrl()) return jsonResponse(draftSummaryPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Roadmap" });
+    expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/overview/detail`);
+    expect(window.location.search).toBe(`?version=${projectPayload.active_version_id}`);
+    expect(window.location.hash).toBe("#roadmap");
   });
 
   test("redirects Spaces to the Rooms sub-tab (labelled Spaces) by default", async () => {
@@ -493,7 +519,7 @@ describe("App", () => {
   });
 
   test("renders a deleted project URL as gone", async () => {
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === `/api/v1/projects/${projectPayload.id}`) {
@@ -516,7 +542,7 @@ describe("App", () => {
     window.history.pushState(
       {},
       "",
-      `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#viewer`,
+      `/projects/${projectPayload.id}/overview?version=${projectPayload.active_version_id}#viewer`,
     );
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -547,7 +573,7 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
       `/sign-in?next=${encodeURIComponent(
-        `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#viewer`,
+        `/projects/${projectPayload.id}/overview?version=${projectPayload.active_version_id}#viewer`,
       )}`,
     );
     expect(await screen.findByText("CAD files received")).toBeVisible();
@@ -557,14 +583,14 @@ describe("App", () => {
     expect(screen.queryByRole("button", { name: /More actions for/ })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Drag CAD files received/)).not.toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Spec. Status" })).getByRole("button", {
+      within(screen.getByRole("region", { name: "Documentation progress" })).getByRole("button", {
         name: "Retry",
       }),
     ).toBeVisible();
   });
 
   test("redirects a previously authenticated project tab after a 401", async () => {
-    const projectPath = `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#working`;
+    const projectPath = `/projects/${projectPayload.id}/overview?version=${projectPayload.active_version_id}#working`;
     window.history.pushState({}, "", projectPath);
     markSessionAuthenticated();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -590,7 +616,7 @@ describe("App", () => {
 
   test("renders table-neutral editor header states", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -631,7 +657,7 @@ describe("App", () => {
       value: { writeText },
       configurable: true,
     });
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const tokenRecord = {
       id: "4d21615a-2ed4-4d5a-bdb2-2995b91e2fe2",
@@ -735,7 +761,7 @@ describe("App", () => {
   });
 
   test("renders locked editor header as Save As only", async () => {
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const lockedProject = {
       ...projectPayload,
@@ -773,7 +799,7 @@ describe("App", () => {
 
   test("blocks the app while Save Version is committing", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const saveUrl = `${draftUrl}/save`;
     const saveResponse = createDeferred<Awaited<ReturnType<typeof jsonResponse>>>();
@@ -826,7 +852,7 @@ describe("App", () => {
 
   test("waits for queued table writes before Save Version", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const saveUrl = `${draftUrl}/save`;
     const pendingWrite = createDeferred<void>();
@@ -873,7 +899,7 @@ describe("App", () => {
   });
 
   test("warns before unload while a table write is still pending without a server draft", async () => {
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const pendingWrite = createDeferred<void>();
     const coordinator = getDraftWriteCoordinator(
       projectPayload.id,
@@ -906,7 +932,7 @@ describe("App", () => {
 
   test("cancels queued writes and waits for the in-flight write before discard", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const pendingWrite = createDeferred<void>();
     const queuedRun = vi.fn(async () => undefined);
@@ -964,7 +990,7 @@ describe("App", () => {
 
   test("prompts to restore or discard a recovered draft and warns before unload", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -1004,7 +1030,7 @@ describe("App", () => {
 
   test("requires a save, save-as, or discard choice before switching away from a dirty version", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const saveUrl = `${draftUrl}/save`;
     const saveResponse = createDeferred<Awaited<ReturnType<typeof jsonResponse>>>();
@@ -1073,7 +1099,7 @@ describe("App", () => {
 
   test("shows Save As and discard exits when Save finds a stale version ETag", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     const draftUrl = draftSummaryUrl();
     const saveUrl = `${draftUrl}/save`;
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
@@ -1176,7 +1202,7 @@ describe("App", () => {
 
   test("refetches project access after signing in from a public project URL", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     let projectFetchCount = 0;
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -1365,7 +1391,7 @@ describe("App", () => {
 
   test("applies the default status template from the empty Status tab", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/overview`);
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const draftUrl = draftSummaryUrl();

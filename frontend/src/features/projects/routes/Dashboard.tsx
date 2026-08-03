@@ -16,7 +16,7 @@ import {
   useProjectsQuery,
   useRestoreProjectMutation,
 } from "../hooks";
-import { projectStatusPath } from "../lib";
+import { projectOverviewPath } from "../lib";
 import type { ProjectSummary } from "../types";
 
 const EMPTY_PROJECTS: ProjectSummary[] = [];
@@ -190,7 +190,7 @@ export function Dashboard({ session }: { session: AuthSession }) {
           onClose={() => setIsCreateOpen(false)}
           onCreated={(project) => {
             setIsCreateOpen(false);
-            navigate(projectStatusPath(project.id));
+            navigate(projectOverviewPath(project.id));
           }}
         />
       ) : null}

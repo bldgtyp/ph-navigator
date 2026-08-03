@@ -70,6 +70,9 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
             "editor",
           ),
         });
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+        });
       }
       if (slice.draft_etag !== variables.current.draft_etag) {
         markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
@@ -257,6 +260,9 @@ export function useEnvelopeAttachmentMutation({
       });
       await queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.documentationSummary(projectId, versionId, "editor"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
       });
     },
     onError: (error) => {

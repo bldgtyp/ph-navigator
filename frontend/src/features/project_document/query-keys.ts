@@ -13,6 +13,10 @@ export const projectDocumentQueryKeys = {
     [...projectDocumentQueryKeys.project(projectId), "documentation-summary"] as const,
   documentationSummary: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
     [...projectDocumentQueryKeys.documentationSummaries(projectId), versionId, accessMode] as const,
+  documentationRollups: (projectId: string) =>
+    [...projectDocumentQueryKeys.project(projectId), "documentation-rollup"] as const,
+  documentationRollup: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
+    [...projectDocumentQueryKeys.documentationRollups(projectId), versionId, accessMode] as const,
   diff: (projectId: string, versionId: string, to: string) =>
     [...projectDocumentQueryKeys.project(projectId), "diff", versionId, to] as const,
 };

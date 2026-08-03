@@ -97,6 +97,37 @@ class ProjectDocumentationSummaryResponse(BaseModel):
     sections: list[DocumentationSection]
 
 
+class DocumentationRollupGroup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    title: str
+    anchor: str
+    counts: DocumentationAxisCounts
+
+
+class DocumentationRollupSection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    title: str
+    anchor: str
+    counts: DocumentationAxisCounts
+    groups: list[DocumentationRollupGroup]
+
+
+class ProjectDocumentationRollupResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: UUID
+    version_id: UUID
+    source: ProjectDocumentSource
+    version_etag: str
+    draft_etag: str | None
+    counts: DocumentationAxisCounts
+    sections: list[DocumentationRollupSection]
+
+
 @dataclass(frozen=True)
 class DocumentationTable:
     table_name: str
@@ -237,6 +268,46 @@ def get_saved_documentation_summary(version_id: UUID, access: ProjectAccess) -> 
             draft_etag=None,
             body=body,
         )
+    )
+
+
+def get_draft_documentation_rollup(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationRollupResponse:
+    return documentation_rollup(get_draft_documentation_summary(version_id, access))
+
+
+def get_saved_documentation_rollup(version_id: UUID, access: ProjectAccess) -> ProjectDocumentationRollupResponse:
+    return documentation_rollup(get_saved_documentation_summary(version_id, access))
+
+
+def documentation_rollup(summary: ProjectDocumentationSummaryResponse) -> ProjectDocumentationRollupResponse:
+    sections = [
+        DocumentationRollupSection(
+            key=section.key,
+            title=section.title,
+            anchor=section.anchor,
+            counts=section.counts,
+            groups=[
+                DocumentationRollupGroup(
+                    key=group.key,
+                    title=group.title,
+                    anchor=group.anchor,
+                    counts=group.counts,
+                )
+                for group in section.groups
+                if group.counts.spec_total > 0
+            ],
+        )
+        for section in summary.sections
+        if section.counts.spec_total > 0
+    ]
+    return ProjectDocumentationRollupResponse(
+        project_id=summary.project_id,
+        version_id=summary.version_id,
+        source=summary.source,
+        version_etag=summary.version_etag,
+        draft_etag=summary.draft_etag,
+        counts=summary.counts,
+        sections=sections,
     )
 
 

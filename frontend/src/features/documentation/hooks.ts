@@ -16,6 +16,7 @@ import {
 } from "../project_document/table-slice";
 import {
   applyDocumentationEnvelopeCommand,
+  fetchDocumentationRollup,
   fetchDocumentationDraftTable,
   fetchDocumentationSummary,
   replaceDocumentationDraftTable,
@@ -37,6 +38,24 @@ export function useDocumentationSummaryQuery(
   return useQuery({
     queryKey: documentationQueryKeys.summary(projectId, resolvedVersionId, accessMode),
     queryFn: () => fetchDocumentationSummary(projectId, resolvedVersionId, accessMode),
+    enabled: resolvedVersionId.length > 0,
+    staleTime: Infinity,
+  });
+}
+
+export function useDocumentationRollupQuery(
+  projectId: string,
+  versionId: string | null,
+  accessMode: "editor" | "viewer",
+) {
+  const resolvedVersionId = versionId ?? "";
+  return useQuery({
+    queryKey: projectDocumentQueryKeys.documentationRollup(
+      projectId,
+      resolvedVersionId,
+      accessMode,
+    ),
+    queryFn: () => fetchDocumentationRollup(projectId, resolvedVersionId, accessMode),
     enabled: resolvedVersionId.length > 0,
     staleTime: Infinity,
   });
@@ -351,6 +370,9 @@ function acknowledgeDocumentationWrite(
     }),
     queryClient.invalidateQueries({
       queryKey: documentationQueryKeys.summaries(projectId),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
     }),
     queryClient.invalidateQueries({
       queryKey: projectDocumentQueryKeys.statusSummaries(projectId),

@@ -15,8 +15,11 @@ from features.project_document.aperture_commands.service import (
 )
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.documentation_summary import (
+    ProjectDocumentationRollupResponse,
     ProjectDocumentationSummaryResponse,
+    get_draft_documentation_rollup,
     get_draft_documentation_summary,
+    get_saved_documentation_rollup,
     get_saved_documentation_summary,
 )
 from features.project_document.models import (
@@ -103,6 +106,14 @@ def get_saved_documentation_summary_route(
     return get_saved_documentation_summary(version_id, access)
 
 
+@router.get("/document/documentation-rollup", response_model=ProjectDocumentationRollupResponse)
+def get_saved_documentation_rollup_route(
+    version_id: UUID,
+    access: ProjectViewAccess,
+) -> ProjectDocumentationRollupResponse:
+    return get_saved_documentation_rollup(version_id, access)
+
+
 @router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
 def get_saved_table(
     version_id: UUID,
@@ -140,6 +151,14 @@ def get_draft_documentation_summary_route(
     access: ProjectEditAccess,
 ) -> ProjectDocumentationSummaryResponse:
     return get_draft_documentation_summary(version_id, access)
+
+
+@router.get("/draft/documentation-rollup", response_model=ProjectDocumentationRollupResponse)
+def get_draft_documentation_rollup_route(
+    version_id: UUID,
+    access: ProjectEditAccess,
+) -> ProjectDocumentationRollupResponse:
+    return get_draft_documentation_rollup(version_id, access)
 
 
 @router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)

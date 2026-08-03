@@ -2,7 +2,7 @@ import { errorMessage } from "../../shared/lib/errors";
 import { spacesRoomsPath } from "../spaces/paths";
 
 export const PROJECT_TABS = [
-  "status",
+  "overview",
   "climate",
   "apertures",
   "envelope",
@@ -15,7 +15,7 @@ export const PROJECT_TABS = [
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 
 export const TAB_LABELS: Record<ProjectTab, string> = {
-  status: "Status",
+  overview: "Overview",
   climate: "Climate",
   apertures: "Apertures",
   envelope: "Envelope",
@@ -27,7 +27,7 @@ export const TAB_LABELS: Record<ProjectTab, string> = {
 };
 
 export const TAB_COPY: Record<ProjectTab, string> = {
-  status: "Track this project's lifecycle milestones.",
+  overview: "Project roadmap and documentation progress at a glance.",
   climate: "Project location and weather/climate reference datasets.",
   apertures: "Aperture types, frames, glazing, dimensions, and U-Value.",
   envelope: "Envelope assemblies land after the aperture catalog slices.",
@@ -46,8 +46,8 @@ export function projectTabPath(projectId: string, tab: ProjectTab): string {
   return `/projects/${projectId}/${tab}`;
 }
 
-export function projectStatusPath(projectId: string): string {
-  return projectTabPath(projectId, "status");
+export function projectOverviewPath(projectId: string): string {
+  return projectTabPath(projectId, "overview");
 }
 
 export function isProjectTab(value: string | undefined): value is ProjectTab {

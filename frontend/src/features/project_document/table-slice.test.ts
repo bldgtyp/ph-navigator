@@ -152,6 +152,11 @@ describe("createTableSliceFeature", () => {
     const siblingViewerKey = siblingFeature.queryKeys.slice(projectId, versionId, "viewer");
     const siblingOtherVersionKey = siblingFeature.queryKeys.slice(projectId, "v2", "editor");
     const draftSummaryKey = projectDocumentQueryKeys.draftSummary(projectId, versionId);
+    const documentationRollupKey = projectDocumentQueryKeys.documentationRollup(
+      projectId,
+      versionId,
+      "editor",
+    );
     queryClient.setQueryData(sourceEditorKey, current);
     queryClient.setQueryData(
       siblingEditorKey,
@@ -170,6 +175,7 @@ describe("createTableSliceFeature", () => {
       is_locked: false,
       can_edit: true,
     });
+    queryClient.setQueryData(documentationRollupKey, { sections: [] });
     const siblingRefetch = vi.fn(async () => makeSlice({ rows: ["refetched-sibling"] }));
     const siblingObserver = new QueryObserver(queryClient, {
       queryKey: siblingEditorKey,
@@ -204,5 +210,6 @@ describe("createTableSliceFeature", () => {
       dirty_tables: ["source_table"],
     });
     expect(queryClient.getQueryState(draftSummaryKey)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(documentationRollupKey)?.isInvalidated).toBe(true);
   });
 });

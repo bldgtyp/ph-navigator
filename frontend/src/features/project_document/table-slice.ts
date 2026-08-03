@@ -254,6 +254,9 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.documentationSummaries(projectId),
       }),
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.documentationRollups(projectId),
+      }),
     ];
     if (
       onAcceptedSlice &&

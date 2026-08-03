@@ -20,7 +20,13 @@ import type { ProjectDocumentReadSafeEnvelope } from "../../project_document/typ
 import { ProjectTabContent } from "../components/ProjectTabContent";
 import { ProjectSettingsModal } from "../components/ProjectSettingsModal";
 import { useProjectQuery } from "../hooks";
-import { isProjectTab, PROJECT_TABS, projectStatusPath, projectTabPath, TAB_LABELS } from "../lib";
+import {
+  isProjectTab,
+  PROJECT_TABS,
+  projectOverviewPath,
+  projectTabPath,
+  TAB_LABELS,
+} from "../lib";
 
 export function ProjectShell() {
   const { projectId, tab } = useParams();
@@ -56,7 +62,7 @@ export function ProjectShell() {
   );
 
   if (!activeTab && projectId) {
-    return <Navigate to={projectStatusPath(projectId)} replace />;
+    return <Navigate to={projectOverviewPath(projectId)} replace />;
   }
 
   if (projectQuery.isLoading) {
@@ -115,7 +121,7 @@ export function ProjectShell() {
   // the internal `name` directly. See planning/features/project-public-alias.
   const projectTitleLabel = `${project.bt_number} - ${project.display_name}`;
   const projectCrumbLabel = projectTitleLabel;
-  const topbarBreadcrumbs = [{ label: projectCrumbLabel, to: projectStatusPath(project.id) }];
+  const topbarBreadcrumbs = [{ label: projectCrumbLabel, to: projectOverviewPath(project.id) }];
   const handleSignOut = () => {
     signOutMutation.mutate(undefined, {
       onSettled: () => {
@@ -198,7 +204,7 @@ export function ProjectShell() {
             </Link>
           ))}
         </nav>
-        <ProjectTabContent tab={activeTab ?? "status"} project={openProject} />
+        <ProjectTabContent tab={activeTab ?? "overview"} project={openProject} />
       </section>
       {isSettingsOpen ? (
         <ProjectSettingsModal project={openProject} onClose={() => setIsSettingsOpen(false)} />

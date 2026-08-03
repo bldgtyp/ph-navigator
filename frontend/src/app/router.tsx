@@ -124,6 +124,7 @@ export function AppRouter() {
         )}
       />
       <Route path="/projects/:projectId" element={<ProjectTabRedirect />} />
+      <Route path="/projects/:projectId/status/*" element={<StatusToOverviewRedirect />} />
       <Route path="/projects/:projectId/windows/*" element={<WindowsToAperturesRedirect />} />
       <Route path="/projects/:projectId/rooms" element={<RoomsToSpacesRedirect />} />
       <Route
@@ -172,6 +173,22 @@ function RoomsToSpacesRedirect() {
     <Navigate
       to={{
         pathname: spacesRoomsPath(projectId ?? ""),
+        search: location.search,
+        hash: location.hash,
+      }}
+      replace
+    />
+  );
+}
+
+function StatusToOverviewRedirect() {
+  const { projectId } = useParams();
+  const location = useLocation();
+  const suffix = location.pathname.match(/\/status(\/.*)?$/)?.[1] ?? "";
+  return (
+    <Navigate
+      to={{
+        pathname: `/projects/${projectId}/overview${suffix}`,
         search: location.search,
         hash: location.hash,
       }}

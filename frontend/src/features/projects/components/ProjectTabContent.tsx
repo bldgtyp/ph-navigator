@@ -49,7 +49,7 @@ const PROJECT_TAB_MODULES: Record<
   ProjectTab,
   { Component: ProjectTabModule; className?: string; loadingLabel: string }
 > = {
-  status: { Component: StatusTab, className: "status-panel", loadingLabel: TAB_LABELS.status },
+  overview: { Component: StatusTab, className: "status-panel", loadingLabel: TAB_LABELS.overview },
   climate: { Component: ClimateTab, className: "climate-tab", loadingLabel: TAB_LABELS.climate },
   apertures: {
     Component: AperturesTab,
