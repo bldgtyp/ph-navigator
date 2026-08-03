@@ -301,9 +301,9 @@ def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dic
         return attachment_table_rows(tables.get("equipment", {}).get("heat_pumps", {}).get(heat_pump_key))
     if table_key == "assembly_segments":
         rows: list[dict[str, Any]] = []
-        for assembly in _dict_rows(tables.get("assemblies")):
-            for layer in _dict_rows(assembly.get("layers")):
-                for segment in _dict_rows(layer.get("segments")):
+        for assembly in attachment_table_rows(tables.get("assemblies")):
+            for layer in attachment_table_rows(assembly.get("layers")):
+                for segment in attachment_table_rows(layer.get("segments")):
                     row = dict(segment)
                     row.setdefault("assembly_id", assembly.get("id"))
                     row.setdefault("layer_id", layer.get("id"))

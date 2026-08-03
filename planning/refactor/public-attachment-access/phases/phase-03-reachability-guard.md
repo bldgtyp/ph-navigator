@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 10:17 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Structural tests that make an unreachable or unregistered attachment
   column impossible to ship silently.
@@ -116,3 +116,28 @@ regression that returns rows but drops the field is also caught.
   deliberately reintroduced defect.
 - The negative anonymous case is pinned alongside them.
 - `make ci` green.
+
+## Completion evidence
+
+- Guard A scans Pydantic attachment columns from the contract row models and the
+  irregular envelope rows; Guard B obtains each injected table path from the
+  table contract registry and the real empty-document shape, independent of the
+  walker branch map.
+- Guard B groups 31 fields into 16 table fixtures. Every table key is also pinned
+  independently as a bare list and a `{field_defs, rows}` envelope; nested
+  assembly segments now use the same tolerant row helper at all three levels.
+- Temporarily removing the Phase 02 registry entry failed Guard A with:
+  `thermal_bridges.pdf_report_asset_ids is a document attachment column with no
+  ATTACHMENT_FIELDS entry — anonymous viewers cannot see it and the orphan
+  sweeper will treat its assets as garbage.`
+- Temporarily restoring `_dict_rows` for Thermal Bridges failed Guard B with:
+  `thermal_bridges.pdf_report_asset_ids is registered but its real table shape
+  yields zero rows — anonymous viewers cannot see its assets and the orphan
+  sweeper will treat them as garbage.`
+- Both defects were restored. The combined guards, registry suite, and existing
+  anonymous 404/403 negative gate pass `55` tests.
+- Three parallel `simplify` reviews completed; cached fixtures, grouped table
+  traversal, cached contract paths, and consolidated irregular metadata address
+  every finding.
+- `make ci` passes: backend `1829 passed, 7 skipped`; frontend tests and build,
+  formatting, lint, types, and repository boundary checks are green.

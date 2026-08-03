@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 10:03 EDT
-STATUS: Active — Phases 00-02 complete; Phase 03 next
+TIME: 10:17 EDT
+STATUS: Active — Phases 00-03 complete; Phase 04 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,8 +17,9 @@ RELATED:
 
 ## Current state
 
-**Phases 00-02 complete. The row walker reaches all 31 registered attachment
-fields, including `thermal_bridges.pdf_report_asset_ids`.**
+**Phases 00-03 complete. The row walker reaches all 31 registered attachment
+fields, including `thermal_bridges.pdf_report_asset_ids`, and structural guards
+now prevent either defect from shipping silently again.**
 
 Two independent backend defects and two UI defects, all confirmed by executing
 code in `backend/.venv`, not by reading:
@@ -43,9 +44,10 @@ completed packet.
 
 ## Next step
 
-**[Phase 03](./phases/phase-03-reachability-guard.md) — make the registration and
-row-walker guarantees structural.** Add and falsify both schema-derived guards
-so future attachment fields cannot become unregistered or unreachable silently.
+**[Phase 04](./phases/phase-04-download-error-ux.md) — keep download failures
+inside the application.** Add the shared fetch-first download helper, typed
+failure UX, and browser-aware backend error response without weakening JSON API
+clients.
 
 ## Blockers / decisions needed from Ed
 
@@ -133,6 +135,33 @@ remediation is required before Phase 01.
 - `make ci` green: backend `1795 passed, 7 skipped`; frontend tests and
   production build plus all formatting, lint, type, and boundary checks passed.
 
+## Phase 03 verification
+
+- Guard A derives every `_asset_ids` column from the registered Pydantic table
+  models plus the three irregular envelope models and asserts a matching
+  `ATTACHMENT_FIELDS` entry.
+- Guard B derives fixture paths from `TableContract.table_path`, injects all 31
+  unique references into the real empty-document shapes, and asserts both
+  nonzero walked rows and field-level references. It traverses 16 table fixtures,
+  independent of the row-walker's branch map.
+- Shape pin: all 16 attachment table keys pass as both bare lists and
+  `{field_defs, rows}` envelopes, including nested assembly segments.
+- Negative gate remains pinned: an unreferenced anonymous asset is still 404,
+  and `/url` is still 403 `asset_not_referenced`.
+- Guard A falsification, with the PDF Report registry entry temporarily removed:
+  `thermal_bridges.pdf_report_asset_ids is a document attachment column with no
+  ATTACHMENT_FIELDS entry — anonymous viewers cannot see it and the orphan
+  sweeper will treat its assets as garbage.`
+- Guard B falsification, with `_dict_rows` temporarily restored for Thermal
+  Bridges: `thermal_bridges.pdf_report_asset_ids is registered but its real
+  table shape yields zero rows — anonymous viewers cannot see its assets and the
+  orphan sweeper will treat them as garbage.`
+- Both defects were restored; focused bundle `55 passed`. Three parallel
+  `simplify` reviews completed, and all test reuse/efficiency findings were
+  incorporated.
+- `make ci` green: backend `1829 passed, 7 skipped`; frontend tests and build,
+  formatting, lint, types, and repository boundary checks passed.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
@@ -144,8 +173,8 @@ remediation is required before Phase 01.
   tables. Phase 00 proved all production references satisfy that contract.
 - **The Phase 02 FieldDef refactor must be byte-identical** — the built-in seed
   is fingerprinted. If the fingerprint moves, stop.
-- **Guard tests must be falsified** (Phase 03). An unfalsified guard is not a
-  guard — the existing registry test passed throughout this entire bug.
+- **Guard falsification is recorded in Phase 03.** Preserve the consequence-rich
+  assertions; the old registry-presence test passed throughout this entire bug.
 
 ## Verification gates (packet level)
 
@@ -198,3 +227,7 @@ Frontend:
   31st registered field without moving the Thermal Bridges schema fingerprint;
   focused backend and signed-out file-bearing browser checks passed. Phase 03
   next; deployment remains Ed's call.
+- **2026-08-03 10:17 EDT** — Phase 03 completed locally. Both schema-derived
+  guards were deliberately falsified with the original defects, emitted the
+  intended consequence-rich failures, and returned to `55 passed` after clean
+  restores. Phase 04 next.
