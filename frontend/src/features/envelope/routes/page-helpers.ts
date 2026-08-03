@@ -1,3 +1,4 @@
+import { materialNeedsCatalogReview } from "../drift";
 import type {
   Assembly,
   EnvelopeReadResponse,
@@ -45,6 +46,11 @@ export function exportErrorDetails(error: unknown): string | null {
   return `HBJSON export needs attention: ${lines.join("; ")}${suffix}`;
 }
 
+/**
+ * Distinct materials used by this assembly that need catalog review. Scoped to
+ * one assembly, so the banner must say so — the project-wide number comes from
+ * `countProjectMaterialDrift`.
+ */
 export function countAssemblyMaterialDrift(
   assembly: Assembly,
   driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>,
@@ -56,11 +62,17 @@ export function countAssemblyMaterialDrift(
       const materialId = segment.project_material_id;
       if (!materialId || materialIds.has(materialId)) continue;
       materialIds.add(materialId);
-      const item = driftByMaterialId.get(materialId);
-      if (item && item.state !== "in_sync") count += 1;
+      if (materialNeedsCatalogReview(driftByMaterialId.get(materialId))) count += 1;
     }
   }
   return count;
+}
+
+/** Every project material needing review — matches what "Review all" opens. */
+export function countProjectMaterialDrift(
+  driftByMaterialId: ReadonlyMap<string, ProjectMaterialDriftItem>,
+): number {
+  return [...driftByMaterialId.values()].filter(materialNeedsCatalogReview).length;
 }
 
 export function hasCatalogOriginMaterials(materials: ProjectMaterial[]): boolean {

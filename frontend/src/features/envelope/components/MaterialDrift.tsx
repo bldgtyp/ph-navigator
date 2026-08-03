@@ -15,6 +15,7 @@ import {
   useUnitPreference,
   type UnitFormatOptions,
 } from "../../../lib/units";
+import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import {
   parseOptionalNumber,
@@ -22,7 +23,7 @@ import {
   trimToNull,
 } from "../../catalogs/components/form-helpers";
 import { ModalUnitToggle } from "./ModalUnitToggle";
-import { MATERIAL_DRIFT_STATE_LABELS } from "../drift";
+import { materialCatalogActionHint } from "../drift";
 import type {
   EnvelopeCommand,
   ProjectMaterial,
@@ -50,14 +51,11 @@ const DRIFT_FIELD_LABELS: Record<ProjectMaterialDriftFieldKey, string> = {
 
 type DriftAction = ProjectMaterialRefreshChoice["action"];
 
-export function MaterialDriftBadge({ item }: { item: ProjectMaterialDriftItem | null }) {
-  if (!item || item.state === "in_sync") return null;
-  return (
-    <span className={`chip chip--sm material-drift-badge ${item.state}`}>
-      {MATERIAL_DRIFT_STATE_LABELS[item.state]}
-    </span>
-  );
-}
+const ACTION_LABELS: Record<DriftAction, string> = {
+  keep_mine: "Keep mine",
+  take_catalog: "Take catalog",
+  use_value: "Edit…",
+};
 
 export function MaterialDriftDialog({
   material,
@@ -121,87 +119,111 @@ export function MaterialDriftDialog({
   }
 
   const blocked = item.state === "source_deactivated" || item.state === "source_missing";
+  // The footer names how many values the current choices will actually write,
+  // so "Apply" never over-promises when the user keeps their own values.
+  const changeCount = fields.filter((field) => {
+    const action = actions[field.key];
+    if (action === "use_value") return true;
+    if (action === "take_catalog") return field.differs;
+    return false;
+  }).length;
+  const submitLabel =
+    changeCount === 0
+      ? "Apply refresh"
+      : `Apply ${changeCount} ${changeCount === 1 ? "change" : "changes"}`;
+
   return (
     <ModalDialog
-      title={`Refresh ${material.name}`}
+      title={`Catalog review — ${material.name}`}
       titleId="material-drift-dialog-title"
       onClose={onClose}
+      headerAccessory={<ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />}
     >
       <div className="modal-form">
-        <ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
         {blocked ? (
           <p className="form-error" role="alert">
-            Source catalog material is unavailable. Pick a new source or detach to custom.
+            {materialCatalogActionHint(item)} Pick a new catalog source for this material, or keep
+            it as a project-only material.
           </p>
         ) : fields.length === 0 ? (
-          <p>
-            This material has no field differences. Confirm to update the synced catalog version.
-          </p>
+          <p className="modal-lede">This material already matches the catalog.</p>
         ) : (
-          <div className="material-drift-fields">
-            {fields.map((field) => (
-              <fieldset key={field.key} className="material-drift-field">
-                <legend>
-                  {fieldLabel(field.key)}
-                  {field.is_overridden ? <span>Local override</span> : null}
-                </legend>
-                <dl>
-                  <div>
-                    <dt>Project</dt>
-                    <dd>{formatDriftValue(field.key, field.project_value, unitOptions)}</dd>
+          <>
+            <p className="modal-lede">
+              {materialCatalogActionHint(item)} Choose what to keep for each.
+            </p>
+            <div className="material-drift-fields">
+              {fields.map((field) => (
+                <section key={field.key} className="drift-field">
+                  <h3 className="drift-field__label">
+                    {fieldLabel(field.key)}
+                    {field.is_overridden ? (
+                      <span className="drift-field__override">Local override</span>
+                    ) : null}
+                  </h3>
+                  <div className="drift-field__compare">
+                    <span className="drift-value">
+                      <span className="drift-value__caption">Project</span>
+                      <span className="drift-value__value">
+                        {formatDriftValue(field.key, field.project_value, unitOptions)}
+                      </span>
+                    </span>
+                    <span className="drift-field__arrow" aria-hidden="true">
+                      →
+                    </span>
+                    <span className={`drift-value${field.differs ? " drift-value--incoming" : ""}`}>
+                      <span className="drift-value__caption">Catalog</span>
+                      <span className="drift-value__value">
+                        {formatDriftValue(field.key, field.catalog_value, unitOptions)}
+                      </span>
+                    </span>
                   </div>
-                  <div>
-                    <dt>Catalog</dt>
-                    <dd>{formatDriftValue(field.key, field.catalog_value, unitOptions)}</dd>
+                  <div
+                    className="drift-choice"
+                    role="radiogroup"
+                    aria-label={`${fieldLabel(field.key)} value to keep`}
+                  >
+                    {(["keep_mine", "take_catalog", "use_value"] as const).map((action) => (
+                      <label key={action} className="drift-choice__option">
+                        <input
+                          type="radio"
+                          name={`drift-${field.key}`}
+                          checked={actions[field.key] === action}
+                          onChange={() =>
+                            setActions((current) => ({ ...current, [field.key]: action }))
+                          }
+                        />
+                        <span>{ACTION_LABELS[action]}</span>
+                      </label>
+                    ))}
                   </div>
-                </dl>
-                {(["keep_mine", "take_catalog", "use_value"] as const).map((action) => (
-                  <label key={action} className="checkbox-row">
+                  {actions[field.key] === "use_value" ? (
                     <input
-                      type="radio"
-                      name={`drift-${field.key}`}
-                      checked={actions[field.key] === action}
-                      onChange={() =>
-                        setActions((current) => ({ ...current, [field.key]: action }))
-                      }
+                      className="drift-field__input"
+                      aria-label={`${fieldLabel(field.key)} value`}
+                      value={edits[field.key] ?? ""}
+                      onChange={(event) => {
+                        setParseError(null);
+                        setEdits((current) => ({
+                          ...current,
+                          [field.key]: event.currentTarget.value,
+                        }));
+                      }}
                     />
-                    {actionLabel(action)}
-                  </label>
-                ))}
-                {actions[field.key] === "use_value" ? (
-                  <input
-                    value={edits[field.key] ?? ""}
-                    onChange={(event) => {
-                      setParseError(null);
-                      setEdits((current) => ({
-                        ...current,
-                        [field.key]: event.currentTarget.value,
-                      }));
-                    }}
-                  />
-                ) : null}
-              </fieldset>
-            ))}
-          </div>
+                  ) : null}
+                </section>
+              ))}
+            </div>
+          </>
         )}
-        {parseError || error ? (
-          <p className="form-error" role="alert">
-            {parseError ?? error}
-          </p>
-        ) : null}
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={busy || blocked}
-            onClick={submit}
-          >
-            Apply refresh
-          </button>
-        </div>
+        <DialogActions
+          busy={busy}
+          error={parseError ?? error}
+          submitLabel={submitLabel}
+          submitDisabled={blocked || fields.length === 0}
+          onClose={onClose}
+          onConfirm={submit}
+        />
       </div>
     </ModalDialog>
   );
@@ -223,12 +245,6 @@ function defaultEdits(
       formatDriftValue(field.key, field.project_value, unitOptions),
     ]),
   );
-}
-
-function actionLabel(action: DriftAction): string {
-  if (action === "keep_mine") return "Keep project value";
-  if (action === "take_catalog") return "Take catalog value";
-  return "Edit value";
 }
 
 function fieldLabel(key: ProjectMaterialDriftFieldKey): string {

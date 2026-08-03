@@ -932,6 +932,14 @@
   color: var(--phn-danger);
 }
 
+/* One grid row inside `.envelope-body`, which is taller than this content and
+   would otherwise stretch the banner/chips/tables apart to fill it. */
+.materials-panel {
+  align-content: start;
+  display: grid;
+  gap: var(--space-12);
+}
+
 .materials-panel__sections {
   display: grid;
   gap: var(--space-18);
@@ -1118,12 +1126,6 @@
   justify-content: space-between;
 }
 
-.spec-expansion__header-actions {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--space-8);
-}
-
 .spec-expansion__use-sites {
   display: grid;
   gap: var(--space-10);
@@ -1165,10 +1167,12 @@
   display: grid;
 }
 
-/* Composes `.chip .chip--sm`; coloured material-drift indicator. */
+/* Composes `.chip .chip--sm`; coloured material-drift indicator. Amber is the
+   app's "needs attention" tone (same token the report tables use), not the
+   magenta highlight — drift is a work item, not a brand accent. */
 .material-drift-badge {
-  background: color-mix(in oklab, var(--phn-warning) 16%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--phn-warning) 45%, var(--border-subtle));
+  background: color-mix(in oklab, var(--report-status-missing) 16%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--report-status-missing) 50%, var(--border-subtle));
   color: var(--text-primary);
   font-weight: var(--fw-semibold);
 }
@@ -1182,35 +1186,6 @@
 .material-drift-badge.customized {
   background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
   border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
-}
-
-.material-drift-summary {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  display: grid;
-  gap: var(--space-8);
-  padding: var(--space-12);
-}
-
-.material-drift-summary header,
-.material-drift-summary li {
-  align-items: center;
-  display: flex;
-  gap: var(--space-10);
-  justify-content: space-between;
-}
-
-.material-drift-summary h2 {
-  font-size: var(--fs-lg);
-  margin: 0;
-}
-
-.material-drift-summary ul {
-  display: grid;
-  gap: var(--space-6);
-  list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 .spec-notes {
@@ -1273,41 +1248,170 @@
   padding: var(--space-8) var(--space-10);
 }
 
+/* Collapsed-row catalog flag in the Materials table. Small enough to sit
+   beside the name without shifting the row, loud enough to scan a column for. */
+.materials-panel__name {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.material-drift-flag {
+  align-items: center;
+  background: color-mix(in oklab, var(--report-status-missing) 18%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--report-status-missing) 55%, var(--border-subtle));
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  padding: var(--space-2);
+}
+
+.material-drift-flag--critical {
+  background: color-mix(in oklab, var(--phn-danger) 14%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--phn-danger) 50%, var(--border-subtle));
+}
+
+/* One element carries state + action, so it keeps the button shape but stays
+   compact enough to sit inline at the top of the expansion. */
+.material-drift-action {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-8);
+}
+
+/* --- Catalog review dialog ------------------------------------------------ */
+
 .material-drift-fields {
   display: grid;
   gap: var(--space-12);
 }
 
-.material-drift-field {
+.drift-field {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   display: grid;
-  gap: var(--space-8);
-  margin: 0;
-  padding: var(--space-10);
+  gap: var(--space-10);
+  padding: var(--space-12);
 }
 
-.material-drift-field legend {
+.drift-field__label {
+  align-items: baseline;
+  display: flex;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  gap: var(--space-8);
+  letter-spacing: var(--tracking-caps);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.drift-field__override {
+  color: var(--text-secondary);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-normal);
+  text-transform: none;
+}
+
+/* Project → Catalog, read left to right in the direction the value moves. */
+.drift-field__compare {
+  align-items: center;
+  display: grid;
+  gap: var(--space-10);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.drift-field__arrow {
+  color: var(--text-muted);
+}
+
+.drift-value {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.drift-value__caption {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.drift-value__value {
+  overflow-wrap: anywhere;
+}
+
+/* The incoming catalog value is the thing being decided about — emphasize it. */
+.drift-value--incoming .drift-value__value {
+  color: var(--accent-text);
   font-weight: var(--fw-semibold);
 }
 
-.material-drift-field legend span {
+/* Same visual family as `.modal-unit-toggle` (accent-tinted pill track, mono
+   caps labels, solid accent on the active option) — the two sit inches apart
+   in this dialog. It does not reuse that class because the unit toggle's
+   sliding indicator assumes two equal 26px cells, and these are three
+   text-width options. */
+.drift-choice {
+  align-items: center;
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  padding: var(--space-2);
+  width: fit-content;
+}
+
+.drift-choice__option {
+  cursor: pointer;
+  position: relative;
+}
+
+/* The radio stays in the a11y tree and keeps arrow-key radiogroup behavior;
+   the visible control is its sibling span. */
+.drift-choice__option input {
+  height: 100%;
+  inset: 0;
+  margin: 0;
+  min-height: auto;
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.drift-choice__option span {
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  margin-left: var(--space-8);
+  display: block;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
+  line-height: var(--lh-solid);
+  padding: var(--space-8) var(--space-12);
+  text-transform: uppercase;
+  transition: color var(--transition-fast) var(--ease);
 }
 
-.material-drift-field dl {
-  display: grid;
-  gap: var(--space-8);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0;
+.drift-choice__option:hover span {
+  color: var(--text-primary);
 }
 
-.material-drift-field dd {
-  margin: 0;
-  overflow-wrap: anywhere;
+.drift-choice__option input:checked + span {
+  background: var(--accent-dark);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 14%, transparent);
+  color: var(--text-on-accent);
+}
+
+.drift-choice__option input:focus-visible + span {
+  box-shadow: var(--phn-focus);
+}
+
+.drift-field__input {
+  justify-self: start;
+  min-width: 200px;
 }
 
 .project-material-editor {
@@ -1688,19 +1792,11 @@
 }
 
 .segment-dialog-section-heading,
-.segment-dialog-disclosure summary,
-.segment-section-header h3 {
+.segment-dialog-disclosure summary {
   font-size: var(--fs-md);
   font-weight: var(--fw-semibold);
   line-height: var(--lh-ui);
   margin: 0;
-}
-
-.segment-section-header {
-  align-items: center;
-  display: flex;
-  gap: var(--space-12);
-  justify-content: space-between;
 }
 
 .segment-geometry-grid {
@@ -1807,15 +1903,6 @@
 .material-picker-panel {
   display: grid;
   gap: var(--space-10);
-}
-
-.segment-properties-form .modal-actions {
-  margin-top: var(--space-2);
-  padding-top: var(--space-4);
-}
-
-.modal-danger-action {
-  justify-self: start;
 }
 
 @media (max-width: 780px) {

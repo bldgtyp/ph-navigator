@@ -1218,8 +1218,17 @@ describe("EnvelopePage", () => {
     expect(within(statusSelect).getByRole("option", { name: "N/A" })).toBeInTheDocument();
   });
 
-  test("catalog drift badges render in assemblies and materials tabs", async () => {
+  /**
+   * One catalog-origin material — `pmat_insul` / "Wood fiber board", used by
+   * WALL-C3 — whose conductivity the shared catalog has since changed.
+   * `override` lets a test answer extra endpoints (e.g. command POSTs) first.
+   */
+  function mockDriftedMaterialFetch(
+    override: (url: string) => Promise<Response> | null = () => null,
+  ): void {
     fetchMock.mockImplementation((url: string) => {
+      const overridden = override(url);
+      if (overridden) return overridden;
       if (url.includes("/envelope?")) {
         return Promise.resolve(
           jsonResponse({
@@ -1267,21 +1276,63 @@ describe("EnvelopePage", () => {
       }
       return defaultFetchImplementation(url);
     });
+  }
+
+  test("catalog drift surfaces in the assemblies banner and on the collapsed materials row", async () => {
+    mockDriftedMaterialFetch();
 
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
-    expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
+    // The headline count is project-wide (it is what "Review all" opens); the
+    // trailing clause is the assembly-scoped number.
+    expect(
+      await screen.findByText("1 material needs catalog review · 1 used in this assembly."),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole("link", { name: "Review all" }));
 
-    // Drift now surfaces inside the per-material expanded row, not as a
-    // top-of-page "Catalog review" band. Expand the drifted material and
-    // confirm the MaterialDriftBadge renders inside.
+    // The drifted material must be identifiable WITHOUT expanding it.
+    const driftedRow = (await screen.findByText("Wood fiber board")).closest("[role='row']")!;
+    expect(
+      within(driftedRow as HTMLElement).getByRole("img", { name: /Catalog drift/ }),
+    ).toBeInTheDocument();
+
+    // Expanding it offers one consolidated, count-bearing action.
+    await userEvent.click(
+      driftedRow.querySelector("button[aria-label='Expand row']") as HTMLElement,
+    );
+    expect(
+      await screen.findByRole("button", { name: "Review 1 catalog change" }),
+    ).toBeInTheDocument();
+  });
+
+  test("applying a catalog refresh closes the dialog instead of re-prompting", async () => {
+    mockDriftedMaterialFetch((url) =>
+      url.includes("/draft/envelope/commands")
+        ? Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-refresh" }))
+        : null,
+    );
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+
     await userEvent.click(
       (await screen.findByText("Wood fiber board"))
         .closest("[role='row']")!
         .querySelector("button[aria-label='Expand row']") as HTMLElement,
     );
-    expect(await screen.findAllByText("Catalog drift")).not.toHaveLength(0);
+    await userEvent.click(await screen.findByRole("button", { name: "Review 1 catalog change" }));
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Catalog review — Wood fiber board",
+    });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Apply 1 change" }));
+
+    // Applying is the end of the task — the old flow left the dialog open and
+    // re-rendered it as a "no differences, confirm?" dead end.
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Catalog review — Wood fiber board" }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   test("invalid assembly id redirects to the first sorted assembly", async () => {
