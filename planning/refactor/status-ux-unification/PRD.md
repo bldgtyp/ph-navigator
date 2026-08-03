@@ -123,9 +123,10 @@ own meaning but adopts the phrase `{n} need attention` in place of
   `Site Photos {d}/{t}`), and `{n} need attention` when n > 0. Each meter
   links to `/documentation?needs={axis}#{anchor}`.
 - Sections with zero records are hidden (matches Documentation).
-- Optional disclosure: expanding a section row reveals per-group meter rows
-  (same links, group anchors). No record rows, no statuses, no notes — those
-  live in Documentation.
+- Each section row is expandable to per-group meter rows (same three-meter
+  layout, deep links via group anchors; empty groups hidden) — accepted for
+  v1 per D-12. No record rows, no statuses, no notes — those live in
+  Documentation.
 - Data source: a counts-only rollup projection of the documentation summary
   (editors read draft, viewers read saved version — unchanged access rules).
   The 15 owning data hooks stay unmounted; no record-level payload ships to

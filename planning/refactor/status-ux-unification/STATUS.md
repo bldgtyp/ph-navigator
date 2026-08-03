@@ -27,6 +27,10 @@ Deep-link feasibility verified against source 2026-08-03: Documentation
 hash anchors already expand + scroll; axis filters are local state only, so
 the `?needs=` param is net-new (Phase 03).
 
+2026-08-03 follow-up review resolved the open items: chip strings accepted
+(D-11), per-group meter disclosure is in v1 (D-12); O-1 approach approved
+with the code check remaining the first Phase 01 action.
+
 ## Next step
 
 Pick up **Phase 01** (vocabulary/labels/tooltips/legend) on a feature
@@ -39,6 +43,19 @@ renaming the DataTable column header.
 None. Coordinate Phase 02's CSS alias retirement with
 `../spec-status-value-unification/` Phase 07 if that adapter cleanup is
 still open when Phase 02 starts.
+
+## Sequencing (Ed, 2026-08-03)
+
+- Run **serial** with `../shared-segmented-control/` (either order). The
+  packets are functionally disjoint — status selects/pills and filter chips
+  are explicitly out of the segmented-control scope — but both edit the
+  `context/DESIGN_SYSTEM.md` component inventory, so don't run them
+  concurrently.
+- `planning/features_v1.1/aperture-psi-install/` Phases 01/03 carry
+  `[conditional]` `status_summary.py` entries: they are skipped if this
+  packet's Phase 05 (retire `status_summary.py`) lands first. If psi-install
+  runs first instead, Phase 05's consumer sweep must pick up whatever it
+  added there. Re-check that packet's STATUS before starting Phase 05.
 
 ## Phase ledger
 

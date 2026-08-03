@@ -75,16 +75,20 @@ RELATED:
   section** — rejected for now; per-table groups are sufficient and the
   section meters make the split unnecessary.
 
+- **D-11 — Filter chip strings accepted** (Ed, 2026-08-03): `Needs spec` /
+  `Needs datasheet` / `Needs site photos`.
+
+- **D-12 — Overview section rows include the per-group meter disclosure in
+  v1** (Ed, 2026-08-03): expanding a section reveals per-group meter rows
+  with the same axis deep links (group anchors). Still counts-only — no
+  record rows on Overview.
+
 ## Open items (to resolve during implementation)
 
-- **O-1 — Where does the DataTable column header rename land?** If built-in
-  FieldDef `display_name` is code-derived at read time, change
-  `STATUS_DISPLAY_NAME` backend-side; if it is persisted into saved
-  documents, override at the frontend display layer instead and leave the
-  stored/API name alone. Verify in Phase 01; also check gh_api exports for
-  display-name coupling.
-- **O-2 — Exact chip strings** (`Needs spec` / `Needs datasheet` /
-  `Needs site photos`) are Claude's proposal; Ed may adjust wording at
-  Phase 01 review without re-planning.
-- **O-3 — Whether Overview section rows get the optional per-group meter
-  disclosure in v1** or ship sections-only first.
+- **O-1 — Where does the DataTable column header rename land?** Approach
+  approved (Ed, 2026-08-03); the code check remains the first Phase 01
+  action. If built-in FieldDef `display_name` is code-derived at read
+  time, change `STATUS_DISPLAY_NAME` backend-side; if it is persisted into
+  saved documents, override at the frontend display layer instead and
+  leave the stored/API name alone. Also check gh_api exports for
+  display-name coupling. Record the finding here.

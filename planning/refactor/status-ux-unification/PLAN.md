@@ -125,8 +125,8 @@ Frontend:
 - Replace `RecordStatusSummary` usage in `StatusTab.tsx` with the new
   meters pane (per PRD §4.1): section rows, three meters each, attention
   count, deep links `/documentation?needs={axis}#{anchor}`, hidden empty
-  sections, legend affordance, optional per-group disclosure (O-3 — decide
-  at pickup). New TanStack Query hook on the rollup endpoint; keep Roadmap
+  sections, legend affordance, and per-group meter disclosure (D-12).
+  New TanStack Query hook on the rollup endpoint; keep Roadmap
   and meters requests independent with separate skeleton/error states.
 - Session-storage keys for disclosure state: new keys; no migration needed.
 
