@@ -69,16 +69,19 @@ cd frontend
 node scripts/agent-browser.mjs /projects/<id>/apertures --out /tmp/a.png
 
 # Drive a flow, then shoot (clicks run in order; selectors are Playwright locators).
+# The fixture has a dirty draft, so every project tab opens the "Recovered draft
+# found" modal over the page — dismiss it first (it has no header "Close"; the
+# footer actions are the only dismiss, and Restore is the keep-it branch).
 # Sort is now a menu: open it, then pick Manual (there is no #...-sort-manual id):
 node scripts/agent-browser.mjs /projects/<id>/apertures \
-  --click "text=Close" --click "[aria-label='Aperture Types order']" --click "text=Manual" --out /tmp/manual.png
+  --click 'role=button[name="Restore draft"]' --click "[aria-label='Aperture Types order']" --click "text=Manual" --out /tmp/manual.png
 
 # Verify PERSISTENCE across reload: the app debounces saves ~500ms, so a run that
 # clicks-then-closes too fast never fires the PUT. Use --settle to wait it out,
 # then re-run clean and confirm the state stuck:
 node scripts/agent-browser.mjs /projects/<id>/apertures \
-  --click "text=Close" --click "[aria-label='Aperture Types order']" --click "text=Manual" --settle 1200 --out /tmp/set.png
-node scripts/agent-browser.mjs /projects/<id>/apertures --click "text=Close" --out /tmp/reload.png
+  --click 'role=button[name="Restore draft"]' --click "[aria-label='Aperture Types order']" --click "text=Manual" --settle 1200 --out /tmp/set.png
+node scripts/agent-browser.mjs /projects/<id>/apertures --click 'role=button[name="Restore draft"]' --out /tmp/reload.png
 
 # Public page, no sign-in; full-page shot; watch it live:
 node scripts/agent-browser.mjs /sign-in --no-signin --full --headed --out /tmp/signin.png
@@ -89,6 +92,17 @@ Or via make: `make agent-shot ROUTE=/projects/<id>/apertures OUT=/tmp/a.png ARGS
 Every run prints the final URL, the screenshot path, and any **page console
 errors** (so you can spot failed requests). Exit code is non-zero on failure,
 with a best-effort failure screenshot.
+
+### Many runs in a row: mind the login budget
+
+Every invocation signs in, and the public login route is rate limited
+(`Settings.login_rate_limit_per_account_per_minute`, 20/min per IP). Past that
+budget the sign-in silently returns 429 and the run dies on
+`page.waitForURL: Timeout` — which reads like a broken page, not a throttle.
+A dozen back-to-back runs is fine; a scripted loop over many routes is not.
+For loops, reuse one session: `font-audit.mjs --storage-state <path>` signs in
+on the first run and restores the cookie on the rest (see
+`font-audit-sweep.mjs`). `agent-browser.mjs` has no such flag yet.
 
 ### When the driver isn't enough
 

@@ -1,5 +1,5 @@
 {
-  "$comment": "Rendered typography contract enforced by scripts/font-audit-eval.mjs against the working/font-audit sweep; the state manifest lives in font-audit-states.mjs (shared with the sweep). Ceilings are ratchets pinned to the 2026-07-17 post-consolidation result (29 variants, from a 55-variant baseline) — lower them as further consolidation lands, never raise them to bless drift. The PRD's aspirational ceiling is 25; the gap to 29 is enumerated in planning/archive/dated/2026-07-17/typography-consolidation/STATUS.md. Role budgets count distinct site-wide variants participating in each inferred role (modal/ prefix stripped); 'button' includes every text node inside clickable cards/rows/pills, not just the shared button tiers.",
+  "$comment": "Rendered typography contract enforced by scripts/font-audit-eval.mjs against the working/font-audit sweep; the state manifest lives in font-audit-states.mjs (shared with the sweep). Ceilings are ratchets pinned to the 2026-07-17 post-consolidation result (29 variants, from a 55-variant baseline) — lower them as further consolidation lands, never raise them to bless drift. The PRD's aspirational ceiling is 25; the gap to 29 is enumerated in planning/archive/dated/2026-07-17/typography-consolidation/STATUS.md. Role budgets count distinct site-wide variants participating in each inferred role (modal/ prefix stripped); 'button' includes every text node inside clickable cards/rows/pills, not just the shared button tiers. A budget may only be raised when an EXISTING blessed variant reaches a new role and the site-wide count does not move — that is role reach, not drift. Only raise recorded so far: 'label' 4 -> 5 (2026-08-03) for ThermalStandardSelect's wrapping <label>.",
   "families": ["Geist", "Geist Mono"],
   "weights": ["400", "500", "600", "700"],
   "allowedTracking": ["normal", "0.05em"],
@@ -9,7 +9,7 @@
     "table-header": 4,
     "table-cell": 4,
     "button": 20,
-    "label": 4,
+    "label": 5,
     "input": 5
   }
 }
