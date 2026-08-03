@@ -378,8 +378,10 @@ Codes introduced by this feature:
 
 - **Public-readable project URLs ≠ public asset enumeration.**
   Anonymous viewers can resolve signed URLs only for assets that are
-  *currently referenced* by the version they are viewing. The backend
-  enforces this "referenced by" check before issuing a signed URL.
+  referenced by the project's active saved version. The separate project-
+  location allowance covers its weather asset. The backend evaluates the
+  attachment-field registry through `list_asset_references` /
+  `iter_rows_for_raw_tables` before issuing a signed URL.
 - **MCP** never anonymous: project- or user-scoped tokens require `asset:read`
   / `asset:write`; project access is re-checked through the issuing user and
   all calls are audit-logged.

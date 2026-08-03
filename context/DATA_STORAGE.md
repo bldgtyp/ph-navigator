@@ -296,6 +296,16 @@ projects/_orphaned/{project_id}/{asset_id}/{name}           # GC-quarantined
 equipment/thermal-bridge datasheet fields, …) to its allowed kinds, MIME types,
 per-cell `max_count`, and per-file size cap.
 
+Registered document tables can migrate from a bare row list to a
+`{field_defs, rows}` envelope when they gain FieldDefs. Any code that walks
+table rows must tolerate both shapes. `list_asset_references` delegates this
+normalization to `iter_rows_for_raw_tables`; reachability guards prove every
+registered attachment field yields rows in both forms. The remaining structural
+follow-up is tracked in
+`planning/refactor/attachment-reference-walker-unification/`: derive mappings
+for contract-backed tables, define explicit adapters for irregular tables, and
+consolidate the separate mutation row lookup.
+
 ### 4.4 Upload flow — direct-to-store, three steps
 
 1. **Upload intent** (`POST …/assets/upload-intent`) — validate kind/size/MIME,
@@ -310,9 +320,17 @@ per-cell `max_count`, and per-file size cap.
 
 `GET …/assets/{id}/url` mints signed GET URLs (preview ≈15 min, download ≈60
 min with a `Content-Disposition` attachment header) plus a thumbnail URL.
-Anonymous viewers can only resolve assets **referenced by the version they're
-viewing** (`_asset_is_referenced` / `project_location.epw_asset_id`); MCP needs
-`asset:read`.
+An anonymous viewer can resolve an asset only when an attachment column in the
+project's active saved version references it. The separate
+`project_location.epw_asset_id` allowance covers project weather/location
+assets. `list_asset_references` and `iter_rows_for_raw_tables` implement the
+document reference gate used by anonymous reads, orphan sweeping, write-time
+reference validation, and bulk download. Attach/detach share the field registry
+and use the same row walker for direct tables; nested assembly segments retain
+their dedicated row lookup. A missed registry entry or direct-table row shape
+can therefore hide a public file, incorrectly expose it to garbage collection,
+and break edit/download workflows—not merely omit a thumbnail. MCP access
+instead requires `asset:read`.
 
 ### 4.6 Delete, orphans, and the 90-day sweep
 

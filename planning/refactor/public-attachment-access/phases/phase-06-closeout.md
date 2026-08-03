@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 11:22 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Fold accepted decisions into context/, run the repo closeout gate, and
   record follow-ups.
@@ -30,13 +30,14 @@ explicit, stated policy:
 > A signed-out viewer may fetch an asset only if it is referenced by an
 > attachment column of the project's saved active document (plus the separate
 > location/weather allowance). The resolver is
-> `list_asset_references` / `iter_rows_for_raw_tables`, and it is also what the
-> orphan sweeper, write-time reference validation, bulk download, and
-> attach/detach use to decide whether an asset belongs to the project.
+> `list_asset_references` / `iter_rows_for_raw_tables`; anonymous reads, the
+> orphan sweeper, write-time reference validation, and bulk download consume
+> that gate. Attach/detach share the attachment-field registry and the direct-
+> table row walker, while nested assembly segments use a dedicated lookup.
 
-That last clause is the load-bearing part. The bug was survivable-looking
-because nobody documented that one resolver defines project membership for five
-subsystems at once.
+That coupling is the load-bearing part. The bug was survivable-looking because
+nobody documented that the attachment registry and row-shape authorities feed
+five workflows at once.
 
 **2. `context/DATA_STORAGE.md` or `backend/.instructions.md`** — state the
 invariant Phase 01 encodes in a comment: *tables migrate between a bare list and
@@ -68,21 +69,46 @@ Per the root `CLAUDE.md`, in order, waiting for each to finish:
 - If any decision was made that the packet did not anticipate — notably the
   PDF-only vs `DATASHEET_CONTENT_TYPES` call from Phase 00 — record it in a
   `decisions.md` in this folder.
-- When the work is deployed and verified, archive the packet per
-  `planning/.instructions.md` §5 and add a line to `planning/archive/README.md`.
+- Under the active `implement-loop`, archive the packet after the local scope is
+  implemented and the closeout gate is green. Here, archive means the planning
+  scope is complete; it does **not** claim production deployment or production
+  verification. Keep that external handoff explicit in `STATUS.md` and add the
+  required line to `planning/archive/README.md`.
 
 ## Follow-up to record, not to do
 
-**Derive the table→rows mapping from the table contract registry.**
+**Unify attachment reference and mutation row traversal.**
 `iter_rows_for_raw_tables` is a hand-written if-chain that must be kept in sync
-with the document schema by hand. Phase 01 makes it shape-tolerant and Phase 03
-guards it, but the structural fix is to stop hand-maintaining the mapping at all
-— build it from `backend/features/project_document/tables/registry.py`, the same
-source the document is built from. Deliberately out of scope for a bug fix.
+with document shape. Phase 01 makes it shape-tolerant and Phase 03 guards it,
+but registry derivation covers only contract-backed mappings. The structural
+follow-up must also add contracts or adapters for unregistered frame/glazing
+tables, preserve explicit flattening for the registered nested assembly path,
+and consolidate the separate mutation row lookup. Deliberately out of scope for
+this bug fix; it is recorded in
+`planning/refactor/attachment-reference-walker-unification/`.
 
-Record it where the team will find it when someone next touches that file — a
-brief note in `context/DATA_STORAGE.md` or a `planning/refactor/` stub, at the
-implementer's discretion. Do not open it as work in this packet.
+## Completion evidence
+
+- `context/DATA_STORAGE.md` documents the active-saved-version anonymous gate,
+  list/envelope row-shape invariant, actual reference/mutation coupling, and the
+  deferred traversal-unification pointer.
+- `context/technical-requirements/attachments.md` now agrees with that canonical
+  security boundary; `context/ui/pages/thermal-bridges.md` documents PDF Report
+  as a PDF-only saved-version-gated attachment.
+- `../decisions.md` records the Phase 00 evidence for keeping PDF Report
+  PDF-only. The separate
+  `planning/refactor/attachment-reference-walker-unification/` packet scopes
+  registry-backed mappings, irregular adapters, and mutation lookup without
+  implementing them here.
+- Three parallel `simplify` reviews and rechecks completed with no remaining
+  correctness, reuse, or efficiency findings.
+- The `docs-pass` found no additional ADR or lesson-log update was warranted;
+  every durable fact is recorded once in its established source of truth.
+- Ordered closeout: `make format` completed without code changes; full `make ci`
+  passed with backend `1830 passed, 7 skipped` and frontend `2389 passed`, plus
+  formatting, lint, types, boundaries, contract checks, and production build.
+- No deployment or production write was performed. Deployment remains Ed's
+  explicit action.
 
 ## Deploy
 

@@ -26,6 +26,10 @@ report tables use. There is no second-level sub-tab bar.
   a stable order. Columns include the thermal-bridge **type**
   (a single-select whose option list is editable in-grid), Ψ-value, and a
   **status** column following the §1.8 evidence/status grammar.
+- **PDF Report** is a PDF-only attachment column. Its files use the same active-
+  saved-version anonymous reference gate as datasheets and site photos; a
+  public viewer can preview or download only reports referenced by that saved
+  version.
 - Custom fields and single-select option edits are supported through the
   shared controller (`useSliceTableController`), so option renames/removals
   go through the same replace-table flow as other slice tables.

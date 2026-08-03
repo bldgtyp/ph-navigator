@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 11:03 EDT
-STATUS: Active — Phases 00-05 complete; Phase 06 next
+TIME: 11:22 EDT
+STATUS: Complete locally — Phases 00-06 green; production deploy pending Ed
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,9 +17,10 @@ RELATED:
 
 ## Current state
 
-**Phases 00-05 complete. The row walker reaches all 31 registered attachment
-fields, including `thermal_bridges.pdf_report_asset_ids`, and structural guards
-now prevent either defect from shipping silently again.**
+**Phases 00-06 are complete and green locally. The row walker reaches all 31
+registered attachment fields, including
+`thermal_bridges.pdf_report_asset_ids`; structural guards prevent either defect
+from shipping silently again; and the cross-subsystem contract is documented.**
 
 Two independent backend defects and two UI defects, all confirmed by executing
 code in `backend/.venv`, not by reading:
@@ -36,18 +37,22 @@ code in `backend/.venv`, not by reading:
 4. **False-normal unresolved attachments — fixed in Phase 05.** Pending URL
    resolution, settled missing assets, and resolved assets now render as three
    explicit states across editor and viewer surfaces.
+5. **Cross-subsystem attachment reachability — documented in Phase 06.** The
+   anonymous saved-version gate, list/envelope row-shape invariant, PDF Report
+   page behavior, and deferred walker-unification scope now have durable homes.
 
 Reachability matrix and method: [research.md](./research.md).
 
 Reproduced from Ed's screenshots against production `2524 - Linde Home`. Phase
-00 found no stored-data violations. Phases 01-02 are implemented and green in
-the local checkout; production behavior remains unchanged until Ed deploys the
-completed packet.
+00 found no stored-data violations. Phases 01-06 and every local closeout gate
+are green. Production behavior remains unchanged until Ed deploys the completed
+packet.
 
 ## Next step
 
-**[Phase 06](./phases/phase-06-durable-docs-and-handoff.md) — durable docs and
-handoff** before the completed packet is archived.
+Run the `implement-loop` final archive cleanup. After handoff, Ed may deploy via
+the **Deploy Production** GitHub Actions workflow and verify the Linde public
+viewer; no agent deployment is authorized.
 
 ## Blockers / decisions needed from Ed
 
@@ -204,6 +209,24 @@ remediation is required before Phase 01.
   passed`; formatting, lint, types, boundaries, contract checks, and production
   build passed.
 
+## Phase 06 verification
+
+- Durable sources now state the active-saved-version anonymous gate, the
+  list/envelope row-shape invariant, the registry/row-traversal coupling, and
+  PDF Report's PDF-only public-viewer behavior.
+- D-01 records the production-backed PDF-only decision. The deferred
+  `attachment-reference-walker-unification` refactor scopes contract-derived
+  mappings, irregular adapters, and mutation lookup consolidation without
+  widening access.
+- Three parallel `simplify` reviews and rechecks completed with no remaining
+  findings. The `docs-pass` required no additional ADR or lesson-log entry.
+- `make format` completed without code changes.
+- Full `make ci` green: backend `1830 passed, 7 skipped`; frontend `2389
+  passed`; formatting, lint, types, boundaries, contract checks, and production
+  build passed.
+- No deployment or production write occurred; production deployment remains
+  Ed's explicit action.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
@@ -279,3 +302,7 @@ Frontend:
 - **2026-08-03 11:03 EDT** — Phase 05 completed implementation, focused tests,
   signed-out unavailable/restored-PDF browser acceptance, three-way simplify
   rechecks, Graphify, docs-pass, and full `make ci`. Phase 06 next.
+- **2026-08-03 11:22 EDT** — Phase 06 completed durable documentation, D-01,
+  the walker-unification follow-up stub, three-way simplify rechecks,
+  docs-pass, `make format`, and full `make ci`. All local phases are complete;
+  deployment remains Ed's call.
