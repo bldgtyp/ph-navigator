@@ -82,7 +82,7 @@ def pump_payload() -> dict[str, Any]:
                     "volts": 120,
                     "horse_power": None,
                     "wattage": 45,
-                    "flow_gpm": 15.141647136,
+                    "flow_l_min": 15.141647136,
                     "runtime_khr_yr": 2.5,
                     "annual_energy_kwh": 112.5,
                     "internal_heat_gains_utilization_factor": 0.4,
@@ -171,7 +171,7 @@ def test_pumps_contract_exposes_field_registry() -> None:
 
 
 def test_pump_flow_field_uses_fixed_flow_rate_units() -> None:
-    flow_field = next(field for field in PUMPS_BUILT_IN_FIELD_DEFS if field.field_key == "flow_gpm")
+    flow_field = next(field for field in PUMPS_BUILT_IN_FIELD_DEFS if field.field_key == "flow_l_min")
 
     assert flow_field.display_name == "Flow"
     assert flow_field.config["units"] == {

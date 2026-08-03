@@ -332,9 +332,9 @@ const HEAT_PUMP_NUMBER_FIELDS = new Set([
   "seer",
   "nominal_tons",
   "fan_speed_cfm",
-  "cooling_btuh",
-  "heating_btuh_47f",
-  "heating_btuh_17f",
+  "cooling_cap_kw",
+  "heating_cap_kw_47f",
+  "heating_cap_kw_17f",
   "heating_cop",
 ]);
 

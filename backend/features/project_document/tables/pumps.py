@@ -3,7 +3,7 @@
 Pumps publishes a `TableFieldRegistry` for user-defined custom-field
 schema mutations through the generic project-document mutation path.
 Mutable-type built-in pump values (`tag`, `use`, `manufacturer`,
-`model`, `volts`, `horse_power`, `wattage`, `flow_gpm`,
+`model`, `volts`, `horse_power`, `wattage`, `flow_l_min`,
 `runtime_khr_yr`) live in `PumpRow.custom_values`. Locked-type built-ins
 (`device_type`, `phase`, `link`, `notes`) keep typed Pydantic columns.
 The `datasheet` attachment lives in `datasheet_asset_ids` (not in the
@@ -91,7 +91,7 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="horse_power", display_name="Horse Power", field_type=CustomFieldType.number),
     built_in_field_def(field_key="wattage", display_name="Wattage", field_type=CustomFieldType.number),
     built_in_field_def(
-        field_key="flow_gpm",
+        field_key="flow_l_min",
         display_name="Flow",
         field_type=CustomFieldType.number,
         config={

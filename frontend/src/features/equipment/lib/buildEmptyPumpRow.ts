@@ -43,7 +43,10 @@ export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
           customNumberValue(base, "horse_power"),
         ),
         wattage: readNumberDefault(fieldDefaults.wattage, customNumberValue(base, "wattage")),
-        flow_gpm: readNumberDefault(fieldDefaults.flow_gpm, customNumberValue(base, "flow_gpm")),
+        flow_l_min: readNumberDefault(
+          fieldDefaults.flow_l_min,
+          customNumberValue(base, "flow_l_min"),
+        ),
         runtime_khr_yr: readNumberDefault(
           fieldDefaults.runtime_khr_yr,
           customNumberValue(base, "runtime_khr_yr"),

@@ -21,9 +21,7 @@ from features.heat_pumps.models import (
     HeatPumpOutdoorEquipRow,
     HeatPumpsTableSlice,
 )
-
-# Conversion factor for storage (kW) → Phius calc (kBtu/h).
-KW_TO_KBTU_PER_H = 3.412141633
+from features.heat_pumps.units import KW_TO_KBTU_PER_H
 
 WarningField = Literal[
     "heating",

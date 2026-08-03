@@ -907,7 +907,7 @@ describe("equipment room helpers", () => {
   });
 
   test("pumps flow field carries fixed gpm and L/min units", () => {
-    const flowField = pumpsBuiltInFieldDefs.find((field) => field.field_key === "flow_gpm");
+    const flowField = pumpsBuiltInFieldDefs.find((field) => field.field_key === "flow_l_min");
 
     expect(flowField?.display_name).toBe("Flow");
     expect(flowField?.config.units).toEqual({
@@ -920,12 +920,9 @@ describe("equipment room helpers", () => {
     });
   });
 
-  test("pumps flow overlay renders legacy persisted field as unit-aware Flow", () => {
-    const legacyFieldDefs = pumpsBuiltInFieldDefs.map((field) =>
-      field.field_key === "flow_gpm" ? { ...field, display_name: "Flow - GPM", config: {} } : field,
-    );
-    const schema = schemaForPumps(buildPumpsSlice({ field_defs: legacyFieldDefs }));
-    const flowField = schema.fieldDefs.find((field) => field.field_key === "flow_gpm");
+  test("pumps flow overlay preserves backend-owned units metadata", () => {
+    const schema = schemaForPumps(buildPumpsSlice());
+    const flowField = schema.fieldDefs.find((field) => field.field_key === "flow_l_min");
 
     expect(flowField?.display_name).toBe("Flow");
     expect(flowField?.numberUnits).toEqual({

@@ -175,8 +175,9 @@ describe("HeatPumpsPanel", () => {
     expect(await screen.findByRole("button", { name: "Add indoor model" })).toBeInTheDocument();
     expect(screen.getByText("PLA-A18EA8")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Cooling Capacity kW/ })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /Heating Capacity kW/ })).toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: /47F/ })).toBeNull();
+    expect(
+      screen.getByRole("columnheader", { name: /Heating Capacity at 47F kW/ }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("5.28").length).toBeGreaterThan(0);
   });
 
@@ -296,7 +297,7 @@ describe("HeatPumpsPanel", () => {
       await screen.findByRole("columnheader", { name: /Cooling Capacity kBtu\/h/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: /Heating Capacity kBtu\/h/ }),
+      screen.getByRole("columnheader", { name: /Heating Capacity at 47F kBtu\/h/ }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("18.0").length).toBeGreaterThan(0);
   });

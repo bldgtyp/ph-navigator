@@ -96,9 +96,9 @@ class HeatPumpIndoorEquipRow(RowWithCustomFields):
     install_type: OptionId | None = None
     nominal_tons: NonNegativeFloat | None = None
     fan_speed_cfm: NonNegativeFloat | None = None
-    cooling_btuh: NonNegativeFloat | None = None
-    heating_btuh_47f: NonNegativeFloat | None = None
-    heating_btuh_17f: NonNegativeFloat | None = None
+    cooling_cap_kw: NonNegativeFloat | None = None
+    heating_cap_kw_47f: NonNegativeFloat | None = None
+    heating_cap_kw_17f: NonNegativeFloat | None = None
     heating_cop: PositiveFloat | None = None
     seer: NonNegativeFloat | None = None
     eer: NonNegativeFloat | None = None

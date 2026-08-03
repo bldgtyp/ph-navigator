@@ -27,5 +27,8 @@ in sync when you add a step.
 | 4 | — | `_upgrade_v3_to_v4`: adds the built-in Room→Ventilator linked-record field. |
 | 5 | — | `_upgrade_v4_to_v5`: adds the Heat Pump `name` ("Display Name") built-in and backfills it from the existing `tag`. |
 | 6 | — | `_upgrade_v5_to_v6`: adds Documentation evidence (photo) fields/waivers and renames the built-in `status` field to "Specification Status". |
+| 7 | 2026-07-19 | `_upgrade_v6_to_v7`: backfills persisted Documentation evidence statuses from attachment and waiver state. |
+| 8 | 2026-07-19 | `_upgrade_v7_to_v8`: renames typed specification status `missing` to `needed` in Materials, Glazings, and Frames. |
+| 9 | 2026-08-02 | `_upgrade_v8_to_v9`: makes heat-pump and pump unit-bearing keys truthful, converts legacy 17F Btu/h capacity to canonical kW, and refreshes fixed power/flow FieldDefs. |
 
 <!-- Backfill the missing dates from the plan/commit that landed each step when convenient; the code is authoritative in the meantime. -->

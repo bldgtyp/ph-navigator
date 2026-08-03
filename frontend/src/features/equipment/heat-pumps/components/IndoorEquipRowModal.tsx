@@ -66,9 +66,9 @@ export function IndoorEquipRowModal({
     }
     if (
       negativeNumber(draft.fan_speed_cfm) ||
-      negativeNumber(draft.cooling_btuh) ||
-      negativeNumber(draft.heating_btuh_47f) ||
-      negativeNumber(draft.heating_btuh_17f) ||
+      negativeNumber(draft.cooling_cap_kw) ||
+      negativeNumber(draft.heating_cap_kw_47f) ||
+      negativeNumber(draft.heating_cap_kw_17f) ||
       negativeNumber(draft.heating_cop) ||
       negativeNumber(draft.seer) ||
       negativeNumber(draft.eer) ||
@@ -172,20 +172,20 @@ export function IndoorEquipRowModal({
           />
           <NumberField
             label="Cooling capacity (kW)"
-            value={draft.cooling_btuh}
-            onChange={(cooling_btuh) => setDraft({ ...draft, cooling_btuh })}
+            value={draft.cooling_cap_kw}
+            onChange={(cooling_cap_kw) => setDraft({ ...draft, cooling_cap_kw })}
             disabled={readOnly}
           />
           <NumberField
-            label="Heating capacity (kW)"
-            value={draft.heating_btuh_47f}
-            onChange={(heating_btuh_47f) => setDraft({ ...draft, heating_btuh_47f })}
+            label="Heating capacity at 47F (kW)"
+            value={draft.heating_cap_kw_47f}
+            onChange={(heating_cap_kw_47f) => setDraft({ ...draft, heating_cap_kw_47f })}
             disabled={readOnly}
           />
           <NumberField
-            label="Heating Btu/h at 17F"
-            value={draft.heating_btuh_17f}
-            onChange={(heating_btuh_17f) => setDraft({ ...draft, heating_btuh_17f })}
+            label="Heating capacity at 17F (kW)"
+            value={draft.heating_cap_kw_17f}
+            onChange={(heating_cap_kw_17f) => setDraft({ ...draft, heating_cap_kw_17f })}
             disabled={readOnly}
           />
           <NumberField

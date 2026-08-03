@@ -150,7 +150,6 @@ export const HOT_WATER_TANK_ID_PREFIX = "hwt";
 export const ELECTRIC_HEATER_ID_PREFIX = "heatr";
 export const APPLIANCE_ID_PREFIX = "appl";
 
-const PUMP_FLOW_LEGACY_DISPLAY_NAME = "Flow - GPM";
 export const PUMP_FLOW_RATE_UNITS: NumberUnitsConfig = {
   mode: "fixed",
   unit_type: "flow_rate",
@@ -300,7 +299,7 @@ const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "volts",
   "horse_power",
   "wattage",
-  "flow_gpm",
+  "flow_l_min",
   "runtime_khr_yr",
   "annual_energy_kwh",
   "internal_heat_gains_utilization_factor",
@@ -484,7 +483,7 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("horse_power", "Horse Power", "number"),
   builtInFieldDef("wattage", "Wattage", "number"),
   {
-    ...builtInFieldDef("flow_gpm", "Flow", "number"),
+    ...builtInFieldDef("flow_l_min", "Flow", "number"),
     config: {
       units: PUMP_FLOW_RATE_UNITS,
     },
@@ -844,7 +843,6 @@ export function roomsTableColumnsForSanitize(
 }
 
 export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableFieldRenderOverlay> {
-  const flowField = pumpsTableFieldDefs(pumpsSlice).find((field) => field.field_key === "flow_gpm");
   return {
     record_id: {
       locked: ["display_name", "delete", "duplicate"],
@@ -882,12 +880,8 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
     wattage: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
-    flow_gpm: {
+    flow_l_min: {
       locked: DEFAULT_BUILT_IN_LOCKS,
-      numberUnits: PUMP_FLOW_RATE_UNITS,
-      ...(flowField?.display_name === PUMP_FLOW_LEGACY_DISPLAY_NAME
-        ? { display_name: "Flow" }
-        : {}),
     },
     runtime_khr_yr: {
       locked: DEFAULT_BUILT_IN_LOCKS,
@@ -1369,7 +1363,7 @@ export function emptyPump(): PumpRow {
       volts: null,
       horse_power: null,
       wattage: null,
-      flow_gpm: null,
+      flow_l_min: null,
       runtime_khr_yr: null,
     },
   };
@@ -3592,7 +3586,7 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
       volts: nonNegativeOrNull(customNumberValue(pump, "volts")),
       horse_power: nonNegativeOrNull(customNumberValue(pump, "horse_power")),
       wattage: nonNegativeOrNull(customNumberValue(pump, "wattage")),
-      flow_gpm: nonNegativeOrNull(customNumberValue(pump, "flow_gpm")),
+      flow_l_min: nonNegativeOrNull(customNumberValue(pump, "flow_l_min")),
       runtime_khr_yr: nonNegativeOrNull(customNumberValue(pump, "runtime_khr_yr")),
     },
     notes: pump.notes?.trim() || null,

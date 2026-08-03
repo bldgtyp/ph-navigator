@@ -5,6 +5,14 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-02
 
+- `units-field-naming` - Shipped project-document schema v9 so heat-pump
+  capacities and pump flow use truthful canonical-SI keys backed by backend
+  FieldDef units metadata. The v8→v9 migration preserves existing kW/l-min
+  magnitudes, converts legacy 17F Btu/h by the exact `3412.141633` factor, and
+  refreshes persisted built-ins. Frozen earlier inputs, a new v8 golden case,
+  Phius export, simplify/docs-pass, Graphify, full CI (backend 1,776 passed / 7
+  skipped; frontend 2,373 passed), and mounted SI/IP API/UI checks all passed;
+  no production project write was performed.
 - `licensed-data-pipeline` - Shipped the private-git to immutable-R2 licensed
   data pipeline, manifest-pinned runtime reads, audited fail-closed DB-seed
   applies, and Ed-dispatched Render production workflow. Production reconciled

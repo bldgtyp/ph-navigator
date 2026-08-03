@@ -65,9 +65,9 @@ export type HeatPumpIndoorEquipRow = {
   install_type: string | null;
   nominal_tons: number | null;
   fan_speed_cfm: number | null;
-  cooling_btuh: number | null;
-  heating_btuh_47f: number | null;
-  heating_btuh_17f: number | null;
+  cooling_cap_kw: number | null;
+  heating_cap_kw_47f: number | null;
+  heating_cap_kw_17f: number | null;
   heating_cop: number | null;
   seer: number | null;
   eer: number | null;

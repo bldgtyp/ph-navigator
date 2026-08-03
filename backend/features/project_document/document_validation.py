@@ -150,7 +150,7 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         rows=pumps,
         single_select_options=document.single_select_options,
         target_row_ids=target_row_ids,
-        non_negative_field_keys=frozenset({"volts", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"}),
+        non_negative_field_keys=frozenset({"volts", "horse_power", "wattage", "flow_l_min", "runtime_khr_yr"}),
     )
 
     fans = document.tables.equipment.fans.rows

@@ -170,7 +170,7 @@ def _pump_payload() -> dict[str, Any]:
                     "model": "0015e3",
                     "volts": 120,
                     "wattage": 45,
-                    "flow_gpm": 15.141647136,
+                    "flow_l_min": 15.141647136,
                     "runtime_khr_yr": 2.5,
                     "annual_energy_kwh": 113,
                     "internal_heat_gains_utilization_factor": 0.5,

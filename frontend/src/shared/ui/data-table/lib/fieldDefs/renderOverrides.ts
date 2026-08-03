@@ -30,5 +30,7 @@ function mergeFieldDefRenderOverride(schemaFieldDef: FieldDef, override: FieldDe
     built_in: override.built_in ?? schemaFieldDef.built_in,
     custom_field_type: override.custom_field_type ?? schemaFieldDef.custom_field_type,
     locked: override.locked ?? schemaFieldDef.locked,
+    // Persisted backend metadata is the units source of truth.
+    numberUnits: schemaFieldDef.numberUnits,
   };
 }
