@@ -257,6 +257,15 @@ hand-roll a backdrop, panel, or footer. The contract:
 - **Labels.** Cancel is literally "Cancel"; the primary is a specific verb
   (`Create material`, `Delete room`, `Save`); busy state swaps to an ellipsis
   form (`Saving…`).
+- **Body stack.** Wrap dialog content in `.modal-form`; it owns the vertical
+  rhythm (`--space-16` grid gap). Use `.modal-lede` for the summary line under
+  the title. A dialog with its own body class (`.segment-properties-form`,
+  `.envelope-import`, …) may override the gap, not re-invent the stack.
+- **Chrome separators.** `.modal-header` and `.modal-actions` carry a hairline
+  rule (and their own padding) by default, app-wide — a dialog does not opt in,
+  and feature CSS must not re-declare the border. Header accessories (a unit
+  toggle, a `⋯` menu) belong in `ModalDialog`'s `headerAccessory`, above the
+  rule — not loose at the top of the body.
 - **Box.** Shared `.modal-panel`. Oversized modals that scroll add
   `.modal-panel--resizable` for the lower-right resize grip.
 - **Backdrop-click.** OFF by default (forms can't lose input to a stray click);

@@ -62,8 +62,8 @@ The state machine has five terminal values. Computed by
 | State | When it fires |
 |-------|---------------|
 | `in_sync` | Catalog row exists and is active; every field matches; `local_overrides` is empty. The "nothing to do" state. |
-| `customized` | Catalog row exists and is active; every field matches catalog values; `local_overrides` is non-empty. Reached when an author edited a field then refreshed it back to the catalog value (the override flag persists). The UI treats this as "user intent recorded, no action needed today." |
-| `drifted` | Catalog row exists and is active; **at least one field differs** from the catalog. The "Catalog drift" review badge appears. Per-field `differs` and `is_overridden` distinguish "catalog moved" from "I moved" in the refresh dialog. |
+| `customized` | Catalog row exists and is active; every field matches catalog values; `local_overrides` is non-empty. Reached when an author edited a field then refreshed it back to the catalog value (the override flag persists). "User intent recorded, no action needed today" — it is **excluded from the needs-review count and carries no row flag**, but the review dialog stays reachable so the author can compare and reset. |
+| `drifted` | Catalog row exists and is active; **at least one field differs** from the catalog. Needs review: an amber row flag and a count-bearing "Review N catalog changes" action appear. Per-field `differs` and `is_overridden` distinguish "catalog moved" from "I moved" in the refresh dialog. |
 | `source_deactivated` | Catalog row exists but `is_active == false`. The catalog admin retired the row; the project can keep or detach but cannot `refresh_project_material_from_catalog`. |
 | `source_missing` | Catalog row was hard-deleted. The project material is now an orphan from the catalog's perspective; refresh is blocked. |
 
@@ -100,8 +100,28 @@ Fields not enumerated in `field_choices` are treated as `keep_mine`.
 HTTP 409 if the project material has no `catalog_origin`
 (`project_material_has_no_catalog_origin`), the catalog row is missing
 (`catalog_material_source_missing`), or the catalog row is deactivated
-(`catalog_material_source_deactivated`). The refresh dialog only opens
-for `drifted` rows; the other states are surfaced via static badges.
+(`catalog_material_source_deactivated`).
+
+## Front-end review contract
+
+- **Needs review** = `drifted` | `source_deactivated` | `source_missing`.
+  `customized` and `in_sync` are not review work. This split is
+  `materialNeedsCatalogReview` vs `materialHasCatalogAction` in
+  `frontend/src/features/envelope/drift.ts`; the counts and the row flag key
+  off the former, the review dialog off the latter.
+- The Assemblies banner counts **project-wide** materials needing review (it
+  links to the project-wide Materials tab) and names the assembly-scoped
+  subset in a trailing clause. Counting only the active assembly there made
+  the banner disagree with what "Review all" opened.
+- A row shows its state without being expanded (amber flag; red for the two
+  blocked states). Expanding offers exactly one action, whose label carries
+  the change count.
+- The dialog closes on a successful apply. Leaving it open re-rendered the
+  now-synced material as a "no differences — confirm?" prompt with no
+  meaningful choice.
+- For `source_deactivated` / `source_missing` the dialog opens read-only:
+  it explains the broken source and disables the primary, since the command
+  is rejected server-side anyway.
 
 ## See also
 

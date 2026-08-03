@@ -17,11 +17,10 @@
   margin-bottom: var(--space-16);
 }
 
+/* The divider is now the shared `.modal-header` default (styles/modals.css);
+   only the top-alignment of the tall title block is local. */
 #weather-picker .modal-header {
   align-items: flex-start;
-  margin-bottom: var(--space-18);
-  padding-bottom: var(--space-16);
-  border-bottom: 1px solid var(--border-subtle);
 }
 
 .climate-picker-content {

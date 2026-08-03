@@ -615,7 +615,7 @@ Consistent visual language for state across the app:
 | Evidence missing | Badge/icon + filterable status | Tables, Materials, Site Photos |
 | Evidence attached | Badge/icon + file count/preview | Datasheets, photos, HBJSON files |
 | N/A accepted | Muted badge/state | Spec/photo requirements |
-| Catalog/source drift | Refresh/drift badge | Materials, frames, glazings, catalog-linked rows |
+| Catalog/source drift | Amber ↻ flag on the collapsed row (red ⚠ when the source is retired/missing) + one consolidated "Review N catalog changes" action when expanded | Materials, frames, glazings, catalog-linked rows |
 
 ---
 

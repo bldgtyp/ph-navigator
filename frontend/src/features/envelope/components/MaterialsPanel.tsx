@@ -25,9 +25,13 @@ import {
   type StatusFilterOption,
   type StatusFilterValue,
 } from "../../../shared/ui/report-table";
-import { MaterialDriftBadge } from "./MaterialDrift";
+import {
+  MaterialCatalogAction,
+  MaterialDriftFlag,
+  MaterialReviewBanner,
+} from "./MaterialCatalogStatus";
 import { ProjectMaterialEditorModal } from "./ProjectMaterialEditorModal";
-import { materialNeedsCatalogReview } from "../drift";
+import { materialHasCatalogAction, materialNeedsCatalogReview } from "../drift";
 import { sortProjectMaterials, viewerVisibleMaterials } from "../lib";
 import type {
   EnvelopeAttachmentChange,
@@ -78,6 +82,7 @@ export function MaterialsPanel({
   const [editingSiteKey, setEditingSiteKey] = useState<string | null>(null);
   const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue<ReportStatusKey>>("all");
+  const [reviewOnly, setReviewOnly] = useState(false);
 
   const visibleMaterials = useMemo(() => {
     const filtered = isViewer ? viewerVisibleMaterials(materials) : materials;
@@ -95,10 +100,24 @@ export function MaterialsPanel({
     return counts;
   }, [visibleMaterials]);
 
+  const reviewCount = useMemo(
+    () =>
+      visibleMaterials.filter((m) => materialNeedsCatalogReview(driftByMaterialId.get(m.id)))
+        .length,
+    [driftByMaterialId, visibleMaterials],
+  );
+
+  // Refreshing the last drifted material empties the review filter; drop back
+  // to the full list rather than leaving the user staring at an empty table.
+  const reviewFilterActive = reviewOnly && reviewCount > 0;
+
   const filteredMaterials = useMemo(() => {
-    if (statusFilter === "all") return visibleMaterials;
-    return visibleMaterials.filter((m) => m.specification_status === statusFilter);
-  }, [statusFilter, visibleMaterials]);
+    const byReview = reviewFilterActive
+      ? visibleMaterials.filter((m) => materialNeedsCatalogReview(driftByMaterialId.get(m.id)))
+      : visibleMaterials;
+    if (statusFilter === "all") return byReview;
+    return byReview.filter((m) => m.specification_status === statusFilter);
+  }, [driftByMaterialId, reviewFilterActive, statusFilter, visibleMaterials]);
   const { activeMaterials, backgroundMaterials, unusedMaterials } = useMemo(() => {
     const active: ProjectMaterial[] = [];
     const background: ProjectMaterial[] = [];
@@ -149,7 +168,12 @@ export function MaterialsPanel({
       header: "Material",
       primary: true,
       width: "minmax(180px, 2fr)",
-      render: (m) => <span title={m.name}>{m.name}</span>,
+      render: (m) => (
+        <span className="materials-panel__name" title={m.name}>
+          {m.name}
+          <MaterialDriftFlag item={driftByMaterialId.get(m.id) ?? null} />
+        </span>
+      ),
     },
     {
       key: "category",
@@ -302,23 +326,16 @@ export function MaterialsPanel({
         const useSiteGroups = groupMaterialUseSites(material.use_sites);
         return (
           <div className="spec-expansion">
-            <header className="spec-expansion__header">
-              <div>
-                <MaterialDriftBadge item={driftItem} />
-              </div>
-              <div className="spec-expansion__header-actions">
-                {canEdit && materialNeedsCatalogReview(driftItem) ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={busy}
-                    onClick={() => onRefreshMaterial(material.id)}
-                  >
-                    Refresh from catalog
-                  </button>
-                ) : null}
-              </div>
-            </header>
+            {materialHasCatalogAction(driftItem) ? (
+              <header className="spec-expansion__header">
+                <MaterialCatalogAction
+                  item={driftItem}
+                  canEdit={canEdit}
+                  busy={busy}
+                  onReview={() => onRefreshMaterial(material.id)}
+                />
+              </header>
+            ) : null}
             <div className="spec-expansion__columns">
               <div className="spec-expansion__left">
                 <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
@@ -403,7 +420,12 @@ export function MaterialsPanel({
   );
 
   return (
-    <>
+    <div className="materials-panel">
+      <MaterialReviewBanner
+        count={reviewCount}
+        filtered={reviewFilterActive}
+        onToggleFilter={() => setReviewOnly((current) => !current)}
+      />
       <StatusFilterChips
         options={filterOptions}
         value={statusFilter}
@@ -459,7 +481,7 @@ export function MaterialsPanel({
           onCommand={onCommand}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 

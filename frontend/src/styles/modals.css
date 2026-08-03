@@ -35,6 +35,36 @@
   gap: var(--space-10);
 }
 
+/* Modal body stack. `.modal-form` is the wrapper every `ModalDialog` puts its
+   content in, but it had no rule at all — so field groups, help copy, and the
+   footer collapsed against each other in every dialog that used it. Mirrors
+   the `.project-form` stack in base.css; dialogs with their own body class
+   (`.segment-properties-form`, `.envelope-import`, …) still override the gap. */
+.modal-form {
+  display: grid;
+  gap: var(--space-16);
+}
+
+/* Help/summary copy directly under the header ("Catalog has 2 changes…"). */
+.modal-lede {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+/* Header and footer are chrome: rule them off from the body so a dense form
+   does not read as one undifferentiated block of text. */
+.modal-header {
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-16);
+  padding-bottom: var(--space-12);
+}
+
+.modal-actions {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-16);
+}
+
 .modal-header h2 {
   margin: 0;
   font-size: var(--fs-lg);

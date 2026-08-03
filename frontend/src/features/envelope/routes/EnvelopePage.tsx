@@ -63,9 +63,11 @@ import type {
 import {
   confirmDraftExport,
   countAssemblyMaterialDrift,
+  countProjectMaterialDrift,
   exportErrorDetails,
   hasCatalogOriginMaterials,
 } from "./page-helpers";
+import { materialHasCatalogAction, materialReviewBannerLabel } from "../drift";
 
 export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const location = useLocation();
@@ -158,6 +160,10 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       ),
     [materialDriftQuery.data?.materials],
   );
+  // Two numbers, because the banner links to the project-wide Materials tab:
+  // the headline counts everything "Review all" will show, and the trailing
+  // clause says how much of it is in the assembly currently on screen.
+  const projectDriftCount = countProjectMaterialDrift(driftByMaterialId);
   const activeAssemblyDriftCount = activeAssembly
     ? countAssemblyMaterialDrift(activeAssembly, driftByMaterialId)
     : 0;
@@ -388,10 +394,15 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             {phpp.error}
           </p>
         ) : null}
-        {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
+        {projectDriftCount > 0 && isAssembliesRoute ? (
           <div className="envelope-command-banner" role="status">
-            {activeAssemblyDriftCount} material{" "}
-            {activeAssemblyDriftCount === 1 ? "copy needs" : "copies need"} catalog review.
+            <span>
+              {materialReviewBannerLabel(projectDriftCount)}
+              {activeAssemblyDriftCount > 0
+                ? ` · ${activeAssemblyDriftCount} used in this assembly`
+                : ""}
+              .
+            </span>
             <NavLink
               className="text-button"
               to={{ pathname: envelopeMaterialsPath(project.id), search: location.search }}
@@ -579,14 +590,21 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           }}
         />
       ) : null}
-      {refreshMaterial && refreshDriftItem ? (
+      {refreshMaterial && materialHasCatalogAction(refreshDriftItem) ? (
         <MaterialDriftDialog
           material={refreshMaterial}
           item={refreshDriftItem}
           busy={commandMutation.isPending}
           error={commandError}
           onClose={closeRefresh}
-          onCommand={(command) => void applyCommand(command)}
+          // Applying is the end of the task: close on success. Leaving it open
+          // re-rendered the now-in-sync material as a "no differences, confirm?"
+          // prompt — a dead end the user had to cancel out of.
+          onCommand={(command) => {
+            void applyCommand(command).then((applied) => {
+              if (applied) closeRefresh();
+            });
+          }}
         />
       ) : null}
       {importer.plan ? (

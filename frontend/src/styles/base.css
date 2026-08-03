@@ -301,7 +301,9 @@ a:focus-visible {
   color: var(--accent-text);
 }
 
-.project-form .checkbox-row {
+/* Checkbox/radio + label row. Owned globally (not scoped to `.project-form`)
+   so the same control reads the same inside a modal as on a settings page. */
+.checkbox-row {
   display: flex;
   align-items: center;
   gap: var(--space-8);
@@ -310,7 +312,7 @@ a:focus-visible {
   text-transform: none;
 }
 
-.project-form .checkbox-row input {
+.checkbox-row input {
   min-height: auto;
   accent-color: var(--accent);
 }

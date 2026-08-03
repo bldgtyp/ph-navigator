@@ -436,19 +436,24 @@ state; they should be stable, visible, and tied to the flip actions.
 
 **Drift summary banner (US-ENV-11):**
 
-When any segment in the active assembly has drifted from the
-catalog (its `material.catalog_origin.catalog_version_id !=
-catalog_materials.current_version_id`), a small banner appears
-above the canvas:
+When any project material needs catalog review, a small banner appears
+above the canvas. The headline count is **project-wide** — it has to match
+what "Review all" opens — and the assembly currently on screen is a
+trailing clause:
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  ↻ 3 segments drifted from catalog       [ Review all → ]    │
+│  3 materials need catalog review · 1 used in this assembly.   │
+│                                          [ Review all → ]     │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-Click "Review all" → opens the project-wide drift report
-(reachable also from project header `⋯ → Catalog drift report`).
+"Needs review" is `drifted` / `source_deactivated` / `source_missing` only;
+a deliberately `customized` material never appears in this count. See
+`context/technical-requirements/envelope-catalog-drift.md`.
+
+Click "Review all" → the Materials sub-tab, where the same banner offers
+"Show only these" as a filter instead of a navigation.
 
 ## 2.7.3 Materials sub-tab (`/envelope/materials`)
 
@@ -528,8 +533,8 @@ them explicitly.
 
 | Region | Content |
 |---|---|
-| **Header** | Bold material name (clickable → inline rename). Right side: 📚 Library badge when from catalog; ↻ refresh badge when drifted (click → refresh-from-catalog dialog). Sub-line: category + product data (resistivity in IP, conductivity in SI; respects active unit system). |
-| **QA bar** | Specification-status `<Select>` (states follow §1.8). `[+ Notes]` opens an inline notes editor. `⋯` overflow: "Edit material values…" (affects all uses), "Refresh from catalog…", "Delete material" (only enabled when no segments reference it). |
+| **Header** | Bold material name (clickable → inline rename). An amber ↻ flag sits next to the name **while the row is collapsed** whenever the material needs catalog review (red ⚠ for a retired/missing source), with the reason in its tooltip — drift must be scannable down the column without opening every row. Sub-line: category + product data (resistivity in IP, conductivity in SI; respects active unit system). |
+| **QA bar** | Specification-status `<Select>` (states follow §1.8). `[+ Notes]` opens an inline notes editor. `⋯` overflow: "Edit material values…" (affects all uses), "Delete material" (only enabled when no segments reference it). Catalog review is **one consolidated primary button** at the top of the expansion carrying its own count ("Review 2 catalog changes") — state and action in a single element, not a badge on one side and an outline button on the other. |
 | **Datasheets** | Drag-and-drop zone for one or more datasheets (PDFs / images). Missing state follows the evidence/status grammar in §1.8; disabled when status = N/A. **One zone per material**, not per use (V2 cleanup vs V1's per-segment redundancy). |
 | **"Used in N segments"** | Assembly-level sub-rows grouped by material + assembly. Each row shows the assembly path plus a compact segment summary (`layer N, segments 1, 3, 5`) and one site-photo drag-and-drop zone for that material in that assembly. Existing segment-level photo refs are still reconciled through the same asset attachment flow. |
 
