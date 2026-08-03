@@ -13,15 +13,16 @@ RELATED:
 
 ## Current state
 
-`Active`. Migration step 1 is complete: the generic native-radio
+`Active`. Migration steps 1-2 are complete: the generic native-radio
 `SegmentedControl<T>` exists in `shared/ui`, and `MaterialDriftDialog` consumes
-it with its feature CSS removed. The reuse review found and inventoried a
-fifth implementation in `StatusItemModal`.
+it with its feature CSS removed. `ModalUnitToggle` now delegates to the same
+primitive, and its duplicated CSS is gone. The reuse review found and
+inventoried a fifth implementation in `StatusItemModal`.
 
 ## Next step
 
-Execute migration step 2: move `ModalUnitToggle` onto the shared primitive and
-delete `.modal-unit-toggle` styling.
+Execute migration step 3: move `TopbarUnitToggle` onto the shared primitive,
+then run the rendered typography sweep because it appears on every page.
 
 ## Blockers
 
@@ -62,3 +63,10 @@ pixel change":
   baseline screenshot was saved at
   `/tmp/shared-segmented-control-before-topbar.png`; the seeded fixture has no
   project materials, so it could not expose the drift dialog for a baseline.
+- **2026-08-03** — Step 2 complete. `ModalUnitToggle` now delegates to the
+  shared primitive with its existing ids and accessible labels preserved;
+  deleted the `.modal-unit-toggle` selector family. Focused tests, `tsc -b`,
+  and `pnpm run check:all` passed. The mounted Segment Properties dialog kept
+  the same 56×30 geometry, selected SI state, and visual appearance; screenshots:
+  `/tmp/shared-segmented-control-before-modal-unit.png` and
+  `/tmp/shared-segmented-control-after-modal-unit.png`.

@@ -1,4 +1,5 @@
 import type { UnitSystem } from "../../../lib/units";
+import { SegmentedControl } from "../../../shared/ui/SegmentedControl";
 
 const UNIT_OPTIONS: UnitSystem[] = ["IP", "SI"];
 
@@ -12,21 +13,19 @@ export function ModalUnitToggle({
   setUnitSystem: (next: UnitSystem) => void;
 }) {
   return (
-    <div id={id} className="modal-unit-toggle" role="radiogroup" aria-label="Display units">
-      {UNIT_OPTIONS.map((option) => (
-        <button
-          key={option}
-          id={id ? `${id}-${option.toLowerCase()}` : undefined}
-          type="button"
-          role="radio"
-          aria-label={`Set display units to ${option}`}
-          aria-checked={unitSystem === option}
-          className={unitSystem === option ? "active" : ""}
-          onClick={() => setUnitSystem(option)}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      id={id}
+      value={unitSystem}
+      onChange={setUnitSystem}
+      ariaLabel="Display units"
+      options={UNIT_OPTIONS.map((option) => ({
+        value: option,
+        label: option,
+        ariaLabel: `Set display units to ${option}`,
+        id: id ? `${id}-${option.toLowerCase()}` : undefined,
+      }))}
+      size="xs"
+      equalWidth
+    />
   );
 }
