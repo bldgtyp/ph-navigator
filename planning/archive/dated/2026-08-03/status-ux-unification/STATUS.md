@@ -92,7 +92,7 @@ still open when Phase 02 starts.
 
 ## Sequencing (Ed, 2026-08-03)
 
-- Run **serial** with `planning/refactor/shared-segmented-control/` (either order). The
+- Run **serial** with `planning/archive/dated/2026-08-03/shared-segmented-control/` (either order). The
   packets are functionally disjoint — status selects/pills and filter chips
   are explicitly out of the segmented-control scope — but both edit the
   `context/DESIGN_SYSTEM.md` component inventory, so don't run them

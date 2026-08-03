@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: Deferred — scoped, not started
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Replace five divergent segmented-toggle implementations with one
   blessed `SegmentedControl` primitive in `shared/ui`, and add it to the
@@ -9,14 +9,21 @@ SCOPE: Replace five divergent segmented-toggle implementations with one
 RELATED:
   - ./PRD.md
   - ./STATUS.md
-  - ../../../context/DESIGN_SYSTEM.md
-  - ../../../frontend/src/styles/README.md
+  - ../../../../../context/DESIGN_SYSTEM.md
+  - ../../../../../frontend/src/styles/README.md
 ---
 
 # Shared segmented control
 
 Planning router for extracting one segmented-control primitive from the five
 that exist today.
+
+## Completion result
+
+Completed and archived 2026-08-03. `SegmentedControl<T>` now owns compact and
+content-scale inline single-selects through native radio semantics. The two
+remaining `.pill-tab` consumers are true tablists and intentionally stay
+separate.
 
 ## Why this exists
 

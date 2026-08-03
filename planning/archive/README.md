@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-03
 
+- `shared-segmented-control` - Replaced five bespoke inline single-selects with
+  generic native-radio `SegmentedControl<T>` compact/content variants while
+  preserving true tablists as `.pill-tab`. Added focused primitive and consumer
+  tests, design-system/CSS ownership, mounted geometry and interaction checks,
+  rendered typography verification (22/22 states, 28/29 variants), Graphify,
+  three-way simplify reviews per phase, docs-pass, and green full CI (backend
+  1,822 passed / 7 skipped; frontend 2,396 passed).
 - `status-ux-unification` - Unified status vocabulary and controls across
   Documentation, DataTables, report panes, and Aperture editors; added
   URL-addressable Documentation evidence filters; replaced the Status record

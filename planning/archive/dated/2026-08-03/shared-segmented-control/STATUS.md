@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: In review
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: State ledger for the shared segmented-control extraction.
 RELATED:
@@ -13,18 +13,19 @@ RELATED:
 
 ## Current state
 
-`In review`. All five migration/design-system steps are complete: the generic native-radio
-`SegmentedControl<T>` exists in `shared/ui`, and `MaterialDriftDialog` consumes
-it with its feature CSS removed. `ModalUnitToggle` now delegates to the same
-primitive, and its duplicated CSS is gone. The reuse review found and
-inventoried a fifth implementation in `StatusItemModal`. Both compact unit
-toggles and both content-scale single-select groups now use the shared
-primitive. True tablist consumers remain separate.
+`Complete`. All five migration/design-system steps are complete: the generic
+native-radio `SegmentedControl<T>` exists in `shared/ui`, and
+`MaterialDriftDialog` consumes it with its feature CSS removed.
+`ModalUnitToggle` now delegates to the same primitive, and its duplicated CSS
+is gone. The reuse review found and inventoried a fifth implementation in
+`StatusItemModal`. Both compact unit toggles and both content-scale
+single-select groups now use the shared primitive. True tablist consumers
+remain separate.
 
 ## Next step
 
-Run the implement-loop final completion cleanup: mark the packet complete,
-archive it, update planning indexes, and verify no stale active links remain.
+None. The packet is archived; Aperture catalog-drift work can consume the
+shared primitive without another implementation.
 
 ## Blockers
 
@@ -103,3 +104,6 @@ pixel change":
   / 7 skipped; frontend 2,396 passed; production build and all static gates
   passed. `graphify update .` completed. Final grep leaves `.pill-tab` only in
   `CondensationRiskModal` and `SegmentMaterialPicker`, both true tablists.
+- **2026-08-03** — Final completion cleanup. Packet marked complete and moved
+  to `planning/archive/dated/2026-08-03/shared-segmented-control/`; planning
+  indexes and dependent packet links updated. No deferred implementation work.

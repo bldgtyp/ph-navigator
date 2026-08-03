@@ -1,14 +1,14 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: Deferred — scoped, not started
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Contract for a shared `SegmentedControl` primitive and the migration of
   the five existing implementations onto it.
 RELATED:
   - ./README.md
   - ./STATUS.md
-  - ../../../context/DESIGN_SYSTEM.md
+  - ../../../../../context/DESIGN_SYSTEM.md
 ---
 
 # PRD — Shared segmented control
@@ -97,7 +97,7 @@ Ordered so each step is independently shippable and verifiable:
    `frontend/src/styles/README.md`. Until this step lands, the refactor has not
    actually prevented a sixth implementation.
 
-## Open questions
+## Resolved questions
 
 - **Q1.** Does `.pill-tab` belong to this primitive? It is content-scale and
   some usages are true tabs (`role="tablist"` in `CondensationRiskModal`).
@@ -129,3 +129,19 @@ Ordered so each step is independently shippable and verifiable:
 - `make ci` green, including `check:typography` and the rendered sweep.
 - Screenshots of the topbar toggle, a modal unit toggle, and the drift dialog
   before/after, showing no unintended visual change.
+
+## Completion evidence — 2026-08-03
+
+- `SegmentedControl<T>` is the only segmented single-select implementation;
+  all compact and content-group consumers migrated. True tablists remain on
+  `.pill-tab` by design.
+- `make ci`: backend 1,822 passed / 7 skipped; frontend 2,396 passed; production
+  build and all static guards passed.
+- `make typography-eval`: 22/22 states, 28/29 site-wide variants, all role
+  budgets passed.
+- Mounted browser checks preserved the topbar at 70×38 and modal toggle at
+  56×30, verified native selection in the status modal, and confirmed the
+  Material Source control remains a true tablist.
+- The seeded fixture had no drifted material or climate-backed condensation
+  profile; those two consumers were covered by focused component tests rather
+  than live-route screenshots. This is the only verification limitation.

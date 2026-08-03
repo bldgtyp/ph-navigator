@@ -79,8 +79,8 @@ these before designing anything new:
   flag can say "this product needs review" and let the dialog do the detail —
   confirm that reads correctly with real project data.
 - **Q3.** Does the shared segmented control land first (see
-  `planning/refactor/shared-segmented-control/`)? If so, sequence that first
-  and consume it here rather than copying `.drift-choice`.
+  `planning/archive/dated/2026-08-03/shared-segmented-control/`)? It has landed;
+  consume it here rather than copying `.drift-choice`.
 
 ## Done means
 
