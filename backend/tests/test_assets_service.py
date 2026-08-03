@@ -714,6 +714,31 @@ def test_attach_and_detach_find_rows_in_envelope_tables(
     assert detach.json()["asset_ids"] == []
 
 
+def test_attach_preserves_document_row_not_found_error(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    asset_id = "asset_attach_missing_row"
+    insert_project_asset(project_id=project_id, asset_id=asset_id)
+    current = client.get(_draft_pumps_url(project_id, version_id)).json()
+
+    response = client.post(
+        _asset_url(project_id, asset_id, "/attach"),
+        headers={"Origin": ORIGIN},
+        json={
+            "version_id": version_id,
+            "table_key": "pumps",
+            "row_id": "pmp_missing",
+            "field_key": "datasheet_asset_ids",
+            "if_match_version": current["version_etag"],
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "document_row_not_found"
+
+
 def test_complete_upload_marks_magic_mismatch_failed(clean_document_tables: None) -> None:
     fake_r2 = FakeR2Client()
     _install_fake_asset_service(fake_r2)

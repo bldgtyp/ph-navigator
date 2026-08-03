@@ -30,8 +30,8 @@ RELATED:
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 01 | Contract-derived adapter authority and irregular adapters | Complete |
-| 02 | Shared mutation row lookup and duplicate-code removal | Next |
-| 03 | Full verification, stable docs, and archive closeout | Pending |
+| 02 | Shared mutation row lookup and duplicate-code removal | Complete |
+| 03 | Full verification, stable docs, and archive closeout | Next |
 
 ## Required verification
 

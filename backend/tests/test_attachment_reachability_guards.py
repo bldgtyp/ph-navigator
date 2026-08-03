@@ -15,10 +15,13 @@ from pydantic import BaseModel
 from features.assets.registry import (
     ATTACHMENT_FIELDS,
     AttachmentFieldConfig,
-    iter_rows_for_raw_tables,
     list_asset_references,
 )
-from features.assets.table_adapters import get_attachment_table_adapter
+from features.assets.table_adapters import (
+    find_attachment_row,
+    get_attachment_table_adapter,
+    iter_attachment_rows,
+)
 from features.project_document import envelope_models, rows
 from features.project_document.document import ProjectDocumentTables
 from features.project_document.envelope_models import AssemblySegment, ProjectFrame, ProjectGlazing
@@ -189,7 +192,7 @@ def test_every_registered_attachment_field_is_reachable() -> None:
         }
         _replace_rows_at_contract_path(tables, table_key, _real_row_shape(tables, table_key, row))
 
-        rows_walked = iter_rows_for_raw_tables(tables, table_key)
+        rows_walked = iter_attachment_rows(tables, table_key)
         references = list_asset_references(cast(Any, _RawDocument(tables)))
 
         for field in fields:
@@ -211,6 +214,19 @@ def test_attachment_row_walker_tolerates_bare_lists_and_envelopes(table_key: str
 
     _replace_rows_at_contract_path(tables, table_key, rows_value)
 
-    walked = iter_rows_for_raw_tables(tables, table_key)
+    walked = iter_attachment_rows(tables, table_key)
     assert len(walked) == 1
     assert walked[0]["id"] == row["id"]
+
+
+@pytest.mark.parametrize("table_key", ["pumps", "project_frames", "assembly_segments"])
+def test_attachment_row_lookup_returns_the_live_raw_row(table_key: str) -> None:
+    tables = copy.deepcopy(_BASE_TABLES)
+    row = {"id": f"row_mutation_{table_key}", "photo_asset_ids": []}
+    _replace_rows_at_contract_path(tables, table_key, _real_row_shape(tables, table_key, row))
+
+    found = find_attachment_row(tables, table_key, row["id"])
+
+    assert found is not None
+    found["photo_asset_ids"] = ["asset_mutated"]
+    assert iter_attachment_rows(tables, table_key)[0]["photo_asset_ids"] == ["asset_mutated"]

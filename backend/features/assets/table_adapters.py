@@ -48,14 +48,16 @@ def find_attachment_row(tables: dict[str, Any], table_key: str, row_id: str) -> 
     return adapter.find_row(tables, row_id) if adapter is not None else None
 
 
-def attachment_table_rows(value: object) -> list[dict[str, Any]]:
-    """Normalize a bare row list or a FieldDef table envelope."""
-
+def _iter_attachment_table_rows(value: object) -> Iterator[dict[str, Any]]:
     if isinstance(value, dict):
         envelope = cast(dict[str, object], value)
         if isinstance(envelope.get("rows"), list):
-            return _dict_rows(envelope["rows"])
-    return _dict_rows(value)
+            value = envelope["rows"]
+    if not isinstance(value, list):
+        return
+    for item in value:
+        if isinstance(item, dict):
+            yield cast(dict[str, Any], item)
 
 
 def _build_attachment_table_adapters() -> dict[str, AttachmentTableAdapter]:
@@ -76,13 +78,13 @@ def _direct_adapter(
     *,
     source: AttachmentAdapterSource,
 ) -> AttachmentTableAdapter:
-    def read_rows(tables: dict[str, Any]) -> list[dict[str, Any]]:
+    def read_rows(tables: dict[str, Any]) -> Iterable[dict[str, Any]]:
         value: object = tables
         for path_part in table_path:
             if not isinstance(value, dict):
                 return []
             value = value.get(path_part)
-        return attachment_table_rows(value)
+        return _iter_attachment_table_rows(value)
 
     return AttachmentTableAdapter(
         table_path=table_path,
@@ -92,15 +94,9 @@ def _direct_adapter(
 
 
 def _assembly_segment_rows(tables: dict[str, Any]) -> Iterator[dict[str, Any]]:
-    for assembly in attachment_table_rows(tables.get("assemblies")):
-        for layer in attachment_table_rows(assembly.get("layers")):
-            yield from attachment_table_rows(layer.get("segments"))
-
-
-def _dict_rows(value: object) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
-    return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)]
+    for assembly in _iter_attachment_table_rows(tables.get("assemblies")):
+        for layer in _iter_attachment_table_rows(assembly.get("layers")):
+            yield from _iter_attachment_table_rows(layer.get("segments"))
 
 
 _IRREGULAR_ADAPTERS: dict[str, AttachmentTableAdapter] = {

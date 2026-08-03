@@ -23,7 +23,7 @@ from features.assets.base import (
     generated_asset_id,
     location_asset_ids_for_project,
 )
-from features.assets.downloads import AssetBulkDownloadWorkflow, find_row
+from features.assets.downloads import AssetBulkDownloadWorkflow
 from features.assets.heic_conversion import (
     AssetConversionError,
     convert_heic_upload_to_jpeg,
@@ -54,6 +54,7 @@ from features.assets.registry import (
     weather_file_upload_allowed,
 )
 from features.assets.storage_r2 import asset_object_key
+from features.assets.table_adapters import find_attachment_row
 from features.project_document import repository as document_repository
 from features.project_document.store import get_saved_document
 from features.project_document.validation import (
@@ -528,7 +529,14 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
                 draft_etag_mismatch_message="The draft changed before this attachment update was applied.",
             )
             next_raw = base_body.model_dump(mode="json")
-            row = find_row(next_raw, payload.table_key, payload.row_id)
+            tables = cast(dict[str, Any], next_raw["tables"])
+            row = find_attachment_row(tables, payload.table_key, payload.row_id)
+            if row is None:
+                raise api_error(
+                    status.HTTP_404_NOT_FOUND,
+                    "document_row_not_found",
+                    "Document row not found.",
+                )
             values = row.get(payload.field_key)
             if not isinstance(values, list):
                 values = []

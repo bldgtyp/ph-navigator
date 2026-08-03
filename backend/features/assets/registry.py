@@ -263,7 +263,7 @@ def list_asset_references(
     for field in field_configs:
         fields_by_table.setdefault(field.table_key, []).append(field)
     for table, fields in fields_by_table.items():
-        for row in iter_rows_for_raw_tables(tables, table):
+        for row in iter_attachment_rows(tables, table):
             for field in fields:
                 values = row.get(field.field_key)
                 if not isinstance(values, list):
@@ -284,12 +284,3 @@ def list_asset_references(
                         }
                     )
     return references
-
-
-def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[str, Any]]:
-    tables = body.model_dump(mode="json")["tables"]
-    return iter_rows_for_raw_tables(tables, table_key)
-
-
-def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
-    return iter_attachment_rows(tables, table_key)

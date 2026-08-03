@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 15:35 EDT
-STATUS: Active — Phase 01 complete; Phase 02 next
+TIME: 16:06 EDT
+STATUS: Active — Phase 02 complete; Phase 03 next
 AUTHOR: Codex with Ed May
 SCOPE: Remove hand-maintained attachment row traversal without losing support
   for irregular project-document tables.
@@ -68,3 +68,18 @@ implementation.
   lookup, and eliminated a duplicate heat-pump alias derivation in tests.
 - `docs-pass` found no stable-context update appropriate before mutation lookup
   is unified in Phase 02.
+
+### Phase 02
+
+- `uv run pytest tests/test_assets_registry.py tests/test_attachment_reachability_guards.py tests/test_assets_service.py tests/envelope/test_envelope_attachments.py -q`
+  — `84 passed`.
+- Focused Ruff and ty checks passed for all changed asset modules and tests.
+- `make format` and `make ci` passed: backend `1828 passed, 7 skipped`; frontend
+  `2396 passed` across `263` files; production build passed. Existing warning
+  output remained non-failing.
+- `graphify update .` completed; generated graph output was already current.
+- `simplify` made direct and nested row readers lazy, preserving short-circuit
+  lookup without double materialization; reuse and quality reviews were clean
+  after that fix.
+- `docs-pass` replaced the deleted walker and separate-assembly-lookup wording
+  in `context/DATA_STORAGE.md` and the attachment security contract.

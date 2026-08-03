@@ -380,8 +380,9 @@ Codes introduced by this feature:
   Anonymous viewers can resolve signed URLs only for assets that are
   referenced by the project's active saved version. The separate project-
   location allowance covers its weather asset. The backend evaluates the
-  attachment-field registry through `list_asset_references` /
-  `iter_rows_for_raw_tables` before issuing a signed URL.
+  closed attachment-field registry through `list_asset_references` and the
+  shared attachment table adapters before issuing a signed URL. Adapter
+  discovery supplies row shape only; it does not authorize new fields.
 - **MCP** never anonymous: project- or user-scoped tokens require `asset:read`
   / `asset:write`; project access is re-checked through the issuing user and
   all calls are audit-logged.
