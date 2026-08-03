@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, Paperclip, Plus } from "lucide-react";
-import { assetDownloadPath } from "../api";
-import { uploadAsset, useAssetUrls } from "../hooks";
+import { uploadAsset, useAssetDownload, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
 import type { AssetUrls, AttachmentFieldConfig } from "../types";
 
@@ -221,6 +220,7 @@ export function AttachmentCell({
       {modalIndex !== null && value[modalIndex]
         ? createPortal(
             <AttachmentModal
+              key={value[modalIndex]}
               projectId={projectId}
               assetId={value[modalIndex]}
               asset={urlById.get(value[modalIndex])}
@@ -262,6 +262,7 @@ function AttachmentModal({
   onReplace: (files: FileList | null) => void;
 }) {
   const replaceRef = useRef<HTMLInputElement | null>(null);
+  const { download, downloadError } = useAssetDownload();
   const isImage = asset?.content_type.startsWith("image/");
   return (
     <div className="attachment-modal" role="dialog" aria-modal="true">
@@ -284,6 +285,11 @@ function AttachmentModal({
             </div>
           )}
         </div>
+        {downloadError ? (
+          <p className="form-error" role="alert">
+            {downloadError}
+          </p>
+        ) : null}
         <footer>
           <button type="button" onClick={onPrev} aria-label="Previous">
             ←
@@ -291,7 +297,9 @@ function AttachmentModal({
           <button type="button" onClick={onNext} aria-label="Next">
             →
           </button>
-          <a href={assetDownloadPath(projectId, assetId)}>Download</a>
+          <button type="button" onClick={() => void download(projectId, assetId)}>
+            Download
+          </button>
           {asset?.preview_url ? (
             <a href={asset.preview_url} target="_blank" rel="noreferrer">
               Open in new tab

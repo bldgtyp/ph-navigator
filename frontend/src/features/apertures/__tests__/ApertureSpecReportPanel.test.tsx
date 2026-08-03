@@ -10,6 +10,12 @@ import type { ProjectFrameRead, ProjectGlazingRead } from "../types";
 
 vi.mock("../../assets/hooks", () => ({
   uploadAsset: vi.fn(),
+  useAssetDownload: () => ({
+    clearDownloadError: vi.fn(),
+    download: vi.fn(),
+    downloadError: null,
+    runDownload: vi.fn(),
+  }),
   useAssetUrls: () => ({
     data: [
       {

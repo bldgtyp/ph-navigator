@@ -10,7 +10,8 @@ import {
   type WriteOp,
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "./AttachmentCell";
-import { assetDownloadPath, startBulkDownload } from "../api";
+import { bulkDownloadAssetId, downloadAsset, startBulkDownload } from "../api";
+import { useAssetDownload } from "../hooks";
 import { readAttachmentAssetIds } from "../lib";
 import type { AttachmentFieldConfig, AttachmentRow, AttachmentRowsSlice } from "../types";
 
@@ -33,6 +34,7 @@ export function AttachmentRowsTable({
   config: AttachmentFieldConfig;
   onReplaceRows: (rows: AttachmentRow[]) => Promise<void>;
 }) {
+  const { downloadError, runDownload } = useAssetDownload();
   const rows = useMemo(() => (Array.isArray(slice.rows) ? slice.rows : []), [slice.rows]);
 
   const replaceCell = useCallback(
@@ -105,38 +107,45 @@ export function AttachmentRowsTable({
   };
 
   const downloadAll = async () => {
-    const job = await startBulkDownload({
-      projectId,
-      tableKey: tableName,
-      columnKey: fieldKey,
-      kind: config.assetKind,
+    await runDownload(async () => {
+      const job = await startBulkDownload({
+        projectId,
+        tableKey: tableName,
+        columnKey: fieldKey,
+        kind: config.assetKind,
+      });
+      await downloadAsset(projectId, bulkDownloadAssetId(job));
     });
-    if (job.result_asset_id) {
-      window.location.href = assetDownloadPath(projectId, job.result_asset_id);
-    }
   };
 
   return (
-    <DataTable
-      tableName={fieldLabel}
-      rows={rows}
-      getRowId={(row) => row.id}
-      fieldDefs={fieldDefs}
-      columnDefs={columns}
-      view={emptyViewState() as ViewState}
-      onViewChange={() => undefined}
-      onWrite={readOnly ? undefined : onWrite}
-      readOnly={readOnly}
-      // CSV export is editor-only (CP-7). Here `readOnly` tracks the viewer
-      // access class (attachment rows have no version lock), so it doubles as
-      // the export gate.
-      canDownloadCsv={!readOnly}
-      emptyMessage="No rows are available for this attachment field."
-      overflowMenuActions={
-        <button type="button" onClick={() => void downloadAll()}>
-          Download all
-        </button>
-      }
-    />
+    <>
+      {downloadError ? (
+        <p className="form-error" role="alert">
+          {downloadError}
+        </p>
+      ) : null}
+      <DataTable
+        tableName={fieldLabel}
+        rows={rows}
+        getRowId={(row) => row.id}
+        fieldDefs={fieldDefs}
+        columnDefs={columns}
+        view={emptyViewState() as ViewState}
+        onViewChange={() => undefined}
+        onWrite={readOnly ? undefined : onWrite}
+        readOnly={readOnly}
+        // CSV export is editor-only (CP-7). Here `readOnly` tracks the viewer
+        // access class (attachment rows have no version lock), so it doubles as
+        // the export gate.
+        canDownloadCsv={!readOnly}
+        emptyMessage="No rows are available for this attachment field."
+        overflowMenuActions={
+          <button type="button" onClick={() => void downloadAll()}>
+            Download all
+          </button>
+        }
+      />
+    </>
   );
 }

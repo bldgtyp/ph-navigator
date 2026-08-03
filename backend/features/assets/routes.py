@@ -128,7 +128,11 @@ def get_asset_url(asset_id: str, access: ProjectViewAccess, service: AssetServic
 
 
 @router.get("/{asset_id}/download")
-def download_asset(asset_id: str, access: ProjectViewAccess, service: AssetServiceDep) -> RedirectResponse:
+def download_asset(
+    asset_id: str,
+    access: ProjectViewAccess,
+    service: AssetServiceDep,
+) -> RedirectResponse:
     urls = service.get_asset_urls(access, asset_id)
     return RedirectResponse(urls.download_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 

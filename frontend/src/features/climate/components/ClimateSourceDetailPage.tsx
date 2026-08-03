@@ -4,8 +4,8 @@ import { Download, MapPin, Trash2 } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
 import { errorMessage } from "../../../shared/lib/errors";
-import { AppMenu, AppMenuLink } from "../../../shared/ui/AppMenu";
-import { assetDownloadPath } from "../../assets/api";
+import { AppMenu, AppMenuItem, AppMenuLink } from "../../../shared/ui/AppMenu";
+import { useAssetDownload } from "../../assets/hooks";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import {
@@ -501,24 +501,47 @@ function WeatherFileActionsMenu({
   statAssetId: string | null;
   ddyAssetId: string | null;
 }) {
+  const { download, downloadError } = useAssetDownload();
   if (!sourceUrl && !epwAssetId && !statAssetId && !ddyAssetId) return null;
   return (
-    <AppMenu label="Weather file actions" className="climate-main-menu">
-      {sourceUrl ? (
-        <AppMenuLink icon={Download} href={sourceUrl}>
-          Download OneBuilding .zip file
-        </AppMenuLink>
+    <div>
+      <AppMenu label="Weather file actions" className="climate-main-menu">
+        {sourceUrl ? (
+          <AppMenuLink icon={Download} href={sourceUrl}>
+            Download OneBuilding .zip file
+          </AppMenuLink>
+        ) : null}
+        {epwAssetId ? (
+          <AssetDownloadMenuLink
+            projectId={projectId}
+            assetId={epwAssetId}
+            label="EPW"
+            onDownload={download}
+          />
+        ) : null}
+        {statAssetId ? (
+          <AssetDownloadMenuLink
+            projectId={projectId}
+            assetId={statAssetId}
+            label="STAT"
+            onDownload={download}
+          />
+        ) : null}
+        {ddyAssetId ? (
+          <AssetDownloadMenuLink
+            projectId={projectId}
+            assetId={ddyAssetId}
+            label="DDY"
+            onDownload={download}
+          />
+        ) : null}
+      </AppMenu>
+      {downloadError ? (
+        <p className="form-error" role="alert">
+          {downloadError}
+        </p>
       ) : null}
-      {epwAssetId ? (
-        <AssetDownloadMenuLink projectId={projectId} assetId={epwAssetId} label="EPW" />
-      ) : null}
-      {statAssetId ? (
-        <AssetDownloadMenuLink projectId={projectId} assetId={statAssetId} label="STAT" />
-      ) : null}
-      {ddyAssetId ? (
-        <AssetDownloadMenuLink projectId={projectId} assetId={ddyAssetId} label="DDY" />
-      ) : null}
-    </AppMenu>
+    </div>
   );
 }
 
@@ -526,15 +549,17 @@ function AssetDownloadMenuLink({
   projectId,
   assetId,
   label,
+  onDownload,
 }: {
   projectId: string;
   assetId: string;
   label: string;
+  onDownload: (projectId: string, assetId: string) => Promise<void>;
 }) {
   return (
-    <AppMenuLink icon={Download} href={assetDownloadPath(projectId, assetId)}>
+    <AppMenuItem icon={Download} onClick={() => void onDownload(projectId, assetId)}>
       Download {label}
-    </AppMenuLink>
+    </AppMenuItem>
   );
 }
 

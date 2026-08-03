@@ -1,12 +1,15 @@
+import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeUpload,
   createUploadIntent,
+  downloadAsset,
   fetchAssetUrls,
   fetchAttachmentRows,
   putToSignedUrl,
   replaceAttachmentRows,
 } from "./api";
+import { errorMessage } from "../../shared/lib/errors";
 import { sha256HexOfFile } from "../../shared/lib/sha256";
 import { assetQueryKeys } from "./query-keys";
 import type { AssetKind, AttachmentRowsPayload, AttachmentRowsSlice } from "./types";
@@ -24,6 +27,24 @@ export function useAssetUrls(projectId: string, assetIds: string[]) {
     refetchInterval: (query) =>
       query.state.data?.some((asset) => asset.thumbnail_status === "pending") ? 2500 : false,
   });
+}
+
+export function useAssetDownload() {
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const clearDownloadError = useCallback(() => setDownloadError(null), []);
+  const runDownload = useCallback(async (operation: () => Promise<void>) => {
+    setDownloadError(null);
+    try {
+      await operation();
+    } catch (error) {
+      setDownloadError(errorMessage(error, "Could not download this file. Try again."));
+    }
+  }, []);
+  const download = useCallback(
+    (projectId: string, assetId: string) => runDownload(() => downloadAsset(projectId, assetId)),
+    [runDownload],
+  );
+  return { clearDownloadError, download, downloadError, runDownload };
 }
 
 export function useAttachmentRows(

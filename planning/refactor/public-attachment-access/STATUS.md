@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 10:17 EDT
-STATUS: Active — Phases 00-03 complete; Phase 04 next
+TIME: 10:40 EDT
+STATUS: Active — Phases 00-04 complete; Phase 05 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,7 +17,7 @@ RELATED:
 
 ## Current state
 
-**Phases 00-03 complete. The row walker reaches all 31 registered attachment
+**Phases 00-04 complete. The row walker reaches all 31 registered attachment
 fields, including `thermal_bridges.pdf_report_asset_ids`, and structural guards
 now prevent either defect from shipping silently again.**
 
@@ -31,7 +31,8 @@ code in `backend/.venv`, not by reading:
 2. **Missing `thermal_bridges.pdf_report_asset_ids` registration — fixed in
    Phase 02.** The PDF-only field is now covered by public reads, write
    validation, attach/detach, bulk download, and orphan protection.
-3. Download controls navigate to the API origin, so any non-2xx becomes the page.
+3. **Raw download navigation — fixed in Phase 04.** User actions preflight the
+   signed URL, keep failures in the app, and isolate the storage navigation.
 4. `AttachmentCell` has no unavailable state, so an unresolvable asset renders as
    a plausible empty file.
 
@@ -44,10 +45,8 @@ completed packet.
 
 ## Next step
 
-**[Phase 04](./phases/phase-04-download-error-ux.md) — keep download failures
-inside the application.** Add the shared fetch-first download helper, typed
-failure UX, and browser-aware backend error response without weakening JSON API
-clients.
+**[Phase 05](./phases/phase-05-unavailable-state.md) — explicit unavailable
+state** for assets that cannot resolve.
 
 ## Blockers / decisions needed from Ed
 
@@ -162,6 +161,28 @@ remediation is required before Phase 01.
 - `make ci` green: backend `1829 passed, 7 skipped`; frontend tests and build,
   formatting, lint, types, and repository boundary checks passed.
 
+## Phase 04 verification
+
+- All four download surfaces use one fetch-first helper and one shared hook;
+  failed/no-result bulk jobs no longer disappear silently.
+- Exact client copy is covered for `asset_not_referenced`, `asset_not_found`,
+  `asset_upload_incomplete`, `project_deleted`, and `not_authenticated`, with a
+  request-id-bearing fallback for unknown codes.
+- Asset `/download` errors negotiate to HTML for browser requests at the global
+  exception seam, so dependency failures are covered; JSON clients retain the
+  structured envelope and successful requests retain `307` redirects.
+- Focused suites: backend `21 passed`; frontend `10 passed`, including the
+  modal's in-flight file-navigation race and failed bulk-job branch.
+- Signed-out local browser: stale detached PDF produced the mapped in-app alert
+  without leaving Thermal Bridges; the fixture was restored to the identical
+  saved version ETag. A pasted unreferenced URL rendered HTML, and a successful
+  restored download left the app mounted.
+- Three parallel `simplify` reviews and rechecks completed with no remaining
+  findings.
+- Full `make ci` green: backend `1830 passed, 7 skipped`; frontend `2384
+  passed`; formatting, lint, types, boundaries, contract checks, and production
+  build passed.
+
 ## Hazards
 
 - **Do not run `backend/scripts/sweep_orphaned_assets.py` with `dry_run=False`**
@@ -231,3 +252,6 @@ Frontend:
   guards were deliberately falsified with the original defects, emitted the
   intended consequence-rich failures, and returned to `55 passed` after clean
   restores. Phase 04 next.
+- **2026-08-03 10:40 EDT** — Phase 04 completed. Focused tests, signed-out
+  failure/success browser acceptance, three-way simplify review, docs-pass, and
+  full `make ci` passed. Phase 05 next.

@@ -1,4 +1,5 @@
-import { fetchJson, getApiBaseUrl } from "../../shared/api/client";
+import { ApiRequestError, fetchJson } from "../../shared/api/client";
+import { downloadUrl } from "../../shared/lib/downloadBlob";
 import type {
   AssetKind,
   AssetUrls,
@@ -144,6 +145,48 @@ export async function startBulkDownload(args: {
   });
 }
 
-export function assetDownloadPath(projectId: string, assetId: string): string {
-  return `${getApiBaseUrl()}/api/v1/projects/${projectId}/assets/${assetId}/download`;
+export function bulkDownloadAssetId(job: JobResponse): string {
+  if (job.status === "failed" || !job.result_asset_id) {
+    throw new Error("Could not prepare this download. Try again.");
+  }
+  return job.result_asset_id;
+}
+
+const DOWNLOAD_ERROR_MESSAGES: Record<string, string> = {
+  asset_not_referenced:
+    "This file isn't part of the shared view. Ask the project owner to attach it.",
+  asset_not_found: "This file is no longer available.",
+  asset_upload_incomplete: "This file is still uploading — try again in a moment.",
+  project_deleted: "This project has been deleted.",
+  not_authenticated: "Your session expired. Sign in again to download.",
+};
+
+export class AssetDownloadError extends Error {
+  errorCode: string | null;
+  requestId: string | null;
+
+  constructor(message: string, errorCode: string | null, requestId: string | null) {
+    super(message);
+    this.name = "AssetDownloadError";
+    this.errorCode = errorCode;
+    this.requestId = requestId;
+  }
+}
+
+export async function downloadAsset(projectId: string, assetId: string): Promise<void> {
+  try {
+    const urls = await fetchJson<AssetUrls>(`/api/v1/projects/${projectId}/assets/${assetId}/url`);
+    // A signed storage response may still fail after the API preflight. Keep
+    // that response out of PH-Navigator's browsing context.
+    downloadUrl(urls.download_url, "", "_blank");
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      const mapped = error.errorCode ? DOWNLOAD_ERROR_MESSAGES[error.errorCode] : undefined;
+      const fallback = "Could not download this file. Try again or contact support.";
+      const message =
+        mapped ?? `${fallback}${error.requestId ? ` (Request ID: ${error.requestId})` : ""}`;
+      throw new AssetDownloadError(message, error.errorCode, error.requestId);
+    }
+    throw new AssetDownloadError("Could not download this file. Try again.", null, null);
+  }
 }

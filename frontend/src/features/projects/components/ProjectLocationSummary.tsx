@@ -1,5 +1,5 @@
 import type { UnitSystem } from "../../../lib/units";
-import { assetDownloadPath } from "../../assets/api";
+import { useAssetDownload } from "../../assets/hooks";
 import {
   elevationUnitLabel,
   formatLocationElevationDisplay,
@@ -19,6 +19,7 @@ export function ProjectLocationSummary({
   location: ProjectLocation | undefined;
   unitSystem: UnitSystem;
 }) {
+  const { download, downloadError } = useAssetDownload();
   if (!location?.is_set) {
     return <p className="form-note">No location set.</p>;
   }
@@ -74,14 +75,26 @@ export function ProjectLocationSummary({
         <dt>EPW</dt>
         <dd>
           {location.epw ? (
-            <a href={assetDownloadPath(projectId, location.epw.id)}>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => void download(projectId, location.epw!.id)}
+            >
               {location.epw.filename ?? location.epw.id}
-            </a>
+            </button>
           ) : (
             "None"
           )}
         </dd>
       </div>
+      {downloadError ? (
+        <div>
+          <dt>Download</dt>
+          <dd className="form-error" role="alert">
+            {downloadError}
+          </dd>
+        </div>
+      ) : null}
       <div>
         <dt>EPW source</dt>
         <dd>{location.epw_source_url ?? "None"}</dd>

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 10:40 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Replace hard navigations to the API origin with in-app error handling,
   and stop the API from returning a bare JSON body to a browser navigation.
@@ -123,3 +123,33 @@ cannot embarrass us."
 - No user-facing surface navigates to the API origin for a download.
 - Tests 1–4 pass.
 - The manual checks above are confirmed.
+
+## Completion evidence
+
+- `downloadAsset()` now preflights the shared `/url` endpoint, maps the five
+  named API codes to actionable copy, and opens the signed storage response in
+  an isolated `_blank` context so storage-side failures cannot replace
+  PH-Navigator.
+- `useAssetDownload()` owns the shared pending/error plumbing across the modal,
+  attachment-table bulk export, Project Location, and Climate weather-file
+  menus. Failed or result-less bulk jobs now produce an inline error instead of
+  doing nothing.
+- The global HTTP exception seam content-negotiates asset `/download` failures,
+  including dependency-level failures such as `project_deleted`; JSON remains
+  unchanged for API clients and successful requests remain `307` redirects.
+- Focused verification: backend asset suite `21 passed`; frontend helper and
+  modal suites `10 passed`. Coverage includes all five message mappings, the
+  generic request-id fallback, failed bulk jobs, target/rel isolation, modal
+  navigation after both settled and in-flight failures, HTML/JSON 403 parity,
+  dependency-level 410 HTML, and both success redirects.
+- Signed-out browser check: detaching the loaded Thermal Bridges PDF in a second
+  session produced the mapped in-app alert while the route stayed mounted; the
+  local fixture was restored to its exact original version ETag. Pasting an
+  unreferenced `/download` URL rendered `File unavailable` HTML, and a restored
+  successful download left the app route mounted with no alert.
+- Three parallel `simplify` reviews completed. Shared URL-download and error
+  helpers replaced duplicate call-site plumbing; every correctness,
+  efficiency, navigation-isolation, and race finding was fixed and rechecked.
+- Full `make ci` green: backend `1830 passed, 7 skipped`; frontend `2384
+  passed`; formatting, lint, types, boundaries, contract checks, and production
+  build passed. Existing warning-only lint/test/build diagnostics are unchanged.

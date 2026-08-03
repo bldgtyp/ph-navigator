@@ -499,6 +499,67 @@ def test_anonymous_asset_registry_hides_unreferenced_item(clean_document_tables:
     assert blocked_url.json()["error_code"] == "asset_not_referenced"
 
 
+def test_asset_download_content_negotiates_errors_without_changing_redirects(
+    clean_document_tables: None,
+) -> None:
+    fake_r2 = FakeR2Client()
+    _install_fake_asset_service(fake_r2)
+    try:
+        editor = signed_in_client()
+        project = create_project(editor)
+        project_id = project["id"]
+        version_id = project["active_version_id"]
+        referenced = "asset_referenced_download"
+        unreferenced = "asset_unreferenced_download"
+        insert_project_asset(project_id=project_id, asset_id=referenced)
+        insert_project_asset(project_id=project_id, asset_id=unreferenced)
+        _save_pump_with_datasheet(editor, project_id, version_id, referenced)
+        viewer = TestClient(app)
+
+        json_error = viewer.get(
+            _asset_url(project_id, unreferenced, "/download"),
+            headers={"Accept": "application/json"},
+        )
+        html_error = viewer.get(
+            _asset_url(project_id, unreferenced, "/download"),
+            headers={"Accept": "text/html"},
+        )
+
+        assert json_error.status_code == 403
+        assert json_error.headers["content-type"].startswith("application/json")
+        assert json_error.json()["error_code"] == "asset_not_referenced"
+        assert html_error.status_code == 403
+        assert html_error.headers["content-type"].startswith("text/html")
+        assert "This file is not available" in html_error.text
+        assert "asset_not_referenced" not in html_error.text
+
+        for accept in ("application/json", "text/html"):
+            success = viewer.get(
+                _asset_url(project_id, referenced, "/download"),
+                headers={"Accept": accept},
+                follow_redirects=False,
+            )
+            assert success.status_code == 307
+            assert success.headers["location"].startswith("https://fake-r2.test/")
+
+        deleted = editor.post(
+            f"/api/v1/projects/{project_id}/delete",
+            headers={"Origin": ORIGIN},
+            json={"confirm": True},
+        )
+        assert deleted.status_code == 200
+        deleted_html = viewer.get(
+            _asset_url(project_id, referenced, "/download"),
+            headers={"Accept": "text/html"},
+        )
+        assert deleted_html.status_code == 410
+        assert deleted_html.headers["content-type"].startswith("text/html")
+        assert "This project has been deleted." in deleted_html.text
+        assert "project_deleted" not in deleted_html.text
+    finally:
+        _clear_fake_asset_service()
+
+
 def test_signed_in_asset_registry_still_lists_project_assets(clean_document_tables: None) -> None:
     editor = signed_in_client()
     project = create_project(editor)
