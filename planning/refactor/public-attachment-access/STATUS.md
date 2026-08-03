@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Researched and scoped — ready for implementation handoff, no code written
+TIME: 09:32 EDT
+STATUS: Active — Phase 00 complete; Phase 01 next
 AUTHOR: Claude with Ed May
 SCOPE: Current state, next step, blockers, and verification gates for public
   attachment access.
@@ -17,7 +17,7 @@ RELATED:
 
 ## Current state
 
-**Research complete and measured. No code written.**
+**Phase 00 production inventory complete. No code written yet.**
 
 Two independent backend defects and two UI defects, all confirmed by executing
 code in `backend/.venv`, not by reading:
@@ -35,27 +35,66 @@ code in `backend/.venv`, not by reading:
 
 Reachability matrix and method: [research.md](./research.md).
 
-Reproduced from Ed's screenshots against production `2524 - Linde Home`. Not yet
-reproduced locally against the `AGENT-BROWSER` fixture — worth doing as the
-first step of Phase 01 so there is a red test before the fix.
+Reproduced from Ed's screenshots against production `2524 - Linde Home`. Phase
+00 found no stored-data violations, so Phase 01 can safely activate validation
+for the previously unreachable tables. The browser symptom is not yet
+reproduced against the local `AGENT-BROWSER` fixture.
 
 ## Next step
 
-**[Phase 00](./phases/phase-00-production-inventory.md) — production inventory.**
-Read-only. Must complete before any code lands, because Phase 01 switches on
-write validation for references that have never been validated.
+**[Phase 01](./phases/phase-01-row-walker.md) — fix the row walker.** Add the red
+regression coverage, make every branch tolerate list and `{field_defs, rows}`
+shapes, and prove the anonymous gate remains closed to unreferenced assets.
 
 ## Blockers / decisions needed from Ed
 
-- **Ship order vs the certifier link.** Phases 01 + 02 are the contained backend
-  half and are what make the PDFs open. 04 and 05 improve every failure mode but
-  are not required for the link to work. If the link needs to go out sooner, 01 +
-  02 is the minimum viable set.
-- **PDF-only allowlist** for the new registry entry — mirrors the frontend, but
-  confirm against Phase 00 that no stored PDF-report asset is a non-PDF before
-  locking it in.
-- **Remediation for any Phase 00 violations** — re-upload, detach, or relax the
-  registry entry, per case.
+None. Phase 00 found zero violations. The Phase 02 PDF-only allowlist matches
+all stored `pdf_report_asset_ids` references, and the planned counts exceed
+every stored cell count.
+
+## Phase 00 findings
+
+Read-only production inventory completed 2026-08-03 against the active saved
+version of all four projects returned by `phn.list_projects`:
+
+| Project | Active version | References in the five scoped tables |
+| --- | --- | ---: |
+| `2613 - Ayers Home` | `985208f3-3aa2-4e8d-8a12-f2a15491ef7c` | 0 |
+| `2524 - Linde Home` | `36cec711-bc53-497c-a999-99754d89e22b` | 7 |
+| `2242 - Arverne D` | `46625e9d-6c4c-4bef-9ccc-f2b2d2017a3c` | 0 |
+| `1299 - JM Test Project` | `d8bb0f86-0bc8-4c0e-94ee-c1f9cd73c3c3` | 0 |
+
+Counts by table and column:
+
+| Table | Field | References |
+| --- | --- | ---: |
+| `thermal_bridges` | `pdf_report_asset_ids` | 5 |
+| `heat_pump_outdoor_equip` | `datasheet_asset_ids` | 1 |
+| `heat_pump_indoor_equip` | `datasheet_asset_ids` | 1 |
+| all other scoped table/field pairs | — | 0 |
+
+Every stored reference is on `2524 - Linde Home`:
+
+| Table | Row id | Field | Asset id | Bytes |
+| --- | --- | --- | --- | ---: |
+| `thermal_bridges` | `tb_757a0d25a6d240b484c1cbd144550333` | `pdf_report_asset_ids` | `asset_20260709170202490275` | 515335 |
+| `thermal_bridges` | `tb_832b12b2968643a99843016aa51bb997` | `pdf_report_asset_ids` | `asset_20260709170222459071` | 400647 |
+| `thermal_bridges` | `tb_3384cce701ae481e81aadc1d988df7f3` | `pdf_report_asset_ids` | `asset_20260709170237662276` | 314093 |
+| `thermal_bridges` | `tb_f1d01438d25343b18f13f3954034206e` | `pdf_report_asset_ids` | `asset_20260709170257160661` | 411815 |
+| `thermal_bridges` | `tb_fa3bf90685b8457f8bb2591909781385` | `pdf_report_asset_ids` | `asset_20260709170309042567` | 454657 |
+| `heat_pump_outdoor_equip` | `hpoe_01KZ1FHFGA224G5N58FKWKE737` | `datasheet_asset_ids` | `asset_20260802152841180739` | 1326375 |
+| `heat_pump_indoor_equip` | `hpie_01KZ1FHFGA5R3W12A7N4FNS2H8` | `datasheet_asset_ids` | `asset_20260802152841180739` | 1326375 |
+
+**Zero violations.** Every referenced asset exists in the same project, has
+`upload_status="uploaded"`, `asset_kind="datasheet"`,
+`content_type="application/pdf"`, `deleted_at=null`, and size below 25 MB.
+Every cell contains one id, below the planned limit of five. The shared
+heat-pump datasheet is intentionally referenced by two rows.
+
+**Orphan-sweep check: clean.** None of the referenced assets has
+`metadata.orphaned_status="moved"`; all returned `orphaned_status=null`.
+Therefore Phase 02 can keep the PDF-only allowlist, and no production
+remediation is required before Phase 01.
 
 ## Hazards
 
@@ -113,3 +152,6 @@ Frontend:
   table. Probed all 30 registered fields: 10 unreachable due to the envelope-shape
   defect in the row walker, spanning five subsystems including a latent data-loss
   path. Packet rewritten with seven phases. No code changes.
+- **2026-08-03 09:32 EDT** — Phase 00 completed read-only across all four
+  production projects and 20 scoped table reads. Seven references found; zero
+  validation violations and zero orphan-moved markers. Phase 01 unblocked.

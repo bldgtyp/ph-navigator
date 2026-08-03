@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
-TIME: 09:10 EDT
-STATUS: Not started
+TIME: 09:32 EDT
+STATUS: Complete
 AUTHOR: Claude with Ed May
 SCOPE: Read-only inventory of stored attachment references on the five
   unreachable tables, before write validation is switched on.
@@ -107,6 +107,21 @@ Append to `../STATUS.md` under a `## Phase 00 findings` heading:
 - The findings section exists in `STATUS.md` with a violation list or a clean
   bill.
 - Ed has signed off on the remediation for any violation, or there are none.
+
+## Completion evidence
+
+Completed 2026-08-03 through the read-only production `phn` tools:
+
+- `list_projects` returned all four production projects visible to Ed.
+- `get_table` read the active saved version of all five scoped tables for each
+  project (20 table reads total).
+- `list_assets` resolved every stored reference without creating a draft.
+- Seven references were found. All seven pass the applicable planned Phase
+  01/02 validation contracts; no remediation or allowlist relaxation is
+  required.
+
+The per-reference inventory and project/version ids are retained in
+[`../STATUS.md`](../STATUS.md#phase-00-findings).
 
 ## Risks
 
