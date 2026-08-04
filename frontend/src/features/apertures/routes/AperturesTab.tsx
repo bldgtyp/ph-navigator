@@ -54,6 +54,7 @@ import {
   isApertureSubroute,
 } from "../paths";
 import { InstallTypesPanel } from "../installs/InstallTypesPanel";
+import { InstallsModal } from "../components/InstallsModal";
 import type {
   ApertureAttachmentChangeArgs,
   ApertureCommand,
@@ -86,6 +87,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
   const [actionError, setActionError] = useState<string | null>(null);
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const [installsModalOpen, setInstallsModalOpen] = useState(false);
   const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const dimFormat = useApertureDimFormat();
@@ -315,6 +317,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
       : null;
   const apertureActions = (
     <>
+      <button
+        type="button"
+        className="secondary-button"
+        title="Window install psi-values"
+        onClick={() => setInstallsModalOpen(true)}
+      >
+        Installs
+      </button>
       <DisplayFormatMenuGroup {...dimFormat} />
       <AppMenu label="Aperture actions">
         {exportContext ? (
@@ -410,6 +420,16 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 busy={mutation.isPending || reportRefreshMutation.isPending}
                 onSave={(chosen) => void handleRefreshSave(chosen)}
               />
+              {installsModalOpen && activeAperture ? (
+                <InstallsModal
+                  project={project}
+                  aperture={activeAperture}
+                  apertures={sorted}
+                  canEdit={canEdit}
+                  onDispatch={async (command) => (await dispatch(command)) !== null}
+                  onClose={() => setInstallsModalOpen(false)}
+                />
+              ) : null}
               <ManufacturerFiltersModal
                 open={filtersModalOpen}
                 apertures={sorted}

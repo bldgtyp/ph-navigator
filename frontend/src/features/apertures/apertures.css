@@ -1460,3 +1460,148 @@
 .aperture-card-row__metric--muted {
   color: var(--text-muted);
 }
+
+/* Installs modal: key-view overlay + legend (aperture-psi-install D-6c). */
+/* The shared .modal-panel caps at 560px; the key view + legend need a
+   wider two-column stage. Scoped to the dialog id ModalDialog stamps on
+   the panel section. */
+#installs-modal {
+  width: min(920px, 94vw);
+}
+
+.installs-modal__body {
+  display: grid;
+  grid-template-columns: auto minmax(300px, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.installs-modal__key-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 400px;
+  overflow: auto;
+}
+
+.installs-modal__canvas {
+  position: relative;
+  display: inline-block;
+}
+
+/* The builder absolutely-positions the SVG inside its canvas stage; here it
+   is the in-flow element that sizes the key view, so restore static flow. */
+.installs-modal__canvas .aperture-svg-canvas {
+  position: static;
+}
+
+.installs-modal__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.installs-modal__edge {
+  position: absolute;
+  padding: 0;
+  border: 1px solid transparent;
+  background: color-mix(in oklab, var(--installs-tint, var(--text-muted)) 34%, transparent);
+  cursor: pointer;
+}
+
+.installs-modal__edge[data-kind="default"] {
+  background: color-mix(in oklab, var(--text-muted) 12%, transparent);
+}
+
+.installs-modal__edge:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.installs-modal__edge[data-kind="mull"] {
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--text-muted) 25%, transparent),
+    color-mix(in oklab, var(--text-muted) 25%, transparent) 3px,
+    transparent 3px,
+    transparent 8px
+  );
+}
+
+.installs-modal__type-list {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.installs-modal__type {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.installs-modal__type[data-armed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+}
+
+.installs-modal__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--installs-tint, var(--text-muted)) 60%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+.installs-modal__type-psi,
+.installs-modal__type-usage {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.installs-modal__create {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.installs-modal__create-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.installs-modal__copy {
+  position: relative;
+}
+
+.installs-modal__copy-popover {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 220px;
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+  z-index: var(--z-dropdown);
+}
+
+.installs-modal__copy-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

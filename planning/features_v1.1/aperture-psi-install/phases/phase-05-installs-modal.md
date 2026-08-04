@@ -3,7 +3,7 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Not started
+STATUS:  ✅ Done 2026-08-04 (⏸ awaiting Ed's UI review — see as-built notes)
 AUTHOR:  Ed + Claude
 SCOPE:   Frontend. The core interaction: per-aperture modal with read-only
          key-view SVG, pick-type-then-paint-edges, bulk apply, copy-to,
@@ -81,3 +81,50 @@ families):
   short screenshot sequence for Ed's review and pause for feedback before
   phase 06 polish decisions.
 - Closeout gate; STATUS.md ledger.
+
+## As-built notes (2026-08-04)
+
+- **Entry point:** one `Installs` button (title "Window install psi-values")
+  in the builder header actions for the active aperture — not per-aperture
+  row buttons; the modal always targets the active aperture.
+- **View-model:** `install-overlay.ts` composes on
+  `resolveInstallPsiForAperture` (the phase-04 resolver stays the single
+  owner of edge resolution); each overlay cell carries the full
+  `ResolvedInstallPsi` plus the raw slot for the paint transition. The
+  copy-to filter mirrors the backend `_grid_signature`
+  (`apertureGridSignature`).
+- **Legend:** reads `useInstallTypeSummaries()` from the phase-04
+  `InstallTypesProvider` (no forked slice query in the modal). Inline
+  create goes through `installs/useCreateInstallType.ts`, which reuses the
+  phase-03 payload builders + replace mutation and invalidates the
+  apertures slice so summaries refresh. Ψ entry is unit-aware
+  (`parseLinearPsiToWmK` + `psiUnitLabel`) so IP-mode input converts to SI.
+  PDF marker is the blessed `chip chip--sm chip--outline`.
+- **Fit zoom:** fits by width to exactly 360 px — equal to the SVG
+  `MIN_CANVAS_WIDTH_PX` floor, so the floor can never re-scale the canvas
+  out from under the absolutely-positioned overlay; tall apertures scroll
+  vertically. The builder's `position: absolute` rule on
+  `.aperture-svg-canvas` is overridden to `static` inside the modal (it
+  collapsed the key view to 0 height otherwise).
+- **Footer:** `Apply selected to all edges`; `Copy assignments to…` popover
+  (extracted control, `useOutsidePointerDown` + `aria-expanded`); secondary
+  `Close` (ManufacturerFiltersModal precedent) instead of a primary `Done`.
+  Legend rows are plain toggle buttons with `aria-pressed` (not
+  listbox/option).
+- **No armed type → inspect:** via `title`/`aria-label` tooltips only; no
+  transient popover was needed.
+- **Write batching:** dispatches serialize through a `busy` flag; no
+  coalescing layer (each paint is one `setElementInstall` command).
+- **Test deltas from plan:** e2e paints one edge + clears it + apply-to-all
+  + reload persistence on the 1×1 fixture (FrameRow phase-04 cells
+  asserted); copy-to and mull hatching are covered by vitest
+  (`install-overlay.test.ts` — signature filter, mull cells) rather than
+  e2e, since the seeded fixture has a single aperture. Screenshots:
+  `working/agent-browser/installs-modal-phase05.png` (default state) and
+  `installs-modal-phase05-painted.png` (armed + painted top edge).
+- **Deferred follow-ups:** backend-emitted grid signature on the apertures
+  slice (so the copy-to predicate has one owner); a shared swatch primitive
+  if a third feature needs color chips.
+- **⏸ Pause:** per plan, Ed reviews the modal UI from the screenshots /
+  live app before phase-06 polish decisions; phase 06 proceeds on the
+  docs-integration work meanwhile.
