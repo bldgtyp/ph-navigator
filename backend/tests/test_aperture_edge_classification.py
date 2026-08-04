@@ -3,6 +3,10 @@
 Pure-geometry cases from the phase-01 plan: single element, side-by-side
 mull, 2x2 grid, span adjacency, void neighbours, and an L-shaped mixed
 adjacency where a side abuts both glazed and void cells.
+
+Paired with ``frontend/src/features/apertures/__tests__/
+edge-classification.test.ts`` — the TS suite copies these case tables
+verbatim; update both together.
 """
 
 from __future__ import annotations

@@ -748,7 +748,7 @@
 
 .aperture-element-table {
   --aperture-table-columns: minmax(112px, 0.7fr) minmax(220px, 2.6fr) minmax(104px, 0.7fr)
-    minmax(64px, 0.42fr) minmax(64px, 0.42fr);
+    minmax(64px, 0.42fr) minmax(64px, 0.42fr) minmax(72px, 0.48fr);
   display: grid;
   overflow: visible;
   padding: 0 var(--space-8) var(--space-8);
@@ -1453,4 +1453,10 @@
   .apertures-page__header-actions {
     margin-left: auto;
   }
+}
+
+/* Effective Ψ-install cells: inherited-default and derived mull values
+   read as secondary; assigned values keep normal metric weight. */
+.aperture-card-row__metric--muted {
+  color: var(--text-muted);
 }

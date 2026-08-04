@@ -4,6 +4,9 @@ Phase 02 of aperture-psi-install: the resolver precedence (mull → assigned
 → default), the three install commands, grid-mutation slot hygiene, the
 route-3 `installs` block + uniform `frame_type` default (D-5), the U-value
 report edge values, and the apertures slice summary payload.
+
+Resolver cases are paired with ``frontend/src/features/apertures/
+__tests__/install-psi.test.ts`` — update both together.
 """
 
 from __future__ import annotations

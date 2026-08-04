@@ -44,6 +44,9 @@ export function GlazingRow({ glazing, canEdit, onPick }: GlazingRowProps) {
       <div className="aperture-card-row__metric" role="cell">
         {formatNumber(glazing?.g_value ?? null)}
       </div>
+      <div className="aperture-card-row__metric" role="cell">
+        -
+      </div>
     </div>
   );
 }

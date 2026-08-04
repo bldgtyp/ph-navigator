@@ -1,11 +1,11 @@
 # STATUS — aperture-psi-install
 
-**State:** 🟢 Active — design accepted by Ed 2026-08-03. Phases 01–03
-(backend schema v10, resolution/commands/route 3, Installs sub-tab)
+**State:** 🟢 Active — design accepted by Ed 2026-08-03. Phases 01–04
 implemented on `feature/aperture-psi-install`.
 
-**Next step:** Pick up `phases/phase-04-effective-display.md` on the same
-feature branch. Status UX unification is complete; skip the retired
+**Next step:** Pick up `phases/phase-05-installs-modal.md` on the same
+feature branch — note the ledger's ⏸: Ed reviews the modal UI after its
+exit gate before the packet moves on. Status UX unification is complete; skip the retired
 `status_summary.py` and frontend destination work described by D-9.
 
 **Accepted design:** `decisions.md` (D-1…D-10) is the authority; PRD.md holds
@@ -18,7 +18,7 @@ the rationale + wireframe; research.md holds all code citations.
 | 01 Schema v10: table, slots, classification | PHN backend | ✅ Done 2026-08-03 | `feature/aperture-psi-install`; v9→v10 migration + corpus fixtures (phius 0.052 / phi 0.04); 1850 backend tests green incl. new edge-classification + install-types suites; as-built notes in phase doc |
 | 02 Resolution, commands, route 3 | PHN backend | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; resolver (mull→assigned→default) + 3 commands + hygiene + route-3 `installs` block + uniform frame default + U-value edge wiring + slice summaries; REST spot-check on AGENT-BROWSER fixture (draft discarded); backend suite + frontend dev-check green |
 | 03 Installs sub-tab | PHN frontend | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; fifth sub-tab + DataTable page (TB recipe, shared helpers extracted); 15th table-regression case (smoke + cell-behavior green); route-union 500 fixed + locked by test; screenshot `working/agent-browser/installs-subtab-phase03.png` |
-| 04 Effective-value display | PHN frontend | Not started | — |
+| 04 Effective-value display | PHN frontend | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; TS mirrors (paired suites + reciprocal backend pointers); element card gained a dedicated 6th `Ψ-inst` column (assigned/default/mull states, muted inheritance); U-Values Ψ-INSTALL column verified live; screenshots `frame-row-psi-phase04.png` + `u-values-psi-phase04.png` |
 | 05 Installs modal (⏸ Ed UI review after exit gate) | PHN frontend | Not started | — |
 | 06 Documentation integration + docs sync | PHN both | Not started | — |
 | 07 GH client per-edge fidelity | honeybee_grasshopper_ph_plus | Not started — gated on 02 deployed | — |

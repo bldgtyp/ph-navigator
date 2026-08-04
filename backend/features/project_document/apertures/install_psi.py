@@ -14,6 +14,10 @@ Void elements carry no install edges and are skipped. Data problems that
 validation normally prevents (dangling slot ref, unset ``psi_w_mk``)
 degrade to the next rung with a typed warning instead of raising, so the
 U-value report and route-3 export can surface them without failing.
+
+Mirrored in TypeScript for zero-latency display:
+``frontend/src/features/apertures/install-psi.ts`` — keep the precedence
+rungs in lockstep (their test suites pair case-for-case).
 """
 
 from __future__ import annotations

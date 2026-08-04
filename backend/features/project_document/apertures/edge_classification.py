@@ -11,6 +11,10 @@ mulled side carries no install edge.
 
 Pure geometry: no catalog or slot lookups, so the phase-02 resolver and
 grid-mutation hygiene can call it as a plain function.
+
+Mirrored in TypeScript for zero-latency display:
+``frontend/src/features/apertures/edge-classification.ts`` — keep the two
+in lockstep (their test suites copy the same case tables).
 """
 
 from __future__ import annotations
