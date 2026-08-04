@@ -24,6 +24,7 @@ export const HOT_WATER_TANKS_STATUS_OPTION_KEY = "hot_water_tanks.status";
 export const ELECTRIC_HEATERS_STATUS_OPTION_KEY = "electric_heaters.status";
 export const APPLIANCES_STATUS_OPTION_KEY = "appliances.status";
 export const THERMAL_BRIDGES_STATUS_OPTION_KEY = "thermal_bridges.status";
+export const APERTURE_INSTALL_TYPES_STATUS_OPTION_KEY = "aperture_install_types.status";
 export const HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_outdoor_equip.status";
 export const HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_indoor_equip.status";
 export const HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY = "heat_pumps_outdoor_units.status";

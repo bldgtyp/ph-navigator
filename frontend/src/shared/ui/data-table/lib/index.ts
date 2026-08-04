@@ -60,6 +60,7 @@ export {
   missingOptionReferences,
   optionReferenceCounts,
 } from "./options/references";
+export { fieldDefsToSanitizeColumns } from "./fieldDefsToSanitizeColumns";
 export { normalizeOptionOrders } from "./options/normalize";
 
 export {

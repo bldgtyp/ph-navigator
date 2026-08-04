@@ -146,6 +146,9 @@ const heatPumpLeafRoute = (leaf: string) => (projectId: string) =>
 /** features/projects/lib.ts — projectTabPath("thermal-bridges"). */
 const thermalBridgesRoute = (projectId: string) => `/projects/${projectId}/thermal-bridges`;
 
+/** features/apertures/paths.ts — aperturesInstallsPath(projectId). */
+const aperturesInstallsRoute = (projectId: string) => `/projects/${projectId}/apertures/installs`;
+
 // --- The matrix -------------------------------------------------------
 
 export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
@@ -630,6 +633,27 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
     },
     singleSelectSample: { mode: "existing", label: "15-Ambient" },
     addRow: { mode: "inline", buttonName: "Add thermal bridge" },
+  },
+  {
+    // Lives under the Apertures tab's fifth sub-tab, not its own nav tab;
+    // "assets" is the closest matrix area (same library-table family as
+    // Thermal Bridges). Ships with the seeded, delete-blocked
+    // `apit_default` row, so the grid body is never empty.
+    id: "aperture-install-types",
+    label: "Installs",
+    area: "assets",
+    route: aperturesInstallsRoute,
+    tableKey: "aperture_install_types",
+    regionName: "Installs",
+    identifierHeader: "Display Name",
+    expectedHeaders: ["Tag", "Display Name", "Psi-Install", "Source", "Notes"],
+    representativeFields: {
+      text: "record_id",
+      number: "psi_w_mk",
+      single_select: "source",
+    },
+    singleSelectSample: { mode: "existing", label: "Calculated" },
+    addRow: { mode: "inline", buttonName: "Add install type" },
   },
 ];
 

@@ -43,13 +43,16 @@ import { useFramePickerFilterPreferences } from "../hooks/useFramePickerFilterPr
 import { ManufacturerFilterProvider } from "../hooks/useManufacturerFilter";
 import { canExportApertureUValueReport, naturalSortApertures } from "../lib";
 import {
+  APERTURE_SUBROUTES,
   apertureSubpath,
   aperturesBuilderPath,
   aperturesFramesPath,
   aperturesGlazingsPath,
+  aperturesInstallsPath,
   aperturesUValuesPath,
   isApertureSubroute,
 } from "../paths";
+import { InstallTypesPanel } from "../installs/InstallTypesPanel";
 import type {
   ApertureAttachmentChangeArgs,
   ApertureCommand,
@@ -73,6 +76,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const isBuilderRoute = isApertureSubroute(subpath, "builder");
   const isGlazingsRoute = isApertureSubroute(subpath, "glazings");
   const isFramesRoute = isApertureSubroute(subpath, "frames");
+  const isInstallsRoute = isApertureSubroute(subpath, "installs");
   const isUValuesRoute = isApertureSubroute(subpath, "u-values");
   const isProductReportRoute = isGlazingsRoute || isFramesRoute;
   const canExportUValueReport = canExportApertureUValueReport(sessionQuery.data);
@@ -272,7 +276,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     );
   }
 
-  if (!isBuilderRoute && !isGlazingsRoute && !isFramesRoute && !isUValuesRoute) {
+  if (!APERTURE_SUBROUTES.some((route) => isApertureSubroute(subpath, route))) {
     return (
       <Navigate
         to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
@@ -387,6 +391,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 Frames
               </AppSubTabLink>
               <AppSubTabLink
+                to={{ pathname: aperturesInstallsPath(project.id), search: location.search }}
+              >
+                Installs
+              </AppSubTabLink>
+              <AppSubTabLink
                 to={{ pathname: aperturesUValuesPath(project.id), search: location.search }}
               >
                 U-Values
@@ -420,6 +429,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   {actionError}
                 </p>
               ) : null}
+              {isInstallsRoute ? <InstallTypesPanel project={project} /> : null}
               {isUValuesRoute ? (
                 uValueReportQuery.isLoading ? (
                   <section className="apertures-placeholder-panel">

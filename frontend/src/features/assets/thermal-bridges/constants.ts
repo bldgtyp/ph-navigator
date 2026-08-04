@@ -2,8 +2,6 @@ import {
   ALL_FIELD_LOCKS,
   DEFAULT_BUILT_IN_LOCKS,
   RECORD_ID_FIELD_KEY,
-  type DataTableColumnDef,
-  type FieldDef,
   type TableFieldDef,
   type TableFieldRenderOverlay,
 } from "../../../shared/ui/data-table";
@@ -27,12 +25,7 @@ import {
 
 export const THERMAL_BRIDGE_ID_PREFIX = "tb";
 
-export const PDF_REPORT_ATTACHMENT_CONFIG = {
-  assetKind: "datasheet" as const,
-  allowedTypes: ["application/pdf"],
-  maxCount: 5,
-  maxFileSizeMb: 25,
-};
+export { PDF_REPORT_ATTACHMENT_CONFIG } from "../lib";
 
 export const THERMAL_BRIDGE_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(RECORD_ID_FIELD_KEY, "Tag", "short_text"),
@@ -129,16 +122,7 @@ export function thermalBridgesFieldOverlay(
   };
 }
 
-export function thermalBridgesTableColumnsForSanitize(
-  fieldDefs: readonly FieldDef[],
-): DataTableColumnDef<unknown>[] {
-  return fieldDefs.map((fieldDef) => ({
-    id: fieldDef.field_key,
-    fieldKey: fieldDef.field_key,
-    header: fieldDef.display_name,
-    accessor: () => null,
-  }));
-}
+export { fieldDefsToSanitizeColumns as thermalBridgesTableColumnsForSanitize } from "../../../shared/ui/data-table/lib";
 
 function builtInFieldDef(
   field_key: string,

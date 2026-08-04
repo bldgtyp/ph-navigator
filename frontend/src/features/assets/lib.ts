@@ -8,6 +8,15 @@ export const DATASHEET_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
   maxFileSizeMb: 25,
 };
 
+// PDF-only justification-report slot (Flixo / simulation PDFs) shared by
+// the Thermal Bridges and Installs library tables.
+export const PDF_REPORT_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
+  assetKind: "datasheet",
+  allowedTypes: ["application/pdf"],
+  maxCount: 5,
+  maxFileSizeMb: 25,
+};
+
 export const SITE_PHOTO_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
   assetKind: "site_photo",
   allowedTypes: ["image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"],

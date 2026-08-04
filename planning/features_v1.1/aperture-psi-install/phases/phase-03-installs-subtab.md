@@ -3,7 +3,8 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Not started
+STATUS:  ✅ Complete 2026-08-04 — implemented on feature/aperture-psi-install;
+         `make ci` green; as-built amendments at the end of this file
 AUTHOR:  Ed + Claude
 SCOPE:   Frontend (+ trivial backend none). Fifth Apertures sub-tab hosting the
          aperture_install_types DataTable page — the ThermalBridgesPage recipe
@@ -74,3 +75,41 @@ never hand-written strings.
 - Agent-browser screenshot of the populated tab
   (`/projects/<id>/apertures/installs`) attached to STATUS.md.
 - `make frontend-dev-check` during work; full closeout gate before merge.
+
+## As-built amendments (2026-08-04)
+
+- **Module lives at `frontend/src/features/apertures/installs/`** (types,
+  api via `createTableSliceFeature`, constants, payloads,
+  `InstallTypesTable`, `InstallTypesPanel`); the sub-tab wiring in
+  `AperturesTab.tsx` is ~10 lines (route flag + link + panel mount), and
+  the redirect guard now derives from a new `APERTURE_SUBROUTES` tuple in
+  `paths.ts` so the next sub-tab is a one-entry change.
+- **§2 delete-block seam:** the client-side Default-row guard lives in
+  `installTypesPayloadFromRowDelete` (drops `apit_default` from the delete
+  set so sibling deletes still land), not in `validate()` — validate runs
+  on every op and would have blocked unrelated edits. Server 409 remains
+  the authority; `deleteConflict` copy explains both causes.
+- **Generalized while cloning:** `PDF_REPORT_ATTACHMENT_CONFIG` moved to
+  `features/assets/lib.ts` (TB re-exports it);
+  `fieldDefsToSanitizeColumns` extracted to `shared/ui/data-table/lib`
+  (TB aliases it); the shared `addRowButton`/`readStringDefault`/
+  `readNumberDefault`/`customTextValue` helpers are imported rather than
+  re-cloned. No hand-maintained built-in FieldDef fallback — the slice's
+  `field_defs` are required and used directly.
+- **Wiring gap found+fixed:** the generic table route validates against the
+  `RegisteredTableResponse` union in `tables/__init__.py`; the new slice
+  type had to be added there (500 otherwise). A route-level backend test
+  now locks this in.
+- **Tests:** vitest payload suite (7); e2e coverage via the table-regression
+  matrix — Installs added as the 15th case (harness, smoke, cell-behavior
+  all green). The shared `commitSingleSelect` e2e helper needed a
+  race-safe popover-or-chevron branch (the psi column sits immediately
+  left of `source`, so the activation click can open the popover
+  directly). No bespoke jsdom render test (TB precedent has none; the e2e
+  smoke covers mount).
+- **Known unrelated drift:** the pre-existing `heat-pumps-equipment-indoor`
+  e2e smoke case fails on a stale "Heating Capacity" header expectation
+  (v9 units rename); not touched by this phase.
+- Screenshot evidence: `working/agent-browser/installs-subtab-phase03.png`
+  (gitignored working dir) — Installs sub-tab with the seeded Default row,
+  unit-aware Ψ column, Source pill, and shared affordances.

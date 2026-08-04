@@ -316,11 +316,13 @@ export async function addRowAndGetId(
 
 /**
  * Open a single-select cell's option popover and commit the sample option.
- * Single-select cells open via the right-edge chevron (not double-click —
- * see GridBody), so the cell is activated first to make the chevron
- * interactive, then the popover search + listbox drive the commit. `existing`
- * picks a seeded option by exact label; `create` mints a new option through
- * the popover's "+ Create" footer.
+ * A click either activates the cell (chevron appears) or — when the cell
+ * was already active, e.g. after an edit on the column immediately left —
+ * opens the popover directly and hides the chevron (see GridBody's
+ * active-cell click path). The helper settles on whichever of the two
+ * appears before branching, then drives the popover search + listbox.
+ * `existing` picks a seeded option by exact label; `create` mints a new
+ * option through the popover's "+ Create" footer.
  */
 export async function commitSingleSelect(
   page: Page,
@@ -328,9 +330,15 @@ export async function commitSingleSelect(
   sample: SingleSelectSample,
 ): Promise<void> {
   await cell.click();
-  await cell.getByRole("button", { name: "Open options" }).click();
 
   const popover = page.locator(".single-select-popover");
+  const chevron = cell.getByRole("button", { name: "Open options" });
+  // Wait for the click's outcome (popover XOR chevron) before branching so
+  // the check can't race the React state commit.
+  await expect(popover.or(chevron).first(), "popover or chevron after click").toBeVisible();
+  if (!(await popover.isVisible())) {
+    await chevron.click();
+  }
   await expect(popover, "single-select popover").toBeVisible();
   await popover.getByRole("textbox", { name: "Search options" }).fill(sample.label);
 

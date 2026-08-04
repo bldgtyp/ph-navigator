@@ -10,14 +10,27 @@ export function aperturesFramesPath(projectId: string): string {
   return `/projects/${projectId}/apertures/frames`;
 }
 
+export function aperturesInstallsPath(projectId: string): string {
+  return `/projects/${projectId}/apertures/installs`;
+}
+
 export function aperturesUValuesPath(projectId: string): string {
   return `/projects/${projectId}/apertures/u-values`;
 }
 
-export function isApertureSubroute(
-  subpath: string,
-  route: "builder" | "glazings" | "frames" | "u-values",
-): boolean {
+/** Every Apertures sub-tab leaf, in nav order. The route-flag union and
+ * the AperturesTab redirect guard both derive from this tuple so adding a
+ * sub-tab is a one-entry change. */
+export const APERTURE_SUBROUTES = [
+  "builder",
+  "glazings",
+  "frames",
+  "installs",
+  "u-values",
+] as const;
+export type ApertureSubroute = (typeof APERTURE_SUBROUTES)[number];
+
+export function isApertureSubroute(subpath: string, route: ApertureSubroute): boolean {
   return subpath === `/${route}` || subpath.startsWith(`/${route}/`);
 }
 

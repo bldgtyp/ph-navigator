@@ -240,6 +240,27 @@ def test_default_row_values_remain_editable() -> None:
     assert next_body.tables.aperture_install_types.rows[0].custom_values["psi_w_mk"] == 0.011
 
 
+# --- generic table route -----------------------------------------------------
+
+
+def test_install_types_route_serves_slice_with_seeded_default(clean_document_tables: None) -> None:
+    # Route-level (not builder-level) on purpose: the generic table route
+    # validates against the RegisteredTableResponse union, so a slice type
+    # missing from `tables/__init__.py` 500s even when the builder works.
+    from tests.test_project_document import create_project, signed_in_client
+
+    client = signed_in_client()
+    project = create_project(client)
+    response = client.get(
+        f"/api/v1/projects/{project['id']}/versions/{project['active_version_id']}/draft/tables/aperture_install_types"
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [row["id"] for row in body["aperture_install_types"]] == [APERTURE_INSTALL_DEFAULT_TYPE_ID]
+    assert body["field_defs"][0]["display_name"] == "Tag"
+    assert APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY in body["single_select_options"]
+
+
 # --- v9 -> v10 migration -----------------------------------------------------
 
 
