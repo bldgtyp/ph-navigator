@@ -519,11 +519,40 @@ JSON document. Illustrative sketch (the canonical model is the
               "left":   null
             },
             "glazing_id": "pglz_...",            // ProjectGlazing id | null
-            "operation": null                    // null | { type: "swing"|"slide", directions: [...] }
+            "operation": null,                   // null | { type: "swing"|"slide", directions: [...] }
+            "installs": {                        // v10 — each side: aperture_install_types row id | null
+              "top":    null,                    // null = inherit the seeded Default type
+              "right":  null,
+              "bottom": null,
+              "left":   null
+            }
           }
         ]
       }
     ],
+    "aperture_install_types": {                   // v10 — window-install Ψ library (TB-style envelope)
+      "field_defs": [],                           // seeded FieldDefs: name, psi_w_mk, source, status
+      "rows": [
+        {
+          "id": "apit_default",                   // seeded per project; program-aware Ψ
+          "pdf_report_asset_ids": [],             // Flixo/THERM justification PDFs
+          "datasheet_asset_ids": [],
+          "photo_asset_ids": [],
+          "datasheet_status": "na",
+          "photo_status": "na",
+          "datasheet_not_required": true,
+          "photo_not_required": true,
+          "notes": null,
+          "custom_values": { "name": "Default", "psi_w_mk": 0.052, "...": "..." }
+        }
+      ]
+    },
+    // aperture_install_types (schema v10, aperture-psi-install): the v9→v10
+    // migration seeds the Default row and empty per-edge `installs` slots.
+    // Deleting a row still assigned to an edge is blocked (409); the Default
+    // row cannot be deleted. Validation self-heals the seeded option lists +
+    // Default row. Per-edge resolution (mulled Ψ=0 → assigned → inherited
+    // Default) is documented in `context/ui/pages/apertures-tab.md` §2.6.4.
     // kind:"void" elements preserve exact grid coverage but must carry no
     // frame, glazing, or operation assignments. Consumers exclude them from
     // U-value math, specification reports, and all exports.

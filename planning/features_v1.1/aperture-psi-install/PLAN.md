@@ -3,7 +3,7 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Accepted — phases 01–05 complete 2026-08-03/04 (05 ⏸ Ed UI review)
+STATUS:  Accepted — PHN phases 01–06 complete 2026-08-03/04 (05 ⏸ Ed UI review; 07 gated on deploy)
          (feature/aperture-psi-install); 05–07 not started
 AUTHOR:  Ed + Claude
 SCOPE:   Phase map, ordering constraints, and cross-packet coordination.

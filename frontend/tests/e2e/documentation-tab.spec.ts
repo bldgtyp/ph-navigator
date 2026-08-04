@@ -198,6 +198,36 @@ test("Documentation tab supports contractor directions and editor evidence publi
   }
 });
 
+test("Documentation lists the Installs group and deep-links to the Installs tab", async ({
+  page,
+}) => {
+  await signInForAgent(page);
+  const stamp = Date.now().toString().slice(-8);
+  const projectId = await createProject(page, {
+    name: `Psi Docs ${stamp}`,
+    btNumber: `idoc-${stamp}`,
+  });
+
+  // Every project carries the seeded Default install type, so the
+  // apertures section always shows the Installs group.
+  await page.goto(`/projects/${projectId}/documentation#apertures`);
+  const installsGroup = page.getByRole("region", { name: "Installs", exact: true });
+  await expect(installsGroup).toBeVisible();
+  await installsGroup.getByRole("button", { name: "Installs" }).click();
+  const record = installsGroup.getByRole("listitem").filter({
+    has: page.getByRole("button", { name: "Default" }),
+  });
+  await expect(record).toBeVisible();
+
+  // The open-owner link deep-links onto the Installs sub-tab, but is
+  // pointer-events:none until the record label is hovered (row-action
+  // reveal pattern).
+  await record.getByRole("button", { name: "Default" }).hover();
+  await record.getByLabel("Open record - Default").click();
+  await expect(page).toHaveURL(/\/apertures\/installs\?focus=apit_default$/);
+  await expect(page.getByRole("gridcell", { name: "Default" }).first()).toBeVisible();
+});
+
 async function seedVentilator(
   request: APIRequestContext,
   baseURL: string | undefined,

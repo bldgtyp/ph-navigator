@@ -194,11 +194,11 @@ const DIRECTIONS: Record<string, DocumentationDirection> = {
   apertures: {
     key: "apertures",
     title: "Windows and Apertures",
-    overview: "Document installed products and labels for glazing and frame records.",
+    overview: "Document installed products and labels for glazing, frame, and install records.",
     shots: [
       "Overall window or door opening showing the product in context.",
       "Readable NFRC, manufacturer, or shop label for glass and frame products.",
-      "Frame spacer, mullion, or installation condition when it supports a psi-value input.",
+      "Installation condition at the window-to-wall junction (shims, backer rod, air-seal, insulation) for each Ψ-install type.",
     ],
     exampleImageUrl: null,
   },

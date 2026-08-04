@@ -431,6 +431,7 @@ const ROWS_KEY_BY_TABLE: Record<string, string> = {
   electric_heaters: "electric_heaters",
   appliances: "appliances",
   thermal_bridges: "thermal_bridges",
+  aperture_install_types: "aperture_install_types",
   project_materials: "rows",
   assembly_segments: "rows",
   heat_pumps_outdoor_equip: "outdoor_equip",

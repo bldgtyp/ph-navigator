@@ -3,7 +3,7 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Not started
+STATUS:  ✅ Done 2026-08-04
 AUTHOR:  Ed + Claude
 SCOPE:   Backend + frontend + context docs. Surface install types on the
          Documentation page (and thereby the future Overview meters), update
@@ -68,3 +68,42 @@ RELATED: ../decisions.md (D-7, D-9),
   of the feature is done — re-check `planning/STATUS.md` and this packet's
   README status line, and run the docs-pass skill across the whole diff
   history of the feature.
+
+## As-built notes (2026-08-04)
+
+- **Registry entry:** no separate factory — `_aperture_table` gained a
+  keyword-only `status_source` param (default `specification_status`), and
+  the Installs entry registers as
+  `_aperture_table("aperture_install_types", "Installs", "installs",
+  status_source="custom_status")`. The phase's "clone `_thermal_bridge_table`"
+  direction assumed the source couldn't be parameterized; the param is
+  strictly simpler.
+- **Frontend:** the only code change the generic documentation UI needed was
+  the `ROWS_KEY_BY_TABLE` entry (`aperture_install_types` → same-named slice
+  rows key) — that map doubles as the documentation write allowlist. The
+  `?focus=` deep link was already handled by the phase-03 Installs page.
+- **Directions copy:** the apertures photo-shot bullet stays a photo subject
+  (window-to-wall junction condition per Ψ-install type); the editor
+  create/attach/assign workflow lives in `context/ui/pages/apertures-tab.md`
+  §2.6.4, not in the contractor photo guide.
+- **Rollup test delta:** `test_documentation_rollup_is_counts_only_...` now
+  expects the apertures section always present — every document carries the
+  seeded Default row (complete, evidence not-required), so a fresh project
+  shows Installs 1/1 complete rather than an empty section.
+- **MCP:** `context/mcp.md` unchanged — the MCP table tools resolve through
+  the same `get_table_contract` registry, which has included
+  `aperture_install_types` since phase 01. Verified via REST
+  (`GET .../draft/tables/aperture_install_types` → 200 with seeded Default).
+  Note: a phn-local stdio server spawned before the v10 code will 404 with a
+  stale `supported_tables: [rooms, apertures]` diagnostic (that list is a
+  legacy literal in `tables/registry.py`, not the real registry) until the
+  process restarts.
+- **Pre-existing follow-up (not this phase):** the first test in
+  `documentation-tab.spec.ts` ("contractor directions and editor evidence
+  publication") fails on clean HEAD — it predates status-ux-unification
+  (expects no "Documentation…" heading and a "Missing photos" chip; the
+  shipped UI has "Documentation progress" meters and "Needs site photos").
+  Needs a rewrite against the current Overview/Documentation UX.
+- Screenshot: `working/agent-browser/documentation-installs-phase06.png`
+  (Apertures section with Glazings/Frames/Installs groups; Default record
+  expanded, meters picking the group up with zero extra work).
