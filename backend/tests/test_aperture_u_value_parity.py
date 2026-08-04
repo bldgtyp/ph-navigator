@@ -127,7 +127,7 @@ def test_single_element_asymmetric_frame_snapshot() -> None:
             }
         ],
         "warnings": [],
-        "content_hash": "120248e960c8fa76d2a43d02f7453f6cacd0c0a1029646f232569926571d6e51",
+        "content_hash": "f92da030a575776c1a0aa0984f7daf184c5b02fc7837118249790853b6db64e4",
     }
 
 
@@ -164,7 +164,7 @@ def test_two_by_two_mixed_glazing_snapshot() -> None:
         ("aptel_11", 0.9741, 1.32, 0.9951, 0.3249),
     ]
     assert result["warnings"] == []
-    assert result["content_hash"] == "8e2d36edd9e765844781aa82a631075919aa673e2c63c0327932839e3cea8c6c"
+    assert result["content_hash"] == "587ec6399383d0a2ad4aa6459dcb7aefa00844b785d57d41f47ec8af64fa44a9"
 
 
 @pytest.mark.parametrize(
@@ -179,7 +179,7 @@ def test_two_by_two_mixed_glazing_snapshot() -> None:
                 elements=[_element("aptel_unassigned", frames=_frames(top=None))],
             ),
             "missing_frame",
-            "94da45ccb38b12774431e50fa22de68f46e446ea4eb96e5b6e7a06afb0c36385",
+            "be68eb01afe7c066480d0a0d23fa7e1ec747986fa26ebdc31125be365f3bd8f2",
         ),
         (
             ApertureTypeEntry(
@@ -190,7 +190,7 @@ def test_two_by_two_mixed_glazing_snapshot() -> None:
                 elements=[_element("aptel_incomplete", frames=_frames(top="pfrm_incomplete"))],
             ),
             "incomplete_frame_data",
-            "c9d510d0ad4c7f71e841ce31bdf7362fe346825a9291dd772ccd4fb284f29ba1",
+            "6b36d45f74581b5b42113d5a34f88aab48a03e2dbbc6bd2f8de28a03966e0985",
         ),
         (
             ApertureTypeEntry(
@@ -201,7 +201,7 @@ def test_two_by_two_mixed_glazing_snapshot() -> None:
                 elements=[_element("aptel_missing_glazing", glazing_id=None)],
             ),
             "missing_glazing",
-            "6cd64885d0cfc476481e68e1f4638f029e019020aa7ef2a7f9ab5917e9c8f12d",
+            "3c88965bc5ff8b4dadc3006cb5c50d3249e8f327e2cb3f8d31cfbf5682ee3470",
         ),
     ],
 )
@@ -248,7 +248,7 @@ def test_non_positive_glazing_area_snapshot() -> None:
     assert result["elements"][0]["glazing_area_m2"] == 0.0
     assert result["elements"][0]["frame_area_m2"] == 1.0
     assert [warning["kind"] for warning in result["warnings"]] == ["non_positive_glazing_area"]
-    assert result["content_hash"] == "c3dd4bbd7043523eaf0496699301261a9b33e5be5ff2706d90adc4833f7ad174"
+    assert result["content_hash"] == "634af8007550d6bf77f698f23dec348f23fdcdf6cb0f5fbf56d6d38a7f85f2e5"
 
 
 def test_void_and_all_void_snapshots() -> None:
@@ -287,7 +287,7 @@ def test_void_and_all_void_snapshots() -> None:
     mixed_result = _snapshot(mixed, _tables())
     assert mixed_result["total_area_m2"] == 1.0
     assert [item["element_id"] for item in mixed_result["elements"]] == ["aptel_glazed"]
-    assert mixed_result["content_hash"] == "f3c79aa0dbe4d1c81d84231ba2cbe331ea2df28ec8b39a49d71aeb6fb790cffc"
+    assert mixed_result["content_hash"] == "c4623e0c8b5f9a94829cb2facf09dbb6de639c978e710fdc44ea71ab391460f9"
 
     all_void_result = _snapshot(all_void, _tables())
     assert all_void_result == {
@@ -304,7 +304,7 @@ def test_void_and_all_void_snapshots() -> None:
                 "message": "Aperture type apt_all_void contains no glazed elements.",
             }
         ],
-        "content_hash": "3dccf8ee3395f2996336bdec22ce1c4c8987ad030b82256ee4c437faccf3949d",
+        "content_hash": "2e14e647db26efcaa4847edc42cc82f5bff3c33d9eb5b5486a8c7faa26a5d3b8",
     }
 
 

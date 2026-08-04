@@ -14,6 +14,7 @@ function element(
     row_span: rowSpan,
     column_span: columnSpan,
     frames: { top: null, right: null, bottom: null, left: null },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: null,
     operation: null,
   };

@@ -50,6 +50,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: frame(50), right: frame(50), bottom: frame(50), left: frame(50) },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: glazing(),
     operation: null,
     ...overrides,

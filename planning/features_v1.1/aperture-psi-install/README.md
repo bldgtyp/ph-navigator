@@ -1,8 +1,8 @@
 # Feature: Aperture Psi-Install (`psi_install_w_mk`)
 
 ```
-STATUS:  Active — design accepted 2026-08-03; phase 01 (backend schema v10)
-         complete 2026-08-03, phases 02–07 pending.
+STATUS:  Active — design accepted 2026-08-03; phases 01–02 (backend)
+         complete 2026-08-03/04, phases 03–07 pending.
 ORIGIN:  honeybee_grasshopper_ph_plus (GH plugin, PH-Nav V1 client — Get Apertures)
 DATE:    2026-07-05 (need filed) / 2026-08-03 (research + PRD draft)
 AUTHOR:  Ed + Claude

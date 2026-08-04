@@ -42,6 +42,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: null, right: null, bottom: null, left: null },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: null,
     operation: null,
     ...overrides,
@@ -58,6 +59,7 @@ describe("mismatchedSides", () => {
         bottom: frame("Double-Hung"),
         left: frame("Swing (Left)"),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     expect(mismatchedSides(el)).toEqual([]);
   });
@@ -71,6 +73,7 @@ describe("mismatchedSides", () => {
         bottom: frame("Swing (Left)"),
         left: frame("Swing (Left)"),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     expect(mismatchedSides(el)).toEqual(["top"]);
   });
@@ -84,6 +87,7 @@ describe("mismatchedSides", () => {
         bottom: frame("Slide"),
         left: frame("Fixed"),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     expect(mismatchedSides(el)).toEqual(["left"]);
   });
@@ -97,6 +101,7 @@ describe("mismatchedSides", () => {
         bottom: null,
         left: null,
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     expect(mismatchedSides(el)).toEqual(["right"]);
   });
@@ -110,6 +115,7 @@ describe("mismatchedSides", () => {
         bottom: null,
         left: frame("Swing (Left)"),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     expect(mismatchedSides(el)).toEqual([]);
   });

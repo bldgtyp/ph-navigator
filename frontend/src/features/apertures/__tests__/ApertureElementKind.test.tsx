@@ -92,6 +92,7 @@ describe("Aperture element kind controls", () => {
         element({
           name: "Operable",
           frames: { top: frame(), right: null, bottom: null, left: null },
+          installs: { top: null, right: null, bottom: null, left: null },
           glazing: glazing(),
           operation: { type: "swing", directions: ["left"] },
         }),
@@ -137,6 +138,7 @@ describe("Aperture element kind controls", () => {
         operation: null,
         glazing_id: null,
         frames: { top: null, right: null, bottom: null, left: null },
+        installs: { top: null, right: null, bottom: null, left: null },
       },
     });
     renderHarness(aperture([element()]), onSetElementKind);

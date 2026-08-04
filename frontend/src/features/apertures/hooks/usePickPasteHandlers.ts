@@ -11,6 +11,7 @@ import type {
   ApertureAssignmentSnapshot,
   ApertureElement,
   ApertureElementFrames,
+  ApertureElementInstalls,
   ApertureOperation,
   FrameRef,
   GlazingRef,
@@ -22,6 +23,7 @@ export type PasteTargetSnapshot = {
   operation: ApertureOperation | null;
   glazing: GlazingRef | null;
   frames: ApertureElementFrames;
+  installs: ApertureElementInstalls;
 };
 
 const PASTE_PULSE_MS = 600;
@@ -141,6 +143,7 @@ function assignmentSnapshot(target: PasteTargetSnapshot): ApertureAssignmentSnap
       bottom: projectRefId(target.frames.bottom),
       left: projectRefId(target.frames.left),
     },
+    installs: { ...target.installs },
   };
 }
 

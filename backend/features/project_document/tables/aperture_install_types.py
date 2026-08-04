@@ -78,6 +78,18 @@ APERTURE_INSTALL_SOURCE_OPTIONS: tuple[SingleSelectOption, ...] = (
 )
 
 
+def install_type_psi_w_mk(row: ApertureInstallTypeRow) -> float | None:
+    """The row's Ψ-install from ``custom_values``, or ``None`` when unset."""
+    psi = row.custom_values.get("psi_w_mk")
+    return float(psi) if isinstance(psi, (int, float)) else None
+
+
+def install_type_name(row: ApertureInstallTypeRow) -> str | None:
+    """The row's display name from ``custom_values``, or ``None`` when unset."""
+    name = row.custom_values.get("name")
+    return name if isinstance(name, str) else None
+
+
 def default_install_type_row(*, is_phius: bool) -> ApertureInstallTypeRow:
     """Build the seeded program-aware Default row (D-4).
 

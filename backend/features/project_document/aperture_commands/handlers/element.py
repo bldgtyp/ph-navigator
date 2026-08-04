@@ -28,6 +28,7 @@ from features.project_document.aperture_commands.models import (
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     ApertureElementFrames,
+    ApertureElementInstalls,
     ProjectDocumentV1,
 )
 from features.shared.errors import api_error
@@ -112,6 +113,7 @@ def apply_set_element_kind(
                 updates.update(
                     {
                         "frames": ApertureElementFrames(),
+                        "installs": ApertureElementInstalls(),
                         "glazing_id": None,
                         "operation": None,
                     }

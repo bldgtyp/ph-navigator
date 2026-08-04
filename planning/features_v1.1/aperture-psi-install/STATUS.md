@@ -1,10 +1,11 @@
 # STATUS — aperture-psi-install
 
-**State:** 🟢 Active — design accepted by Ed 2026-08-03. Phase 01 (backend
-schema v10) implemented 2026-08-03 on `feature/aperture-psi-install`.
+**State:** 🟢 Active — design accepted by Ed 2026-08-03. Phases 01–02
+(backend schema v10 + resolution/commands/route 3) implemented on
+`feature/aperture-psi-install`.
 
-**Next step:** Pick up `phases/phase-02-resolution-commands-route3.md` on the
-same feature branch. Status UX unification is complete; skip the retired
+**Next step:** Pick up `phases/phase-03-installs-subtab.md` on the same
+feature branch. Status UX unification is complete; skip the retired
 `status_summary.py` and frontend destination work described by D-9.
 
 **Accepted design:** `decisions.md` (D-1…D-10) is the authority; PRD.md holds
@@ -15,7 +16,7 @@ the rationale + wireframe; research.md holds all code citations.
 | Phase | Repo | State | Evidence |
 | --- | --- | --- | --- |
 | 01 Schema v10: table, slots, classification | PHN backend | ✅ Done 2026-08-03 | `feature/aperture-psi-install`; v9→v10 migration + corpus fixtures (phius 0.052 / phi 0.04); 1850 backend tests green incl. new edge-classification + install-types suites; as-built notes in phase doc |
-| 02 Resolution, commands, route 3 | PHN backend | Not started | — |
+| 02 Resolution, commands, route 3 | PHN backend | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; resolver (mull→assigned→default) + 3 commands + hygiene + route-3 `installs` block + uniform frame default + U-value edge wiring + slice summaries; REST spot-check on AGENT-BROWSER fixture (draft discarded); backend suite + frontend dev-check green |
 | 03 Installs sub-tab | PHN frontend | Not started | — |
 | 04 Effective-value display | PHN frontend | Not started | — |
 | 05 Installs modal (⏸ Ed UI review after exit gate) | PHN frontend | Not started | — |

@@ -9,8 +9,14 @@ Span shape: V2 stores inclusive `(start, end)` tuples; the GH client wants V1's
 already top-to-bottom in V2 (row 0 = top), matching V1's wire convention, so no
 server-side reversal is needed (the GH client does its own bottom-to-top flip
 for Rhino). `chi_value` is omitted — V2 frames have no chi field (O3); the client
-defaults it to 0.0. `psi_install_w_mk` IS emitted (V1 never sent it and the
-client silently defaulted 0.04).
+defaults it to 0.0.
+
+Ψ-install contract (aperture-psi-install D-5): `frame_type.psi_install_w_mk`
+always carries the project Default value, **uniform** across every frame block
+and never null — the current GH client dedups frame elements by name, so a
+per-edge-varying value there would be silently misapplied. The true per-edge
+effective values (incl. 0.0 on interior/mulled sides) ride in each element's
+additive `installs` block, which the updated client (phase 07) reads instead.
 """
 
 from __future__ import annotations
@@ -20,6 +26,12 @@ from typing import Any
 from starlette import status
 
 from features.gh_api.export_helpers import reject_duplicate_names
+from features.project_document.aperture_commands.models import APERTURE_SIDES, ApertureSide
+from features.project_document.apertures.install_psi import (
+    ApertureInstallPsiResolution,
+    default_install_psi_w_mk,
+    resolve_install_psi_for_aperture,
+)
 from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import ProjectDocumentTables, ProjectDocumentV1
 from features.project_document.envelope_models import (
@@ -43,11 +55,13 @@ def export_aperture_types(body: ProjectDocumentV1) -> dict[str, dict[str, Any]]:
         error_code="duplicate_aperture_type_names",
         message="Aperture types have duplicate names; rename them so each is unique before exporting to Grasshopper.",
     )
+    default_psi = default_install_psi_w_mk(body.tables)
     payloads: dict[str, dict[str, Any]] = {}
     for aperture in body.tables.apertures:
         glazed = _glazed_elements(aperture)
         _reject_unsafe_void_layout(aperture, glazed)
-        payloads[aperture.name] = _aperture_type(aperture, glazed, body.tables)
+        resolution = resolve_install_psi_for_aperture(aperture, body.tables)
+        payloads[aperture.name] = _aperture_type(aperture, glazed, body.tables, resolution, default_psi)
     return payloads
 
 
@@ -59,13 +73,15 @@ def _aperture_type(
     aperture: ApertureTypeEntry,
     glazed_elements: list[ApertureElement],
     tables: ProjectDocumentTables,
+    resolution: ApertureInstallPsiResolution,
+    default_psi: float,
 ) -> dict[str, Any]:
     return {
         "name": aperture.name,
         "display_name": aperture.name,
         "row_heights_mm": list(aperture.row_heights_mm),
         "column_widths_mm": list(aperture.column_widths_mm),
-        "elements": [_element(element, tables) for element in glazed_elements],
+        "elements": [_element(element, tables, resolution, default_psi) for element in glazed_elements],
     }
 
 
@@ -101,7 +117,12 @@ def _reject_unsafe_void_layout(
         )
 
 
-def _element(element: ApertureElement, tables: ProjectDocumentTables) -> dict[str, Any]:
+def _element(
+    element: ApertureElement,
+    tables: ProjectDocumentTables,
+    resolution: ApertureInstallPsiResolution,
+    default_psi: float,
+) -> dict[str, Any]:
     row_start, row_end = element.row_span
     column_start, column_end = element.column_span
     return {
@@ -111,8 +132,21 @@ def _element(element: ApertureElement, tables: ProjectDocumentTables) -> dict[st
         "row_span": row_end - row_start + 1,
         "col_span": column_end - column_start + 1,
         "glazing": _glazing(glazing_by_id(tables, element.glazing_id)),
-        "frames": {side: _frame(frame_by_id(tables, getattr(element.frames, side))) for side in _FRAME_SIDES},
+        "frames": {
+            side: _frame(frame_by_id(tables, getattr(element.frames, side)), default_psi) for side in _FRAME_SIDES
+        },
+        "installs": {side: _install(element.id, side, resolution) for side in APERTURE_SIDES},
         "operation": _operation(element.operation),
+    }
+
+
+def _install(element_id: str, side: ApertureSide, resolution: ApertureInstallPsiResolution) -> dict[str, Any]:
+    resolved = resolution.values[(element_id, side)]  # total for glazed elements by construction
+    return {
+        "install_type_id": resolved.install_type_id,
+        "name": resolved.install_type_name,
+        "psi_install_w_mk": resolved.psi_w_mk,
+        "source": resolved.source,
     }
 
 
@@ -133,7 +167,7 @@ def _glazing(glazing: ProjectGlazing | None) -> dict[str, Any] | None:
     }
 
 
-def _frame(frame: ProjectFrame | None) -> dict[str, Any] | None:
+def _frame(frame: ProjectFrame | None, default_psi: float) -> dict[str, Any] | None:
     if frame is None:
         return None
     return {
@@ -144,7 +178,8 @@ def _frame(frame: ProjectFrame | None) -> dict[str, Any] | None:
             "width_mm": frame.width_mm,
             "u_value_w_m2k": frame.u_value_w_m2k,
             "psi_g_w_mk": frame.psi_g_w_mk,
-            "psi_install_w_mk": frame.psi_install_w_mk,
+            # Uniform project Default on purpose (D-5) — see module docstring.
+            "psi_install_w_mk": default_psi,
             "specification_status": frame.specification_status,
             "manufacturer": frame.manufacturer,
             "operation": frame.operation,

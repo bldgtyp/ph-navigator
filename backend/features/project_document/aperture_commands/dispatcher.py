@@ -27,6 +27,11 @@ from features.project_document.aperture_commands.handlers.element import (
 from features.project_document.aperture_commands.handlers.flip import (
     apply_flip_left_right,
 )
+from features.project_document.aperture_commands.handlers.installs import (
+    apply_copy_element_installs,
+    apply_install_to_apertures,
+    apply_set_element_install,
+)
 from features.project_document.aperture_commands.handlers.manufacturer_filters import (
     apply_set_manufacturer_filters,
 )
@@ -82,6 +87,9 @@ _HANDLERS: dict[str, _Handler] = {
     "flipLeftRight": cast(_Handler, apply_flip_left_right),
     "setManufacturerFilters": cast(_Handler, apply_set_manufacturer_filters),
     "refreshRefFromCatalog": cast(_Handler, apply_refresh_ref_from_catalog),
+    "setElementInstall": cast(_Handler, apply_set_element_install),
+    "applyInstallToApertures": cast(_Handler, apply_install_to_apertures),
+    "copyElementInstalls": cast(_Handler, apply_copy_element_installs),
 }
 
 # Commands declared in the union but intentionally not wired up.

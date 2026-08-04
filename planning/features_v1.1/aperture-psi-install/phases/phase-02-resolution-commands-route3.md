@@ -3,7 +3,8 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Not started
+STATUS:  ✅ Complete 2026-08-04 — implemented on feature/aperture-psi-install;
+         `make ci` green; as-built amendments at the end of this file
 AUTHOR:  Ed + Claude
 SCOPE:   Backend only. Effective-Ψ resolver, aperture commands for assignment,
          grid-mutation slot hygiene, route-3 `installs` block + frame_type
@@ -112,3 +113,38 @@ values are *tolerated*, but don't leak garbage):
   `setElementInstall`, then `get_table`/export inspection on the
   AGENT-BROWSER fixture; discard the draft afterwards.
 - Closeout gate (simplify, docs-pass, format, ci) + STATUS.md ledger.
+
+## As-built amendments (2026-08-04)
+
+- **§1 resolver shape:** only the per-aperture
+  `resolve_install_psi_for_aperture` shipped (returning
+  `ApertureInstallPsiResolution` keyed `(element_id, side)`); the
+  document-wide 3-tuple wrapper had no consumer and was dropped. Shared
+  `install_type_psi_w_mk` / `install_type_name` accessors live in
+  `tables/aperture_install_types.py`.
+- **§2 `copyElementInstalls`** rejects grid mismatch with **422**
+  `aperture_installs_copy_grid_mismatch` (not 400 — 422 is the aperture
+  command convention); `_grid_signature` compares dimension *counts* +
+  element spans/kinds, so mm dimensions may differ. The grid-signature
+  helper lives (private) in `handlers/installs.py`, not next to the
+  classifier.
+- **§3 hygiene:** `setElementKind`→void now also clears `installs`
+  (pre-existing handler would otherwise trip the v10 void validator);
+  paste copies the four slots (undo snapshot gained `installs`);
+  merge/split deliberately reset to all-None (position-dependent);
+  dimensions handlers needed no change.
+- **§5 cache identity:** `content_hash_for_aperture` now folds the
+  *resolved* per-side (source, Ψ) pairs in, so install edits/reassignments
+  change result identity even though U-w excludes Ψ-install. U-value CSV
+  goldens + parity hashes regenerated accordingly; synthetic frames'
+  never-authoritative `psi_install_w_mk=0.01` no longer echoes into
+  reports (resolver emits 0.0 without a seeded install-types table).
+- **Exit-gate spot-check** ran through the REST command endpoint (same
+  dispatcher) because the session's `phn-local` stdio process predated the
+  branch and had stale imports: `setElementInstall` on the AGENT-BROWSER
+  fixture assigned `apit_default` to one edge, slice returned the summary
+  payload (0.04 non-Phius default), draft discarded (`discarded: true`).
+- Frontend mirrors landed with the phase: `installs` on wire + hydrated
+  elements, snapshot `installs`, the three commands in the TS union, and
+  `aperture_install_types` summaries on the slice (15 test fixtures
+  updated).

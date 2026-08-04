@@ -159,6 +159,7 @@ const ACTIVE_APERTURE: ApertureTypeEntry = {
       row_span: [0, 0],
       column_span: [0, 0],
       frames: { top: null, right: null, bottom: null, left: null },
+      installs: { top: null, right: null, bottom: null, left: null },
       glazing: null,
       operation: null,
     },
@@ -175,6 +176,7 @@ function createSlice(apertures: ApertureTypeEntry[]): AperturesSlice {
     apertures,
     project_glazings: [],
     project_frames: [],
+    aperture_install_types: [],
     manufacturer_filters: null,
   };
 }

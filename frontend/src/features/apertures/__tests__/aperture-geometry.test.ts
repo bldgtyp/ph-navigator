@@ -58,6 +58,7 @@ function element(overrides: Partial<ApertureElement>): ApertureElement {
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: null, right: null, bottom: null, left: null },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: glazing(),
     operation: null,
     ...overrides,
@@ -163,6 +164,7 @@ describe("elementRegionsMm", () => {
         bottom: frame(70),
         left: frame(80),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     const rect = { x: 10, y: 20, width: 500, height: 400 };
     const r = elementRegionsMm(el, rect);
@@ -198,6 +200,7 @@ describe("elementRegionsMm", () => {
         bottom: frame(70),
         left: frame(80),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     const rect = { x: 0, y: 0, width: 500, height: 400 };
     const r = elementRegionsMm(el, rect);
@@ -240,6 +243,7 @@ describe("flipColumnForInterior", () => {
     const el = element({
       column_span: [0, 1],
       frames: { top: null, bottom: null, left: leftFrame, right: rightFrame },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     const e = entry({ column_widths_mm: [100, 200, 300], elements: [el] });
     const flipped = flipColumnForInterior(e, el);
