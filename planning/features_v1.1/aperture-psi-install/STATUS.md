@@ -28,6 +28,12 @@ the rationale + wireframe; research.md holds all code citations.
 
 ## Coordination
 
+- **Upstream refactor SHIPPED 2026-08-12** — honeybee-ph v1.33.33 + PHX v1.56.73 released;
+  GH components merged (canvas step pending, Ed). Landing zone for phase 07: `PhApertureInstallType` + per-edge aperture slots + resolver (primary:
+  `honeybee_ph/planning/refactor/aperture-psi-install.md`), PHPP per-row Ψ-install, WUFI/METr
+  export-time window-type variant synthesis. Mapping for the GH client:
+  [`upstream-alignment.md`](upstream-alignment.md). Phase 07 is now additionally sequenced
+  behind the honeybee_ph → PHX → honeybee_grasshopper_ph releases.
 - **status-ux-unification** (completed and archived 2026-08-03):
   `status_summary.py` and its frontend destination are retired; do not
   recreate them in phases 01/03. No new evidence axes (D-7 here defers the
