@@ -1,11 +1,12 @@
 {
-  "fingerprint": "2fbe144f784f1de59fd1687a95c9349ebdc34fa84467897f99f8a02c16a30ba2",
-  "fixture_input_count": 6,
+  "fingerprint": "f771e5816835ce7785a84d4dde02c0f306b3e53fd1af5ebed89ab6a15abc1c30",
+  "fixture_input_count": 8,
   "fixture_versions": [
     "v1",
     "v4",
     "v7",
-    "v8"
+    "v8",
+    "v9"
   ],
-  "schema_version": 9
+  "schema_version": 10
 }

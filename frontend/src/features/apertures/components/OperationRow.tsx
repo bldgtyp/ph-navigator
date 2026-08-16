@@ -59,6 +59,9 @@ export function OperationRow({ operation, canEdit, onCommit }: OperationRowProps
         <div className="aperture-card-row__metric" role="cell">
           -
         </div>
+        <div className="aperture-card-row__metric" role="cell">
+          -
+        </div>
       </div>
     );
   }
@@ -109,6 +112,9 @@ export function OperationRow({ operation, canEdit, onCommit }: OperationRowProps
             ))}
           </div>
         )}
+      </div>
+      <div className="aperture-card-row__metric" role="cell">
+        -
       </div>
       <div className="aperture-card-row__metric" role="cell">
         -

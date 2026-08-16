@@ -8,7 +8,7 @@
 // the offending table (via the matrix `id`/`label`) so the broken route is
 // obvious without re-running the whole matrix.
 //
-// One project is created once and reused across all 14 tables — the suite
+// One project is created once and reused across all 15 tables — the suite
 // only navigates and reads, never mutates, so cross-table state can't leak.
 // Run:
 //   E2E_EMAIL=codex@example.com E2E_PASSWORD=password \

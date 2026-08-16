@@ -51,6 +51,7 @@ STATUS_OPTION_IDS: tuple[str, ...] = (
 # frontend schemas must all stay aligned with it.
 STATUS_TABLE_NAMES: tuple[str, ...] = (
     "thermal_bridges",
+    "aperture_install_types",
     "pumps",
     "fans",
     "hot_water_heaters",

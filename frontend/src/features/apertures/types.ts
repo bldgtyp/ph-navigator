@@ -109,6 +109,17 @@ export type ApertureElementFrames = {
   left: FrameRef | null;
 };
 
+// Per-side install-type assignment slots; `null` inherits the project
+// Default install type (`apit_default`). Raw wire ids on both wire and
+// hydrated elements — effective-Ψ resolution is a backend concern
+// surfaced via the U-Values panel and route 3.
+export type ApertureElementInstalls = {
+  top: string | null;
+  right: string | null;
+  bottom: string | null;
+  left: string | null;
+};
+
 export type ApertureElement = {
   id: string;
   name: string;
@@ -116,6 +127,7 @@ export type ApertureElement = {
   row_span: [number, number];
   column_span: [number, number];
   frames: ApertureElementFrames;
+  installs: ApertureElementInstalls;
   glazing: GlazingRef | null;
   operation: ApertureOperation | null;
 };
@@ -131,6 +143,7 @@ export type ApertureAssignmentSnapshot = {
   operation: ApertureOperation | null;
   glazing_id: string | null;
   frames: WireApertureElementFrames;
+  installs: ApertureElementInstalls;
 };
 
 export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {
@@ -155,6 +168,17 @@ export type ManufacturerFilters = {
   glazing_manufacturers_enabled: string[] | null;
 };
 
+// Install-type library row projected for the builder UI (mirror of the
+// backend `ApertureInstallTypeSummary`). `source` is the option id of the
+// row's Source single-select.
+export type ApertureInstallTypeSummary = {
+  id: string;
+  name: string | null;
+  psi_w_mk: number | null;
+  source: string | null;
+  has_pdf: boolean;
+};
+
 export type AperturesSlice = {
   project_id: string;
   version_id: string;
@@ -164,6 +188,7 @@ export type AperturesSlice = {
   apertures: ApertureTypeEntry[];
   project_glazings: ProjectGlazing[];
   project_frames: ProjectFrame[];
+  aperture_install_types: ApertureInstallTypeSummary[];
   manufacturer_filters: ManufacturerFilters | null;
 };
 
@@ -217,11 +242,10 @@ export type WireAperturesSlice = Omit<
   project_frames: WireProjectFrame[];
 };
 
-// Discriminated union mirroring the backend `ApertureCommand`. Five
-// kinds (editDimension, addRow, addColumn, deleteRow, deleteColumn)
-// were stubbed in Phase 01 and are wired in Phase 05; the remaining
-// stubs (merge, split, pickFrame, pickGlazing, pasteAssignment) still
-// raise `aperture_command_not_implemented` server-side.
+// Discriminated union mirroring the backend `ApertureCommand`. Every
+// kind is wired server-side; the install-assignment kinds
+// (setElementInstall / applyInstallToApertures / copyElementInstalls)
+// are consumed by the Installs modal (aperture-psi-install phase 05).
 export type ApertureCommand =
   | { kind: "createApertureType"; proposed_name?: string | null }
   | { kind: "renameApertureType"; aperture_type_id: string; new_name: string }
@@ -279,6 +303,29 @@ export type ApertureCommand =
       restore_assignment?: ApertureAssignmentSnapshot;
     }
   | { kind: "flipLeftRight"; aperture_type_id: string }
+  | {
+      // aperture-psi-install: assign (or clear, with null) one perimeter
+      // edge's install-type slot. Interior (mulled) edges are rejected.
+      kind: "setElementInstall";
+      aperture_type_id: string;
+      element_id: string;
+      side: ApertureSide;
+      install_type_id: string | null;
+    }
+  | {
+      // aperture-psi-install: bulk-assign one install type to every
+      // perimeter edge of the listed apertures (null clears to inherit).
+      kind: "applyInstallToApertures";
+      aperture_ids: string[];
+      install_type_id: string | null;
+    }
+  | {
+      // aperture-psi-install: copy per-edge install assignments onto
+      // apertures with an identical grid signature.
+      kind: "copyElementInstalls";
+      source_aperture_id: string;
+      target_aperture_ids: string[];
+    }
   | {
       // Phase 11: replace the project-document manufacturer-filter
       // enabled lists. ``null`` for either field = "all enabled".

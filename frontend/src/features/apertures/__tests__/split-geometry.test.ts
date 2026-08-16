@@ -10,6 +10,7 @@ function element(row: [number, number], col: [number, number]): ApertureElement 
     row_span: row,
     column_span: col,
     frames: { top: null, right: null, bottom: null, left: null },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: null,
     operation: null,
   };

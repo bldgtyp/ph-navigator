@@ -14,6 +14,7 @@ import type {
   GlazingRef,
 } from "../types";
 import type { ViewDirection } from "../frame-label-map";
+import { useInstallPsiResolution } from "../hooks/useInstallTypes";
 import { ApertureElementCard } from "./ApertureElementCard";
 
 const CARD_MOVE_DURATION_MS = 180;
@@ -51,6 +52,7 @@ export function ApertureElementCardStack({
   onDismissOperationWarning,
   uValueByElementId,
 }: ApertureElementCardStackProps) {
+  const installResolution = useInstallPsiResolution(aperture);
   const stackRef = useRef<HTMLDivElement | null>(null);
   const previousRectsRef = useRef<Map<string, DOMRect>>(new Map());
   const previousOrderKeyRef = useRef<string | null>(null);
@@ -105,6 +107,7 @@ export function ApertureElementCardStack({
           operationWarningDismissed={dismissedOperationWarnings.includes(element.id)}
           onDismissOperationWarning={() => onDismissOperationWarning(element.id)}
           uValueWm2k={uValueByElementId?.get(element.id) ?? null}
+          installResolution={installResolution}
         />
       ))}
     </div>

@@ -471,6 +471,13 @@ Current enforced controls live under `frontend/scripts/`, wired into
   CSS custom properties are actually defined in the token files.
 - **DataTable convention check** (`check-data-table-contract.mjs`,
   `pnpm check:data-table`) — see the DataTable Rendering Convention section.
+- **Interaction-state check** (`check-interaction-states.mjs`,
+  `pnpm check:interaction-states`): a state rule (`:hover`, `:focus-visible`,
+  `[data-armed]`, `.is-selected`, …) paints its ring (`outline`/`box-shadow`)
+  and fill (`background`) from the state tokens — see
+  `context/DESIGN_SYSTEM.md` § Interaction states. Existing debt is frozen in
+  `scripts/interaction-states-baseline.json` (101 fingerprints); the ratchet
+  may only shrink.
 - **Typography check** (`check-typography.mjs`, `pnpm check:typography`):
   typography in component CSS and TS/TSX comes only from the token
   vocabulary (`--font-*`, `--fs-*`, `--fw-*`, `--tracking-*`, `--lh-*`) or

@@ -23,7 +23,7 @@ This document has **two audiences and two modes**:
 > (Layer-2-resolved) values** so an external tool can read them without the
 > repo. When they drift, the CSS wins — refresh this snapshot from
 > `tokens.css`. `check:css-vars` / `check:hex` keep the *code* honest; this
-> doc is the *portable mirror*. Snapshot taken **2026-07-18**.
+> doc is the *portable mirror*. Snapshot taken **2026-08-15**.
 
 ---
 
@@ -185,8 +185,81 @@ Ascending: `--shadow-elev-1/2/3`; `--shadow-popover` (dropdowns/popovers);
   box and swallows clicks meant for whatever sits below it. Padding is a second
   floor a border-box cannot shrink past, so overriding `min-height` alone is
   not enough. Existing opt-outs: `.dimension-chrome-label-button`,
-  `.dimension-chrome-delete-button`, `.assembly-segment-hit-target`. Class
-  specificity already beats the element rule — do not weaken the global one.
+  `.dimension-chrome-delete-button`, `.assembly-segment-hit-target`,
+  `.installs-modal__edge`, `.installs-modal__type`,
+  `.installs-modal__type-action`, `.installs-modal__create-action`. Such a
+  button usually also wants `border-radius: 0`
+  — pill corners on a box tracing rectangular geometry read as a floating
+  bubble, not as the thing itself. Class specificity already beats the element
+  rule — do not weaken the global one.
+
+## Interaction states (the state language)
+
+Hover, selection, "armed", focus and disabled are **already designed**. They are
+not per-screen decisions, and a new surface never picks its own ring color or
+wash — it picks the row here that matches its kind of surface. Tokens live in
+`styles/tokens.css` § Interaction states; `check:interaction-states` fails a
+state rule that paints a ring or fill from anything else.
+
+Two surface families, because the app has two kinds of thing to point at:
+
+**A. Row / list surfaces** — sidebar rows, menu items, legend rows, ghost and
+icon buttons. The background tints; nothing rings.
+
+| State | Token | Reads as |
+|-------|-------|----------|
+| Hover (list row) | `--state-row-hover-bg` | barely-there **neutral** wash (5% text on card) |
+| Selected (list row) | `--state-row-selected-bg` + `--state-row-selected-text` | teal `--accent-light` fill + accent text |
+| Hover (ghost/icon button, menu item) | `--state-ghost-hover-bg` | quiet elevated wash |
+| Hover / selected (DataTable) | `--data-table-hover-bg` / `--data-table-selected-bg` | accent 6% / 8% — the grid's own denser pair |
+
+The split is deliberate: **hover is neutral, selection is teal.** A hover that
+uses accent competes with the selected row and the list stops reading.
+
+**B. Geometry surfaces** — anything drawn: the aperture builder canvas, the
+Installs key view, the assembly canvas. The thing under the cursor is an object
+with edges, so it takes a **ring**, optionally with a tint.
+
+| State | Ring | Tint |
+|-------|------|------|
+| Hover | `--state-hover-ring` (magenta `--highlight-text` @76%) | `--state-hover-tint` (@8%) |
+| Selected / armed | `--state-selected-ring` (`--accent`) | `--state-selected-tint` (accent @14%) |
+
+**Ring mechanics — this part is not optional:**
+
+```css
+.thing {                       /* at rest: the ring exists, invisible */
+  outline: var(--state-ring-width) solid transparent;
+  outline-offset: var(--state-ring-offset);   /* -2px → drawn INSIDE the box */
+}
+.thing:hover,
+.thing:has(.thing__hit:focus-visible) {
+  outline-color: var(--state-hover-ring);
+  background: var(--state-hover-tint);
+}
+```
+
+- **Transparent at rest, colored by state** — never add/remove the outline, or
+  the object moves under the cursor.
+- **Inset (`outline-offset` negative), never outset.** An outset ring on a
+  drawn object is clipped by the neighbouring band, the canvas edge, or any
+  scrolling ancestor — it visibly cuts off on the top/left. (`box-shadow:
+  inset 0 0 0 2px …` is the alternative when `outline` is already spoken for.)
+- **Keyboard focus mirrors hover** on hit-target overlays (`:has(… :focus-visible)`),
+  because the visible object and the focusable button are different elements.
+  Ordinary controls just take the standard focus ring, `--phn-focus`.
+- **Selection must beat hover**: order the selected rule last, or state it with
+  a higher-specificity selector.
+
+**Documented exception — canvas *mode* palettes.** The assembly canvas encodes a
+*mode*, not just a state: pick = `--assembly-pick-ring` (green), paint/paste =
+`--assembly-paint-tint` + `--assembly-paint-pulse` (gold), add =
+`--assembly-canvas-add`. A mode palette is a deliberate, named, feature-scoped
+extension — add one only when a surface genuinely has modes, name it in the
+feature's token block, and say so here.
+
+**Disabled** is opacity + `cursor: not-allowed`/`default` and no state paint —
+never a greyed one-off color.
 
 ## Component inventory (the blessed building blocks)
 
@@ -212,7 +285,9 @@ the spec to reproduce.
 | Card panel | panels.css recipe (`.auth-panel`, `.status-*`, `.project-list`, …) | bordered card surfaces + blueprint-grid deco |
 | **DataTable** | `shared/ui/data-table` (`<DataTable>`) | the flagship grid — dense, uniform, axis-tinted filter/sort/group |
 | Report table | `shared/ui/report-table` (`report-status-chip`) | status-dot / status-chip report grids |
-| Info tooltip | `<InfoTooltip>` (ⓘ) | hover help; dark panel |
+| Hover tooltip | `<Tooltip>` (`shared/ui/tooltip`) | the standard hover/focus hint on a control — dark bubble, `TOOLTIP_HOVER_DELAY.medium/long`, `placement`. Prefer it over a native `title`. A **disabled** button fires no pointer events, so wrap it in an inline-flex span, put the tooltip on the span, and set `pointer-events: none` on the disabled button — otherwise the state that most needs explaining ("why is this greyed out?") is the one with no hint |
+| Canvas hint | `[data-toolbar-tooltip]` (`shared/ui/canvas/canvas-hint-tooltip.css`) | pure-CSS label for drawing-tool toolbar buttons |
+| Info tooltip | `<InfoTooltip>` (ⓘ) | multi-line hover help behind a small ⓘ trigger (U-Value chip, assembly thermal header, status vocabulary). Renders *through* `<Tooltip>`, so it is portalled and collision-aware — an absolutely-positioned panel gets clipped by the first scrolling ancestor |
 | Inline header editor | `InlineHeaderNameEditor` | rename-on-hover header control |
 | Element sidebar | `shared/ui/element-sidebar` (`<ElementSidebar>`) | shared object-list rail (Envelope Assemblies, Aperture Types) — "1A Quiet List": ghost header with a Sort-order menu (`AppMenu`), neutral hover / teal-only selection, hover-reveal grip + ghost action cluster, groups-as-dividers with drag-between-groups + a top add-group divider |
 | Attachments | `shared/ui/attachments` | file chips/cells/panel (assets, envelope, equipment) |
@@ -236,6 +311,10 @@ the spec to reproduce.
    enforced by `check:typography` + `make typography-eval` (29-variant ceiling).
 3. **Reuse first.** Need a button/chip/menu/modal/table? It exists — use the
    class or the `shared/ui` component. Don't reinvent.
+3b. **States are reuse too.** Hover / selected / armed / focus come from
+   § Interaction states — the same tokens the sidebar, the DataTable and the
+   canvases already use. Inventing a ring color or a hover wash for one screen
+   is the same error as hand-rolling a button. (`check:interaction-states`.)
 4. **Roles, not places.** Feature CSS never restyles a shared primitive's
    typography or shape.
 5. **DataTable uniformity is an iron-law.** Basic affordances are parent-owned,
@@ -254,7 +333,11 @@ hand-roll a backdrop, panel, or footer. The contract:
 - **Footer — always `DialogActions`.** Cancel (`secondary-button`, left) + one
   styled primary (`primary-button`, right); `danger` prop swaps the primary to
   `danger-button`; `extraActions` adds secondary/tertiary buttons between the
-  two anchors. No bare/unstyled action buttons.
+  two anchors. No bare/unstyled action buttons. The footer is Cancel/primary
+  and nothing else: tools that act on the dialog's body (bulk apply, copy-to)
+  belong with the control that arms them or in `headerAccessory`. A dialog that
+  writes as you interact has no honest `Cancel`, so stage the edits and write
+  them on the primary instead (the Installs modal's `installs-draft.ts`).
 - **Labels.** Cancel is literally "Cancel"; the primary is a specific verb
   (`Create material`, `Delete room`, `Save`); busy state swaps to an ellipsis
   form (`Saving…`).
@@ -269,8 +352,38 @@ hand-roll a backdrop, panel, or footer. The contract:
   rule — not loose at the top of the body.
 - **Box.** Shared `.modal-panel`. Oversized modals that scroll add
   `.modal-panel--resizable` for the lower-right resize grip.
+- **Unbounded content pins the footer.** If the body can grow without bound (a
+  list of rows, a library that grows with the project), pass `scrollBody` —
+  `.modal-panel--scroll-body` keeps the header and `.modal-actions` fixed and
+  scrolls the body, so Cancel/primary are never scrolled off. A dialog whose
+  body has its own scroll region (one column of a two-column layout, e.g. the
+  Installs modal's type list) sets `overflow: hidden` on the body and scrolls
+  that region instead.
 - **Backdrop-click.** OFF by default (forms can't lose input to a stray click);
   read-only viewers opt in with `dismissOnBackdrop`.
+
+## How this document is kept in front of the work
+
+A design system that lives only in a doc gets re-invented by whoever is fixing
+"just one CSS line". Three mechanisms carry it, and all three are load-bearing:
+
+1. **Routing.** `CLAUDE.md`'s dispatch table sends *any* user-visible change —
+   including a one-line tweak — here first, and `frontend/.instructions.md`
+   opens with a four-question visual pre-flight (component? state? dialog?
+   token?).
+2. **Presence at the moment of the edit.** `.claude/hooks/ui-design-system-hook.py`
+   (registered as a `PreToolUse` hook on Edit/Write) fires whenever a frontend
+   `.css` or feature/shared `.tsx` is edited and injects the state/component/
+   modal/token rules into the working context, whether or not anyone opened
+   this file. Editing `styles/tokens.css` adds a note that new tokens are a
+   design-system change, not a local fix.
+3. **Guards.** `pnpm run check:all` rejects off-system values (see § Guards);
+   `check:interaction-states` specifically rejects a hover/selected/armed rule
+   that paints from anything but the state language.
+
+When you *do* extend the system, update this file in the same commit — the
+hook and the guards point here, so a stale doc silently becomes the wrong
+instruction for every future agent.
 
 ## Where the real thing lives
 
@@ -287,14 +400,18 @@ stylesheet split plan, the full guard list): **`frontend/src/styles/README.md`**
 
 `check:css-vars` (every `var()` resolves) · `check:hex` (no raw hex) ·
 `check:z-index` (z-scale only) · `check:typography` (token vocabulary,
-zero-debt) · `check:sizes` (≤500 lines) · `check:shape` (feature file shape).
+zero-debt) · `check:interaction-states` (hover/selected/armed rules paint from
+the state tokens; baselined debt only) · `check:sizes` (≤500 lines) ·
+`check:shape` (feature file shape).
 Plus `make typography-eval` — the rendered 22-state computed-style sweep.
 
 ## Related docs
 
 - `frontend/src/styles/README.md` — implementation styling guide (the how).
 - `context/UI_UX.md` — UI intent, common elements, DataTable model (§1.7),
-  multi-page flows, state-indicator cheatsheet.
+  multi-page flows, and the §4 state-indicator cheatsheet — which covers
+  *document* state (clean / dirty / locked / read-only). **Interaction** state
+  (hover / selected / armed / focus) lives here, in § Interaction states.
 - `context/ui/pages/*.md` — per-page design narratives (read only the page in
   hand).
 - `context/CODING_STANDARDS.md` — frontend engineering standards.

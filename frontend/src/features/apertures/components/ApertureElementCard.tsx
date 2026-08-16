@@ -24,6 +24,8 @@ import { mismatchedSides } from "../operation-frame-match";
 import { UValueChip } from "./UValueChip";
 import { useUnitPreference } from "../../../lib/units";
 import type { UnitSystem } from "../../../lib/units";
+import { edgeClassKey } from "../edge-classification";
+import type { ResolvedInstallPsi } from "../install-psi";
 
 export type ApertureElementCardProps = {
   element: ApertureElement;
@@ -39,6 +41,10 @@ export type ApertureElementCardProps = {
   operationWarningDismissed: boolean;
   onDismissOperationWarning: () => void;
   uValueWm2k?: number | null;
+  /** Per-aperture effective Ψ-install resolution keyed by
+   *  `edgeClassKey(elementId, side)`; undefined when the parent has no
+   *  install-type data (frame rows then show "-"). */
+  installResolution?: Map<string, ResolvedInstallPsi>;
 };
 
 export function ApertureElementCard({
@@ -55,11 +61,13 @@ export function ApertureElementCard({
   operationWarningDismissed,
   onDismissOperationWarning,
   uValueWm2k,
+  installResolution,
 }: ApertureElementCardProps) {
   const { unitSystem } = useUnitPreference();
   const mismatched = operationWarningDismissed ? [] : mismatchedSides(element);
   const uValueUnit = uValueUnitLabel(unitSystem);
   const widthUnit = widthUnitLabel(unitSystem);
+  const psiUnit = psiInstallUnitLabel(unitSystem);
   const kindControl = kindControlFor(element.kind);
   const kindContent = (() => {
     switch (element.kind) {
@@ -83,6 +91,7 @@ export function ApertureElementCard({
                 <MetricColumnHeader label="U-Value" unit={uValueUnit} />
                 <MetricColumnHeader label="Width" unit={widthUnit} />
                 <span role="columnheader">g-Value</span>
+                <MetricColumnHeader label="Ψ-inst" unit={psiUnit} />
               </div>
               <GlazingRow glazing={element.glazing} canEdit={canEdit} onPick={onPickGlazing} />
               {APERTURE_SIDES.map((side) => {
@@ -100,6 +109,7 @@ export function ApertureElementCard({
                         ? mismatchTooltip(element.frames[side]?.operation, element.operation)
                         : null
                     }
+                    install={installResolution?.get(edgeClassKey(element.id, side)) ?? null}
                     onPick={(frame) => onPickFrame(side, frame)}
                   />
                 );
@@ -213,6 +223,10 @@ function uValueUnitLabel(unitSystem: UnitSystem): string {
 
 function widthUnitLabel(unitSystem: UnitSystem): string {
   return unitSystem === "IP" ? "in" : "mm";
+}
+
+function psiInstallUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "Btu/(h-ft-F)" : "W/(m-K)";
 }
 
 function mismatchTooltip(

@@ -22,6 +22,7 @@ import json
 from collections import OrderedDict
 from typing import TypeVar
 
+from features.project_document.apertures.install_psi import resolve_install_psi_for_aperture
 from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ApertureTypeEntry,
@@ -85,9 +86,13 @@ def content_hash_for_aperture(entry: ApertureTypeEntry, tables: ProjectDocumentT
     types. ``name`` and ``operation`` are excluded so changes to those
     fields don't invalidate the cache. ``catalog_origin`` is excluded —
     the values referenced by the origin are already in the hash via the
-    frame / glazing properties.
+    frame / glazing properties. The **resolved** per-side Ψ-install is
+    included (not the raw slot ids): it rides on every edge breakdown
+    for display, so an install-type edit or reassignment must change the
+    result identity even though U-w itself excludes Ψ-install.
     """
 
+    install_resolution = resolve_install_psi_for_aperture(entry, tables)
     payload = {
         "aperture_type_id": entry.id,
         "row_heights_mm": [_round(v) for v in entry.row_heights_mm],
@@ -105,6 +110,11 @@ def content_hash_for_aperture(entry: ApertureTypeEntry, tables: ProjectDocumentT
                     "left": _frame_payload_for_id(tables, el.frames.left),
                 },
                 "glazing": _glazing_payload(glazing_by_id(tables, el.glazing_id)),
+                "installs": {
+                    side: [resolved.source, _round(resolved.psi_w_mk)]
+                    for side in ("top", "right", "bottom", "left")
+                    if (resolved := install_resolution.values.get((el.id, side))) is not None
+                },
             }
             for el in sorted(entry.elements, key=lambda e: (e.row_span[0], e.column_span[0], e.id))
         ],

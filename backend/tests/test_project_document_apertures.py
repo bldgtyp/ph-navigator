@@ -289,7 +289,7 @@ def test_void_aperture_element_rejects_assignments(field: str, value: object) ->
     }
     payload[field] = value
 
-    with pytest.raises(ValidationError, match="must not carry frames/glazing/operation"):
+    with pytest.raises(ValidationError, match="must not carry frames/installs/glazing/operation"):
         ApertureElement.model_validate(payload)
 
 

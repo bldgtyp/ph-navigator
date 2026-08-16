@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from features.project_document.tables.aperture_install_types import ApertureInstallTypesSliceResponse
     from features.project_document.tables.apertures import AperturesSliceResponse
     from features.project_document.tables.appliances import AppliancesSliceResponse
     from features.project_document.tables.contracts import TableContract, TableRowsResponse
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
         RoomsSliceResponse
         | SpaceTypesSliceResponse
         | ThermalBridgesSliceResponse
+        | ApertureInstallTypesSliceResponse
         | AppliancesSliceResponse
         | ElectricHeatersSliceResponse
         | VentilatorsSliceResponse
@@ -118,11 +120,16 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.apertures import AperturesSliceResponse
 
         return AperturesSliceResponse
+    if name == "ApertureInstallTypesSliceResponse":
+        from features.project_document.tables.aperture_install_types import ApertureInstallTypesSliceResponse
+
+        return ApertureInstallTypesSliceResponse
     if name in {"get_table_contract", "get_table_contract_by_schema_slug", "iter_table_contracts"}:
         from features.project_document.tables import registry
 
         return getattr(registry, name)
     if name == "RegisteredTableResponse":
+        from features.project_document.tables.aperture_install_types import ApertureInstallTypesSliceResponse
         from features.project_document.tables.apertures import AperturesSliceResponse
         from features.project_document.tables.appliances import AppliancesSliceResponse
         from features.project_document.tables.contracts import TableRowsResponse
@@ -146,6 +153,7 @@ def __getattr__(name: str) -> Any:
             RoomsSliceResponse
             | SpaceTypesSliceResponse
             | ThermalBridgesSliceResponse
+            | ApertureInstallTypesSliceResponse
             | AppliancesSliceResponse
             | ElectricHeatersSliceResponse
             | VentilatorsSliceResponse
@@ -164,6 +172,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "ApertureInstallTypesSliceResponse",
     "AperturesSliceResponse",
     "AttachmentRowsResponse",
     "AppliancesSliceResponse",

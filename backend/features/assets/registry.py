@@ -33,10 +33,17 @@ DOCUMENTATION_ATTACHMENT_TABLE_KEYS: tuple[str, ...] = (
     "electric_heaters",
     "appliances",
     "thermal_bridges",
+    "aperture_install_types",
     "heat_pump_outdoor_equip",
     "heat_pump_indoor_equip",
     "heat_pump_outdoor_units",
     "heat_pump_indoor_units",
+)
+#: Tables whose rows carry a PDF-only "PDF Report" attachment slot (a Flixo /
+#: simulation report) alongside the standard datasheet/photo pair.
+PDF_REPORT_ATTACHMENT_TABLE_KEYS: tuple[str, ...] = (
+    "thermal_bridges",
+    "aperture_install_types",
 )
 
 
@@ -113,15 +120,18 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
         max_count=10,
         max_file_size_mb=25,
     ),
-    AttachmentFieldConfig(
-        key=f"thermal_bridges.{PDF_REPORT_FIELD_KEY}",
-        table_key="thermal_bridges",
-        field_key=PDF_REPORT_FIELD_KEY,
-        asset_kinds=frozenset({"datasheet"}),
-        allowed_content_types=frozenset({"application/pdf"}),
-        allowed_extensions=frozenset(),
-        max_count=5,
-        max_file_size_mb=25,
+    *(
+        AttachmentFieldConfig(
+            key=f"{table}.{PDF_REPORT_FIELD_KEY}",
+            table_key=table,
+            field_key=PDF_REPORT_FIELD_KEY,
+            asset_kinds=frozenset({"datasheet"}),
+            allowed_content_types=frozenset({"application/pdf"}),
+            allowed_extensions=frozenset(),
+            max_count=5,
+            max_file_size_mb=25,
+        )
+        for table in PDF_REPORT_ATTACHMENT_TABLE_KEYS
     ),
     *(
         AttachmentFieldConfig(

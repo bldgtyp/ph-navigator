@@ -496,6 +496,23 @@ class ApertureElementFrames(BaseModel):
     left: str | None = Field(default=None, pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
 
 
+class ApertureElementInstalls(BaseModel):
+    """Four-sided per-element install-type assignment slots (top/right/bottom/left).
+
+    ``None`` inherits the project's Default install type (`apit_default`).
+    Interior (mulled) edges are never stored — they are derived Psi=0 by
+    `apertures/edge_classification.py`; a stale assignment on an interior
+    edge is tolerated here and ignored by the resolver.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    top: str | None = Field(default=None, pattern=r"^apit_[A-Za-z0-9_-]+$", max_length=80)
+    right: str | None = Field(default=None, pattern=r"^apit_[A-Za-z0-9_-]+$", max_length=80)
+    bottom: str | None = Field(default=None, pattern=r"^apit_[A-Za-z0-9_-]+$", max_length=80)
+    left: str | None = Field(default=None, pattern=r"^apit_[A-Za-z0-9_-]+$", max_length=80)
+
+
 class ApertureElement(BaseModel):
     """One layout element inside an aperture type, spanning a grid rectangle.
 
@@ -515,6 +532,7 @@ class ApertureElement(BaseModel):
     row_span: tuple[int, int]
     column_span: tuple[int, int]
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
+    installs: ApertureElementInstalls = Field(default_factory=ApertureElementInstalls)
     glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     operation: ApertureOperation | None = None
 
@@ -542,10 +560,11 @@ class ApertureElement(BaseModel):
     def _validate_kind_assignments(self) -> ApertureElement:
         if self.kind == "void" and (
             any((self.frames.top, self.frames.right, self.frames.bottom, self.frames.left))
+            or any((self.installs.top, self.installs.right, self.installs.bottom, self.installs.left))
             or self.glazing_id is not None
             or self.operation is not None
         ):
-            raise ValueError("ApertureElement(kind=void) must not carry frames/glazing/operation")
+            raise ValueError("ApertureElement(kind=void) must not carry frames/installs/glazing/operation")
         return self
 
 

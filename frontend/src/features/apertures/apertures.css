@@ -176,10 +176,13 @@
   --aperture-region-stroke: var(--svg-line-heavy);
   --aperture-null-stroke: color-mix(in oklab, var(--text-secondary) 60%, transparent);
   --aperture-canvas-add: var(--highlight-text);
-  --aperture-hover-ring: color-mix(in oklab, var(--highlight-text) 76%, transparent);
-  --aperture-hover-tint: color-mix(in oklab, var(--highlight-text) 8%, transparent);
-  --aperture-selected-ring: var(--accent);
-  --aperture-selected-tint: color-mix(in oklab, var(--accent) 14%, transparent);
+  /* Feature aliases of the app-wide state language (styles/tokens.css
+     § Interaction states). Same values as before, one owner now — a new
+     aperture surface reuses these instead of picking its own ring color. */
+  --aperture-hover-ring: var(--state-hover-ring);
+  --aperture-hover-tint: var(--state-hover-tint);
+  --aperture-selected-ring: var(--state-selected-ring);
+  --aperture-selected-tint: var(--state-selected-tint);
   --aperture-card-selected-tint: color-mix(in oklab, var(--accent) 2%, var(--bg-card) 10%);
   --aperture-pill-bg: var(--bg-card);
   --aperture-pill-border: var(--border-subtle);
@@ -644,11 +647,18 @@
 
 /* ---- Phase 06: element table + pickers ----------------------------------- */
 
+/* The element table has min-width columns (Name … Ψ-inst), so on a narrow
+   viewport the stack is wider than the workspace and the page scrolls
+   horizontally. `min-width: max-content` makes the stack — and, by stretch,
+   every card in it — as wide as that widest row, so the card's border and
+   zebra rows travel with the columns instead of the far-right column spilling
+   past a card edge that stopped at the viewport. */
 .aperture-element-card-stack {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
   margin-top: 0.5rem;
+  min-width: max-content;
 }
 
 .aperture-element-card {
@@ -748,7 +758,7 @@
 
 .aperture-element-table {
   --aperture-table-columns: minmax(112px, 0.7fr) minmax(220px, 2.6fr) minmax(104px, 0.7fr)
-    minmax(64px, 0.42fr) minmax(64px, 0.42fr);
+    minmax(64px, 0.42fr) minmax(64px, 0.42fr) minmax(72px, 0.48fr);
   display: grid;
   overflow: visible;
   padding: 0 var(--space-8) var(--space-8);
@@ -1453,4 +1463,442 @@
   .apertures-page__header-actions {
     margin-left: auto;
   }
+}
+
+/* Effective Ψ-install cells: inherited-default and derived mull values
+   read as secondary; assigned values keep normal metric weight. */
+.aperture-card-row__metric--muted {
+  color: var(--text-muted);
+}
+
+/* Installs modal: key-view overlay + legend (aperture-psi-install D-6c). */
+/* The shared .modal-panel caps at 560px; the key view + legend need a
+   wider two-column stage. Scoped to the dialog id ModalDialog stamps on
+   the panel section. */
+#installs-modal {
+  width: min(920px, 94vw);
+}
+
+/* The panel is `--scroll-body`, so the body is the flexible middle. It does not
+   scroll as a whole — the type list does (below), which keeps the key view and
+   the paint bar in place while a long library scrolls. */
+.installs-modal__body {
+  display: grid;
+  grid-template-columns: auto minmax(320px, 1fr);
+  gap: var(--space-24);
+  padding: var(--space-16) 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.installs-modal__key-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  max-width: 400px;
+  overflow: auto;
+}
+
+.installs-modal__canvas {
+  position: relative;
+  display: inline-block;
+}
+
+/* The builder absolutely-positions the SVG inside its canvas stage; here it
+   is the in-flow element that sizes the key view, so restore static flow. */
+.installs-modal__canvas .aperture-svg-canvas {
+  position: static;
+}
+
+.installs-modal__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Geometry-driven hit/tint band: its box comes from the frame strip it sits
+   on, so it opts out of the global button chrome entirely. `min-height` +
+   `padding: 0` escape the 38px control floor (which otherwise inflated every
+   horizontal band to 38px and pushed bottom bands past the aperture), and
+   `border-radius: 0` drops the pill corners a rectangular frame must not have. */
+.installs-modal__edge {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  /* The app's geometry-surface ring: present but invisible at rest so hover
+     cannot move the band, and inset so it is never clipped by the neighbouring
+     band or the canvas edge (DESIGN_SYSTEM.md § Interaction states). */
+  outline: var(--state-ring-width) solid transparent;
+  outline-offset: var(--state-ring-offset);
+  background: color-mix(in oklab, var(--installs-tint, var(--text-muted)) 34%, transparent);
+  cursor: pointer;
+}
+
+/* No special case for the Default row: an edge resolving to Default paints the
+   same 34% pull of its legend swatch as every other type, so the grey in the
+   drawing is the grey in the list. `data-kind` stays for behaviour/tests. */
+
+/* Hover = the standard canvas hover ring, plus a stronger pull of the band's
+   own type color so the assignment stays readable under the cursor. */
+.installs-modal__edge:hover:not(:disabled),
+.installs-modal__edge:focus-visible {
+  outline-color: var(--state-hover-ring);
+  background: color-mix(in oklab, var(--installs-tint, var(--text-muted)) 72%, transparent);
+}
+
+/* Armed = painting, so the key view takes a paint-bucket cursor drawn from
+   the same lucide `PaintBucket` glyph the assemblies canvas uses for its
+   paste gesture. Two stroked copies give the glyph a light halo so it stays
+   readable over both the tinted frames and the glazing fill; the hotspot sits
+   at the pour corner. Mulled edges stay `not-allowed` (they are disabled, so
+   the `:not(:disabled)` arm below skips them). */
+.installs-modal__canvas[data-armed="true"],
+.installs-modal__canvas[data-armed="true"] .installs-modal__edge:not(:disabled) {
+  cursor:
+    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20stroke='white'%20stroke-width='4.5'%3E%3Cpath%20d='M11%207%206%202'/%3E%3Cpath%20d='M18.992%2012H2.041'/%3E%3Cpath%20d='M21.145%2018.38A3.34%203.34%200%200%201%2020%2016.5a3.3%203.3%200%200%201-1.145%201.88c-.575.46-.855%201.02-.855%201.595A2%202%200%200%200%2020%2022a2%202%200%200%200%202-2.025c0-.58-.285-1.13-.855-1.595'/%3E%3Cpath%20d='m8.5%204.5%202.148-2.148a1.205%201.205%200%200%201%201.704%200l7.296%207.296a1.205%201.205%200%200%201%200%201.704l-7.592%207.592a3.615%203.615%200%200%201-5.112%200l-3.888-3.888a3.615%203.615%200%200%201%200-5.112L5.67%207.33'/%3E%3C/g%3E%3Cg%20stroke='black'%20stroke-width='2'%3E%3Cpath%20d='M11%207%206%202'/%3E%3Cpath%20d='M18.992%2012H2.041'/%3E%3Cpath%20d='M21.145%2018.38A3.34%203.34%200%200%201%2020%2016.5a3.3%203.3%200%200%201-1.145%201.88c-.575.46-.855%201.02-.855%201.595A2%202%200%200%200%2020%2022a2%202%200%200%200%202-2.025c0-.58-.285-1.13-.855-1.595'/%3E%3Cpath%20d='m8.5%204.5%202.148-2.148a1.205%201.205%200%200%201%201.704%200l7.296%207.296a1.205%201.205%200%200%201%200%201.704l-7.592%207.592a3.615%203.615%200%200%201-5.112%200l-3.888-3.888a3.615%203.615%200%200%201%200-5.112L5.67%207.33'/%3E%3C/g%3E%3C/svg%3E")
+      4 20,
+    copy;
+}
+
+.installs-modal__edge[data-kind="mull"] {
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--text-muted) 25%, transparent),
+    color-mix(in oklab, var(--text-muted) 25%, transparent) 3px,
+    transparent 3px,
+    transparent 8px
+  );
+}
+
+.installs-modal__legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+  min-height: 0;
+}
+
+.installs-modal__legend-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* The one scroll region in the dialog: the library grows with the project,
+   everything else (key view, paint bar, + New type, footer) stays put.
+   `padding-right` keeps the row cards clear of the scrollbar. */
+.installs-modal__type-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-4) 0 0;
+  /* Flex column, not grid: each row clips its children (`overflow: hidden` for
+     the card radius), which zeroes a track's automatic minimum size — as a grid
+     the rows compressed into each other instead of scrolling. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Legend row owns the card: the arm-paint button and the edit affordance live
+   inside one border, so the pencil reads as part of the row rather than as
+   loose chrome floating beside it. `overflow: hidden` clips the children's
+   hover fills to the rounded corners. */
+.installs-modal__type-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.installs-modal__type-row[data-armed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+}
+
+/* Editing swaps the row's contents for the inline form, which supplies its own
+   stack — the row just becomes its padded container. */
+.installs-modal__type-row--editing {
+  display: block;
+  padding: var(--space-12);
+}
+
+/* Ghost edit button, full row height so its hairline reads as a divider
+   between the paint target and the row action. `min-height`, `padding: 0`, and
+   `border-radius: 0` opt out of the global pill/38px button chrome. */
+.installs-modal__type-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  transition:
+    color var(--transition-fast) var(--ease),
+    background var(--transition-fast) var(--ease);
+}
+
+.installs-modal__type-row:hover .installs-modal__type-action {
+  color: var(--text-secondary);
+}
+
+.installs-modal__type-action:hover,
+.installs-modal__type-action:focus-visible {
+  background: var(--bg-elev);
+  color: var(--accent-text);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .installs-modal__type-action {
+    transition: none;
+  }
+}
+
+/* The whole row body is the arm-paint target; the card chrome is the row's, so
+   this is a flat full-bleed button (no border, no radius, no 38px floor). */
+.installs-modal__type {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-10);
+  width: 100%;
+  min-height: 34px;
+  padding: var(--space-8) var(--space-12);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  /* Buttons inherit the 16px body size; a legend row is list chrome, so it
+     reads at the app's dense row scale instead. */
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.installs-modal__type:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+  transform: none;
+}
+
+.installs-modal__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-2xs);
+  background: color-mix(in oklab, var(--installs-tint, var(--text-muted)) 60%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+.installs-modal__type-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+/* Ψ and the usage count are per-row grids, so a min-width plus tabular figures
+   is what keeps the numbers reading as columns down the list. */
+.installs-modal__type-psi {
+  min-width: 9ch;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Hover-hint anchor: a disabled button dispatches no pointer events, so the
+   Tooltip trigger has to be the wrapper — otherwise the one state that most
+   needs an explanation ("why is this greyed out?") is the one with no hint. */
+.installs-modal__tooltip-anchor {
+  display: inline-flex;
+}
+
+.installs-modal__tooltip-anchor > button:disabled {
+  pointer-events: none;
+}
+
+/* Paint tools + status for the armed type, under the key view they act on.
+   Dashed while nothing is armed (an empty slot), solid and accented once
+   painting is live. */
+.installs-modal__paint-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-10);
+  padding: var(--space-10) var(--space-12);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.installs-modal__paint-bar[data-armed="true"] {
+  border-style: solid;
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--border-subtle));
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+
+.installs-modal__paint-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+
+/* Secondary buttons are uppercase + tracked, so the label needs its own line
+   budget: the hint wraps instead of the action. */
+.installs-modal__paint-action {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Inline type editor: one line inside the legend row it replaces — name, Ψ,
+   confirm, cancel — with the unit captioned over the Ψ field and any parse
+   error spanning underneath. */
+.installs-modal__create {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px auto auto;
+  align-items: center;
+  gap: var(--space-6) var(--space-8);
+}
+
+.installs-modal__create--panel {
+  padding: var(--space-10) var(--space-12);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.installs-modal__create-unit {
+  grid-area: 1 / 2 / 2 / 3;
+  color: var(--text-muted);
+  font-size: var(--fs-2xs);
+  line-height: var(--lh-solid);
+}
+
+/* Project-wide usage, opposite the unit caption: it belongs to the decision
+   being made about this type, not to the aperture on screen. */
+.installs-modal__create-usage {
+  grid-area: 1 / 1 / 2 / 2;
+  color: var(--text-muted);
+  font-size: var(--fs-2xs);
+  line-height: var(--lh-solid);
+}
+
+.installs-modal__create input {
+  grid-row: 2;
+}
+
+.installs-modal__create-error {
+  grid-area: 3 / 1 / 4 / 5;
+  margin: 0;
+}
+
+/* Confirm / cancel are icon-sized, so they opt out of the global 38px control
+   floor and pill radius the same way the row action does. */
+.installs-modal__create-action {
+  grid-row: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.installs-modal__create-action--confirm {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg-card);
+}
+
+.installs-modal__create-action:disabled {
+  opacity: 0.5;
+}
+
+/* Full-width, quiet, and last in the list — an "add a row" affordance rather
+   than a competing action. */
+.installs-modal__new-type {
+  width: 100%;
+  min-height: 32px;
+  padding: var(--space-6) var(--space-12);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.installs-modal__new-type:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  transform: none;
+}
+
+.installs-modal__staged-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+
+.installs-modal__copy {
+  position: relative;
+}
+
+/* Anchored under the header action that opens it. */
+.installs-modal__copy-popover {
+  position: absolute;
+  top: calc(100% + var(--space-6));
+  right: 0;
+  display: grid;
+  gap: var(--space-8);
+  min-width: 280px;
+  padding: var(--space-12);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+  z-index: var(--z-dropdown);
+}
+
+.installs-modal__copy-lede {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+
+.installs-modal__copy-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.installs-modal__copy-actions {
+  display: flex;
+  justify-content: flex-end;
 }

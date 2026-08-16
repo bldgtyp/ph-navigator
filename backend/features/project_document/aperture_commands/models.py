@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.document import (
     ApertureElementFrames,
+    ApertureElementInstalls,
     ApertureElementKind,
     ApertureOperation,
     FrameRef,
@@ -180,6 +181,49 @@ class PickGlazing(BaseModel):
     glazing: GlazingRef
 
 
+APIT_ID_PATTERN = r"^apit_[A-Za-z0-9_-]+$"
+
+
+class SetElementInstall(BaseModel):
+    """Assign (or clear) one perimeter edge's install-type slot.
+
+    ``install_type_id=None`` clears the slot back to inheriting the
+    project Default. Interior (mulled) sides are rejected — they are
+    derived Ψ=0 and never carry an assignment (D-3).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["setElementInstall"] = "setElementInstall"
+    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
+    side: ApertureSide
+    install_type_id: str | None = Field(default=None, pattern=APIT_ID_PATTERN, max_length=80)
+
+
+class ApplyInstallToApertures(BaseModel):
+    """Bulk-assign one install type to every perimeter edge of the listed apertures."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["applyInstallToApertures"] = "applyInstallToApertures"
+    aperture_ids: list[str] = Field(min_length=1, max_length=400)
+    install_type_id: str | None = Field(default=None, pattern=APIT_ID_PATTERN, max_length=80)
+
+
+class CopyElementInstalls(BaseModel):
+    """Copy per-edge install assignments to apertures with an identical grid.
+
+    Targets must share the source's grid signature (same dimension counts
+    and the same element spans/kinds) so slots can be copied
+    position-for-position; mismatched targets are rejected with a named
+    error so the UI can filter its candidate list.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["copyElementInstalls"] = "copyElementInstalls"
+    source_aperture_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    target_aperture_ids: list[str] = Field(min_length=1, max_length=400)
+
+
 OverrideTarget = Literal[
     "frame.top",
     "frame.right",
@@ -196,6 +240,7 @@ class ApertureAssignmentSnapshot(BaseModel):
     operation: ApertureOperation | None = None
     glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
+    installs: ApertureElementInstalls = Field(default_factory=ApertureElementInstalls)
 
 
 class PasteAssignment(BaseModel):
@@ -272,6 +317,9 @@ ApertureCommand = Annotated[
         | FlipLeftRight
         | RefreshRefFromCatalog
         | SetManufacturerFilters
+        | SetElementInstall
+        | ApplyInstallToApertures
+        | CopyElementInstalls
     ),
     Field(discriminator="kind"),
 ]
@@ -298,4 +346,7 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "flipLeftRight": "project_version_aperture_flip_left_right",
     "setManufacturerFilters": "project_version_aperture_manufacturer_filters_set",
     "refreshRefFromCatalog": "project_version_aperture_ref_refresh_from_catalog",
+    "setElementInstall": "project_version_aperture_element_set_install",
+    "applyInstallToApertures": "project_version_aperture_install_bulk_apply",
+    "copyElementInstalls": "project_version_aperture_installs_copy",
 }

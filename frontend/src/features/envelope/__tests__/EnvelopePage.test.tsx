@@ -515,7 +515,10 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     await screen.findByTestId("assembly-thermal-label");
-    await userEvent.click(screen.getByRole("button", { name: "Thermal performance details" }));
+    // The ⓘ panel is the shared portalled tooltip: it opens on hover/focus and
+    // exists in the DOM only while open (it used to be a permanently-rendered,
+    // CSS-revealed span, which a click happened to satisfy).
+    await userEvent.hover(screen.getByRole("button", { name: "Thermal performance details" }));
 
     expect(await screen.findByTestId("assembly-thermal-films")).toHaveTextContent(
       "ISO 6946 surface films, horizontal heat flow",

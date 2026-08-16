@@ -5,6 +5,7 @@ import { useApertureBuilderStore } from "../store/builder-store";
 import type { ApertureElement } from "../types";
 import { apertureElement } from "./aperture-ui-test-fixtures";
 
+const noInstalls = { top: null, right: null, bottom: null, left: null };
 const frames = { top: null, right: null, bottom: null, left: null };
 
 const element = (overrides: Partial<ApertureElement> = {}) =>
@@ -51,7 +52,7 @@ describe("usePickPasteHandlers", () => {
     const onRestoreAssignment = vi.fn().mockRejectedValue(new Error("void_element_assignment"));
     useApertureBuilderStore.getState().pushUndoEntry("apt_1", {
       target_element_id: "target",
-      prior: { frames, glazing_id: null, operation: null },
+      prior: { frames, glazing_id: null, operation: null, installs: noInstalls },
     });
     const { result } = renderHook(() =>
       usePickPasteHandlers({ apertureId: "apt_1", onRestoreAssignment }),
@@ -66,6 +67,7 @@ describe("usePickPasteHandlers", () => {
     const onRestoreAssignment = vi.fn().mockResolvedValue(true);
     const prior = {
       frames: { top: "pfrm_top", right: null, bottom: null, left: null },
+      installs: { top: null, right: null, bottom: null, left: null },
       glazing_id: "pglz_original",
       operation: { type: "swing" as const, directions: ["left" as const] },
     };

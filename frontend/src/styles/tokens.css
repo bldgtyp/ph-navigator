@@ -133,7 +133,35 @@
      selected row carries the teal --accent-light. Neutral (not accent-tinted)
      and theme-safe in both light and dark. The grip reuses --text-muted and the
      action-cluster scrim reuses this token / --accent-light inline. */
-  --sidebar-row-hover: color-mix(in oklab, var(--text-primary) 5%, var(--bg-card));
+  --sidebar-row-hover: var(--state-row-hover-bg);
+
+  /* ---- Interaction states (the state language) -------------------------
+     ONE home for "what does hover/selected/armed look like". Every surface
+     picks from this group — a feature never invents its own hover ring or
+     wash. Two families, because the app has two kinds of surface:
+
+       * LIST/ROW surfaces (sidebar rows, menu items, ghost buttons) tint the
+         background: neutral on hover, teal only when selected.
+       * GEOMETRY surfaces (aperture key view + builder canvas, assembly
+         canvas) draw a RING plus an optional tint, because the thing under
+         the cursor is a drawn object, not a row.
+
+     Ring mechanics matter as much as the color: a ring is an `outline` that
+     is `transparent` at rest and colored by state (no reflow), drawn INSIDE
+     the box with --state-ring-offset. An outset ring gets clipped by the
+     next band, the canvas edge, or any scrolling ancestor.
+     Canvas *mode* palettes (envelope's pick-green / paint-gold) are the
+     documented exception — see context/DESIGN_SYSTEM.md § Interaction states. */
+  --state-row-hover-bg: color-mix(in oklab, var(--text-primary) 5%, var(--bg-card));
+  --state-row-selected-bg: var(--accent-light);
+  --state-row-selected-text: var(--accent-text);
+  --state-ghost-hover-bg: var(--bg-elev);
+  --state-hover-ring: color-mix(in oklab, var(--highlight-text) 76%, transparent);
+  --state-hover-tint: color-mix(in oklab, var(--highlight-text) 8%, transparent);
+  --state-selected-ring: var(--accent);
+  --state-selected-tint: color-mix(in oklab, var(--accent) 14%, transparent);
+  --state-ring-width: 2px;
+  --state-ring-offset: -2px;
   --font-primary: "Geist", sans-serif;
   --font-table: "Geist", sans-serif;
   /* Type scale (rem). 8 steps — the only font sizes allowed in component

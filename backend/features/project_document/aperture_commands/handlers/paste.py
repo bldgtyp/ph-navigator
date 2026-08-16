@@ -1,8 +1,10 @@
-"""Paste-assignment handler — copies the 6 assignment fields from
+"""Paste-assignment handler — copies the assignment fields from
 ``source_element_id`` onto every ``target_element_ids[i]`` inside the
 same aperture type. ``id``, ``row_span``, ``column_span``, and
 ``name`` on each target are preserved; only the assignment payload
-(operation, glazing, four frames) is replaced.
+(operation, glazing, four frames, four install slots) is replaced.
+A pasted install slot may land on a target's interior edge — that is
+the tolerated-stale case the resolver ignores (D-3).
 
 A single command writes all targets atomically inside one
 ``model_copy`` chain so partial failures leave the document
@@ -40,6 +42,7 @@ def _assignment_updates(
         "operation": source.operation.model_copy(deep=True) if source.operation else None,
         "glazing_id": source.glazing_id,
         "frames": source.frames.model_copy(deep=True),
+        "installs": source.installs.model_copy(deep=True),
     }
 
 

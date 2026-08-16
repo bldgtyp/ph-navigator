@@ -32,6 +32,7 @@ from features.project_document.aperture_commands.models import (
     APERTURE_SIDES,
     ApertureSide,
 )
+from features.project_document.apertures.install_psi import resolve_install_psi_for_aperture
 from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ApertureElement,
@@ -48,7 +49,6 @@ class _FrameData:
     width_m: float
     u_value_w_m2k: float
     psi_g_w_mk: float
-    psi_install_w_mk: float | None
 
 
 def calculate_aperture_u_values(
@@ -106,12 +106,16 @@ def calculate_aperture_u_value_terms(
         )
 
     void_adjacency = _void_adjacency_by_element(entry, glazed_elements)
+    install_resolution = resolve_install_psi_for_aperture(entry, tables)
     for element in glazed_elements:
         detail = _calculate_element_detail(
             entry,
             element,
             tables,
             void_adjacent_sides=void_adjacency.get(element.id, ()),
+            install_psi_by_side={
+                side: install_resolution.values[(element.id, side)].psi_w_mk for side in APERTURE_SIDES
+            },
         )
         element_results.append(detail)
         aggregate_warnings.extend(detail.warnings)
@@ -185,6 +189,7 @@ def _calculate_element_detail(
     tables: ProjectDocumentTables,
     *,
     void_adjacent_sides: tuple[ApertureSide, ...] = (),
+    install_psi_by_side: dict[ApertureSide, float],
 ) -> ApertureElementDetail:
     width_m = _element_width_m(entry, element)
     height_m = _element_height_m(entry, element)
@@ -224,6 +229,7 @@ def _calculate_element_detail(
             frame_refs,
             glazing,
             warnings,
+            install_psi_by_side=install_psi_by_side,
         )
 
     f_top = frames["top"]
@@ -252,16 +258,17 @@ def _calculate_element_detail(
             frame_refs,
             glazing,
             warnings,
+            install_psi_by_side=install_psi_by_side,
             interior_width_m=interior_width,
             interior_height_m=interior_height,
             frame_area_m2=round(total_area, 6),
         )
 
     edges = (
-        _edge_breakdown("top", f_top, f_left, f_right, width_m, interior_width),
-        _edge_breakdown("right", f_right, f_top, f_bottom, height_m, interior_height),
-        _edge_breakdown("bottom", f_bottom, f_left, f_right, width_m, interior_width),
-        _edge_breakdown("left", f_left, f_top, f_bottom, height_m, interior_height),
+        _edge_breakdown("top", f_top, f_left, f_right, width_m, interior_width, install_psi_by_side["top"]),
+        _edge_breakdown("right", f_right, f_top, f_bottom, height_m, interior_height, install_psi_by_side["right"]),
+        _edge_breakdown("bottom", f_bottom, f_left, f_right, width_m, interior_width, install_psi_by_side["bottom"]),
+        _edge_breakdown("left", f_left, f_top, f_bottom, height_m, interior_height, install_psi_by_side["left"]),
     )
     glazing_area = interior_width * interior_height
     frame_area = total_area - glazing_area
@@ -305,6 +312,7 @@ def _uncomputed_detail(
     glazing: ProjectGlazing | None,
     warnings: list[ApertureUValueWarning],
     *,
+    install_psi_by_side: dict[ApertureSide, float],
     interior_width_m: float | None = None,
     interior_height_m: float | None = None,
     frame_area_m2: float = 0.0,
@@ -331,6 +339,7 @@ def _uncomputed_detail(
                 frame_ids[side],
                 frame_refs[side],
                 width_m if side in ("top", "bottom") else height_m,
+                install_psi_by_side[side],
             )
             for side in APERTURE_SIDES
         ),
@@ -343,6 +352,7 @@ def _edge_input(
     frame_id: str | None,
     frame: ProjectFrame | None,
     edge_length_m: float,
+    psi_install_w_mk: float,
 ) -> ApertureEdgeBreakdown:
     return ApertureEdgeBreakdown(
         side=side,
@@ -350,7 +360,7 @@ def _edge_input(
         width_m=frame.width_mm / 1000.0 if frame and frame.width_mm is not None else None,
         u_value_w_m2k=frame.u_value_w_m2k if frame else None,
         psi_g_w_mk=frame.psi_g_w_mk if frame else None,
-        psi_install_w_mk=frame.psi_install_w_mk if frame else None,
+        psi_install_w_mk=psi_install_w_mk,
         edge_length_m=edge_length_m,
         interior_length_m=None,
         center_strip_area_m2=None,
@@ -369,6 +379,7 @@ def _edge_breakdown(
     adj_b: _FrameData,
     edge_length_m: float,
     interior_length_m: float,
+    psi_install_w_mk: float,
 ) -> ApertureEdgeBreakdown:
     """Apply PHN's 45-degree split: half of each corner goes to each edge."""
     center = frame.width_m * interior_length_m
@@ -381,7 +392,7 @@ def _edge_breakdown(
         width_m=frame.width_m,
         u_value_w_m2k=frame.u_value_w_m2k,
         psi_g_w_mk=frame.psi_g_w_mk,
-        psi_install_w_mk=frame.psi_install_w_mk,
+        psi_install_w_mk=psi_install_w_mk,
         edge_length_m=edge_length_m,
         interior_length_m=interior_length_m,
         center_strip_area_m2=center,
@@ -481,7 +492,6 @@ def _frame_data(frame_id: str | None, frame: ProjectFrame | None) -> _FrameData 
         width_m=frame.width_mm / 1000.0,
         u_value_w_m2k=frame.u_value_w_m2k,
         psi_g_w_mk=frame.psi_g_w_mk,
-        psi_install_w_mk=frame.psi_install_w_mk,
     )
 
 

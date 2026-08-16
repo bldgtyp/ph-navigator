@@ -41,6 +41,7 @@ from features.project_document.envelope_models import (
     SPECIFICATION_STATUSES,
     ApertureElement,
     ApertureElementFrames,
+    ApertureElementInstalls,
     ApertureElementKind,
     ApertureOperation,
     ApertureOperationDirection,
@@ -66,6 +67,8 @@ from features.project_document.envelope_models import (
     require_catalog_origin_family,
 )
 from features.project_document.rows import (
+    ApertureInstallTypeRow,
+    ApertureInstallTypesTableEnvelope,
     ApplianceRow,
     AppliancesTableEnvelope,
     ElectricHeaterRow,
@@ -157,6 +160,13 @@ THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
     THERMAL_BRIDGE_STATUS_OPTION_KEY,
 )
+APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY = "aperture_install_types.source"
+APERTURE_INSTALL_TYPE_STATUS_OPTION_KEY = "aperture_install_types.status"
+ApertureInstallTypeOptionKey = Literal["aperture_install_types.source", "aperture_install_types.status"]
+APERTURE_INSTALL_TYPE_OPTION_KEYS: tuple[ApertureInstallTypeOptionKey, ...] = (
+    APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY,
+    APERTURE_INSTALL_TYPE_STATUS_OPTION_KEY,
+)
 ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 
@@ -225,7 +235,13 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # v9: heat-pump capacity and pump-flow keys name their canonical SI storage
 # units. The migration backfills backend-owned power metadata, renames the
 # misleading keys, and converts the one legacy Btu/h value to kW.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 9
+#
+# v10 (aperture-psi-install Phase 01): new `aperture_install_types` library
+# table (TB-pattern DataTable) with a program-aware seeded Default row
+# (`apit_default`: 0.052 W/m·K when "phius" is in cert_programs, else 0.04),
+# and per-side `installs` assignment slots on every aperture element
+# (None inherits the Default).
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 10
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -332,6 +348,17 @@ THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
         "notes",
     }
 )
+APERTURE_INSTALL_TYPES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {
+        "id",
+        "pdf_report_asset_ids",
+        "datasheet_asset_ids",
+        "photo_asset_ids",
+        "datasheet_status",
+        "photo_status",
+        "notes",
+    }
+)
 SPACE_TYPES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id"})
 
 
@@ -422,6 +449,7 @@ class ProjectDocumentTables(BaseModel):
     project_glazings: list[ProjectGlazing] = Field(default_factory=list)
     project_frames: list[ProjectFrame] = Field(default_factory=list)
     apertures: list[ApertureTypeEntry] = Field(default_factory=list)
+    aperture_install_types: ApertureInstallTypesTableEnvelope = Field(default_factory=ApertureInstallTypesTableEnvelope)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     space_types: SpaceTypesTableEnvelope = Field(default_factory=SpaceTypesTableEnvelope)
     thermal_bridges: ThermalBridgesTableEnvelope = Field(default_factory=ThermalBridgesTableEnvelope)
@@ -438,7 +466,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[9] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[10] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -473,6 +501,13 @@ __all__ = [
     "APERTURE_DEFAULT_FRAME_NAME",
     "APERTURE_DEFAULT_GLAZING_ID",
     "APERTURE_DEFAULT_GLAZING_NAME",
+    "APERTURE_INSTALL_TYPE_OPTION_KEYS",
+    "APERTURE_INSTALL_TYPE_SOURCE_OPTION_KEY",
+    "APERTURE_INSTALL_TYPE_STATUS_OPTION_KEY",
+    "APERTURE_INSTALL_TYPES_TYPED_COLUMN_FIELD_KEYS",
+    "ApertureInstallTypeOptionKey",
+    "ApertureInstallTypeRow",
+    "ApertureInstallTypesTableEnvelope",
     "APPLIANCE_ENERGY_STAR_OPTION_KEY",
     "APPLIANCE_OPTION_KEYS",
     "APPLIANCE_STATUS_OPTION_KEY",
@@ -480,6 +515,7 @@ __all__ = [
     "APPLIANCES_TYPED_COLUMN_FIELD_KEYS",
     "ApertureElement",
     "ApertureElementFrames",
+    "ApertureElementInstalls",
     "ApertureElementKind",
     "ApertureOperation",
     "ApertureOperationDirection",

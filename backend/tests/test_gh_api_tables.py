@@ -192,7 +192,12 @@ def test_table_routes_smoke_and_client_shape(clean_document_tables: None) -> Non
         payload = response.json()
         # Client-shape: single json parse, dict-key access, JSON-native values only.
         assert json.loads(json.dumps(payload)) == payload
-        assert payload["records"] == []
+        if name == "aperture_install_types":
+            # The install-types library is the one table seeded with a row:
+            # the program-aware Default (aperture-psi-install D-4).
+            assert [record["id"] for record in payload["records"]] == ["apit_default"]
+        else:
+            assert payload["records"] == []
         assert isinstance(payload["field_defs"], list)
         assert payload["schema_version"] == 1
 

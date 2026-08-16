@@ -113,6 +113,7 @@ function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
         row_span: element.row_span,
         column_span: element.column_span,
         frames: hydrateFrames(element.frames, framesById),
+        installs: element.installs,
         glazing: element.glazing_id ? (glazingsById.get(element.glazing_id) ?? null) : null,
         operation: element.operation,
       })),

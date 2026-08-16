@@ -55,6 +55,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: null, right: null, bottom: null, left: null },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: glazing(),
     operation: null,
     ...overrides,
@@ -139,6 +140,7 @@ describe("ApertureElementCardStack", () => {
           name: "B",
           column_span: [1, 1],
           frames: { top: frame({ name: "Frame A" }), right: null, bottom: null, left: null },
+          installs: { top: null, right: null, bottom: null, left: null },
         }),
         element({ id: "aptel_c", name: "C", column_span: [2, 2] }),
       ],
@@ -150,6 +152,7 @@ describe("ApertureElementCardStack", () => {
           ? {
               ...item,
               frames: { ...item.frames, top: frame({ name: "Frame B", width_mm: 50 }) },
+              installs: { top: null, right: null, bottom: null, left: null },
             }
           : item,
       ),

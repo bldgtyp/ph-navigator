@@ -5,7 +5,7 @@
 
 # 2.6 Apertures tab (`/projects/{id}/apertures`)
 
-The Apertures tab has four route-addressable sub-tabs:
+The Apertures tab has five route-addressable sub-tabs:
 
 - **Builder** (`/projects/{id}/apertures/builder`) — the visual aperture-type
   editor.
@@ -13,6 +13,8 @@ The Apertures tab has four route-addressable sub-tabs:
   specification page for project glazing products.
 - **Frames** (`/projects/{id}/apertures/frames`) — a report-table
   specification page for project frame products.
+- **Installs** (`/projects/{id}/apertures/installs`) — the DataTable library
+  of window-install Ψ types (`aperture_install_types`).
 - **U-Values** (`/projects/{id}/apertures/u-values`) — an auditable
   line-by-line aperture U-value report with CSV and formula-XLSX downloads.
 
@@ -120,7 +122,63 @@ Envelope → Materials. Editors can update status, attach/detach datasheets,
 refresh catalog drift, and remove unused project frames. Viewer and locked
 version behavior is read-only with N/A/unused rows hidden in viewer mode.
 
-## 2.6.4 U-Values Report
+## 2.6.4 Installs
+
+Installs is the project library of **window-install Ψ types**
+(`aperture_install_types`), the per-edge installation-junction psi-values
+(aperture-psi-install feature). It is a standard DataTable page (TB-style
+seeded FieldDefs) with Name, Ψ-install, Source, Report (Flixo/THERM PDF
+attachments via `pdf_report_asset_ids`), Datasheet/Site Photos evidence, and
+Status columns. Every project carries a seeded, undeletable **Default** row —
+program-aware (Phius 0.052 / PHI 0.04 W/m·K) at project creation; deleting any
+other type in use is blocked with a 409 listing its dependent edges.
+`?focus={row_id}` deep-links (used by the Documentation page) scroll to and
+highlight the row.
+
+Assignment happens in the Builder, not on this page:
+
+- **Per-edge slots.** Every glazed element carries four install slots
+  (top/right/bottom/left). An unset slot **inherits the Default type**;
+  interior (mulled) edges — where the neighboring cell on that side is glazed
+  — are **derived Ψ = 0** and cannot carry an assignment. Edges next to Empty
+  panels or the aperture boundary are perimeter edges.
+- **FrameRow Ψ-inst column.** The element card's per-edge table shows the
+  effective value per side: assigned (plain), inherited default (muted), or
+  mulled (dash + derived-zero tooltip). The resolved values feed the U-Values
+  report's Ψ-install column and route-3 GH exports; Ψ-install is always
+  excluded from U-w.
+- **Installs modal.** The builder header's `Installs` action opens a
+  per-aperture modal: a read-only key-view SVG with per-edge tint overlay,
+  a legend of install types (swatch, Ψ, PDF chip, live usage count), and
+  pick-type-then-paint-edges interaction — click an edge to assign the armed
+  type, click again to clear back to inherit; while a type is armed the key
+  view takes the paint-bucket cursor, and the hovered edge takes a neutral
+  2px ring plus a saturated fill. "Cleared" is never presented as an absence:
+  the legend states that unpainted edges inherit the Default row *with its Ψ*,
+  and each unassigned edge's tooltip repeats it. **Nothing is written until `Save`**: the
+  session accumulates in `installs-draft.ts` (edge slots, new/edited types,
+  copy targets) and the footer is the standard Cancel/`Save` pair, so Cancel —
+  and Escape — discards the whole session. Save writes the type-library rows
+  first (one create batch, one edit batch), then the edge commands; a session
+  that leaves every perimeter edge on one type collapses to the single
+  `applyInstallToApertures` command instead of one write per edge.
+  Tools sit with what they act on, not in the footer: `Apply to all edges` is
+  in the key view's paint bar (always rendered, enabled once a type is armed —
+  appearing/disappearing shifted the drawing under the cursor), and
+  `Copy to other apertures…` —
+  replacing a target's edge assignments with this aperture's, restricted to an
+  identical grid signature — is a header accessory. `+ New type…` closes the
+  legend list, and each legend row carries a pencil that renames / re-values
+  that type in place; both go through the same payload builders as this page
+  (no forked validation). Per-type usage is a *project-wide* count, so it lives
+  in that row's editor ("Used on 4 edges in this project") rather than in the
+  list, where it read as a fact about the aperture on screen. Main controls
+  carry the shared `<Tooltip>`; the two that can be disabled hang theirs off a
+  wrapper span, so the hint still explains *why* they are disabled (most often:
+  no other aperture has an identical grid). A Ψ field the user did not touch is not written back,
+  so its display rounding can never quantize the stored value.
+
+## 2.6.5 U-Values Report
 
 U-Values is a display-only audit page for the ISO 10077-1 composite aperture
 calculation. Editors see the current document view—their draft when one exists,

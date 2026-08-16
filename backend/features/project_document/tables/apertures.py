@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from features.project_document.document import (
+    ApertureInstallTypeRow,
     ApertureTypeEntry,
     ManufacturerFilters,
     ProjectDocumentV1,
@@ -15,6 +16,7 @@ from features.project_document.document import (
     ProjectGlazing,
 )
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.tables.aperture_install_types import install_type_name, install_type_psi_w_mk
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_outgoing_document
 
@@ -25,6 +27,34 @@ class AperturesSliceReplaceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     apertures: list[ApertureTypeEntry]
+
+
+class ApertureInstallTypeSummary(BaseModel):
+    """Install-type library row projected for the builder UI.
+
+    Everything the element cards / Installs modal need in the slice fetch
+    (aperture-psi-install phases 04–05) without a second request; the full
+    editable table lives on the `aperture_install_types` DataTable slice.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name: str | None
+    psi_w_mk: float | None
+    source: str | None
+    has_pdf: bool
+
+
+def install_type_summary(row: ApertureInstallTypeRow) -> ApertureInstallTypeSummary:
+    source = row.custom_values.get("source")
+    return ApertureInstallTypeSummary(
+        id=row.id,
+        name=install_type_name(row),
+        psi_w_mk=install_type_psi_w_mk(row),
+        source=source if isinstance(source, str) else None,
+        has_pdf=bool(row.pdf_report_asset_ids),
+    )
 
 
 class AperturesSliceResponse(BaseModel):
@@ -38,6 +68,9 @@ class AperturesSliceResponse(BaseModel):
     apertures: list[ApertureTypeEntry]
     project_glazings: list[ProjectGlazing]
     project_frames: list[ProjectFrame]
+    # aperture-psi-install: the install-type library summarized for
+    # effective-Ψ display + assignment pickers.
+    aperture_install_types: list[ApertureInstallTypeSummary] = Field(default_factory=list)
     # Phase 11: enabled-list for the manufacturer-filter modal +
     # picker filtering. ``null`` means "all manufacturers enabled".
     manufacturer_filters: ManufacturerFilters | None = None
@@ -69,6 +102,7 @@ def apertures_response(
         apertures=body.tables.apertures,
         project_glazings=body.tables.project_glazings,
         project_frames=body.tables.project_frames,
+        aperture_install_types=[install_type_summary(row) for row in body.tables.aperture_install_types.rows],
         manufacturer_filters=body.tables.manufacturer_filters,
     )
 

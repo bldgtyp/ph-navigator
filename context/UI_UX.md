@@ -160,6 +160,11 @@ CI) keeps the token system honest:
   `--z-*` tokens, `.ts`/`.tsx`/`.css` files stay under the size cap
   (`@size-exception` escape hatch on line 1), and feature folders keep
   their canonical shape.
+- `check:interaction-states` — hover / focus-visible / selected / armed rules
+  take their ring and fill from the state tokens (`--state-*`, the
+  `--data-table-*` pair, or a feature alias of them), never a hand-picked
+  color; see `context/DESIGN_SYSTEM.md` § Interaction states. Pre-existing
+  debt is frozen in a baseline that may only shrink.
 - `check:typography` — font family/size/weight/tracking/line-height in
   component CSS and TS/TSX come only from the typography tokens
   (`--font-*`, `--fs-*`, `--fw-*`, `--tracking-*`, `--lh-*`) or
@@ -601,7 +606,10 @@ are building **plus §1 (common elements) above**. See
 
 ## 4. State indicators (cheatsheet)
 
-Consistent visual language for state across the app:
+Consistent visual language for **document** state across the app. *Interaction*
+state — hover, selected, armed, focus, disabled — is a different vocabulary and
+lives in `context/DESIGN_SYSTEM.md` § Interaction states (with its own tokens
+and the `check:interaction-states` guard).
 
 | State | Visual | Used where |
 |---|---|---|

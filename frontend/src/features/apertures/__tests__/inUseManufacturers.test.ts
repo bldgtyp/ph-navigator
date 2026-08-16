@@ -71,6 +71,7 @@ function aperture(opts: {
           bottom: opts.frames?.bottom !== undefined ? frame(opts.frames.bottom) : null,
           left: opts.frames?.left !== undefined ? frame(opts.frames.left) : null,
         },
+        installs: { top: null, right: null, bottom: null, left: null },
         glazing: opts.glazing !== undefined ? glazing(opts.glazing) : null,
         operation: null,
       },

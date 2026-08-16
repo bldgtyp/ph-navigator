@@ -189,7 +189,13 @@ def _heat_pump_leaf(table_name: str, field_table_key: str, label: str, leaf: str
     )
 
 
-def _aperture_table(table_name: str, label: str, route_leaf: str) -> DocumentationTable:
+def _aperture_table(
+    table_name: str,
+    label: str,
+    route_leaf: str,
+    *,
+    status_source: Literal["custom_status", "specification_status"] = "specification_status",
+) -> DocumentationTable:
     group_key = _slug(label)
     return DocumentationTable(
         table_name=table_name,
@@ -202,7 +208,7 @@ def _aperture_table(table_name: str, label: str, route_leaf: str) -> Documentati
         group_title=label,
         group_anchor=group_key,
         table_path_template=f"/projects/{{project_id}}/apertures/{route_leaf}?focus={{record_id}}",
-        status_source="specification_status",
+        status_source=status_source,
     )
 
 
@@ -235,6 +241,9 @@ DOCUMENTATION_TABLES: tuple[DocumentationTable, ...] = (
     _equipment_table("appliances", "Appliances", "appliances"),
     _aperture_table("project_glazings", "Glazings", "glazings"),
     _aperture_table("project_frames", "Frames", "frames"),
+    # Unlike glazings/frames (specification_status envelopes), install-type
+    # rows carry the TB-style custom `status` field.
+    _aperture_table("aperture_install_types", "Installs", "installs", status_source="custom_status"),
     _thermal_bridge_table(),
 )
 

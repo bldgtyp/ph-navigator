@@ -725,4 +725,14 @@ GET    /api/v1/gh/projects/{bt_number}/tables/{table_name}
 
 The ApertureCommand union includes batched `setElementKind`
 (`element_ids` + wire `element_kind: "glazed" | "void"`). Converting to
-`void` atomically clears glazing, operation, and all four frame assignments.
+`void` atomically clears glazing, operation, all four frame assignments,
+and all four install slots.
+
+Ψ-install (aperture-psi-install): the union adds `setElementInstall`
+(one perimeter edge; interior/mulled edges are rejected),
+`applyInstallToApertures` (bulk: every perimeter edge of the listed
+apertures), and `copyElementInstalls` (targets must share the source's
+grid signature). The `/gh/.../aperture-types` payload carries a per-side
+`installs` block with the resolved effective values, while every
+`frame_type.psi_install_w_mk` emits the uniform project-Default value
+(never per-edge-varying — the current GH client dedups frames by name).

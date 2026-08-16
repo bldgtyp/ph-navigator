@@ -404,6 +404,9 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     next_tables = ProjectDocumentTables(
         assemblies=[Assembly.model_validate(row) for row in envelope_seed.assemblies],
         project_materials=[ProjectMaterial.model_validate(row) for row in envelope_seed.project_materials],
+        # Carry the template-seeded install-types library (incl. the
+        # program-aware `apit_default` row) through the starter rebuild.
+        aperture_install_types=body.tables.aperture_install_types,
         rooms=RoomsTableEnvelope(
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],

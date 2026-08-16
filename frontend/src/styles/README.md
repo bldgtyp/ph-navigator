@@ -139,6 +139,27 @@ reach — an already-blessed variant showing up under a new inferred role while
 the site-wide variant count holds. A raise that moves the total is new debt;
 consolidate instead.
 
+## Interaction states
+
+Hover, selection, "armed", focus and disabled are **designed once** and reused —
+the same class of decision as which button component to use. The vocabulary,
+the two surface families (row/list vs. geometry) and the ring mechanic live in
+`context/DESIGN_SYSTEM.md` § Interaction states; the tokens live in
+`tokens.css` § Interaction states (`--state-row-hover-bg`,
+`--state-row-selected-bg`, `--state-ghost-hover-bg`, `--state-hover-ring/-tint`,
+`--state-selected-ring/-tint`, `--state-ring-width/-offset`).
+
+The implementation rule that bites hardest: on a **drawn** surface (canvas
+band, key-view edge, assembly segment) the ring is an `outline` that is
+`transparent` at rest and **inset** via `outline-offset: var(--state-ring-offset)`.
+An outset ring is clipped by the neighbouring band, the canvas edge, or any
+scrolling ancestor, and shows up as a highlight that cuts off on one side.
+
+`check:interaction-states` holds the line; `scripts/interaction-states-baseline.json`
+freezes the pre-existing debt and may only shrink. When something genuinely new
+is needed (a canvas *mode* palette, say), name it in the feature's token block
+and document it in DESIGN_SYSTEM.md — don't inline a color.
+
 ---
 
 ## Shared-class catalog (which sheet owns what)
@@ -232,6 +253,7 @@ cascade does not move, and verify in the browser.
 | `check:z-index` | raw `z-index` integers must use the `--z-*` scale |
 | `check:shape` | feature-package file shape |
 | `check:typography` | typography comes from the token vocabulary or `inherit`; zero-debt (empty baseline — see [Typography rules](#typography-rules)) |
+| `check:interaction-states` | a state rule (`:hover`, `:focus-visible`, `[data-armed]`, `.is-selected`, …) paints its **ring** (`outline`/`box-shadow`) and **fill** (`background`) from the state tokens — see [Interaction states](#interaction-states). Existing debt is frozen in `scripts/interaction-states-baseline.json`; the ratchet may only shrink |
 
 ---
 

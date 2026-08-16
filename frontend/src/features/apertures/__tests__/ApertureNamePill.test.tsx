@@ -49,6 +49,7 @@ function element(name = "W1"): ApertureElement {
     row_span: [0, 0],
     column_span: [0, 0],
     frames: { top: frame(), right: frame(), bottom: frame(), left: frame() },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: glazing(),
     operation: null,
   };

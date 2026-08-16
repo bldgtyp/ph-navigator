@@ -11,6 +11,10 @@ element per covered cell. Every new element inherits the source's kind,
 assignments, and name; catalog-origin ``synced_at`` is re-stamped so
 Phase 12 drift detection treats the copies as distinct picks.
 
+Per-side ``installs`` slots are position-dependent, so neither handler
+carries them over: merged/split elements start all-None (inherit the
+project Default) per the aperture-psi-install slot-hygiene rule.
+
 Both handlers re-run the document validator at the dispatcher seam,
 which enforces the coverage invariant — but we also validate
 locally so the structured error code is meaningful.

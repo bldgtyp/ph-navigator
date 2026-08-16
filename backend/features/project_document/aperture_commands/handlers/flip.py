@@ -56,6 +56,13 @@ def _flip_element(element: ApertureElement, column_count: int) -> ApertureElemen
                 },
                 deep=True,
             ),
+            "installs": element.installs.model_copy(
+                update={
+                    "left": element.installs.right,
+                    "right": element.installs.left,
+                },
+                deep=True,
+            ),
             "operation": _flip_operation(element.operation),
         }
     )

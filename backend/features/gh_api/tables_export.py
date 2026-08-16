@@ -1,7 +1,8 @@
 """Generic tabular-element export for the Grasshopper Data API.
 
-`GET /tables/{table_name}` serves the 12 row-based element tables (rooms, space
-types, thermal bridges, and all equipment) from a saved document. Each table is
+`GET /tables/{table_name}` serves the row-based element tables (rooms, space
+types, thermal bridges, aperture install types, and all equipment) from a
+saved document. Each table is
 a Plan-31 mixed-storage envelope `{field_defs, rows}`: rows carry typed built-in
 columns plus a `custom_values` bag. This exporter serializes both, keyed to the
 stable GH-facing external names.
@@ -53,6 +54,7 @@ TABLE_PATHS: dict[str, tuple[str, ...]] = {
     "rooms": ("rooms",),
     "space_types": ("space_types",),
     "thermal_bridges": ("thermal_bridges",),
+    "aperture_install_types": ("aperture_install_types",),
     "pumps": ("equipment", "pumps"),
     "fans": ("equipment", "fans"),
     "ventilators": ("equipment", "ervs"),

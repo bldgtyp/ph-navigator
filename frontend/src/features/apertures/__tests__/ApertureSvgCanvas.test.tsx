@@ -54,6 +54,7 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
       bottom: frame(50),
       left: frame(50),
     },
+    installs: { top: null, right: null, bottom: null, left: null },
     glazing: glazing(),
     operation: null,
     ...overrides,
@@ -120,6 +121,7 @@ describe("ApertureSvgCanvas", () => {
   it("marks a null-frame region with dashed stroke and no fill", () => {
     const el = element({
       frames: { top: null, right: frame(50), bottom: frame(50), left: frame(50) },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     render(
       <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,
@@ -149,6 +151,7 @@ describe("ApertureSvgCanvas", () => {
         bottom: frame(50),
         left: frame(50),
       },
+      installs: { top: null, right: null, bottom: null, left: null },
     });
     render(
       <ApertureSvgCanvas aperture={entry({ elements: [el] })} zoom={1} viewDirection="exterior" />,

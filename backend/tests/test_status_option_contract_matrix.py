@@ -36,7 +36,7 @@ def seeded_document() -> ProjectDocumentV1:
 def test_matrix_covers_every_status_bearing_table() -> None:
     """Guard the guard: a table added to the family must appear here too."""
 
-    assert len(STATUS_TABLE_NAMES) == 12
+    assert len(STATUS_TABLE_NAMES) == 13
 
 
 @pytest.mark.parametrize("table_name", STATUS_TABLE_NAMES)

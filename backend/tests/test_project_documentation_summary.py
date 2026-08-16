@@ -17,7 +17,7 @@ from features.project_document.document import (
 )
 from features.project_document.documentation_summary import documentation_rollup, project_documentation_summary
 from features.project_document.models import ProjectDocumentView
-from features.project_document.rows import SingleSelectOption
+from features.project_document.rows import ApertureInstallTypeRow, SingleSelectOption
 from features.project_document.tables._status_field import STATUS_OPTION_NA, STATUS_OPTION_NEEDED
 from features.project_document.templates import empty_project_document
 from features.projects.models import CreateProjectRequest
@@ -252,6 +252,44 @@ def test_documentation_summary_routes_enforce_draft_and_saved_access(clean_docum
     assert draft_as_viewer.status_code in {401, 403}
 
 
+def test_documentation_summary_includes_aperture_install_types_group() -> None:
+    base = empty_project_document(
+        CreateProjectRequest(name="Documentation summary", bt_number="doc-summary", cert_programs=[])
+    )
+    seeded = base.tables.aperture_install_types
+    install_types = seeded.model_copy(
+        update={
+            "rows": [
+                *seeded.rows,
+                ApertureInstallTypeRow(
+                    id="apit_flixo_sill",
+                    pdf_report_asset_ids=["asset_pdf_1"],
+                    custom_values={"name": "Flixo Sill", "status": STATUS_OPTION_NEEDED},
+                ),
+            ]
+        }
+    )
+    summary = project_documentation_summary(
+        _view(base.tables.model_copy(update={"aperture_install_types": install_types}))
+    )
+
+    apertures_section = next(section for section in summary.sections if section.key == "apertures")
+    installs = next(group for group in apertures_section.groups if group.key == "installs")
+    # Seeded Default row is complete with evidence not-required; the added
+    # row is needed on all axes. The Flixo PDF is not an evidence axis (D-7).
+    assert installs.counts.model_dump() == {
+        "spec_done": 1,
+        "spec_total": 2,
+        "ds_done": 1,
+        "ds_total": 2,
+        "photo_done": 1,
+        "photo_total": 2,
+    }
+    assert installs.records[1].spec_status == "needed"
+    assert installs.records[1].display_name == "Flixo Sill"
+    assert installs.records[1].table_path.endswith("/apertures/installs?focus=apit_flixo_sill")
+
+
 def test_documentation_rollup_is_counts_only_and_hides_empty_groups() -> None:
     base = empty_project_document(
         CreateProjectRequest(name="Documentation summary", bt_number="doc-summary", cert_programs=[])
@@ -268,9 +306,13 @@ def test_documentation_rollup_is_counts_only_and_hides_empty_groups() -> None:
     payload = documentation_rollup(summary).model_dump(mode="json")
 
     assert "records" not in str(payload)
-    assert [section["key"] for section in payload["sections"]] == ["equipment"]
-    assert [group["key"] for group in payload["sections"][0]["groups"]] == ["pumps"]
-    assert payload["sections"][0]["counts"] == next(
+    # Apertures is always present since schema v10: every document seeds the
+    # Default install-type row (complete, evidence not-required).
+    sections_by_key = {section["key"]: section for section in payload["sections"]}
+    assert set(sections_by_key) == {"apertures", "equipment"}
+    assert [group["key"] for group in sections_by_key["apertures"]["groups"]] == ["installs"]
+    assert [group["key"] for group in sections_by_key["equipment"]["groups"]] == ["pumps"]
+    assert sections_by_key["equipment"]["counts"] == next(
         section.counts.model_dump() for section in summary.sections if section.key == "equipment"
     )
 

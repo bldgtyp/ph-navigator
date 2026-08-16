@@ -15,7 +15,7 @@
 import { expect, test } from "@playwright/test";
 import { TABLE_REGRESSION_CASES, type TableRegressionCase, tableCaseById } from "./tableMatrix";
 
-// Independent ground truth: the 14 backend generic-table keys this suite
+// Independent ground truth: the 15 backend generic-table keys this suite
 // targets, straight from backend/features/project_document/tables/
 // registry.py. The coverage test asserts the matrix matches this exactly,
 // so matrix drift from the backend registry fails at author time.
@@ -34,6 +34,7 @@ const EXPECTED_TABLE_KEYS = [
   "heat_pumps_outdoor_units",
   "heat_pumps_indoor_units",
   "thermal_bridges",
+  "aperture_install_types",
 ];
 
 // The keys the suite actually knows about — link targets and seed
@@ -44,7 +45,7 @@ const SAMPLE_PROJECT_ID = "00000000-0000-0000-0000-000000000000";
 const AREAS = ["spaces", "equipment", "heat-pumps", "assets"];
 
 test.describe("@table-harness DataTable regression matrix", () => {
-  test("covers exactly the 14 target tables, keyed uniquely", () => {
+  test("covers exactly the 15 target tables, keyed uniquely", () => {
     const ids = TABLE_REGRESSION_CASES.map((entry) => entry.id);
 
     expect(TABLE_REGRESSION_CASES).toHaveLength(EXPECTED_TABLE_KEYS.length);
