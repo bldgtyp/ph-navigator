@@ -81,6 +81,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const isInstallsRoute = isApertureSubroute(subpath, "installs");
   const isUValuesRoute = isApertureSubroute(subpath, "u-values");
   const isProductReportRoute = isGlazingsRoute || isFramesRoute;
+  // Bare `/apertures` renders the Builder, so the workspace shell is "not one
+  // of the report routes" rather than `isBuilderRoute`.
+  const isReportRoute = isProductReportRoute || isInstallsRoute || isUValuesRoute;
   const canExportUValueReport = canExportApertureUValueReport(sessionQuery.data);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -464,7 +467,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   if (result) setFiltersModalOpen(false);
                 }}
               />
-              <div className="apertures-body">
+              <div
+                className={
+                  isReportRoute ? "apertures-body" : "apertures-body apertures-body--workspace"
+                }
+              >
                 {actionError ? (
                   <p className="form-error" role="alert">
                     {actionError}

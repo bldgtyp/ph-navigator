@@ -186,13 +186,31 @@ otherwise the saved version; viewers and locked versions read the saved
 version. The page follows the global SI/IP preference and performs no
 calculation beyond unit conversion and formatting.
 
-The summary table lists Aperture, Overall W × H, Elements, Area, U-w,
-SHGC (glazing-area-weighted), and Status. Each aperture then has an element
-table with Element, Grid, W × H, Area, Glazing / U / SHGC, A-glazing,
-A-frame, Q-glazing, Q-frame, Q-spacer, and U-element. Expanding an element
-shows exactly four exterior-view edge rows in Top / Right / Bottom / Left
-order with Frame, Width, U-f, Ψ-g, Ψ-install (explicitly excluded from U-w),
-edge and interior lengths, center/corner/frame areas, and Q-frame/Q-spacer.
+The summary table lists Aperture, Overall W × H, Elements (**glazed** — it must
+equal the rows in that aperture's element table, so it reports
+`glazed_element_count`, not the Empty-inclusive `element_count`), Area, U-w,
+SHGC (glazing-area-weighted), and Completeness (the shared read-only
+`StatusPill`, not plain text). Each aperture then has an element table with
+Element, Grid, W × H, Area, Glazing, U-g, g-value, A-glazing, A-frame,
+Q-glazing, Q-frame, Q-spacer, and U-element — one value per column; the glazing
+name, its U and its g-value are **not** combined into one cell. Expanding an
+element shows exactly four exterior-view edge rows in Top / Right / Bottom /
+Left order with Frame, Width, U-f, Ψ-g, Ψ-install (explicitly excluded from
+U-w), edge and interior lengths, center/corner/frame areas, and
+Q-frame/Q-spacer.
+
+Each aperture's footer restates that aperture's summary row (Total area, U-w)
+and so must use the **same formatters as the summary columns** — reaching for
+the Builder's `formatWindowUValue` chip helper instead printed a 2-decimal U-w
+under a 3-decimal one for the same aperture. Unit labels come from
+`features/catalogs/components/unit-labels.ts` (`m2`, `W/m2-K`), never
+hand-written superscripts.
+
+The element tables are wider than the workspace: they scroll horizontally
+inside the shared `ReportTable`, which freezes the expand gutter and the
+Element column so a scrolled row keeps its identity. The report sub-tabs let
+the `.apertures-body` card grow with their content; only the Builder is
+clamped to the viewport (`.apertures-body--workspace`).
 
 The report convention is explicit above the tables:
 
@@ -204,13 +222,15 @@ The report convention is explicit above the tables:
 - Aperture SHGC is glazing-area-weighted.
 
 Empty panels produce no element rows and do not enter U-w or SHGC; their
-excluded count remains visible for reconciliation. An incomplete glazed
+excluded count remains visible for reconciliation, and this page says
+"**Empty panel**" — `kind: "void"` is the wire term only (see `GLOSSARY.md`).
+An incomplete glazed
 element remains visible with warning styling/text and renders unavailable
 calculated cells as em dashes. The aperture rollup includes each unfinished
 element as U = 0 and presents a warning stating that treatment. A missing
 glazing g-value is a non-unfinished warning: that element is excluded from both
-the SHGC numerator and denominator. A project with no aperture types shows a
-quiet empty state; editors get a link back to the Builder, while viewers get
+the SHGC numerator and denominator. A project with no aperture types shows the
+shared `.empty-state`; editors get a link back to the Builder, while viewers get
 explanatory copy only.
 
 The U-value report action menu is hidden without

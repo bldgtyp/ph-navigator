@@ -62,6 +62,20 @@ export function buildStates(projectId) {
     },
     { label: "project-climate", route: `${P}/climate`, clicks: [DISMISS_DRAFT] },
     { label: "project-apertures", route: `${P}/apertures`, clicks: [DISMISS_DRAFT] },
+    // The Apertures sub-tabs are separate routes and none of them were swept —
+    // which is how the U-Values section headings kept rendering at the browser
+    // default 18.72px. The edge breakdown only exists once a row is expanded,
+    // so it needs its own state, same reason as the Overview group rows.
+    {
+      label: "project-apertures-u-values",
+      route: `${P}/apertures/u-values`,
+      clicks: [DISMISS_DRAFT],
+    },
+    {
+      label: "project-apertures-u-values-edges",
+      route: `${P}/apertures/u-values`,
+      clicks: [DISMISS_DRAFT, "[aria-label='Expand row']"],
+    },
     { label: "project-envelope", route: `${P}/envelope`, clicks: [DISMISS_DRAFT] },
     { label: "project-spaces-types", route: `${P}/spaces/space-types`, clicks: [DISMISS_DRAFT] },
     // NOTE: no spaces/equipment record-modal states — those fixture tables are

@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { Fragment } from "react";
 
@@ -32,19 +33,25 @@ export function ReportTable<T>({
 }) {
   const expandable = Boolean(onToggleExpand && renderExpansion);
   const templateColumns = [
-    expandable ? "28px" : null,
+    expandable ? "var(--report-table-gutter)" : null,
     ...columns.map((col) => col.width ?? "minmax(0, 1fr)"),
   ]
     .filter(Boolean)
     .join(" ");
 
-  const gridStyle: CSSProperties = { "--report-table-columns": templateColumns } as CSSProperties;
+  // Column widths are page-authored data, so they cross into CSS as a custom
+  // property. Where the frozen primary column pins is *not* — the stylesheet
+  // owns both the gutter width and the gap, so it derives that from this class.
+  const tableClassName = expandable ? "report-table report-table--expandable" : "report-table";
+  const gridStyle: CSSProperties = {
+    "--report-table-columns": templateColumns,
+  } as CSSProperties;
 
   if (rows.length === 0) {
     return (
-      <div className="report-table" role="status">
+      <div className={tableClassName} role="status">
         <div className="report-table__head" style={gridStyle}>
-          {expandable ? <span /> : null}
+          {expandable ? <span className="report-table__head-gutter" /> : null}
           {columns.map((col) => (
             <span key={col.key} className="report-table__head-cell">
               {col.header}
@@ -59,9 +66,9 @@ export function ReportTable<T>({
   }
 
   return (
-    <div className="report-table" role="table" style={gridStyle}>
+    <div className={tableClassName} role="table" style={gridStyle}>
       <div className="report-table__head" role="row" style={gridStyle}>
-        {expandable ? <span aria-hidden="true" /> : null}
+        {expandable ? <span aria-hidden="true" className="report-table__head-gutter" /> : null}
         {columns.map((col) => {
           const headClassName = [
             "report-table__head-cell",
@@ -108,7 +115,11 @@ export function ReportTable<T>({
                       onToggleExpand?.(id);
                     }}
                   >
-                    ▸
+                    {isExpanded ? (
+                      <ChevronDown aria-hidden="true" size={16} />
+                    ) : (
+                      <ChevronRight aria-hidden="true" size={16} />
+                    )}
                   </button>
                 ) : null}
                 {columns.map((col) => {
@@ -140,7 +151,11 @@ export function ReportTable<T>({
                           {renderRowAction(row)}
                         </span>
                       ) : null}
-                      {col.render(row)}
+                      {/* Wrapped so overflow can ellipsize. `text-overflow` on
+                          the cell itself does nothing: the cell is a flex
+                          container, and a bare text child is an anonymous flex
+                          item, so long values were clipped mid-glyph. */}
+                      <span className="report-table__cell-text">{col.render(row)}</span>
                     </span>
                   );
                 })}

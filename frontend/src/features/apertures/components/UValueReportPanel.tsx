@@ -9,13 +9,14 @@ import {
   useUnitPreference,
 } from "../../../lib/units";
 import {
+  areaUnitLabel,
+  heatFlowUnitLabel,
   lengthUnitLabel,
   psiUnitLabel,
   uValueUnitLabel,
 } from "../../catalogs/components/unit-labels";
-import { ReportTable, type ReportTableColumn } from "../../../shared/ui/report-table";
+import { ReportTable, type ReportTableColumn, StatusPill } from "../../../shared/ui/report-table";
 import { needAttentionLabel } from "../../project_document/specification-status";
-import { formatWindowUValue } from "../format-u-value";
 import type {
   ApertureUValueReport,
   ApertureUValueReportEdge,
@@ -42,12 +43,17 @@ export function UValueReportPanel({
   canEdit: boolean;
 }) {
   const { unitSystem } = useUnitPreference();
-  const [expandedElementId, setExpandedElementId] = useState<string | null>(null);
+  // Per-aperture, not one id for the whole page: with a single id, opening an
+  // element under one aperture silently closed the one you were comparing it
+  // against under another.
+  const [expandedByAperture, setExpandedByAperture] = useState<Record<string, string | null>>({});
   const formats = useMemo(() => makeFormats(unitSystem), [unitSystem]);
 
   if (report.apertures.length === 0) {
     return (
-      <section className="u-value-report__empty" role="status">
+      /* The blessed zero-data placeholder. This was a hand-rolled card, which
+         also nested a white card inside `.apertures-body`'s white card. */
+      <section className="empty-state" role="status">
         <h2>No apertures yet</h2>
         <p>Add an aperture type to generate its line-by-line U-value report.</p>
         {canEdit ? <Link to={builderPath}>Open Apertures builder</Link> : null}
@@ -67,15 +73,20 @@ export function UValueReportPanel({
       key: "dimensions",
       header: "Overall W × H",
       unit: formats.lengthUnit,
+      numeric: true,
       width: "minmax(120px, 1.1fr)",
       render: (row) => formats.dimensions(row.overall_width_m, row.overall_height_m),
     },
     {
       key: "elements",
       header: "Elements",
+      // Qualified, and read off the rows themselves: the count must equal the
+      // element table below it. `element_count` includes Empty panels, which
+      // produce no row and are reported separately.
+      unit: "glazed",
       numeric: true,
       width: "80px",
-      render: (row) => row.element_count,
+      render: (row) => row.elements.length,
     },
     {
       key: "area",
@@ -103,14 +114,14 @@ export function UValueReportPanel({
     {
       key: "status",
       header: "Completeness",
-      width: "120px",
+      width: "140px",
+      // The shared read-only status pill, so completeness reads the same here
+      // as on Glazings/Frames instead of as plain text.
       render: (row) =>
         row.unfinished_count > 0 ? (
-          <span className="u-value-report__warning">
-            {needAttentionLabel(row.unfinished_count)}
-          </span>
+          <StatusPill status="needed">{needAttentionLabel(row.unfinished_count)}</StatusPill>
         ) : (
-          <span className="u-value-report__complete">Complete</span>
+          <StatusPill status="complete">Complete</StatusPill>
         ),
     },
   ];
@@ -124,16 +135,18 @@ export function UValueReportPanel({
           <h2>U-Value Detail Report</h2>
           <p>{reportLegend(report.provenance.generated_note)}</p>
         </div>
-        <span>{report.source === "draft" ? "Current draft" : report.provenance.version_label}</span>
+        {/* Which document this report was generated from — an auditable report
+            must say so. The blessed chip, not a bare grey span. */}
+        <span className="chip chip--sm chip--outline">
+          {report.source === "draft" ? "Current draft" : report.provenance.version_label}
+        </span>
       </header>
 
-      <div className="u-value-report__table-scroll">
-        <ReportTable
-          rows={report.apertures}
-          columns={summaryColumns}
-          getRowId={(row) => row.aperture_type_id}
-        />
-      </div>
+      <ReportTable
+        rows={report.apertures}
+        columns={summaryColumns}
+        getRowId={(row) => row.aperture_type_id}
+      />
 
       <div className="u-value-report__sections">
         {report.apertures.map((section) => (
@@ -142,48 +155,54 @@ export function UValueReportPanel({
             className="u-value-report__section"
             aria-label={`${section.name} U-Value details`}
           >
-            <header className="u-value-report__section-header">
+            <header className="u-value-report__section-header project-section-heading">
               <div>
                 <h3>{section.name}</h3>
-                <span>
-                  {section.element_count} glazed element
-                  {section.element_count === 1 ? "" : "s"}
+                {/* Prose, so a <p> — `.project-section-heading span` is that
+                    role's mono/uppercase count chip. */}
+                <p className="u-value-report__section-meta">
+                  {section.elements.length} glazed element
+                  {section.elements.length === 1 ? "" : "s"}
                   {section.void_count > 0
-                    ? ` · ${section.void_count} void panel${
+                    ? ` · ${section.void_count} Empty panel${
                         section.void_count === 1 ? "" : "s"
                       } excluded`
                     : ""}
-                </span>
+                </p>
               </div>
               {section.unfinished_count > 0 ? (
-                <p role="note">
+                <p className="u-value-report__section-note" role="note">
                   Includes {section.unfinished_count} element
                   {section.unfinished_count === 1 ? "" : "s"} needing attention as U = 0.
                 </p>
               ) : null}
             </header>
-            <div className="u-value-report__table-scroll">
-              <ReportTable
-                rows={section.elements}
-                columns={elementColumns}
-                getRowId={(row) => row.element_id}
-                expandedRowId={expandedElementId}
-                onToggleExpand={(id) =>
-                  setExpandedElementId((current) => (current === id ? null : id))
-                }
-                renderExpansion={(row) => (
-                  <EdgeBreakdown edges={row.edges} warnings={row.warnings} formats={formats} />
-                )}
-                emptyMessage="No glazed elements"
-              />
-            </div>
+            <ReportTable
+              rows={section.elements}
+              columns={elementColumns}
+              getRowId={(row) => row.element_id}
+              expandedRowId={expandedByAperture[section.aperture_type_id] ?? null}
+              onToggleExpand={(id) =>
+                setExpandedByAperture((current) => ({
+                  ...current,
+                  [section.aperture_type_id]: current[section.aperture_type_id] === id ? null : id,
+                }))
+              }
+              renderExpansion={(row) => (
+                <EdgeBreakdown edges={row.edges} warnings={row.warnings} formats={formats} />
+              )}
+              emptyMessage="No glazed elements"
+            />
+            {/* Restates the aperture's own summary row, so it must use the
+                same formatters — the Builder's chip formatter rounds U-w to
+                2dp and printed a different number than the U-w column above
+                for the very same aperture. */}
             <footer className="u-value-report__section-footer">
-              <span>Total area: {formats.area(section.total_area_m2, true)}</span>
+              <span>
+                Total area: {formats.area(section.total_area_m2)} {formats.areaUnit}
+              </span>
               <strong>
-                {formatWindowUValue(
-                  section.window_u_value_w_m2k,
-                  unitSystem === "IP" ? "ip" : "si",
-                )}
+                U-w: {formats.u(section.window_u_value_w_m2k)} {formats.uUnit}
               </strong>
             </footer>
           </section>
@@ -198,11 +217,14 @@ type Formats = ReturnType<typeof makeFormats>;
 function makeFormats(unitSystem: "SI" | "IP") {
   const options = { unitSystem, empty: "—", showUnit: false } as const;
   return {
+    // All labels come from the shared vocabulary. Hand-written superscript
+    // variants ("m²", "Btu/(h·°F)") put two spellings of the same unit in one
+    // header row, next to the ASCII ones the formatters actually emit.
     lengthUnit: lengthUnitLabel(unitSystem),
-    areaUnit: unitSystem === "IP" ? "ft²" : "m²",
+    areaUnit: areaUnitLabel(unitSystem),
     uUnit: uValueUnitLabel(unitSystem),
     psiUnit: psiUnitLabel(unitSystem),
-    qUnit: unitSystem === "IP" ? "Btu/(h·°F)" : "W/K",
+    qUnit: heatFlowUnitLabel(unitSystem),
     length: (value: number | null) =>
       formatLengthFromMm(value === null ? null : value * 1000, options),
     dimensions: (width: number, height: number) =>
@@ -210,8 +232,7 @@ function makeFormats(unitSystem: "SI" | "IP") {
         height * 1000,
         options,
       )}`,
-    area: (value: number | null, showUnit = false) =>
-      formatAreaFromM2(value, { ...options, showUnit }),
+    area: (value: number | null) => formatAreaFromM2(value, options),
     u: (value: number | null) => formatUValueFromWm2K(value, options),
     psi: (value: number | null) => formatLinearPsiFromWmK(value, options),
     q: (value: number | null) => formatHeatFlowFromWK(value, options),
@@ -253,6 +274,7 @@ function makeElementColumns(formats: Formats): ReportTableColumn<ApertureUValueR
       key: "dimensions",
       header: "W × H",
       unit: formats.lengthUnit,
+      numeric: true,
       width: "120px",
       render: (row) => formats.dimensions(row.width_m, row.height_m),
     },
@@ -264,17 +286,28 @@ function makeElementColumns(formats: Formats): ReportTableColumn<ApertureUValueR
       width: "90px",
       render: (row) => formats.area(row.area_m2),
     },
+    // One value per column, like every other column here — a composite cell
+    // hid the g-value behind an ellipsis as soon as the glazing name was long.
     {
       key: "glazing",
-      header: "Glazing / U / SHGC",
-      width: "minmax(170px, 1.4fr)",
-      render: (row) =>
-        row.glazing_name
-          ? `${row.glazing_name} · ${formats.u(row.glazing_u_w_m2k)} · ${formats.number(
-              row.glazing_g_value,
-              3,
-            )}`
-          : "—",
+      header: "Glazing",
+      width: "minmax(160px, 1.4fr)",
+      render: (row) => row.glazing_name ?? "—",
+    },
+    {
+      key: "glazing-u",
+      header: "U-g",
+      unit: formats.uUnit,
+      numeric: true,
+      width: "100px",
+      render: (row) => formats.u(row.glazing_u_w_m2k),
+    },
+    {
+      key: "glazing-g",
+      header: "g-value",
+      numeric: true,
+      width: "85px",
+      render: (row) => formats.number(row.glazing_g_value, 3),
     },
     {
       key: "ag",

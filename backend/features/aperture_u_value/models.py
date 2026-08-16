@@ -150,6 +150,9 @@ class ApertureReportSection(BaseModel):
     name: str
     overall_width_m: float
     overall_height_m: float
+    # Every element in the grid, Empty panels included — so it is NOT the number
+    # of rows in `elements`, which holds the glazed ones only. A UI that labels
+    # this "glazed" contradicts the rows underneath it; use `len(elements)`.
     element_count: int
     void_count: int
     unfinished_count: int
