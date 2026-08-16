@@ -21,7 +21,7 @@ import { DocumentationRecordRow } from "./DocumentationRecordViews";
 import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
   STATUS_AXIS_LABELS,
-  needAttentionLabel,
+  evidenceAttentionLabel,
 } from "../../project_document/specification-status";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
@@ -268,10 +268,8 @@ function setWithToggledValue<T>(current: Set<T>, key: T, force?: boolean): Set<T
 }
 
 function attentionLine(counts: DocumentationAxisCounts): string {
-  const specs = counts.spec_total - counts.spec_done;
-  const datasheets = counts.ds_total - counts.ds_done;
-  const photos = counts.photo_total - counts.photo_done;
-  return `${needAttentionLabel(specs + datasheets + photos)}.`;
+  const label = evidenceAttentionLabel(counts);
+  return label ? `${label}.` : "All evidence is resolved.";
 }
 
 function DocumentationSectionBody({

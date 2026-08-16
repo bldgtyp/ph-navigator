@@ -37,7 +37,7 @@ test("renders counts-only section meters and disclosed group links", async () =>
     "/projects/proj_1/documentation?needs=spec",
     "/projects/proj_1/documentation?needs=spec#equipment",
   ]);
-  expect(screen.getAllByText("3 need attention")[0]).toBeVisible();
+  expect(screen.getAllByText("3 of 6 need attention")[0]).toBeVisible();
   expect(screen.getByRole("link", { name: "Open in Documentation - Equipment" })).toHaveAttribute(
     "href",
     "/projects/proj_1/documentation#equipment",

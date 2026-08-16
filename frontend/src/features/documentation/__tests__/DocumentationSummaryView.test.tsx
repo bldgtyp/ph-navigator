@@ -43,7 +43,7 @@ describe("DocumentationPage", () => {
     renderDocumentation(PROJECT, "/projects/proj_1/documentation");
 
     expect(await screen.findByRole("heading", { name: "Documentation status" })).toBeVisible();
-    expect(screen.getByText("3 need attention.")).toBeVisible();
+    expect(screen.getByText("3 of 9 need attention.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Equipment" })).toHaveAttribute(
       "aria-expanded",
       "false",

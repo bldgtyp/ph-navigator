@@ -10,7 +10,7 @@ import type {
 import type { ProjectDetail } from "../../projects/types";
 import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
-  needAttentionLabel,
+  evidenceAttentionLabel,
   type StatusAxisCounts,
 } from "../../project_document/specification-status";
 
@@ -35,11 +35,11 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
 
   // Attention lives in a heading, right-aligned, and only when there is work
   // left — one rule for the pane and every card in it.
-  const heading = (attention = 0) => (
+  const heading = (counts?: StatusAxisCounts) => (
     <div className="status-heading status-pane-heading">
       <h2 id="documentation-progress-title">Documentation progress</h2>
       <div className="documentation-progress-heading-status">
-        <AttentionCount count={attention} />
+        <AttentionCount counts={counts} />
         <StatusLegend />
       </div>
     </div>
@@ -68,7 +68,7 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   }
   return (
     <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-      {heading(unresolvedCount(query.data.counts))}
+      {heading(query.data.counts)}
       <div className="documentation-progress-total">
         <AxisMeters projectId={project.id} counts={query.data.counts} />
       </div>
@@ -120,7 +120,7 @@ function SectionRow({
           anchor={section.anchor}
           title={section.title}
         />
-        <AttentionCount count={unresolvedCount(section.counts)} />
+        <AttentionCount counts={section.counts} />
       </div>
       <AxisMeters projectId={projectId} anchor={section.anchor} counts={section.counts} />
       {expanded ? (
@@ -193,18 +193,10 @@ function AxisMeters({
 }
 
 /** Nothing at all when the work is done — silence is the "complete" state. */
-function AttentionCount({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return <span className="documentation-progress-attention">{needAttentionLabel(count)}</span>;
-}
-
-function unresolvedCount(counts: StatusAxisCounts): number {
-  return (
-    counts.spec_total -
-    counts.spec_done +
-    (counts.ds_total - counts.ds_done) +
-    (counts.photo_total - counts.photo_done)
-  );
+function AttentionCount({ counts }: { counts?: StatusAxisCounts }) {
+  const label = counts ? evidenceAttentionLabel(counts) : null;
+  if (!label) return null;
+  return <span className="chip chip--sm documentation-progress-attention">{label}</span>;
 }
 
 function DocumentationProgressSkeleton() {

@@ -101,12 +101,13 @@
   gap: var(--space-10);
 }
 
+/* Composes `.chip .chip--sm`; the amber attention palette already used by the
+   Documentation page's write-error banner. */
 .documentation-progress-attention {
-  color: var(--report-status-needed);
-  font-size: var(--fs-xs);
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 30%, var(--border-subtle));
+  background: color-mix(in oklab, var(--attention-amber) 9%, var(--bg-card));
+  color: color-mix(in oklab, var(--attention-amber) 74%, black);
   font-weight: var(--fw-semibold);
-  line-height: var(--lh-ui);
-  white-space: nowrap;
 }
 
 /* Anchored to the far end of the card header — the count reads as a property

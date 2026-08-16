@@ -39,8 +39,38 @@ export function completeCountLabel(done: number, total: number): string {
   return `${done}/${total}`;
 }
 
+/** Evidence slots still unresolved, summed across all three axes. */
+export function unresolvedCount(counts: StatusAxisCounts): number {
+  return (
+    counts.spec_total -
+    counts.spec_done +
+    (counts.ds_total - counts.ds_done) +
+    (counts.photo_total - counts.photo_done)
+  );
+}
+
+/** Every evidence slot tracked — three per record, one per axis. */
+export function trackedCount(counts: StatusAxisCounts): number {
+  return counts.spec_total + counts.ds_total + counts.photo_total;
+}
+
+/** Bare count, for surfaces that track a single axis (e.g. the U-value report). */
 export function needAttentionLabel(count: number): string {
   return `${count} need attention`;
+}
+
+/**
+ * The evidence count sums three axes, so it routinely exceeds the section's
+ * record count — a bare "107 need attention" on 55 records reads as a bug.
+ * Carrying the denominator makes the number self-explaining.
+ *
+ * Returns `null` when nothing is outstanding: a resolved section says nothing
+ * rather than displaying a zero.
+ */
+export function evidenceAttentionLabel(counts: StatusAxisCounts): string | null {
+  const outstanding = unresolvedCount(counts);
+  if (outstanding <= 0) return null;
+  return `${outstanding} of ${trackedCount(counts)} need attention`;
 }
 
 export function resolvedLabel(resolved: number, total: number): string {
