@@ -63,6 +63,15 @@
   letter-spacing: var(--tracking-normal);
 }
 
+/* Same hover as `.status-title-button`, the Roadmap milestone title in the
+   pane next door: the label goes accent, nothing moves. The chevron is
+   currentColor, so it follows. */
+.documentation-progress-toggle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent-text);
+  transform: none;
+}
+
 /* Revealed on hover/focus of the header row, exactly like the Documentation
    page's record open-owner link. */
 .documentation-progress-open {

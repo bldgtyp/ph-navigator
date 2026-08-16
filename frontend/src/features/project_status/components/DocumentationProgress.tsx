@@ -93,17 +93,22 @@ function SectionRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const groupsId = `documentation-progress-groups-${section.key}`;
+  const titleId = `documentation-progress-section-${section.key}`;
   return (
-    <section className="documentation-progress-section">
+    <section className="documentation-progress-section" aria-labelledby={titleId}>
       <div className="documentation-progress-section-header">
         <button
           type="button"
           className="documentation-progress-toggle"
           aria-expanded={expanded}
+          aria-controls={groupsId}
           onClick={onToggle}
         >
-          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          <span>{section.title}</span>
+          <span aria-hidden="true">
+            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </span>
+          <span id={titleId}>{section.title}</span>
         </button>
         <OpenInDocumentationLink
           projectId={projectId}
@@ -113,7 +118,7 @@ function SectionRow({
       </div>
       <MeterRow projectId={projectId} anchor={section.anchor} counts={section.counts} />
       {expanded ? (
-        <div className="documentation-progress-groups">
+        <div className="documentation-progress-groups" id={groupsId}>
           {section.groups.map((group) => (
             <GroupRow key={group.key} projectId={projectId} group={group} />
           ))}
