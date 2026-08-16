@@ -38,7 +38,7 @@
   line-height: var(--lh-body);
 }
 
-.roadmap-skeleton {
+.pane-skeleton {
   display: grid;
   gap: var(--space-10);
 }

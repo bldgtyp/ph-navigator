@@ -34,6 +34,12 @@
    Shared by the Documentation page (read in place) and the Overview
    Documentation-progress pane (drill-in links). Same counts, same look. */
 
+/* Width the three meters need before their counts collide. Consumers size
+   their meter column from this rather than each re-guessing a pixel value. */
+:root {
+  --status-rollup-min: 380px;
+}
+
 .status-axis-rollup {
   display: grid;
   gap: var(--space-8);
@@ -85,7 +91,7 @@
 }
 
 .status-axis-meter[data-zero="true"] .status-axis-meter-count {
-  color: color-mix(in oklab, var(--attention-amber) 72%, black);
+  color: var(--attention-amber-text);
 }
 
 /* Nothing tracked on this axis: the count goes quiet and the track stays

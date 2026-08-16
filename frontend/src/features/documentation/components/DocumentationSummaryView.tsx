@@ -8,7 +8,7 @@ import {
   useDocumentationFieldMutation,
   type DocumentationFieldChange,
 } from "../hooks";
-import { filterRecord, isCountsComplete, sectionRecords, type DocumentationAxis } from "../lib";
+import { filterRecord, sectionRecords, type DocumentationAxis } from "../lib";
 import type {
   DocumentationAxisCounts,
   DocumentationGroup,
@@ -22,6 +22,7 @@ import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVoc
 import {
   STATUS_AXIS_LABELS,
   evidenceAttentionLabel,
+  isCountsComplete,
 } from "../../project_document/specification-status";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [

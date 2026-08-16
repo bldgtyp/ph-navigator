@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-16
 TIME: 09:40
-STATUS: Active
+STATUS: Implemented on branch
 AUTHOR: Claude (with Ed May)
 SCOPE: UI/UX refactor of the Overview tab's Documentation-progress pane
 RELATED:
@@ -37,12 +37,31 @@ they use the same component.
 | 1 | Extract the axis meter as one shared component (`StatusAxisRollup`), consumed by both surfaces; `linkFor` is the only difference | Done |
 | 2 | Heading parity with Roadmap (`.status-pane-heading`); surface the project-level rollup the payload already returned; "Open section" text link → hover-revealed `ExternalLink` icon after the title | Done |
 | 3 | Kill every font fall-through; container type floor; add an expanded-section state to the rendered sweep | Done |
-| 4 | Honest affordances + interaction states (title toggles vs. links; hover/focus everywhere) | Next |
-| 5 | Tame the expanded group list (currently ~1200px repeating the three axis labels 39 times) | Not started |
-| 6 | Attention indicator → blessed chip; reconsider wording (it sums three axes, so "107 need attention" on a 55-record section reads as a bug) | Not started |
-| 7 | States: loading skeleton drops the heading (layout jump); ad-hoc empty state; a 0-total axis renders a 100%-full bar reading as "done" when it means "nothing tracked" | Not started |
-| 8 | Attention indicator: remove from group rows entirely; on the four section cards move it to the card's upper-right; hide at 100% (Ed, 2026-08-16) | Not started |
-| 9 | The section-header open icon should go to the **feature page** (Apertures → `/apertures`, Envelope → `/envelope`, …), not to Documentation. Clicking a *meter* still goes to Documentation with the `?needs=` filter — the header is "go to the thing", the meter is "go to the evidence" (Ed, 2026-08-16) | Not started |
+| 4 | Honest affordances + interaction states (title toggles vs. links; hover/focus everywhere); `aria-controls` on the disclosure | Done |
+| 5 | Tame the expanded group list — single-line rows matching Documentation's group header (Equipment: ~1200px → ~530px) | Done |
+| 6 | Attention indicator → `.chip .chip--sm` with the amber palette; `evidenceAttentionLabel` carries the denominator | Done |
+| 7 | States: heading renders in every state; `.status-empty` panels incl. a new no-sections case; untracked axis no longer reads as complete | Done |
+| 8 | Attention indicator: removed from group rows; right-aligned in the pane and card headings; hidden at 100% (Ed, 2026-08-16) | Done |
+| 9 | Section-header open icon opens the section's own tab, derived from the section key against `PROJECT_TABS`, falling back to Documentation. Meters still open Documentation with `?needs=` — the header is "go to the thing", the meter is "go to the evidence" (Ed, 2026-08-16) | Done |
+
+All nine items are implemented on the branch. Merge is Ed's call.
+
+## Decisions worth keeping
+
+- **`features/project_document/` owns the shared status vocabulary.** It
+  already held `specification-status.ts` and `StatusVocabulary.tsx`, and both
+  `features/documentation` and `features/project_status` import from it, so the
+  meter lives there without inverting any dependency. `StatusAxisCounts` moved
+  there too; `features/documentation/types.ts` aliases it.
+- **`linkFor` is the whole seam** between the two surfaces. Documentation
+  renders the meter in place; Overview passes `linkFor` and gets deep links. Any
+  further divergence should be resisted.
+- **Two gestures, two destinations** (item 9) is the pane's organising rule.
+- **The rendered sweep is the real font check.** `check:typography` proves
+  source values come from tokens and still passed while four elements rendered
+  at the 16px document default. Only `make typography-eval` caught it, and only
+  after adding a state that expands a section — the collapsed `project-overview`
+  state never rendered the group rows.
 
 ## Open debt
 

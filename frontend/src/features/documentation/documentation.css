@@ -64,10 +64,10 @@
 }
 
 .documentation-write-error {
-  background: color-mix(in oklab, var(--attention-amber) 9%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--attention-amber) 36%, var(--border-subtle));
+  background: var(--attention-amber-bg);
+  border: 1px solid var(--attention-amber-border);
   border-radius: var(--radius-md);
-  color: color-mix(in oklab, var(--attention-amber) 74%, black);
+  color: var(--attention-amber-text);
   font-size: var(--fs-sm);
   margin: 0;
   padding: var(--space-10) var(--space-12);
@@ -110,7 +110,7 @@
 .documentation-section-header {
   display: grid;
   gap: var(--space-12);
-  grid-template-columns: minmax(0, 1fr) minmax(min(380px, 100%), 0.45fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(min(var(--status-rollup-min), 100%), 0.45fr) auto;
   padding: 0;
   position: sticky;
   top: var(--space-8);
@@ -155,7 +155,7 @@
 .documentation-group-header {
   display: grid;
   gap: var(--space-12);
-  grid-template-columns: minmax(0, 1fr) minmax(min(380px, 100%), 0.4fr);
+  grid-template-columns: minmax(0, 1fr) minmax(min(var(--status-rollup-min), 100%), 0.4fr);
 }
 
 .documentation-group-title {

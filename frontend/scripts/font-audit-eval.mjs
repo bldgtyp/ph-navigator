@@ -126,6 +126,13 @@ for (const [role, count] of Object.entries(roleVariantCounts).sort((a, b) => b[1
   console.log(`  ${role}: ${count} variants${budget !== undefined ? ` (budget ${budget})` : ""}`);
 }
 
+// A ceiling held open for known, pre-existing drift must keep saying so on
+// every run. A silent green is how the ratchet went stale in the first place:
+// the note is only useful if you cannot pass the check without reading it.
+if (contract.$knownFailure) {
+  console.warn(`\ntypography-eval KNOWN FAILURE HELD OPEN:\n  ${contract.$knownFailure}`);
+}
+
 if (failures.length > 0) {
   console.error(`\ntypography-eval FAILED — ${failures.length} contract violations:`);
   for (const failure of failures) console.error(`  ${failure}`);

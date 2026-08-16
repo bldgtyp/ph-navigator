@@ -25,8 +25,6 @@
    than on a card, so it reads as the sum of what follows and not as a fifth
    section. */
 .documentation-progress-total {
-  display: grid;
-  gap: var(--space-8);
   padding: 0 var(--space-16);
 }
 
@@ -45,31 +43,11 @@
   box-shadow: var(--shadow-elev-1);
 }
 
+/* Type, color and hover come from `.status-title-button` in project_status.css
+   — the Roadmap milestone title next door. Same role, one definition; only the
+   chevron gap is local. */
 .documentation-progress-toggle {
-  min-height: auto;
   gap: var(--space-6);
-  border: 0;
-  background: transparent;
-  color: var(--text-primary);
-  padding: 0;
-  font-family: var(--font-primary);
-  font-size: var(--fs-md);
-  /* Semibold, not bold — the same variant as `.status-title-button`, the
-     Roadmap milestone title in the pane next door. Same role, same type. */
-  font-weight: var(--fw-semibold);
-  line-height: var(--lh-heading);
-  text-align: left;
-  text-transform: none;
-  letter-spacing: var(--tracking-normal);
-}
-
-/* Same hover as `.status-title-button`, the Roadmap milestone title in the
-   pane next door: the label goes accent, nothing moves. The chevron is
-   currentColor, so it follows. */
-.documentation-progress-toggle:hover:not(:disabled) {
-  background: transparent;
-  color: var(--accent-text);
-  transform: none;
 }
 
 /* Revealed on hover/focus of the header row, exactly like the Documentation
@@ -101,12 +79,11 @@
   gap: var(--space-10);
 }
 
-/* Composes `.chip .chip--sm`; the amber attention palette already used by the
-   Documentation page's write-error banner. */
+/* Composes `.chip .chip--sm`; the shared amber attention palette. */
 .documentation-progress-attention {
-  border: 1px solid color-mix(in oklab, var(--attention-amber) 30%, var(--border-subtle));
-  background: color-mix(in oklab, var(--attention-amber) 9%, var(--bg-card));
-  color: color-mix(in oklab, var(--attention-amber) 74%, black);
+  border: 1px solid var(--attention-amber-border);
+  background: var(--attention-amber-bg);
+  color: var(--attention-amber-text);
   font-weight: var(--fw-semibold);
 }
 
@@ -128,7 +105,7 @@
    that repeats the three axis labels once per group. */
 .documentation-progress-group {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(min(380px, 100%), 0.55fr);
+  grid-template-columns: minmax(0, 1fr) minmax(min(var(--status-rollup-min), 100%), 0.55fr);
   align-items: center;
   gap: var(--space-12);
   padding: var(--space-4) 0;

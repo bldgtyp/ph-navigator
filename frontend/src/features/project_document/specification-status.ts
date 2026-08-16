@@ -40,7 +40,7 @@ export function completeCountLabel(done: number, total: number): string {
 }
 
 /** Evidence slots still unresolved, summed across all three axes. */
-export function unresolvedCount(counts: StatusAxisCounts): number {
+function unresolvedCount(counts: StatusAxisCounts): number {
   return (
     counts.spec_total -
     counts.spec_done +
@@ -50,13 +50,18 @@ export function unresolvedCount(counts: StatusAxisCounts): number {
 }
 
 /** Every evidence slot tracked — three per record, one per axis. */
-export function trackedCount(counts: StatusAxisCounts): number {
+function trackedCount(counts: StatusAxisCounts): number {
   return counts.spec_total + counts.ds_total + counts.photo_total;
 }
 
 /** Bare count, for surfaces that track a single axis (e.g. the U-value report). */
 export function needAttentionLabel(count: number): string {
   return `${count} need attention`;
+}
+
+/** Every tracked evidence slot on this rollup is resolved. */
+export function isCountsComplete(counts: StatusAxisCounts): boolean {
+  return unresolvedCount(counts) === 0;
 }
 
 /**

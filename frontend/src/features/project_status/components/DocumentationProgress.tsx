@@ -2,12 +2,13 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
+import { PaneSkeleton } from "./PaneSkeleton";
 import { useDocumentationRollupQuery } from "../../documentation/hooks";
 import type {
   DocumentationRollupGroup,
   DocumentationRollupSection,
 } from "../../documentation/types";
-import { PROJECT_TABS, TAB_LABELS } from "../../projects/lib";
+import { TAB_LABELS, isProjectTab, projectTabPath } from "../../projects/lib";
 import type { ProjectDetail } from "../../projects/types";
 import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
@@ -26,17 +27,80 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
     project.access_mode,
   );
   const [expanded, setExpanded] = useState<Set<string>>(() => readExpanded(project.id));
+  // Persist outside the updater: React may replay a state updater, and an
+  // updater that writes to sessionStorage is not pure.
   const toggleSection = (sectionKey: string) => {
-    setExpanded((current) => {
-      const next = toggled(current, sectionKey);
-      writeExpanded(project.id, next);
-      return next;
-    });
+    const next = toggled(expanded, sectionKey);
+    setExpanded(next);
+    writeExpanded(project.id, next);
   };
 
-  // Attention lives in a heading, right-aligned, and only when there is work
-  // left — one rule for the pane and every card in it.
-  const heading = (counts?: StatusAxisCounts) => (
+  const rollup = query.data;
+  const body = () => {
+    if (!project.active_version_id) {
+      return (
+        <DocumentationProgressEmpty
+          title="No project version yet."
+          copy="Create a version to start tracking specifications, datasheets, and site photos."
+        />
+      );
+    }
+    if (query.isLoading) return <PaneSkeleton />;
+    if (query.isError || !rollup) {
+      return (
+        <div className="status-section-error" role="alert">
+          <p>{errorMessage(query.error, "Could not load documentation progress.")}</p>
+          <button type="button" className="secondary-button" onClick={() => void query.refetch()}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    if (rollup.sections.length === 0) {
+      return (
+        <DocumentationProgressEmpty
+          title="Nothing to document yet."
+          copy="Sections appear here once this version has materials, apertures, or equipment to evidence."
+        />
+      );
+    }
+    return (
+      <>
+        <div className="documentation-progress-total">
+          <AxisMeters projectId={project.id} counts={rollup.counts} />
+        </div>
+        <div className="documentation-progress-sections">
+          {rollup.sections.map((section) => (
+            <SectionRow
+              key={section.key}
+              projectId={project.id}
+              section={section}
+              expanded={expanded.has(section.key)}
+              onToggle={() => toggleSection(section.key)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  // One wrapper for every state, so the heading cannot go missing (or lose its
+  // label) in one of them and shift the layout when data lands.
+  return (
+    <section
+      className="documentation-progress"
+      aria-labelledby="documentation-progress-title"
+      aria-busy={query.isLoading || undefined}
+    >
+      <ProgressHeading counts={rollup?.counts} />
+      {body()}
+    </section>
+  );
+}
+
+/** Attention sits at the far end of the heading, and only while work remains. */
+function ProgressHeading({ counts }: { counts?: StatusAxisCounts }) {
+  return (
     <div className="status-heading status-pane-heading">
       <h2 id="documentation-progress-title">Documentation progress</h2>
       <div className="documentation-progress-heading-status">
@@ -44,68 +108,6 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
         <StatusLegend />
       </div>
     </div>
-  );
-  if (!project.active_version_id) {
-    return (
-      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-        {heading()}
-        <DocumentationProgressEmpty
-          title="No project version yet."
-          copy="Create a version to start tracking specifications, datasheets, and site photos."
-        />
-      </section>
-    );
-  }
-  if (query.isLoading) {
-    return (
-      <section className="documentation-progress" aria-busy="true">
-        {heading()}
-        <DocumentationProgressSkeleton />
-      </section>
-    );
-  }
-  if (query.isError || !query.data) {
-    return (
-      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-        {heading()}
-        <div className="status-section-error" role="alert">
-          <p>{errorMessage(query.error, "Could not load documentation progress.")}</p>
-          <button type="button" className="secondary-button" onClick={() => void query.refetch()}>
-            Retry
-          </button>
-        </div>
-      </section>
-    );
-  }
-  if (query.data.sections.length === 0) {
-    return (
-      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-        {heading()}
-        <DocumentationProgressEmpty
-          title="Nothing to document yet."
-          copy="Sections appear here once this version has materials, apertures, or equipment to evidence."
-        />
-      </section>
-    );
-  }
-  return (
-    <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-      {heading(query.data.counts)}
-      <div className="documentation-progress-total">
-        <AxisMeters projectId={project.id} counts={query.data.counts} />
-      </div>
-      <div className="documentation-progress-sections">
-        {query.data.sections.map((section) => (
-          <SectionRow
-            key={section.key}
-            projectId={project.id}
-            section={section}
-            expanded={expanded.has(section.key)}
-            onToggle={() => toggleSection(section.key)}
-          />
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -173,21 +175,23 @@ function GroupRow({ projectId, group }: { projectId: string; group: Documentatio
  * filter.
  *
  * Section keys are project-tab slugs written with underscores
- * (`thermal_bridges` vs the `thermal-bridges` route). Deriving the slug and
- * checking it against `PROJECT_TABS` means a future section lands on its tab
- * automatically, and one that names no tab falls back to Documentation rather
- * than 404ing.
+ * (`thermal_bridges` vs the `thermal-bridges` route), so a future section lands
+ * on its tab automatically; one that names no tab falls back to the
+ * Documentation anchor rather than 404ing.
  */
 function sectionDestination(projectId: string, section: DocumentationRollupSection) {
   const slug = section.key.replace(/_/g, "-");
-  const tab = PROJECT_TABS.find((candidate) => candidate === slug);
-  if (!tab) {
+  if (!isProjectTab(slug)) {
     return {
       to: `/projects/${projectId}/documentation#${section.anchor}`,
       label: `Open in Documentation - ${section.title}`,
     };
   }
-  return { to: `/projects/${projectId}/${tab}`, label: `Open ${TAB_LABELS[tab]}` };
+  // Through `projectTabPath`, never a hand-built URL: a tab slug is not always
+  // its route (`spaces` resolves to `/spaces/rooms`), so building the string
+  // here would make the "lands on its tab automatically" promise false for
+  // exactly the case it is meant to cover.
+  return { to: projectTabPath(projectId, slug), label: `Open ${TAB_LABELS[slug]}` };
 }
 
 /** Revealed on hover of its header row, like the Documentation page's record
@@ -232,17 +236,6 @@ function DocumentationProgressEmpty({ title, copy }: { title: string; copy: stri
     <div className="status-empty">
       <h3>{title}</h3>
       <p>{copy}</p>
-    </div>
-  );
-}
-
-/** Renders under the real heading, so nothing jumps when the data lands. */
-function DocumentationProgressSkeleton() {
-  return (
-    <div className="roadmap-skeleton" aria-hidden="true">
-      {Array.from({ length: 4 }, (_, index) => (
-        <div className="status-skeleton-line" key={index} />
-      ))}
     </div>
   );
 }

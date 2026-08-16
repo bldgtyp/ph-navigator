@@ -164,6 +164,7 @@
 }
 
 .status-title-button,
+.documentation-progress-toggle,
 .status-item h3 {
   margin: 0;
   border: 0;
@@ -178,12 +179,14 @@
   text-transform: none;
 }
 
-.status-title-button {
+.status-title-button,
+.documentation-progress-toggle {
   min-height: auto;
   letter-spacing: var(--tracking-normal);
 }
 
-.status-title-button:hover:not(:disabled) {
+.status-title-button:hover:not(:disabled),
+.documentation-progress-toggle:hover:not(:disabled) {
   background: transparent;
   color: var(--accent-text);
   transform: none;

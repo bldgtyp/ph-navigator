@@ -4,6 +4,7 @@ import "../status_shared.css";
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
+import { PaneSkeleton } from "../components/PaneSkeleton";
 import { StatusEmptyState } from "../components/StatusEmptyState";
 import { StatusDeleteDialog } from "../components/StatusDeleteDialog";
 import { StatusItemModal } from "../components/StatusItemModal";
@@ -117,11 +118,7 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
               </p>
             ) : null}
             {itemsQuery.isLoading ? (
-              <div className="roadmap-skeleton" aria-hidden="true">
-                {Array.from({ length: 4 }, (_, index) => (
-                  <div className="status-skeleton-line" key={index} />
-                ))}
-              </div>
+              <PaneSkeleton />
             ) : itemsQuery.isError ? (
               <div className="status-section-error" role="alert">
                 <p>{errorMessage(itemsQuery.error, "Could not load roadmap.")}</p>
