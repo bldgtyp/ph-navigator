@@ -1,21 +1,31 @@
+/* Declare the pane's body type once. Without a floor here every text node that
+   forgets an explicit size lands on the 16px document default — larger than
+   anything this dense pane is supposed to render — and the miss is invisible
+   until someone reads computed styles. */
 .documentation-progress {
   display: grid;
   min-width: 0;
   align-content: start;
   gap: var(--space-16);
+  font-size: var(--fs-md);
+  line-height: var(--lh-ui);
 }
 
-.documentation-progress-heading,
 .documentation-progress-section-header,
 .documentation-progress-toggle {
   display: flex;
   align-items: center;
 }
 
-.documentation-progress-heading,
 .documentation-progress-section-header {
-  justify-content: space-between;
-  gap: var(--space-12);
+  gap: var(--space-6);
+}
+
+/* Project totals: the same meters as a section card, on the page ground rather
+   than on a card, so it reads as the sum of what follows and not as a fifth
+   section. */
+.documentation-progress-total {
+  padding: 0 var(--space-16);
 }
 
 .documentation-progress-sections {
@@ -33,61 +43,106 @@
   box-shadow: var(--shadow-elev-1);
 }
 
+/* Type, color and hover come from `.status-title-button` in project_status.css
+   — the Roadmap milestone title next door. Same role, one definition; only the
+   chevron gap is local. */
 .documentation-progress-toggle {
-  gap: var(--space-8);
-  border: 0;
-  background: transparent;
-  color: var(--text-primary);
-  padding: 0;
-  font-weight: var(--fw-semibold);
-  text-transform: none;
-  letter-spacing: var(--tracking-normal);
+  gap: var(--space-6);
 }
 
-.documentation-progress-meters {
-  display: grid;
-  gap: var(--space-8);
-}
-
-.documentation-progress-meter {
-  display: grid;
-  grid-template-columns: minmax(145px, auto) minmax(70px, 1fr);
+/* Revealed on hover/focus of the header row, exactly like the Documentation
+   page's record open-owner link. */
+.documentation-progress-open {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-10);
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  opacity: 0;
+  pointer-events: none;
   text-decoration: none;
+  transition: opacity var(--transition-fast) var(--ease);
 }
 
-.documentation-progress-meter-track {
-  display: block;
-  overflow: hidden;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--border-subtle);
+.documentation-progress-section-header:hover .documentation-progress-open,
+.documentation-progress-section-header:focus-within .documentation-progress-open,
+.documentation-progress-group:hover .documentation-progress-open,
+.documentation-progress-group:focus-within .documentation-progress-open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.documentation-progress-meter-track > .progress-bar__fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
+.documentation-progress-open:hover {
+  color: var(--accent-text);
 }
 
+/* A plain label, not a chip. One of these sits on every section card, so an
+   outlined filled pill turned a secondary annotation into the loudest thing in
+   the pane. `--highlight-text` is the app's existing "needs your attention"
+   red — the same one the topbar's uncommitted-changes state uses. */
 .documentation-progress-attention {
-  color: var(--report-status-needed);
+  color: var(--highlight-text);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
+  white-space: nowrap;
+}
+
+/* Anchored to the far end of the card header — the count reads as a property
+   of the section, not as another line of its meter stack. */
+.documentation-progress-section-header .documentation-progress-attention {
+  margin-inline-start: auto;
 }
 
 .documentation-progress-groups {
   display: grid;
-  gap: var(--space-12);
-  padding: var(--space-12) 0 0 var(--space-24);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--border-subtle);
 }
 
+/* One line per group — title left, meters right — the same shape as the
+   Documentation page's `.documentation-group-header`. Stacking the title above
+   a full-width meter block instead turns a twelve-group section into a wall
+   that repeats the three axis labels once per group. */
 .documentation-progress-group {
   display: grid;
-  gap: var(--space-8);
+  grid-template-columns: minmax(0, 1fr) minmax(min(var(--status-rollup-min), 100%), 0.55fr);
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-4) 0;
+}
+
+.documentation-progress-group + .documentation-progress-group {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Title + its reveal target, mirroring the section header one level up. */
+.documentation-progress-group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* A label, not a link — the icon beside it is the way out. One step quieter
+   than the section title it nests under: same family and role, smaller. */
+.documentation-progress-group-title {
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+}
+
+/* Touch has no hover, so the reveal would strand the link. */
+@media (hover: none), (pointer: coarse) {
+  .documentation-progress-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documentation-progress-open {
+    transition: none;
+  }
 }

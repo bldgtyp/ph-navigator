@@ -1,37 +1,20 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
-import { ProgressBar } from "../../../shared/ui";
+import { PaneSkeleton } from "./PaneSkeleton";
 import { useDocumentationRollupQuery } from "../../documentation/hooks";
-import { completeCountLabel, type DocumentationAxis } from "../../documentation/lib";
 import type {
-  DocumentationAxisCounts,
   DocumentationRollupGroup,
   DocumentationRollupSection,
 } from "../../documentation/types";
+import { TAB_LABELS, isProjectTab, projectTabPath } from "../../projects/lib";
 import type { ProjectDetail } from "../../projects/types";
-import { StatusLegend } from "../../project_document/StatusVocabulary";
+import { StatusAxisRollup } from "../../project_document/StatusVocabulary";
 import {
-  STATUS_AXIS_LABELS,
-  needAttentionLabel,
+  evidenceAttentionLabel,
+  type StatusAxisCounts,
 } from "../../project_document/specification-status";
-
-const AXES: Array<{
-  key: DocumentationAxis;
-  label: string;
-  done: keyof DocumentationAxisCounts;
-  total: keyof DocumentationAxisCounts;
-}> = [
-  { key: "spec", label: STATUS_AXIS_LABELS.spec.meter, done: "spec_done", total: "spec_total" },
-  {
-    key: "datasheet",
-    label: STATUS_AXIS_LABELS.datasheet.meter,
-    done: "ds_done",
-    total: "ds_total",
-  },
-  { key: "photo", label: STATUS_AXIS_LABELS.photo.meter, done: "photo_done", total: "photo_total" },
-];
 
 export function DocumentationProgress({ project }: { project: ProjectDetail }) {
   return <DocumentationProgressForProject key={project.id} project={project} />;
@@ -44,60 +27,90 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
     project.access_mode,
   );
   const [expanded, setExpanded] = useState<Set<string>>(() => readExpanded(project.id));
+  // Persist outside the updater: React may replay a state updater, and an
+  // updater that writes to sessionStorage is not pure.
   const toggleSection = (sectionKey: string) => {
-    setExpanded((current) => {
-      const next = toggled(current, sectionKey);
-      writeExpanded(project.id, next);
-      return next;
-    });
+    const next = toggled(expanded, sectionKey);
+    setExpanded(next);
+    writeExpanded(project.id, next);
   };
 
-  const heading = (
-    <div className="status-section-heading documentation-progress-heading">
-      <div>
-        <h2 id="documentation-progress-title">Documentation progress</h2>
-        <p>Specification, datasheet, and site-photo evidence.</p>
-      </div>
-      <StatusLegend />
-    </div>
-  );
-  if (!project.active_version_id) {
-    return (
-      <section className="documentation-progress">
-        {heading}
-        <p className="status-section-empty">Create a project version to track documentation.</p>
-      </section>
-    );
-  }
-  if (query.isLoading) return <DocumentationProgressSkeleton />;
-  if (query.isError || !query.data) {
-    return (
-      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-        {heading}
+  const rollup = query.data;
+  const body = () => {
+    if (!project.active_version_id) {
+      return (
+        <DocumentationProgressEmpty
+          title="No project version yet."
+          copy="Create a version to start tracking specifications, datasheets, and site photos."
+        />
+      );
+    }
+    if (query.isLoading) return <PaneSkeleton />;
+    if (query.isError || !rollup) {
+      return (
         <div className="status-section-error" role="alert">
           <p>{errorMessage(query.error, "Could not load documentation progress.")}</p>
           <button type="button" className="secondary-button" onClick={() => void query.refetch()}>
             Retry
           </button>
         </div>
-      </section>
+      );
+    }
+    if (rollup.sections.length === 0) {
+      return (
+        <DocumentationProgressEmpty
+          title="Nothing to document yet."
+          copy="Sections appear here once this version has materials, apertures, or equipment to evidence."
+        />
+      );
+    }
+    return (
+      <>
+        <div className="documentation-progress-total">
+          <AxisMeters projectId={project.id} counts={rollup.counts} plain />
+        </div>
+        <div className="documentation-progress-sections">
+          {rollup.sections.map((section) => (
+            <SectionRow
+              key={section.key}
+              projectId={project.id}
+              section={section}
+              expanded={expanded.has(section.key)}
+              onToggle={() => toggleSection(section.key)}
+            />
+          ))}
+        </div>
+      </>
     );
-  }
+  };
+
+  // One wrapper for every state, so the heading cannot go missing (or lose its
+  // label) in one of them and shift the layout when data lands.
   return (
-    <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-      {heading}
-      <div className="documentation-progress-sections">
-        {query.data.sections.map((section) => (
-          <SectionRow
-            key={section.key}
-            projectId={project.id}
-            section={section}
-            expanded={expanded.has(section.key)}
-            onToggle={() => toggleSection(section.key)}
-          />
-        ))}
-      </div>
+    <section
+      className="documentation-progress"
+      aria-labelledby="documentation-progress-title"
+      aria-busy={query.isLoading || undefined}
+    >
+      <ProgressHeading counts={rollup?.counts} />
+      {body()}
     </section>
+  );
+}
+
+/**
+ * Attention sits at the far end of the heading, and only while work remains.
+ *
+ * No status legend here: the legend defines the Needed / Question / Complete /
+ * N-A vocabulary, and this pane renders none of it — only counts and bars. It
+ * belongs on Documentation, where those values are actually shown.
+ */
+function ProgressHeading({ counts }: { counts?: StatusAxisCounts }) {
+  return (
+    <div className="status-heading status-pane-heading">
+      <h2 id="documentation-progress-title">Documentation progress</h2>
+      <AttentionCount counts={counts} />
+    </div>
   );
 }
 
@@ -112,23 +125,29 @@ function SectionRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const groupsId = `documentation-progress-groups-${section.key}`;
+  const titleId = `documentation-progress-section-${section.key}`;
   return (
-    <section className="documentation-progress-section">
+    <section className="documentation-progress-section" aria-labelledby={titleId}>
       <div className="documentation-progress-section-header">
         <button
           type="button"
           className="documentation-progress-toggle"
           aria-expanded={expanded}
+          aria-controls={groupsId}
           onClick={onToggle}
         >
-          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          <span>{section.title}</span>
+          <span aria-hidden="true">
+            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </span>
+          <span id={titleId}>{section.title}</span>
         </button>
-        <Link to={`/projects/${projectId}/documentation#${section.anchor}`}>Open section</Link>
+        <OpenSectionLink {...sectionDestination(projectId, section)} />
+        <AttentionCount counts={section.counts} />
       </div>
-      <MeterRow projectId={projectId} anchor={section.anchor} counts={section.counts} />
+      <AxisMeters projectId={projectId} anchor={section.anchor} counts={section.counts} />
       {expanded ? (
-        <div className="documentation-progress-groups">
+        <div className="documentation-progress-groups" id={groupsId}>
           {section.groups.map((group) => (
             <GroupRow key={group.key} projectId={projectId} group={group} />
           ))}
@@ -138,67 +157,100 @@ function SectionRow({
   );
 }
 
+/**
+ * One row, one way out. A group's three meters would each deep-link to the same
+ * group anchor the row title already points at, differing only by a `?needs=`
+ * filter that is redundant once you are this narrow — so the meters read as
+ * plain numbers here and the hover-revealed icon is the single destination,
+ * exactly as on the section header above.
+ */
 function GroupRow({ projectId, group }: { projectId: string; group: DocumentationRollupGroup }) {
   return (
     <div className="documentation-progress-group">
-      <Link to={`/projects/${projectId}/documentation#${group.anchor}`}>{group.title}</Link>
-      <MeterRow projectId={projectId} anchor={group.anchor} counts={group.counts} />
+      <div className="documentation-progress-group-label">
+        <span className="documentation-progress-group-title">{group.title}</span>
+        <OpenSectionLink
+          to={`/projects/${projectId}/documentation#${group.anchor}`}
+          label={`Open in Documentation - ${group.title}`}
+        />
+      </div>
+      <StatusAxisRollup counts={group.counts} />
     </div>
   );
 }
 
-function MeterRow({
+/**
+ * The header means "go to the thing"; a meter means "go to the evidence". So
+ * the header icon opens the section's own tab — Apertures opens Apertures —
+ * while the meters keep deep-linking into Documentation with a `?needs=`
+ * filter.
+ *
+ * Section keys are project-tab slugs written with underscores
+ * (`thermal_bridges` vs the `thermal-bridges` route), so a future section lands
+ * on its tab automatically; one that names no tab falls back to the
+ * Documentation anchor rather than 404ing.
+ */
+function sectionDestination(projectId: string, section: DocumentationRollupSection) {
+  const slug = section.key.replace(/_/g, "-");
+  if (!isProjectTab(slug)) {
+    return {
+      to: `/projects/${projectId}/documentation#${section.anchor}`,
+      label: `Open in Documentation - ${section.title}`,
+    };
+  }
+  // Through `projectTabPath`, never a hand-built URL: a tab slug is not always
+  // its route (`spaces` resolves to `/spaces/rooms`), so building the string
+  // here would make the "lands on its tab automatically" promise false for
+  // exactly the case it is meant to cover.
+  return { to: projectTabPath(projectId, slug), label: `Open ${TAB_LABELS[slug]}` };
+}
+
+/** Revealed on hover of its header row, like the Documentation page's record
+ *  open-owner link, so the same gesture means the same thing on both. */
+function OpenSectionLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link className="documentation-progress-open" to={to} aria-label={label} title={label}>
+      <ExternalLink size={14} aria-hidden="true" />
+    </Link>
+  );
+}
+
+function AxisMeters({
   projectId,
   anchor,
   counts,
+  plain,
 }: {
   projectId: string;
-  anchor: string;
-  counts: DocumentationAxisCounts;
+  anchor?: string;
+  counts: StatusAxisCounts;
+  plain?: boolean;
 }) {
-  const attention =
-    counts.spec_total -
-    counts.spec_done +
-    counts.ds_total -
-    counts.ds_done +
-    counts.photo_total -
-    counts.photo_done;
+  const hash = anchor ? `#${anchor}` : "";
   return (
-    <div className="documentation-progress-meters">
-      {AXES.map((axis) => {
-        const done = counts[axis.done];
-        const total = counts[axis.total];
-        return (
-          <Link
-            key={axis.key}
-            className="documentation-progress-meter"
-            to={`/projects/${projectId}/documentation?needs=${axis.key}#${anchor}`}
-          >
-            <span>
-              {axis.label} {completeCountLabel(done, total)}
-            </span>
-            <ProgressBar
-              className="documentation-progress-meter-track"
-              value={total > 0 ? (done / total) * 100 : 100}
-              label={`${axis.label} ${done} of ${total}`}
-            />
-          </Link>
-        );
-      })}
-      {attention > 0 ? (
-        <span className="documentation-progress-attention">{needAttentionLabel(attention)}</span>
-      ) : null}
-    </div>
+    <StatusAxisRollup
+      counts={counts}
+      plain={plain}
+      linkFor={(axis) => `/projects/${projectId}/documentation?needs=${axis}${hash}`}
+    />
   );
 }
 
-function DocumentationProgressSkeleton() {
+/** Nothing at all when the work is done — silence is the "complete" state. */
+function AttentionCount({ counts }: { counts?: StatusAxisCounts }) {
+  const label = counts ? evidenceAttentionLabel(counts) : null;
+  if (!label) return null;
+  return <span className="documentation-progress-attention">{label}</span>;
+}
+
+/** Same `.status-empty` panel the Roadmap pane uses, so the two sides of the
+ *  brief go empty the same way. */
+function DocumentationProgressEmpty({ title, copy }: { title: string; copy: string }) {
   return (
-    <section className="documentation-progress" aria-label="Loading documentation progress">
-      <div className="status-skeleton-line" />
-      <div className="status-skeleton-line" />
-      <div className="status-skeleton-line" />
-    </section>
+    <div className="status-empty">
+      <h3>{title}</h3>
+      <p>{copy}</p>
+    </div>
   );
 }
 

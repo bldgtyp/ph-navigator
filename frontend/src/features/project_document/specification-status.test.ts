@@ -3,6 +3,7 @@ import {
   EVIDENCE_STATUSES,
   STATUS_AXIS_LABELS,
   STATUS_AXIS_TOOLTIPS,
+  evidenceAttentionLabel,
   needAttentionLabel,
   normalizeSpecificationStatus,
   normalizeSpecificationStatusRecord,
@@ -22,6 +23,26 @@ describe("specification-status response compatibility", () => {
     expect(STATUS_AXIS_TOOLTIPS.photo).toContain("Installed-condition photos");
     expect(EVIDENCE_STATUSES).toEqual(["needed", "complete", "na"]);
     expect(needAttentionLabel(3)).toBe("3 need attention");
+    expect(
+      evidenceAttentionLabel({
+        spec_done: 1,
+        spec_total: 2,
+        ds_done: 1,
+        ds_total: 2,
+        photo_done: 1,
+        photo_total: 2,
+      }),
+    ).toBe("3 of 6 need attention");
+    expect(
+      evidenceAttentionLabel({
+        spec_done: 2,
+        spec_total: 2,
+        ds_done: 2,
+        ds_total: 2,
+        photo_done: 2,
+        photo_total: 2,
+      }),
+    ).toBeNull();
     expect(resolvedLabel(2, 3)).toBe("2 of 3 resolved");
   });
 

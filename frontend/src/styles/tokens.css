@@ -10,8 +10,15 @@
   --bg-elev: rgb(249, 250, 251);
   --bg-card: #ffffff;
 
-  /* Attention amber is shared by non-status warnings and the Needed status. */
+  /* Attention amber is shared by non-status warnings and the Needed status.
+     The surface trio below is the palette for an amber *panel* — the
+     Documentation write-error banner, the Overview attention chip. It was
+     hand-mixed per feature at drifting percentages (72% vs 74% text, 30% vs
+     36% border) until it became a token; mix here, never in a feature sheet. */
   --attention-amber: #d97706;
+  --attention-amber-bg: color-mix(in oklab, var(--attention-amber) 9%, var(--bg-card));
+  --attention-amber-border: color-mix(in oklab, var(--attention-amber) 32%, var(--border-subtle));
+  --attention-amber-text: color-mix(in oklab, var(--attention-amber) 74%, black);
 
   /* Status control colors. See shared/ui/report-table/ and StatusSelect. */
   --report-status-needed: var(--attention-amber);

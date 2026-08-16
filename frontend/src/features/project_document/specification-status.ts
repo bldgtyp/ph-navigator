@@ -20,8 +20,62 @@ export const STATUS_AXIS_TOOLTIPS: Record<DocumentationStatusAxis, string> = {
 export const STATUS_LEGEND_RESOLVED_COPY =
   "A record is resolved when its status is Complete or N/A.";
 
+/**
+ * Done/total per evidence axis — the shape every documentation rollup returns,
+ * for a project, a section, or a group. Lives here rather than in the
+ * Documentation feature because the Overview pane renders the same meters from
+ * a counts-only projection, and both read it through `StatusAxisRollup`.
+ */
+export type StatusAxisCounts = {
+  spec_done: number;
+  spec_total: number;
+  ds_done: number;
+  ds_total: number;
+  photo_done: number;
+  photo_total: number;
+};
+
+export function completeCountLabel(done: number, total: number): string {
+  return `${done}/${total}`;
+}
+
+/** Evidence slots still unresolved, summed across all three axes. */
+function unresolvedCount(counts: StatusAxisCounts): number {
+  return (
+    counts.spec_total -
+    counts.spec_done +
+    (counts.ds_total - counts.ds_done) +
+    (counts.photo_total - counts.photo_done)
+  );
+}
+
+/** Every evidence slot tracked — three per record, one per axis. */
+function trackedCount(counts: StatusAxisCounts): number {
+  return counts.spec_total + counts.ds_total + counts.photo_total;
+}
+
+/** Bare count, for surfaces that track a single axis (e.g. the U-value report). */
 export function needAttentionLabel(count: number): string {
   return `${count} need attention`;
+}
+
+/** Every tracked evidence slot on this rollup is resolved. */
+export function isCountsComplete(counts: StatusAxisCounts): boolean {
+  return unresolvedCount(counts) === 0;
+}
+
+/**
+ * The evidence count sums three axes, so it routinely exceeds the section's
+ * record count — a bare "107 need attention" on 55 records reads as a bug.
+ * Carrying the denominator makes the number self-explaining.
+ *
+ * Returns `null` when nothing is outstanding: a resolved section says nothing
+ * rather than displaying a zero.
+ */
+export function evidenceAttentionLabel(counts: StatusAxisCounts): string | null {
+  const outstanding = unresolvedCount(counts);
+  if (outstanding <= 0) return null;
+  return `${outstanding} of ${trackedCount(counts)} need attention`;
 }
 
 export function resolvedLabel(resolved: number, total: number): string {

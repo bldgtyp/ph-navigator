@@ -1,7 +1,6 @@
 import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ProgressBar } from "../../../shared/ui";
 import type { AssetUrls } from "../../assets/types";
 import type { ProjectDetail } from "../../projects/types";
 import {
@@ -9,13 +8,7 @@ import {
   useDocumentationFieldMutation,
   type DocumentationFieldChange,
 } from "../hooks";
-import {
-  completeCountLabel,
-  filterRecord,
-  isCountsComplete,
-  sectionRecords,
-  type DocumentationAxis,
-} from "../lib";
+import { filterRecord, sectionRecords, type DocumentationAxis } from "../lib";
 import type {
   DocumentationAxisCounts,
   DocumentationGroup,
@@ -25,10 +18,11 @@ import type {
 } from "../types";
 import { DirectionsModal } from "./DocumentationModals";
 import { DocumentationRecordRow } from "./DocumentationRecordViews";
-import { StatusLegend } from "../../project_document/StatusVocabulary";
+import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
   STATUS_AXIS_LABELS,
-  needAttentionLabel,
+  evidenceAttentionLabel,
+  isCountsComplete,
 } from "../../project_document/specification-status";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
@@ -145,7 +139,7 @@ export function DocumentationSummaryView({
           <p className="documentation-attention-line">{attentionLine(summary.counts)}</p>
         </div>
         <div className="documentation-header__status">
-          <AxisRollup counts={summary.counts} />
+          <StatusAxisRollup counts={summary.counts} />
           <StatusLegend />
         </div>
       </header>
@@ -201,7 +195,7 @@ export function DocumentationSummaryView({
                     </span>
                     <span id={`documentation-section-${section.key}`}>{section.title}</span>
                   </button>
-                  <AxisRollup counts={section.counts} />
+                  <StatusAxisRollup counts={section.counts} />
                   <div className="documentation-section-actions">
                     <button
                       type="button"
@@ -275,52 +269,8 @@ function setWithToggledValue<T>(current: Set<T>, key: T, force?: boolean): Set<T
 }
 
 function attentionLine(counts: DocumentationAxisCounts): string {
-  const specs = counts.spec_total - counts.spec_done;
-  const datasheets = counts.ds_total - counts.ds_done;
-  const photos = counts.photo_total - counts.photo_done;
-  return `${needAttentionLabel(specs + datasheets + photos)}.`;
-}
-
-function AxisRollup({ counts }: { counts: DocumentationAxisCounts }) {
-  return (
-    <div className="documentation-rollup">
-      <AxisMeter
-        label={STATUS_AXIS_LABELS.spec.meter}
-        done={counts.spec_done}
-        total={counts.spec_total}
-      />
-      <AxisMeter
-        label={STATUS_AXIS_LABELS.datasheet.meter}
-        done={counts.ds_done}
-        total={counts.ds_total}
-      />
-      <AxisMeter
-        label={STATUS_AXIS_LABELS.photo.meter}
-        done={counts.photo_done}
-        total={counts.photo_total}
-      />
-    </div>
-  );
-}
-
-function AxisMeter({ label, done, total }: { label: string; done: number; total: number }) {
-  const complete = total === 0 || done >= total;
-  const zero = total > 0 && done === 0;
-  const progress = total > 0 ? (done / total) * 100 : 100;
-  const count = completeCountLabel(done, total);
-  return (
-    <span className="documentation-axis-meter" data-complete={complete} data-zero={zero}>
-      <span className="documentation-axis-meter-copy">
-        <span className="documentation-axis-meter-label">{label}</span>{" "}
-        <span className="documentation-axis-meter-count">{count}</span>
-      </span>
-      <ProgressBar
-        className="documentation-axis-meter-track"
-        value={progress}
-        label={`${label} ${count}`}
-      />
-    </span>
-  );
+  const label = evidenceAttentionLabel(counts);
+  return label ? `${label}.` : "All evidence is resolved.";
 }
 
 function DocumentationSectionBody({
@@ -451,7 +401,7 @@ function DocumentationGroupView({
           </span>
           <span id={groupId}>{group.title}</span>
         </button>
-        <AxisRollup counts={group.counts} />
+        <StatusAxisRollup counts={group.counts} />
       </header>
       {expanded ? (
         <div id={groupBodyId}>

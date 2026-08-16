@@ -1,6 +1,5 @@
 import type { StatusSelectOption } from "../../shared/ui";
 import type {
-  DocumentationAxisCounts,
   DocumentationEvidenceStatus,
   DocumentationRecord,
   DocumentationSection,
@@ -11,9 +10,11 @@ import {
   EVIDENCE_STATUS_LABELS,
   SPECIFICATION_STATUS_LABELS,
   SPECIFICATION_STATUS_OPTIONS,
+  type DocumentationStatusAxis,
 } from "../project_document/specification-status";
 
-export type DocumentationAxis = "spec" | "datasheet" | "photo";
+/** Owned by the shared status vocabulary; aliased for local readability. */
+export type DocumentationAxis = DocumentationStatusAxis;
 
 export const SPEC_STATUS_LABELS: Record<DocumentationSpecStatus, string> = {
   ...SPECIFICATION_STATUS_LABELS,
@@ -74,18 +75,6 @@ export function axisDone(record: DocumentationRecord, axis: DocumentationAxis): 
 
 export function axisMissing(record: DocumentationRecord, axis: DocumentationAxis): boolean {
   return !axisDone(record, axis);
-}
-
-export function completeCountLabel(done: number, total: number): string {
-  return `${done}/${total}`;
-}
-
-export function isCountsComplete(counts: DocumentationAxisCounts): boolean {
-  return (
-    counts.spec_done === counts.spec_total &&
-    counts.ds_done === counts.ds_total &&
-    counts.photo_done === counts.photo_total
-  );
 }
 
 export function filterRecord(

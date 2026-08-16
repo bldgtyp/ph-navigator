@@ -31,18 +31,152 @@ test("renders counts-only section meters and disclosed group links", async () =>
   );
   renderProgress();
 
-  expect(await screen.findByText("Spec. Status 1/2")).toBeVisible();
-  expect(screen.getByText("3 need attention")).toBeVisible();
-  expect(screen.getByRole("link", { name: /Spec. Status 1\/2/ })).toHaveAttribute(
-    "href",
+  // Project totals first, then the section — the same meters, anchored deeper.
+  const specMeters = await screen.findAllByRole("link", { name: /Spec. Status 1\/2/ });
+  expect(specMeters.map((meter) => meter.getAttribute("href"))).toEqual([
+    "/projects/proj_1/documentation?needs=spec",
     "/projects/proj_1/documentation?needs=spec#equipment",
+  ]);
+  expect(screen.getAllByText("3 of 6 need attention")[0]).toBeVisible();
+  // The header opens the section's own tab; the meters open the evidence.
+  expect(screen.getByRole("link", { name: "Open Equipment" })).toHaveAttribute(
+    "href",
+    "/projects/proj_1/equipment",
   );
   await user.click(screen.getByRole("button", { name: "Equipment" }));
-  expect(screen.getByRole("link", { name: "Pumps" })).toHaveAttribute(
+  // A disclosed group offers exactly one destination — the icon. Its title is a
+  // label and its meters are plain numbers, so the row cannot present three
+  // links that all land in the same place.
+  expect(screen.getByRole("link", { name: "Open in Documentation - Pumps" })).toHaveAttribute(
     "href",
     "/projects/proj_1/documentation#pumps",
   );
+  expect(screen.queryByRole("link", { name: "Pumps" })).toBeNull();
+  const groupRow = screen.getByText("Pumps").closest(".documentation-progress-group");
+  expect(groupRow?.querySelectorAll("a")).toHaveLength(1);
   expect(sessionStorage.getItem("phn:overview-documentation-groups:proj_1")).toBe('["equipment"]');
+});
+
+test("the pane carries no status legend — it renders none of that vocabulary", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify(rollupFixture()), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    ),
+  );
+  renderProgress();
+
+  expect(await screen.findByRole("button", { name: "Equipment" })).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Status legend" })).toBeNull();
+});
+
+test.each([
+  ["apertures", "Open Apertures", "/projects/proj_1/apertures"],
+  ["envelope", "Open Envelope", "/projects/proj_1/envelope"],
+  ["thermal_bridges", "Open Thermal Bridges", "/projects/proj_1/thermal-bridges"],
+  // No such tab — fall back to Documentation rather than route to a 404.
+  [
+    "invented_section",
+    "Open in Documentation - Equipment",
+    "/projects/proj_1/documentation#equipment",
+  ],
+])("section %s header opens %s", async (key, label, href) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      const fixture = rollupFixture();
+      return new Response(
+        JSON.stringify({ ...fixture, sections: [{ ...fixture.sections[0], key }] }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }),
+  );
+  renderProgress();
+
+  expect(await screen.findByRole("link", { name: label })).toHaveAttribute("href", href);
+});
+
+test("keeps the heading in every state, so nothing jumps when data lands", async () => {
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      await gate;
+      return new Response(JSON.stringify(rollupFixture()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  );
+  renderProgress();
+
+  // Loading: heading already present, with the skeleton under it.
+  expect(screen.getByRole("heading", { name: "Documentation progress" })).toBeVisible();
+  release?.();
+  expect(await screen.findByRole("button", { name: "Equipment" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Documentation progress" })).toBeVisible();
+});
+
+test("a version with no sections gets an empty panel, not a bare heading", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ ...rollupFixture(), sections: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    ),
+  );
+  renderProgress();
+
+  expect(await screen.findByText("Nothing to document yet.")).toBeVisible();
+});
+
+test("an axis with nothing tracked reads as untracked, not as complete", async () => {
+  const empty = {
+    spec_done: 0,
+    spec_total: 0,
+    ds_done: 0,
+    ds_total: 0,
+    photo_done: 0,
+    photo_total: 0,
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            ...rollupFixture(),
+            counts: empty,
+            sections: [
+              {
+                key: "equipment",
+                title: "Equipment",
+                anchor: "equipment",
+                counts: empty,
+                groups: [],
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    ),
+  );
+  renderProgress();
+
+  const meter = await screen.findAllByRole("progressbar", { name: "Spec. Status none tracked" });
+  // An empty track, not a full one — and no "N need attention" for zero work.
+  expect(meter[0]).toHaveAttribute("aria-valuenow", "0");
+  expect(screen.queryByText(/need attention/)).toBeNull();
 });
 
 function renderProgress() {

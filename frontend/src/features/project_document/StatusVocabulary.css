@@ -16,6 +16,7 @@
   border-radius: var(--radius-sm);
   font: inherit;
   font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
 }
 
 .status-legend-button:hover,
@@ -27,4 +28,131 @@
   display: grid;
   gap: var(--space-6);
   max-width: 320px;
+}
+
+/* ── Evidence-axis meters ──────────────────────────────────────────────
+   Shared by the Documentation page (read in place) and the Overview
+   Documentation-progress pane (drill-in links). Same counts, same look. */
+
+/* Width the three meters need before their counts collide. Consumers size
+   their meter column from this rather than each re-guessing a pixel value. */
+:root {
+  --status-rollup-min: 380px;
+}
+
+.status-axis-rollup {
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.status-axis-meter {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 38px;
+  padding: var(--space-6);
+}
+
+/* Directly on the page ground the chip surface has nothing to lift off, so it
+   reads as a floating panel. Padding stays, so the meters still line up with
+   the card contents below them. */
+.status-axis-rollup--plain .status-axis-meter {
+  background: transparent;
+}
+
+.status-axis-meter-copy {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+  min-width: 0;
+}
+
+/* `--fs-xs`/semibold rather than `--fs-2xs`/bold: the same variant the
+   attention line beside it already uses, so the two peer annotations read as
+   one voice instead of adding a site-wide type variant of their own. */
+.status-axis-meter-label,
+.status-axis-meter-count {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-solid);
+}
+
+/* The label yields first: it truncates so the count — the number the meter
+   exists to show — is never the thing that gets clipped. */
+.status-axis-meter-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-axis-meter-count {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-axis-meter[data-zero="true"] .status-axis-meter-count {
+  color: var(--attention-amber-text);
+}
+
+/* Nothing tracked on this axis: the count goes quiet and the track stays
+   empty, so it cannot be mistaken for finished work. */
+.status-axis-meter[data-untracked="true"] .status-axis-meter-count {
+  color: var(--text-muted);
+}
+
+.status-axis-meter-track {
+  background: color-mix(in oklab, var(--border-subtle) 72%, var(--bg-page));
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.status-axis-meter-track > .progress-bar__fill {
+  background: var(--accent);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.status-axis-meter[data-complete="true"] .status-axis-meter-track > .progress-bar__fill {
+  background: var(--phn-success);
+}
+
+/* Drill-in variant: a row surface, so hover is the neutral wash and focus
+   takes the standard control ring (context/DESIGN_SYSTEM.md § Interaction
+   states). */
+.status-axis-meter--link {
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--transition-fast) var(--ease);
+}
+
+.status-axis-meter--link:hover {
+  background: var(--state-row-hover-bg);
+}
+
+.status-axis-meter--link:focus-visible {
+  box-shadow: var(--phn-focus);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-axis-meter--link {
+    transition: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .status-axis-rollup {
+    gap: var(--space-6);
+  }
 }

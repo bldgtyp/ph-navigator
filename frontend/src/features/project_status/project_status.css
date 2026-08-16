@@ -26,19 +26,6 @@
   padding-right: clamp(var(--space-12), 1.5vw, var(--space-24));
 }
 
-.status-roadmap .status-heading {
-  align-items: center;
-}
-
-.status-roadmap .status-heading h2 {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-}
-
 .status-add-milestone {
   min-height: 30px;
   padding: var(--space-4) var(--space-10);
@@ -177,6 +164,7 @@
 }
 
 .status-title-button,
+.documentation-progress-toggle,
 .status-item h3 {
   margin: 0;
   border: 0;
@@ -191,12 +179,14 @@
   text-transform: none;
 }
 
-.status-title-button {
+.status-title-button,
+.documentation-progress-toggle {
   min-height: auto;
   letter-spacing: var(--tracking-normal);
 }
 
-.status-title-button:hover:not(:disabled) {
+.status-title-button:hover:not(:disabled),
+.documentation-progress-toggle:hover:not(:disabled) {
   background: transparent;
   color: var(--accent-text);
   transform: none;
