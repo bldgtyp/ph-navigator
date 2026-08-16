@@ -43,8 +43,10 @@ they use the same component.
 | 7 | States: heading renders in every state; `.status-empty` panels incl. a new no-sections case; untracked axis no longer reads as complete | Done |
 | 8 | Attention indicator: removed from group rows; right-aligned in the pane and card headings; hidden at 100% (Ed, 2026-08-16) | Done |
 | 9 | Section-header open icon opens the section's own tab, derived from the section key against `PROJECT_TABS`, falling back to Documentation. Meters still open Documentation with `?needs=` — the header is "go to the thing", the meter is "go to the evidence" (Ed, 2026-08-16) | Done |
+| 10 | Group rows get one destination, not four: title becomes a label, meters render unlinked, and the hover-revealed icon is the single way out. All three axis links resolved to the same group anchor (Ed, 2026-08-16) | Done |
+| 11 | Status legend removed from the pane — it defines a Needed/Question/Complete/N-A vocabulary this pane never renders (Ed, 2026-08-16) | Done |
 
-All nine items are implemented on the branch. Merge is Ed's call.
+All eleven items are implemented on the branch. Merge is Ed's call.
 
 ## Decisions worth keeping
 
@@ -94,8 +96,25 @@ All nine items are implemented on the branch. Merge is Ed's call.
 the sweep returns **30 site-wide variants against a ceiling of 29**. The
 ratchet went stale before this branch started.
 
-This branch is **variant-neutral**: also 30, with one *additional* swept state,
-and the `button` role budget down 18 → 17.
+This branch finishes **variant-neutral**: also 30, with one *additional* swept
+state, and the `button` role budget down 18 → 17.
+
+Getting there took two corrections, both caught by the rendered sweep and worth
+remembering:
+
+- The section title and the meter label/count each minted a new variant
+  (`--fs-md`/bold, `--fs-2xs`/bold). Folding each into a variant that already
+  existed improved the design rather than compromising it — the section title
+  now shares `.status-title-button`'s exact type, and the meter shares the
+  attention line's.
+- The attention chip minted a third (`--fs-2xs`/semibold) by overriding
+  `.chip--sm`'s weight from a feature sheet. Deleting the override — rather
+  than adding anything — both fixed the count and restored the rule that
+  feature CSS never restyles a shared primitive's typography.
+
+**Run the sweep after every visual item, not once at the end.** The chip landed
+in item 6 and went unmeasured until item 11, so an interim "variant-neutral"
+claim in this file was true when written and stale for five items.
 
 `variantCeiling` is temporarily held at **30** with a `$knownFailure` key in
 `frontend/scripts/typography-rendered-contract.json` so the check still fails

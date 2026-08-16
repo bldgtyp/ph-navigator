@@ -10,7 +10,7 @@ import type {
 } from "../../documentation/types";
 import { TAB_LABELS, isProjectTab, projectTabPath } from "../../projects/lib";
 import type { ProjectDetail } from "../../projects/types";
-import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
+import { StatusAxisRollup } from "../../project_document/StatusVocabulary";
 import {
   evidenceAttentionLabel,
   type StatusAxisCounts,
@@ -98,15 +98,18 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   );
 }
 
-/** Attention sits at the far end of the heading, and only while work remains. */
+/**
+ * Attention sits at the far end of the heading, and only while work remains.
+ *
+ * No status legend here: the legend defines the Needed / Question / Complete /
+ * N-A vocabulary, and this pane renders none of it — only counts and bars. It
+ * belongs on Documentation, where those values are actually shown.
+ */
 function ProgressHeading({ counts }: { counts?: StatusAxisCounts }) {
   return (
     <div className="status-heading status-pane-heading">
       <h2 id="documentation-progress-title">Documentation progress</h2>
-      <div className="documentation-progress-heading-status">
-        <AttentionCount counts={counts} />
-        <StatusLegend />
-      </div>
+      <AttentionCount counts={counts} />
     </div>
   );
 }
@@ -154,16 +157,24 @@ function SectionRow({
   );
 }
 
+/**
+ * One row, one way out. A group's three meters would each deep-link to the same
+ * group anchor the row title already points at, differing only by a `?needs=`
+ * filter that is redundant once you are this narrow — so the meters read as
+ * plain numbers here and the hover-revealed icon is the single destination,
+ * exactly as on the section header above.
+ */
 function GroupRow({ projectId, group }: { projectId: string; group: DocumentationRollupGroup }) {
   return (
     <div className="documentation-progress-group">
-      <Link
-        className="documentation-progress-group-title"
-        to={`/projects/${projectId}/documentation#${group.anchor}`}
-      >
-        {group.title}
-      </Link>
-      <AxisMeters projectId={projectId} anchor={group.anchor} counts={group.counts} />
+      <div className="documentation-progress-group-label">
+        <span className="documentation-progress-group-title">{group.title}</span>
+        <OpenSectionLink
+          to={`/projects/${projectId}/documentation#${group.anchor}`}
+          label={`Open in Documentation - ${group.title}`}
+        />
+      </div>
+      <StatusAxisRollup counts={group.counts} />
     </div>
   );
 }

@@ -28,8 +28,10 @@ saved version. Empty sections and groups are omitted.
 **Meters.** The three evidence meters come from the shared `StatusAxisRollup`
 (`features/project_document/StatusVocabulary.tsx`) — the same component the
 Documentation page renders, so a meter never looks or counts differently
-depending on which page you read it from. Its `linkFor` prop is the only
-difference between the two surfaces: on Overview each meter is a deep link.
+depending on which page you read it from. Its optional `linkFor` prop is the
+only sanctioned variation: supply it and each meter becomes a deep link, omit
+it and the meter renders in place. Overview supplies it for project totals and
+section meters; Documentation and Overview's group rows omit it.
 
 - `Spec. Status {done}/{total}` → `?needs=spec#{anchor}`;
 - `Datasheets {done}/{total}` → `?needs=datasheet#{anchor}`;
@@ -47,8 +49,9 @@ it, on the page ground rather than on a card. Then one card per section.
 section title toggles disclosure, and a hover-revealed `ExternalLink` icon
 beside it opens that section's **own tab** (Apertures → Apertures). A meter
 means "go to the evidence": it opens Documentation filtered by that axis. The
-route is derived from the section key against `PROJECT_TABS`, falling back to
-the Documentation anchor when a section names no tab.
+route resolves through `projectTabPath` from the section key checked against
+`PROJECT_TABS` — never a hand-built URL, since a tab slug is not always its
+route — and falls back to the Documentation anchor when a section names no tab.
 
 **Attention.** `{n} of {total} need attention` renders as a chip at the far end
 of a heading — the pane heading for project totals, the card header for each
@@ -56,9 +59,21 @@ section — and only while work remains. The denominator is carried because the
 count sums three axes and would otherwise exceed the section's record count.
 Group rows carry no attention count.
 
+**No status legend.** The legend defines the Needed / Question / Complete / N-A
+vocabulary; this pane renders none of it, only counts and bars. It belongs on
+Documentation, where those values are actually shown.
+
 **Disclosure** reveals one line per non-empty group: title left, meters right,
 matching Documentation's group header. It persists only in session storage,
-scoped by project. The shared status legend defines resolved and N/A semantics.
+scoped by project.
+
+A group row has exactly **one** destination — the hover-revealed icon, opening
+the Documentation anchor for that group. Its title is a label and its meters are
+plain numbers, deliberately: at group scope all three axis deep links resolved
+to the same anchor, differing only by a `?needs=` filter that adds nothing once
+you are that narrow, so the row was offering four links to one place. Axis deep
+links remain on the project-total and section meters, where the filter still
+narrows something.
 
 ## Roadmap
 

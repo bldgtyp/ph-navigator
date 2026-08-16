@@ -64,7 +64,9 @@
 }
 
 .documentation-progress-section-header:hover .documentation-progress-open,
-.documentation-progress-section-header:focus-within .documentation-progress-open {
+.documentation-progress-section-header:focus-within .documentation-progress-open,
+.documentation-progress-group:hover .documentation-progress-open,
+.documentation-progress-group:focus-within .documentation-progress-open {
   opacity: 1;
   pointer-events: auto;
 }
@@ -73,18 +75,14 @@
   color: var(--accent-text);
 }
 
-.documentation-progress-heading-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-10);
-}
-
-/* Composes `.chip .chip--sm`; the shared amber attention palette. */
+/* Composes `.chip .chip--sm`; the shared amber attention palette. Tone only —
+   the chip keeps its own type, because a feature sheet does not restyle a
+   shared primitive's typography (and overriding the weight here minted a
+   site-wide type variant of its own). */
 .documentation-progress-attention {
   border: 1px solid var(--attention-amber-border);
   background: var(--attention-amber-bg);
   color: var(--attention-amber-text);
-  font-weight: var(--fw-semibold);
 }
 
 /* Anchored to the far end of the card header — the count reads as a property
@@ -115,22 +113,22 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* One step quieter than the section title it nests under: same family and
-   role, smaller and lighter. */
+/* Title + its reveal target, mirroring the section header one level up. */
+.documentation-progress-group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* A label, not a link — the icon beside it is the way out. One step quieter
+   than the section title it nests under: same family and role, smaller. */
 .documentation-progress-group-title {
-  justify-self: start;
   color: var(--text-primary);
   font-family: var(--font-primary);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   line-height: var(--lh-heading);
-  text-decoration: none;
-}
-
-.documentation-progress-group-title:hover,
-.documentation-progress-group-title:focus-visible {
-  color: var(--accent-text);
-  text-decoration: underline;
 }
 
 /* Touch has no hover, so the reveal would strand the link. */

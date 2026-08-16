@@ -44,11 +44,34 @@ test("renders counts-only section meters and disclosed group links", async () =>
     "/projects/proj_1/equipment",
   );
   await user.click(screen.getByRole("button", { name: "Equipment" }));
-  expect(screen.getByRole("link", { name: "Pumps" })).toHaveAttribute(
+  // A disclosed group offers exactly one destination — the icon. Its title is a
+  // label and its meters are plain numbers, so the row cannot present three
+  // links that all land in the same place.
+  expect(screen.getByRole("link", { name: "Open in Documentation - Pumps" })).toHaveAttribute(
     "href",
     "/projects/proj_1/documentation#pumps",
   );
+  expect(screen.queryByRole("link", { name: "Pumps" })).toBeNull();
+  const groupRow = screen.getByText("Pumps").closest(".documentation-progress-group");
+  expect(groupRow?.querySelectorAll("a")).toHaveLength(1);
   expect(sessionStorage.getItem("phn:overview-documentation-groups:proj_1")).toBe('["equipment"]');
+});
+
+test("the pane carries no status legend — it renders none of that vocabulary", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify(rollupFixture()), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    ),
+  );
+  renderProgress();
+
+  expect(await screen.findByRole("button", { name: "Equipment" })).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Status legend" })).toBeNull();
 });
 
 test.each([
