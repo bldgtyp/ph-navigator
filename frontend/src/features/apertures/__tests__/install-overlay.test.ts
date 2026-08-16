@@ -12,7 +12,8 @@ import {
 } from "../install-overlay";
 import { APERTURE_INSTALL_DEFAULT_TYPE_ID } from "../install-psi";
 import type { ApertureElement, ApertureInstallTypeSummary, ApertureTypeEntry } from "../types";
-import { apertureElement, apertureEntry } from "./aperture-ui-test-fixtures";
+import { apertureElement, apertureEntry, apertureFrame } from "./aperture-ui-test-fixtures";
+import { elementRegionsMm } from "../aperture-geometry";
 
 const DEFAULT_TYPE: ApertureInstallTypeSummary = {
   id: APERTURE_INSTALL_DEFAULT_TYPE_ID,
@@ -74,6 +75,38 @@ describe("installOverlayModel", () => {
       expect(cell.rect.height).toBeGreaterThan(0);
     }
   });
+
+  test("a framed side's band is exactly the drawn frame strip", () => {
+    // Bands must trace the SVG's own frame regions — a band thicker than its
+    // frame reads as a box floating over the drawing rather than as the frame.
+    const framed = apertureEntry({
+      column_widths_mm: [1000],
+      row_heights_mm: [1200],
+      elements: [
+        apertureElement({
+          frames: {
+            top: apertureFrame({ width_mm: 40 }),
+            right: apertureFrame({ width_mm: 60 }),
+            bottom: apertureFrame({ width_mm: 40 }),
+            left: apertureFrame({ width_mm: 60 }),
+          },
+        }),
+      ],
+    });
+    const regions = elementRegionsMm(framed.elements[0]!, {
+      x: 0,
+      y: 0,
+      width: 1000,
+      height: 1200,
+    });
+    const cells = installOverlayModel(framed, [DEFAULT_TYPE], 10);
+    const byKey = new Map(cells.map((cell) => [cell.side, cell.rect]));
+
+    expect(byKey.get("top")).toEqual(regions.top);
+    expect(byKey.get("bottom")).toEqual(regions.bottom);
+    expect(byKey.get("left")).toEqual(regions.left);
+    expect(byKey.get("right")).toEqual(regions.right);
+  });
 });
 
 describe("installTintColors", () => {
@@ -132,12 +165,19 @@ describe("apertureGridSignature", () => {
 });
 
 describe("installUsageCounts", () => {
-  test("counts assigned slots across every aperture", () => {
+  test("counts what each perimeter edge uses — inherited edges count as Default", () => {
     const counts = installUsageCounts([
       mullPair({ top: FLIXO.id, left: FLIXO.id }),
       mullPair({ bottom: FLIXO.id }),
     ]);
+    // Two 1x2 pairs: 8 sides each, 2 of them mulled → 6 perimeter edges per
+    // aperture. 3 carry Flixo explicitly; the other 9 inherit Default.
     expect(counts.get(FLIXO.id)).toBe(3);
-    expect(counts.get(APERTURE_INSTALL_DEFAULT_TYPE_ID)).toBeUndefined();
+    expect(counts.get(APERTURE_INSTALL_DEFAULT_TYPE_ID)).toBe(9);
+  });
+
+  test("a mulled edge with a stale slot is not counted", () => {
+    const counts = installUsageCounts([mullPair({ right: FLIXO.id })]);
+    expect(counts.get(FLIXO.id)).toBeUndefined();
   });
 });

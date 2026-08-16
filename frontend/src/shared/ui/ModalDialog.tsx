@@ -10,6 +10,7 @@ export function ModalDialog({
   showHeaderClose = false,
   dismissOnBackdrop = false,
   resizable = false,
+  scrollBody = false,
 }: {
   id?: string;
   title: string;
@@ -28,6 +29,10 @@ export function ModalDialog({
   // Oversized, scrolling modals (tall forms, data-dense viewers) opt into the
   // lower-right resize grip via `.modal-panel--resizable`.
   resizable?: boolean;
+  // Keep the header and the footer pinned and scroll the body instead of the
+  // whole panel. Use it whenever the content can grow without bound (a list of
+  // rows), so Cancel/primary never scroll out of reach.
+  scrollBody?: boolean;
 }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -62,7 +67,13 @@ export function ModalDialog({
     >
       <section
         id={id}
-        className={resizable ? "modal-panel modal-panel--resizable" : "modal-panel"}
+        className={[
+          "modal-panel",
+          resizable && "modal-panel--resizable",
+          scrollBody && "modal-panel--scroll-body",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

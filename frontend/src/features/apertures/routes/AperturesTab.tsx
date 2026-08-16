@@ -189,6 +189,25 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     }
   };
 
+  /** Apply several commands as one user action (the Installs modal's Save).
+   *  Each write bumps the draft etag, so the accepted slice has to be threaded
+   *  into the next `If-Match` — `dispatch` closes over the slice from its own
+   *  render and would send a superseded etag on the second command. */
+  const dispatchSequence = async (commands: readonly ApertureCommand[]): Promise<boolean> => {
+    if (!slice) return false;
+    setActionError(null);
+    let current = slice;
+    try {
+      for (const command of commands) {
+        current = await mutation.mutateAsync({ current, command });
+      }
+      return true;
+    } catch (error) {
+      setActionError(errorMessage(error, "Could not apply aperture command."));
+      return false;
+    }
+  };
+
   const handleAdd = async () => {
     const next = await dispatch({ kind: "createApertureType" });
     if (!next) return;
@@ -426,7 +445,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   aperture={activeAperture}
                   apertures={sorted}
                   canEdit={canEdit}
-                  onDispatch={async (command) => (await dispatch(command)) !== null}
+                  onDispatchAll={dispatchSequence}
                   onClose={() => setInstallsModalOpen(false)}
                 />
               ) : null}

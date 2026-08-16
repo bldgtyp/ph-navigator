@@ -10,7 +10,7 @@ import {
   resolveInstallPsiForAperture,
   type ResolvedInstallPsi,
 } from "./install-psi";
-import { edgeClassKey } from "./edge-classification";
+import { classifyElementEdges, edgeClassKey } from "./edge-classification";
 import {
   APERTURE_SIDES,
   type ApertureInstallTypeSummary,
@@ -29,9 +29,12 @@ const TINT_TOKENS = [
 ] as const;
 export const DEFAULT_TINT_TOKEN = "var(--text-muted)";
 
-// A frame side with no picked frame has a zero-thickness strip; keep every
-// paintable edge at least this thick (mm) so the band stays visible/hittable.
-const MIN_BAND_MM = 80;
+// A band normally *is* the drawn frame strip, so the tint reads as recoloring
+// the frame rather than as a box floating over it. A side with no picked frame
+// has a zero-thickness strip, so it falls back to this much (mm) to stay
+// visible and hittable — callers pass the mm equivalent of a few screen px at
+// the current zoom, capped below at a third of the element.
+const DEFAULT_MIN_BAND_MM = 80;
 
 export type InstallOverlayCell = {
   elementId: string;
@@ -64,10 +67,13 @@ export function installTintColors(
   return colors;
 }
 
-/** One tint/hit cell per side of every glazed element. */
+/** One tint/hit cell per side of every glazed element. `minBandMm` is the
+ *  fallback thickness for a side with no picked frame (see
+ *  `DEFAULT_MIN_BAND_MM`). */
 export function installOverlayModel(
   aperture: ApertureTypeEntry,
   installTypes: readonly ApertureInstallTypeSummary[],
+  minBandMm: number = DEFAULT_MIN_BAND_MM,
 ): InstallOverlayCell[] {
   const resolution = resolveInstallPsiForAperture(aperture, installTypes);
   const colors = installTintColors(installTypes);
@@ -82,7 +88,7 @@ export function installOverlayModel(
       cells.push({
         elementId: element.id,
         side,
-        rect: bandRect(side, rect, regions[side]),
+        rect: bandRect(side, rect, regions[side], minBandMm),
         kind: resolved.source,
         resolved,
         rawSlot: element.installs[side],
@@ -128,40 +134,47 @@ export function apertureGridSignature(aperture: ApertureTypeEntry): string {
   return `${aperture.row_heights_mm.length}x${aperture.column_widths_mm.length}|${cells.join(";")}`;
 }
 
-/** Per-type live usage count across every glazed element of the project. */
+/** Per-type live usage count across every glazed element of the project.
+ *  Counts what each perimeter edge actually *uses*: an edge with no explicit
+ *  slot uses the Default row, so it counts there — Default is an ordinary
+ *  library row, not an absence. Mulled (interior) edges carry no assignment
+ *  and are skipped, stale slot or not. */
 export function installUsageCounts(apertures: readonly ApertureTypeEntry[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const aperture of apertures) {
+    const classes = classifyElementEdges(aperture);
     for (const element of aperture.elements) {
       if (element.kind !== "glazed") continue;
       for (const side of APERTURE_SIDES) {
-        const slot = element.installs[side];
-        if (slot !== null) counts.set(slot, (counts.get(slot) ?? 0) + 1);
+        if (classes.get(edgeClassKey(element.id, side)) === "interior") continue;
+        const slot = element.installs[side] ?? APERTURE_INSTALL_DEFAULT_TYPE_ID;
+        counts.set(slot, (counts.get(slot) ?? 0) + 1);
       }
     }
   }
   return counts;
 }
 
-function bandRect(side: ApertureSide, elementRect: RectMm, strip: RectMm): RectMm {
+/** The drawn frame strip itself, thickened only when the side carries no
+ *  frame. Everything but the thickness comes from `strip`, so the band keeps
+ *  the SVG's corner ownership (top/bottom span the full element width; left/
+ *  right are inset between them) and lands exactly on the rendered frame. */
+function bandRect(
+  side: ApertureSide,
+  elementRect: RectMm,
+  strip: RectMm,
+  minBandMm: number,
+): RectMm {
   if (side === "top" || side === "bottom") {
-    const height = Math.max(strip.height, Math.min(MIN_BAND_MM, elementRect.height / 3));
+    if (strip.height >= minBandMm) return strip;
+    const height = Math.min(minBandMm, elementRect.height / 3);
     return side === "top"
-      ? { x: elementRect.x, y: elementRect.y, width: elementRect.width, height }
-      : {
-          x: elementRect.x,
-          y: elementRect.y + elementRect.height - height,
-          width: elementRect.width,
-          height,
-        };
+      ? { ...strip, height }
+      : { ...strip, y: elementRect.y + elementRect.height - height, height };
   }
-  const width = Math.max(strip.width, Math.min(MIN_BAND_MM, elementRect.width / 3));
+  if (strip.width >= minBandMm) return strip;
+  const width = Math.min(minBandMm, elementRect.width / 3);
   return side === "left"
-    ? { x: elementRect.x, y: elementRect.y, width, height: elementRect.height }
-    : {
-        x: elementRect.x + elementRect.width - width,
-        y: elementRect.y,
-        width,
-        height: elementRect.height,
-      };
+    ? { ...strip, width }
+    : { ...strip, x: elementRect.x + elementRect.width - width, width };
 }

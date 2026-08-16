@@ -26,41 +26,13 @@
   outline: 0;
 }
 
+/* Only the content stack: the panel chrome (surface, radius, shadow, padding,
+   max-width, arrow, portalling) belongs to the shared `.app-tooltip` bubble
+   this renders inside — one tooltip owner, so an info panel can never be
+   clipped by a scrolling ancestor again. */
 .info-tooltip-content {
-  background: var(--info-tooltip-bg);
-  border-radius: var(--radius-2xs);
-  box-shadow: var(--shadow-elev-1);
-  color: var(--info-tooltip-fg);
   display: grid;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
   gap: var(--space-8);
-  line-height: var(--lh-ui);
-  max-width: min(316px, calc(100vw - 24px));
-  opacity: 0;
-  padding: var(--space-8);
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  text-align: left;
-  top: calc(100% + 8px);
-  transform: translateY(4px);
-  transition:
-    opacity 0.12s var(--ease) 0.2s,
-    transform 0.12s var(--ease) 0.2s;
-  white-space: normal;
-  width: min(316px, calc(100vw - 24px));
-  z-index: var(--z-tooltip);
-}
-
-.info-tooltip-content::after {
-  border-color: transparent transparent var(--info-tooltip-bg);
-  border-style: solid;
-  border-width: 0 6px 6px;
-  bottom: 100%;
-  content: "";
-  position: absolute;
-  right: 1px;
 }
 
 .info-tooltip-content strong {
@@ -69,10 +41,4 @@
 
 .info-tooltip-content em {
   font-style: italic;
-}
-
-.info-tooltip-button:hover .info-tooltip-content,
-.info-tooltip-button:focus-visible .info-tooltip-content {
-  opacity: 1;
-  transform: translateY(0);
 }

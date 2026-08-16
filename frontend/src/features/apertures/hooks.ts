@@ -3,6 +3,7 @@ import { errorMessage } from "../../shared/lib/errors";
 import { attachAssetToDocument, detachAssetFromDocument } from "../assets/api";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
+import { invalidateProjectDocumentEditorTableSlices } from "../project_document/table-slice";
 import {
   applyApertureCommand,
   applyApertureProductCommand,
@@ -20,6 +21,7 @@ import type {
   ApertureSpecReportResponse,
   AperturesSlice,
 } from "./types";
+import { APERTURES_TABLE_NAME } from "./types";
 
 /** Wire kinds whose audit envelope sets ``affects_u_value=true``. The
  *  list mirrors the backend audit flag; keeping it client-side keeps
@@ -231,6 +233,17 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       );
       queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
+      });
+      // An aperture command is a document write, so it bumps the draft etag
+      // for *every* table. Sibling slice caches must be marked stale the same
+      // way a table replace marks them, or the next write from a cached
+      // sibling (e.g. the Installs modal creating a second type after an edge
+      // paint) sends a superseded `If-Match` and 409s. `refetchType: "none"`
+      // keeps this cheap: the refetch happens at write time via
+      // `resolveCachedSliceForWrite`.
+      void invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id, {
+        excludeTableName: APERTURES_TABLE_NAME,
+        refetchActiveSlices: false,
       });
       if (U_VALUE_AFFECTING_KINDS.has(variables.command.kind)) {
         queryClient.invalidateQueries({

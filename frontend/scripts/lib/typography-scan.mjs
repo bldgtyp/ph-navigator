@@ -12,6 +12,10 @@
 // registry (scripts/typography-exceptions.json), never raw literals.
 
 import postcss from "postcss";
+import {
+  countFingerprints as countByFingerprint,
+  diffAgainstBaseline,
+} from "./guard-utils.mjs";
 
 /** CSS longhands the guard covers, plus the `font` shorthand. */
 export const TYPOGRAPHY_CSS_PROPERTIES = new Set([
@@ -131,12 +135,7 @@ export function fingerprintOf(violation) {
 
 /** Collapse violations into `{ fingerprint: count }`, sorted by key. */
 export function countFingerprints(violations) {
-  const counts = {};
-  for (const violation of violations) {
-    const key = fingerprintOf(violation);
-    counts[key] = (counts[key] ?? 0) + 1;
-  }
-  return Object.fromEntries(Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)));
+  return countByFingerprint(violations, fingerprintOf);
 }
 
 /**
@@ -176,22 +175,6 @@ export function applyExceptions(violations, exceptions) {
   return { remaining, problems };
 }
 
-/**
- * Ratchet comparison. `added` = fingerprints (or extra occurrences) not in
- * the baseline → new debt, fail. `stale` = baseline entries no longer found
- * at their recorded count → the baseline must be shrunk (via
- * --update-baseline) so debt can only move downward.
- */
-export function diffAgainstBaseline(currentCounts, baselineCounts) {
-  const added = [];
-  const stale = [];
-  for (const [key, count] of Object.entries(currentCounts)) {
-    const baseline = baselineCounts[key] ?? 0;
-    if (count > baseline) added.push({ fingerprint: key, count, baseline });
-  }
-  for (const [key, baseline] of Object.entries(baselineCounts)) {
-    const count = currentCounts[key] ?? 0;
-    if (count < baseline) stale.push({ fingerprint: key, count, baseline });
-  }
-  return { added, stale };
-}
+// The ratchet comparison is guard-agnostic and lives in guard-utils; re-exported
+// here so check-typography.mjs keeps its single import surface.
+export { diffAgainstBaseline };

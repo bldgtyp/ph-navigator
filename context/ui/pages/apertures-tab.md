@@ -151,10 +151,32 @@ Assignment happens in the Builder, not on this page:
   per-aperture modal: a read-only key-view SVG with per-edge tint overlay,
   a legend of install types (swatch, Ψ, PDF chip, live usage count), and
   pick-type-then-paint-edges interaction — click an edge to assign the armed
-  type, click again to clear back to inherit. Footer actions: apply the armed
-  type to all edges, and copy assignments to apertures with an identical grid
-  signature. Inline `+ New type…` creates a library row through the same
-  payload builders as this page (no forked validation).
+  type, click again to clear back to inherit; while a type is armed the key
+  view takes the paint-bucket cursor, and the hovered edge takes a neutral
+  2px ring plus a saturated fill. "Cleared" is never presented as an absence:
+  the legend states that unpainted edges inherit the Default row *with its Ψ*,
+  and each unassigned edge's tooltip repeats it. **Nothing is written until `Save`**: the
+  session accumulates in `installs-draft.ts` (edge slots, new/edited types,
+  copy targets) and the footer is the standard Cancel/`Save` pair, so Cancel —
+  and Escape — discards the whole session. Save writes the type-library rows
+  first (one create batch, one edit batch), then the edge commands; a session
+  that leaves every perimeter edge on one type collapses to the single
+  `applyInstallToApertures` command instead of one write per edge.
+  Tools sit with what they act on, not in the footer: `Apply to all edges` is
+  in the key view's paint bar (always rendered, enabled once a type is armed —
+  appearing/disappearing shifted the drawing under the cursor), and
+  `Copy to other apertures…` —
+  replacing a target's edge assignments with this aperture's, restricted to an
+  identical grid signature — is a header accessory. `+ New type…` closes the
+  legend list, and each legend row carries a pencil that renames / re-values
+  that type in place; both go through the same payload builders as this page
+  (no forked validation). Per-type usage is a *project-wide* count, so it lives
+  in that row's editor ("Used on 4 edges in this project") rather than in the
+  list, where it read as a fact about the aperture on screen. Main controls
+  carry the shared `<Tooltip>`; the two that can be disabled hang theirs off a
+  wrapper span, so the hint still explains *why* they are disabled (most often:
+  no other aperture has an identical grid). A Ψ field the user did not touch is not written back,
+  so its display rounding can never quantize the stored value.
 
 ## 2.6.5 U-Values Report
 

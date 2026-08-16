@@ -27,6 +27,27 @@
   max-width: calc(100vw - 40px);
 }
 
+/* Unbounded content (a list that grows with the project) must not push the
+   footer out of reach: the panel stops scrolling, the header and `.modal-actions`
+   stay pinned, and the body between them takes the scroll. A dialog whose body
+   has its own scroll region (e.g. one column of a two-column layout) sets
+   `overflow: hidden` on the body and scrolls that region instead. */
+.modal-panel--scroll-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-panel--scroll-body > * {
+  flex: 0 0 auto;
+}
+
+.modal-panel--scroll-body > *:not(.modal-header):not(.modal-actions):not(.form-error) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
 /* Secondary/tertiary footer actions (DialogActions `extraActions`) sit
    between the anchored Cancel (left) and primary (right). */
 .modal-actions-extra {

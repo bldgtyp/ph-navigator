@@ -24,10 +24,18 @@ test("Installs modal paints edges and persists assignments", async ({ page }) =>
   const dialog = page.getByRole("dialog", { name: /Installs —/ });
   await expect(dialog).toBeVisible();
 
-  // Fresh project: only the Default row, zero usage. (Scoped to the
-  // legend — the edge buttons' aria-labels also mention "Default".)
-  const defaultRow = dialog.getByTestId("installs-legend").getByRole("button", { name: /Default/ });
-  await expect(defaultRow).toContainText("0 edges");
+  // Fresh project: only the Default row. (Scoped to the legend —
+  // the edge buttons' aria-labels also mention "Default" — and anchored at the
+  // start of the name so the row's own "Edit install type: Default" pencil
+  // does not also match.)
+  const legend = dialog.getByTestId("installs-legend");
+  const defaultRow = legend.getByRole("button", { name: /^Default/ });
+  await expect(defaultRow).toBeVisible();
+  // Usage is project-wide, so it lives in the row's editor, not the list.
+  await expect(defaultRow).not.toContainText("edges");
+  // The painting tools live with the key view, not the footer, and the bulk
+  // action is disabled (never removed — that moved the drawing) until armed.
+  await expect(dialog.getByRole("button", { name: "Apply to all edges" })).toBeDisabled();
 
   // Arm the Default type and paint the top edge.
   await defaultRow.click();
@@ -35,17 +43,24 @@ test("Installs modal paints edges and persists assignments", async ({ page }) =>
   await expect(topEdge).toHaveAttribute("data-kind", "default");
   await topEdge.click();
   await expect(topEdge).toHaveAttribute("data-kind", "assigned");
-  await expect(defaultRow).toContainText("1 edges");
 
   // Re-clicking the same edge with the same armed type clears to inherit.
   await topEdge.click();
   await expect(topEdge).toHaveAttribute("data-kind", "default");
 
-  // Apply to all edges, then close; the FrameRow Ψ-inst cells go unmuted
+  // Cancel discards the staged session: nothing was written.
+  await topEdge.click();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  await openModal();
+  await expect(topEdge).toHaveAttribute("data-kind", "default");
+
+  // Apply to all edges, then save; the FrameRow Ψ-inst cells go unmuted
   // (assigned) for every perimeter side of the 1x1 element.
-  await dialog.getByRole("button", { name: "Apply selected to all edges" }).click();
-  await expect(defaultRow).toContainText("4 edges");
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await legend.getByRole("button", { name: /^Default/ }).click();
+  await dialog.getByRole("button", { name: "Apply to all edges" }).click();
+  await expect(topEdge).toHaveAttribute("data-kind", "assigned");
+  await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toBeHidden();
   const psiCell = page.locator("[data-testid='install-psi-top']").first();
   await expect(psiCell).not.toHaveClass(/aperture-card-row__metric--muted/);
@@ -55,7 +70,23 @@ test("Installs modal paints edges and persists assignments", async ({ page }) =>
   await page.reload();
   await expect(page.locator(".aperture-element-card").first()).toBeVisible();
   await openModal();
-  await expect(
-    dialog.getByTestId("installs-legend").getByRole("button", { name: /Default/ }),
-  ).toContainText("4 edges");
+  await expect(topEdge).toHaveAttribute("data-kind", "assigned");
+
+  // Rename + re-value a type in place, without leaving the modal.
+  await legend.getByTestId("installs-edit-type-apit_default").click();
+  const form = dialog.getByTestId("installs-edit-form");
+  await form.getByLabel("Install type name").fill("Mid-wall");
+  await form.getByLabel(/Install type psi-value/).fill("0.031");
+  await form.getByRole("button", { name: "Save Default" }).click();
+  await expect(form).toBeHidden();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  await openModal();
+  const renamedRow = legend.getByRole("button", { name: /^Mid-wall/ });
+  await expect(renamedRow).toContainText("0.031");
+  // Project-wide usage shows in the editor: all four perimeter edges carry it.
+  await legend.getByTestId("installs-edit-type-apit_default").click();
+  await expect(dialog.getByTestId("installs-edit-form")).toContainText(
+    "Used on 4 edges in this project",
+  );
 });
