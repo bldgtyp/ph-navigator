@@ -53,9 +53,12 @@ route resolves through `projectTabPath` from the section key checked against
 `PROJECT_TABS` — never a hand-built URL, since a tab slug is not always its
 route — and falls back to the Documentation anchor when a section names no tab.
 
-**Attention.** `{n} of {total} need attention` renders as a chip at the far end
-of a heading — the pane heading for project totals, the card header for each
-section — and only while work remains. The denominator is carried because the
+**Attention.** `{n} of {total} need attention` sits at the far end of a heading
+— the pane heading for project totals, the card header for each section — and
+only while work remains. It is a plain label in `--highlight-text`, the app's
+"needs your attention" red (the topbar's uncommitted-changes state uses the
+same): one appears on every card, so a filled outlined chip made a secondary
+annotation the loudest thing on the page. The denominator is carried because the
 count sums three axes and would otherwise exceed the section's record count.
 Group rows carry no attention count.
 

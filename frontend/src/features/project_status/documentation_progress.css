@@ -75,14 +75,16 @@
   color: var(--accent-text);
 }
 
-/* Composes `.chip .chip--sm`; the shared amber attention palette. Tone only —
-   the chip keeps its own type, because a feature sheet does not restyle a
-   shared primitive's typography (and overriding the weight here minted a
-   site-wide type variant of its own). */
+/* A plain label, not a chip. One of these sits on every section card, so an
+   outlined filled pill turned a secondary annotation into the loudest thing in
+   the pane. `--highlight-text` is the app's existing "needs your attention"
+   red — the same one the topbar's uncommitted-changes state uses. */
 .documentation-progress-attention {
-  border: 1px solid var(--attention-amber-border);
-  background: var(--attention-amber-bg);
-  color: var(--attention-amber-text);
+  color: var(--highlight-text);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
+  white-space: nowrap;
 }
 
 /* Anchored to the far end of the card header — the count reads as a property

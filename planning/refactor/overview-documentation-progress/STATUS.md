@@ -39,7 +39,7 @@ they use the same component.
 | 3 | Kill every font fall-through; container type floor; add an expanded-section state to the rendered sweep | Done |
 | 4 | Honest affordances + interaction states (title toggles vs. links; hover/focus everywhere); `aria-controls` on the disclosure | Done |
 | 5 | Tame the expanded group list — single-line rows matching Documentation's group header (Equipment: ~1200px → ~530px) | Done |
-| 6 | Attention indicator → `.chip .chip--sm` with the amber palette; `evidenceAttentionLabel` carries the denominator | Done |
+| 6 | `evidenceAttentionLabel` carries the denominator; indicator styled as a plain `--highlight-text` label (tried as an amber chip first — too loud with one on every card, Ed 2026-08-16) | Done |
 | 7 | States: heading renders in every state; `.status-empty` panels incl. a new no-sections case; untracked axis no longer reads as complete | Done |
 | 8 | Attention indicator: removed from group rows; right-aligned in the pane and card headings; hidden at 100% (Ed, 2026-08-16) | Done |
 | 9 | Section-header open icon opens the section's own tab, derived from the section key against `PROJECT_TABS`, falling back to Documentation. Meters still open Documentation with `?needs=` — the header is "go to the thing", the meter is "go to the evidence" (Ed, 2026-08-16) | Done |

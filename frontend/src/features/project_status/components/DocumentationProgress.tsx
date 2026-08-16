@@ -237,7 +237,7 @@ function AxisMeters({
 function AttentionCount({ counts }: { counts?: StatusAxisCounts }) {
   const label = counts ? evidenceAttentionLabel(counts) : null;
   if (!label) return null;
-  return <span className="chip chip--sm documentation-progress-attention">{label}</span>;
+  return <span className="documentation-progress-attention">{label}</span>;
 }
 
 /** Same `.status-empty` panel the Roadmap pane uses, so the two sides of the

@@ -105,7 +105,7 @@ greys above — the greys are what actually renders.)*
 | `--phn-warning` (+ `-bg`) | warm amber (from `--highlight-text`) | warning |
 | `--phn-danger` (+ `-bg`) | crimson-derived | danger / destructive |
 | `--attention-amber` | `#d97706` (amber) | non-status attention: Climate data gaps, Documentation write errors/zero meters |
-| `--attention-amber-bg` / `-border` / `-text` | amber @ 9% / 32% / 74% | the amber **panel** trio — write-error banner, Overview attention chip. Mix here, never in a feature sheet: these were hand-mixed per feature until the percentages drifted apart |
+| `--attention-amber-bg` / `-border` / `-text` | amber @ 9% / 32% / 74% | the amber **panel** trio — the Documentation write-error banner. Mix here, never in a feature sheet: these were hand-mixed per feature until the percentages drifted apart |
 | `--report-status-needed` | alias of `--attention-amber` | status controls/pills: Needed |
 | `--report-status-question` | `#0ea5b7` (cyan) | report cell: open question |
 | `--report-status-complete` | `#16a34a` (green) | report cell: complete |
