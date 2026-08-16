@@ -50,6 +50,85 @@ test("renders counts-only section meters and disclosed group links", async () =>
   expect(sessionStorage.getItem("phn:overview-documentation-groups:proj_1")).toBe('["equipment"]');
 });
 
+test("keeps the heading in every state, so nothing jumps when data lands", async () => {
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      await gate;
+      return new Response(JSON.stringify(rollupFixture()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  );
+  renderProgress();
+
+  // Loading: heading already present, with the skeleton under it.
+  expect(screen.getByRole("heading", { name: "Documentation progress" })).toBeVisible();
+  release?.();
+  expect(await screen.findByRole("button", { name: "Equipment" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Documentation progress" })).toBeVisible();
+});
+
+test("a version with no sections gets an empty panel, not a bare heading", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ ...rollupFixture(), sections: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    ),
+  );
+  renderProgress();
+
+  expect(await screen.findByText("Nothing to document yet.")).toBeVisible();
+});
+
+test("an axis with nothing tracked reads as untracked, not as complete", async () => {
+  const empty = {
+    spec_done: 0,
+    spec_total: 0,
+    ds_done: 0,
+    ds_total: 0,
+    photo_done: 0,
+    photo_total: 0,
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            ...rollupFixture(),
+            counts: empty,
+            sections: [
+              {
+                key: "equipment",
+                title: "Equipment",
+                anchor: "equipment",
+                counts: empty,
+                groups: [],
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    ),
+  );
+  renderProgress();
+
+  const meter = await screen.findAllByRole("progressbar", { name: "Spec. Status none tracked" });
+  // An empty track, not a full one — and no "N need attention" for zero work.
+  expect(meter[0]).toHaveAttribute("aria-valuenow", "0");
+  expect(screen.queryByText(/need attention/)).toBeNull();
+});
+
 function renderProgress() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(

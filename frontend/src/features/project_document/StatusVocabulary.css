@@ -88,6 +88,12 @@
   color: color-mix(in oklab, var(--attention-amber) 72%, black);
 }
 
+/* Nothing tracked on this axis: the count goes quiet and the track stays
+   empty, so it cannot be mistaken for finished work. */
+.status-axis-meter[data-untracked="true"] .status-axis-meter-count {
+  color: var(--text-muted);
+}
+
 .status-axis-meter-track {
   background: color-mix(in oklab, var(--border-subtle) 72%, var(--bg-page));
   border-radius: var(--radius-pill);

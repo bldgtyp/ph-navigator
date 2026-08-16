@@ -103,6 +103,10 @@ function StatusAxisMeter({
   total: number;
   to?: string;
 }) {
+  // `total === 0` means nothing is tracked on this axis — not that the work is
+  // done. Painting it as complete showed a full bar for a section with no
+  // records at all, which reads as "finished" when it means "nothing here".
+  const untracked = total === 0;
   const count = completeCountLabel(done, total);
   const body = (
     <>
@@ -112,16 +116,15 @@ function StatusAxisMeter({
       </span>
       <ProgressBar
         className="status-axis-meter-track"
-        value={total > 0 ? (done / total) * 100 : 100}
-        label={`${label} ${count}`}
+        value={untracked ? 0 : (done / total) * 100}
+        label={untracked ? `${label} none tracked` : `${label} ${count}`}
       />
     </>
   );
-  // `total === 0` means nothing is tracked on this axis, not that the work is
-  // finished — it reads as complete rather than as a full bar with no cause.
   const state = {
-    "data-complete": total === 0 || done >= total,
-    "data-zero": total > 0 && done === 0,
+    "data-untracked": untracked,
+    "data-complete": !untracked && done >= total,
+    "data-zero": !untracked && done === 0,
   };
   if (!to) {
     return (

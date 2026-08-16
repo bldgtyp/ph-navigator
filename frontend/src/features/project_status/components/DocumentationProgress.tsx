@@ -46,13 +46,23 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   );
   if (!project.active_version_id) {
     return (
-      <section className="documentation-progress">
+      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
         {heading()}
-        <p className="status-section-empty">Create a project version to track documentation.</p>
+        <DocumentationProgressEmpty
+          title="No project version yet."
+          copy="Create a version to start tracking specifications, datasheets, and site photos."
+        />
       </section>
     );
   }
-  if (query.isLoading) return <DocumentationProgressSkeleton />;
+  if (query.isLoading) {
+    return (
+      <section className="documentation-progress" aria-busy="true">
+        {heading()}
+        <DocumentationProgressSkeleton />
+      </section>
+    );
+  }
   if (query.isError || !query.data) {
     return (
       <section className="documentation-progress" aria-labelledby="documentation-progress-title">
@@ -63,6 +73,17 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
             Retry
           </button>
         </div>
+      </section>
+    );
+  }
+  if (query.data.sections.length === 0) {
+    return (
+      <section className="documentation-progress" aria-labelledby="documentation-progress-title">
+        {heading()}
+        <DocumentationProgressEmpty
+          title="Nothing to document yet."
+          copy="Sections appear here once this version has materials, apertures, or equipment to evidence."
+        />
       </section>
     );
   }
@@ -199,13 +220,25 @@ function AttentionCount({ counts }: { counts?: StatusAxisCounts }) {
   return <span className="chip chip--sm documentation-progress-attention">{label}</span>;
 }
 
+/** Same `.status-empty` panel the Roadmap pane uses, so the two sides of the
+ *  brief go empty the same way. */
+function DocumentationProgressEmpty({ title, copy }: { title: string; copy: string }) {
+  return (
+    <div className="status-empty">
+      <h3>{title}</h3>
+      <p>{copy}</p>
+    </div>
+  );
+}
+
+/** Renders under the real heading, so nothing jumps when the data lands. */
 function DocumentationProgressSkeleton() {
   return (
-    <section className="documentation-progress" aria-label="Loading documentation progress">
-      <div className="status-skeleton-line" />
-      <div className="status-skeleton-line" />
-      <div className="status-skeleton-line" />
-    </section>
+    <div className="roadmap-skeleton" aria-hidden="true">
+      {Array.from({ length: 4 }, (_, index) => (
+        <div className="status-skeleton-line" key={index} />
+      ))}
+    </div>
   );
 }
 
