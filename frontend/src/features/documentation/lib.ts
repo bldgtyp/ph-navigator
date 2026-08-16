@@ -76,10 +76,6 @@ export function axisMissing(record: DocumentationRecord, axis: DocumentationAxis
   return !axisDone(record, axis);
 }
 
-export function completeCountLabel(done: number, total: number): string {
-  return `${done}/${total}`;
-}
-
 export function isCountsComplete(counts: DocumentationAxisCounts): boolean {
   return (
     counts.spec_done === counts.spec_total &&

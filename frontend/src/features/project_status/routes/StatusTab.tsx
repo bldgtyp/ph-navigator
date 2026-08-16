@@ -99,7 +99,7 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
       <div className="status-body">
         <div className="status-dashboard-grid">
           <section className="status-roadmap" aria-labelledby="status-roadmap-heading">
-            <div className="status-heading">
+            <div className="status-heading status-pane-heading">
               <h2 id="status-roadmap-heading">Roadmap</h2>
               {isEditor && items.length > 0 ? (
                 <button

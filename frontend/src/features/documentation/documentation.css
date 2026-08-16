@@ -9,7 +9,6 @@
 .documentation-header,
 .documentation-section-header,
 .documentation-group-header,
-.documentation-rollup,
 .documentation-filterbar,
 .documentation-cell-header,
 .documentation-section-actions {
@@ -29,7 +28,7 @@
   min-width: min(480px, 50%);
 }
 
-.documentation-header__status .documentation-rollup {
+.documentation-header__status .status-axis-rollup {
   flex: 1;
 }
 
@@ -72,74 +71,6 @@
   font-size: var(--fs-sm);
   margin: 0;
   padding: var(--space-10) var(--space-12);
-}
-
-.documentation-rollup {
-  display: grid;
-  gap: var(--space-8);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-width: 0;
-}
-
-.documentation-axis-meter {
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  min-height: 38px;
-  padding: var(--space-6);
-}
-
-.documentation-axis-meter-copy {
-  display: flex;
-  gap: var(--space-4);
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.documentation-axis-meter-label,
-.documentation-axis-meter-count {
-  font-size: var(--fs-2xs);
-  line-height: var(--lh-solid);
-}
-
-.documentation-axis-meter-label {
-  color: var(--text-secondary);
-  font-weight: var(--fw-bold);
-  white-space: nowrap;
-}
-
-.documentation-axis-meter-count {
-  color: var(--accent-text);
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--fw-bold);
-}
-
-.documentation-axis-meter[data-zero="true"] .documentation-axis-meter-count {
-  color: color-mix(in oklab, var(--attention-amber) 72%, black);
-}
-
-.documentation-axis-meter-track {
-  background: color-mix(in oklab, var(--border-subtle) 72%, var(--bg-page));
-  border-radius: var(--radius-pill);
-  display: block;
-  height: 4px;
-  overflow: hidden;
-  width: 100%;
-}
-
-.documentation-axis-meter-track > .progress-bar__fill {
-  background: var(--accent);
-  border-radius: inherit;
-  display: block;
-  height: 100%;
-}
-
-.documentation-axis-meter[data-complete="true"]
-  .documentation-axis-meter-track
-  > .progress-bar__fill {
-  background: var(--phn-success);
 }
 
 .documentation-filterbar {
@@ -405,7 +336,7 @@
     grid-row: 1;
   }
 
-  .documentation-section-header .documentation-rollup {
+  .documentation-section-header .status-axis-rollup {
     grid-column: 1 / -1;
     grid-row: 2;
   }
@@ -431,11 +362,5 @@
 
   .documentation-spec-cell .status-select {
     width: 100%;
-  }
-}
-
-@media (max-width: 520px) {
-  .documentation-rollup {
-    gap: var(--space-6);
   }
 }

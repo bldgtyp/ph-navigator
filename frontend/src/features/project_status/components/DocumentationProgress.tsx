@@ -1,37 +1,18 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
-import { ProgressBar } from "../../../shared/ui";
 import { useDocumentationRollupQuery } from "../../documentation/hooks";
-import { completeCountLabel, type DocumentationAxis } from "../../documentation/lib";
 import type {
-  DocumentationAxisCounts,
   DocumentationRollupGroup,
   DocumentationRollupSection,
 } from "../../documentation/types";
 import type { ProjectDetail } from "../../projects/types";
-import { StatusLegend } from "../../project_document/StatusVocabulary";
+import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
-  STATUS_AXIS_LABELS,
   needAttentionLabel,
+  type StatusAxisCounts,
 } from "../../project_document/specification-status";
-
-const AXES: Array<{
-  key: DocumentationAxis;
-  label: string;
-  done: keyof DocumentationAxisCounts;
-  total: keyof DocumentationAxisCounts;
-}> = [
-  { key: "spec", label: STATUS_AXIS_LABELS.spec.meter, done: "spec_done", total: "spec_total" },
-  {
-    key: "datasheet",
-    label: STATUS_AXIS_LABELS.datasheet.meter,
-    done: "ds_done",
-    total: "ds_total",
-  },
-  { key: "photo", label: STATUS_AXIS_LABELS.photo.meter, done: "photo_done", total: "photo_total" },
-];
 
 export function DocumentationProgress({ project }: { project: ProjectDetail }) {
   return <DocumentationProgressForProject key={project.id} project={project} />;
@@ -53,11 +34,8 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   };
 
   const heading = (
-    <div className="status-section-heading documentation-progress-heading">
-      <div>
-        <h2 id="documentation-progress-title">Documentation progress</h2>
-        <p>Specification, datasheet, and site-photo evidence.</p>
-      </div>
+    <div className="status-heading status-pane-heading">
+      <h2 id="documentation-progress-title">Documentation progress</h2>
       <StatusLegend />
     </div>
   );
@@ -86,6 +64,9 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   return (
     <section className="documentation-progress" aria-labelledby="documentation-progress-title">
       {heading}
+      <div className="documentation-progress-total">
+        <MeterRow projectId={project.id} counts={query.data.counts} />
+      </div>
       <div className="documentation-progress-sections">
         {query.data.sections.map((section) => (
           <SectionRow
@@ -124,7 +105,11 @@ function SectionRow({
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           <span>{section.title}</span>
         </button>
-        <Link to={`/projects/${projectId}/documentation#${section.anchor}`}>Open section</Link>
+        <OpenInDocumentationLink
+          projectId={projectId}
+          anchor={section.anchor}
+          title={section.title}
+        />
       </div>
       <MeterRow projectId={projectId} anchor={section.anchor} counts={section.counts} />
       {expanded ? (
@@ -141,9 +126,40 @@ function SectionRow({
 function GroupRow({ projectId, group }: { projectId: string; group: DocumentationRollupGroup }) {
   return (
     <div className="documentation-progress-group">
-      <Link to={`/projects/${projectId}/documentation#${group.anchor}`}>{group.title}</Link>
+      <Link
+        className="documentation-progress-group-title"
+        to={`/projects/${projectId}/documentation#${group.anchor}`}
+      >
+        {group.title}
+      </Link>
       <MeterRow projectId={projectId} anchor={group.anchor} counts={group.counts} />
     </div>
+  );
+}
+
+/**
+ * "Take me to the records behind this number." The icon is revealed on hover of
+ * its header row and mirrors the Documentation page's record open-owner link,
+ * so the same gesture means the same thing on both surfaces.
+ */
+function OpenInDocumentationLink({
+  projectId,
+  anchor,
+  title,
+}: {
+  projectId: string;
+  anchor: string;
+  title: string;
+}) {
+  return (
+    <Link
+      className="documentation-progress-open"
+      to={`/projects/${projectId}/documentation#${anchor}`}
+      aria-label={`Open in Documentation - ${title}`}
+      title="Open in Documentation"
+    >
+      <ExternalLink size={14} aria-hidden="true" />
+    </Link>
   );
 }
 
@@ -153,42 +169,30 @@ function MeterRow({
   counts,
 }: {
   projectId: string;
-  anchor: string;
-  counts: DocumentationAxisCounts;
+  anchor?: string;
+  counts: StatusAxisCounts;
 }) {
-  const attention =
-    counts.spec_total -
-    counts.spec_done +
-    counts.ds_total -
-    counts.ds_done +
-    counts.photo_total -
-    counts.photo_done;
+  const attention = unresolvedCount(counts);
+  const hash = anchor ? `#${anchor}` : "";
   return (
     <div className="documentation-progress-meters">
-      {AXES.map((axis) => {
-        const done = counts[axis.done];
-        const total = counts[axis.total];
-        return (
-          <Link
-            key={axis.key}
-            className="documentation-progress-meter"
-            to={`/projects/${projectId}/documentation?needs=${axis.key}#${anchor}`}
-          >
-            <span>
-              {axis.label} {completeCountLabel(done, total)}
-            </span>
-            <ProgressBar
-              className="documentation-progress-meter-track"
-              value={total > 0 ? (done / total) * 100 : 100}
-              label={`${axis.label} ${done} of ${total}`}
-            />
-          </Link>
-        );
-      })}
+      <StatusAxisRollup
+        counts={counts}
+        linkFor={(axis) => `/projects/${projectId}/documentation?needs=${axis}${hash}`}
+      />
       {attention > 0 ? (
         <span className="documentation-progress-attention">{needAttentionLabel(attention)}</span>
       ) : null}
     </div>
+  );
+}
+
+function unresolvedCount(counts: StatusAxisCounts): number {
+  return (
+    counts.spec_total -
+    counts.spec_done +
+    (counts.ds_total - counts.ds_done) +
+    (counts.photo_total - counts.photo_done)
   );
 }
 

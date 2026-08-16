@@ -48,6 +48,14 @@ export function buildStates(projectId) {
     { label: "project-recovered-draft-modal", route: `${P}/overview` },
     { label: "project-overview", route: `${P}/overview`, clicks: [DISMISS_DRAFT] },
     {
+      // Documentation progress renders group rows only once a section is
+      // disclosed, so the collapsed state above never sees them — that is how
+      // their 16px fall-through survived. Expand the first section.
+      label: "project-overview-documentation-groups",
+      route: `${P}/overview`,
+      clicks: [DISMISS_DRAFT, ".documentation-progress-toggle"],
+    },
+    {
       label: "project-overview-add-modal",
       route: `${P}/overview`,
       clicks: [DISMISS_DRAFT, ".status-add-milestone"],

@@ -1,14 +1,10 @@
+import type { StatusAxisCounts } from "../project_document/specification-status";
+
 export type DocumentationSpecStatus = "needed" | "question" | "complete" | "na" | "unknown";
 export type DocumentationEvidenceStatus = "needed" | "complete" | "na";
 
-export type DocumentationAxisCounts = {
-  spec_done: number;
-  spec_total: number;
-  ds_done: number;
-  ds_total: number;
-  photo_done: number;
-  photo_total: number;
-};
+/** Owned by the shared status vocabulary — the Overview rollup uses it too. */
+export type DocumentationAxisCounts = StatusAxisCounts;
 
 export type DocumentationRecord = {
   record_id: string;

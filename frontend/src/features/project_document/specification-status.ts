@@ -20,6 +20,25 @@ export const STATUS_AXIS_TOOLTIPS: Record<DocumentationStatusAxis, string> = {
 export const STATUS_LEGEND_RESOLVED_COPY =
   "A record is resolved when its status is Complete or N/A.";
 
+/**
+ * Done/total per evidence axis — the shape every documentation rollup returns,
+ * for a project, a section, or a group. Lives here rather than in the
+ * Documentation feature because the Overview pane renders the same meters from
+ * a counts-only projection, and both read it through `StatusAxisRollup`.
+ */
+export type StatusAxisCounts = {
+  spec_done: number;
+  spec_total: number;
+  ds_done: number;
+  ds_total: number;
+  photo_done: number;
+  photo_total: number;
+};
+
+export function completeCountLabel(done: number, total: number): string {
+  return `${done}/${total}`;
+}
+
 export function needAttentionLabel(count: number): string {
   return `${count} need attention`;
 }

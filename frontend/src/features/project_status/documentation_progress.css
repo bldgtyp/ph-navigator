@@ -1,21 +1,33 @@
+/* Declare the pane's body type once. Without a floor here every text node that
+   forgets an explicit size lands on the 16px document default — larger than
+   anything this dense pane is supposed to render — and the miss is invisible
+   until someone reads computed styles. */
 .documentation-progress {
   display: grid;
   min-width: 0;
   align-content: start;
   gap: var(--space-16);
+  font-size: var(--fs-md);
+  line-height: var(--lh-ui);
 }
 
-.documentation-progress-heading,
 .documentation-progress-section-header,
 .documentation-progress-toggle {
   display: flex;
   align-items: center;
 }
 
-.documentation-progress-heading,
 .documentation-progress-section-header {
-  justify-content: space-between;
-  gap: var(--space-12);
+  gap: var(--space-6);
+}
+
+/* Project totals: the same meters as a section card, on the page ground rather
+   than on a card, so it reads as the sum of what follows and not as a fifth
+   section. */
+.documentation-progress-total {
+  display: grid;
+  gap: var(--space-8);
+  padding: 0 var(--space-16);
 }
 
 .documentation-progress-sections {
@@ -34,14 +46,44 @@
 }
 
 .documentation-progress-toggle {
-  gap: var(--space-8);
+  min-height: auto;
+  gap: var(--space-6);
   border: 0;
   background: transparent;
   color: var(--text-primary);
   padding: 0;
+  font-family: var(--font-primary);
+  font-size: var(--fs-md);
+  /* Semibold, not bold — the same variant as `.status-title-button`, the
+     Roadmap milestone title in the pane next door. Same role, same type. */
   font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+  text-align: left;
   text-transform: none;
   letter-spacing: var(--tracking-normal);
+}
+
+/* Revealed on hover/focus of the header row, exactly like the Documentation
+   page's record open-owner link. */
+.documentation-progress-open {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  opacity: 0;
+  pointer-events: none;
+  text-decoration: none;
+  transition: opacity var(--transition-fast) var(--ease);
+}
+
+.documentation-progress-section-header:hover .documentation-progress-open,
+.documentation-progress-section-header:focus-within .documentation-progress-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.documentation-progress-open:hover {
+  color: var(--accent-text);
 }
 
 .documentation-progress-meters {
@@ -49,35 +91,11 @@
   gap: var(--space-8);
 }
 
-.documentation-progress-meter {
-  display: grid;
-  grid-template-columns: minmax(145px, auto) minmax(70px, 1fr);
-  align-items: center;
-  gap: var(--space-10);
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
-  text-decoration: none;
-}
-
-.documentation-progress-meter-track {
-  display: block;
-  overflow: hidden;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--border-subtle);
-}
-
-.documentation-progress-meter-track > .progress-bar__fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
-}
-
 .documentation-progress-attention {
   color: var(--report-status-needed);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
 }
 
 .documentation-progress-groups {
@@ -90,4 +108,36 @@
 .documentation-progress-group {
   display: grid;
   gap: var(--space-8);
+}
+
+/* One step quieter than the section title it nests under: same family and
+   role, smaller and lighter. */
+.documentation-progress-group-title {
+  justify-self: start;
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+  text-decoration: none;
+}
+
+.documentation-progress-group-title:hover,
+.documentation-progress-group-title:focus-visible {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+/* Touch has no hover, so the reveal would strand the link. */
+@media (hover: none), (pointer: coarse) {
+  .documentation-progress-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documentation-progress-open {
+    transition: none;
+  }
 }

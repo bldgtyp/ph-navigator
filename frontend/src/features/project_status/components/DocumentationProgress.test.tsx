@@ -31,11 +31,16 @@ test("renders counts-only section meters and disclosed group links", async () =>
   );
   renderProgress();
 
-  expect(await screen.findByText("Spec. Status 1/2")).toBeVisible();
-  expect(screen.getByText("3 need attention")).toBeVisible();
-  expect(screen.getByRole("link", { name: /Spec. Status 1\/2/ })).toHaveAttribute(
-    "href",
+  // Project totals first, then the section — the same meters, anchored deeper.
+  const specMeters = await screen.findAllByRole("link", { name: /Spec. Status 1\/2/ });
+  expect(specMeters.map((meter) => meter.getAttribute("href"))).toEqual([
+    "/projects/proj_1/documentation?needs=spec",
     "/projects/proj_1/documentation?needs=spec#equipment",
+  ]);
+  expect(screen.getAllByText("3 need attention")[0]).toBeVisible();
+  expect(screen.getByRole("link", { name: "Open in Documentation - Equipment" })).toHaveAttribute(
+    "href",
+    "/projects/proj_1/documentation#equipment",
   );
   await user.click(screen.getByRole("button", { name: "Equipment" }));
   expect(screen.getByRole("link", { name: "Pumps" })).toHaveAttribute(

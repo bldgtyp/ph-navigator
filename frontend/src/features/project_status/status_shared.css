@@ -1,16 +1,25 @@
-.status-section-heading h2,
-.status-section-heading p {
-  margin: 0;
+/* Both Overview panes (Roadmap, Documentation progress) share one heading
+   role: a quiet mono rail label, not a page heading. Defined once here rather
+   than per-pane so the two sides of the brief cannot drift apart. */
+.status-pane-heading {
+  align-items: center;
 }
 
-.status-section-heading p {
-  margin-top: var(--space-4);
-  color: var(--text-secondary);
+.status-pane-heading h2 {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caps);
+  line-height: var(--lh-ui);
+  text-transform: uppercase;
 }
 
 .status-section-empty {
   color: var(--text-muted);
   font-size: var(--fs-sm);
+  line-height: var(--lh-body);
 }
 
 .status-section-error {
@@ -25,6 +34,8 @@
 
 .status-section-error p {
   margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
 }
 
 .roadmap-skeleton {
