@@ -117,14 +117,24 @@
 
 .documentation-progress-groups {
   display: grid;
-  gap: var(--space-12);
-  padding: var(--space-12) 0 0 var(--space-24);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--border-subtle);
 }
 
+/* One line per group — title left, meters right — the same shape as the
+   Documentation page's `.documentation-group-header`. Stacking the title above
+   a full-width meter block instead turns a twelve-group section into a wall
+   that repeats the three axis labels once per group. */
 .documentation-progress-group {
   display: grid;
-  gap: var(--space-8);
+  grid-template-columns: minmax(0, 1fr) minmax(min(380px, 100%), 0.55fr);
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-4) 0;
+}
+
+.documentation-progress-group + .documentation-progress-group {
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* One step quieter than the section title it nests under: same family and
