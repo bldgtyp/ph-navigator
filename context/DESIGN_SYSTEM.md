@@ -105,6 +105,7 @@ greys above — the greys are what actually renders.)*
 | `--phn-warning` (+ `-bg`) | warm amber (from `--highlight-text`) | warning |
 | `--phn-danger` (+ `-bg`) | crimson-derived | danger / destructive |
 | `--attention-amber` | `#d97706` (amber) | non-status attention: Climate data gaps, Documentation write errors/zero meters |
+| `--attention-amber-bg` / `-border` / `-text` | amber @ 9% / 32% / 74% | the amber **panel** trio — write-error banner, Overview attention chip. Mix here, never in a feature sheet: these were hand-mixed per feature until the percentages drifted apart |
 | `--report-status-needed` | alias of `--attention-amber` | status controls/pills: Needed |
 | `--report-status-question` | `#0ea5b7` (cyan) | report cell: open question |
 | `--report-status-complete` | `#16a34a` (green) | report cell: complete |
@@ -279,6 +280,7 @@ the spec to reproduce.
 | Empty state | `.empty-state` | zero-data placeholder w/ heading + copy |
 | Autocomplete select | `AutocompleteSelect` / `.autocomplete-select*` | typeahead single-select |
 | Status control | `StatusSelect` / `StatusPill` / `.status-select` | editable pill-select and shared read-only pill, including built-in DataTable status cells; tone-colored via `--report-status-*` |
+| Evidence meters | `StatusAxisRollup` (`features/project_document/StatusVocabulary`) | the three Spec./Datasheet/Site-Photo meters, wherever documentation progress is shown. Green at complete, amber count at zero, empty track when the axis tracks nothing. Pass `linkFor` to make each meter a deep link (Overview) or omit it to render in place (Documentation) — that one prop is the *only* sanctioned difference between surfaces. Consumers size their meter column from `--status-rollup-min` |
 | Menus | `.app-menu*` / `.account-menu*` / `.catalog-menu*` | topbar dropdown menus |
 | Forms | `.auth-form`, `.project-form`, `.settings-*`, `.form-error/-note` | labeled field stacks + validation |
 | Modal | `ModalDialog` / `DialogActions`; `.modal-backdrop/-panel/-header` | dialogs |
@@ -308,7 +310,17 @@ the spec to reproduce.
    `letter-spacing`, `line-height` take only `--font-*` / `--fs-*` / `--fw-*`
    / `--tracking-*` / `--lh-*` (or `inherit`). No px/em/rem/`calc()`/`clamp()`
    size literals; `font:` shorthand banned (except `font: inherit`). Zero-debt,
-   enforced by `check:typography` + `make typography-eval` (29-variant ceiling).
+   enforced by `check:typography` + `make typography-eval`.
+   **`check:typography` cannot see the bug you are most likely to ship.** It
+   audits declarations that exist; the common failure is a declaration that
+   does *not* — an element with no `font-size` inherits the 16px document
+   default, larger than anything this dense app renders, and the source guard
+   stays green. Only the rendered sweep catches it. Two habits follow: give a
+   dense container an explicit type floor (`.documentation-record`,
+   `.documentation-progress`) so a forgotten size lands somewhere sane, and
+   remember the sweep only sees what a state actually renders — the Overview
+   group rows hid a 16px fall-through for months because the only Overview
+   state in the manifest was the *collapsed* one.
 3. **Reuse first.** Need a button/chip/menu/modal/table? It exists — use the
    class or the `shared/ui` component. Don't reinvent.
 3b. **States are reuse too.** Hover / selected / armed / focus come from
@@ -403,7 +415,15 @@ stylesheet split plan, the full guard list): **`frontend/src/styles/README.md`**
 zero-debt) · `check:interaction-states` (hover/selected/armed rules paint from
 the state tokens; baselined debt only) · `check:sizes` (≤500 lines) ·
 `check:shape` (feature file shape).
-Plus `make typography-eval` — the rendered 22-state computed-style sweep.
+Plus `make typography-eval` — the rendered 23-state computed-style sweep, and
+its own GitHub workflow rather than part of `make ci`. Adding a state to
+`frontend/scripts/font-audit-states.mjs` both sweeps and enforces it; add one
+whenever UI only exists in a disclosed/expanded state. Its `variantCeiling` is
+a ratchet: lower it as consolidation lands, never raise it to bless drift. A
+ceiling held open for *pre-existing* drift carries a `$knownFailure` note in
+`typography-rendered-contract.json`, which the evaluator prints on every run so
+it cannot go quiet — as of 2026-08-16 it is held at 30 pending removal of the
+30th variant.
 
 ## Related docs
 

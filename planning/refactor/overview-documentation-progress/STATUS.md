@@ -63,6 +63,29 @@ All nine items are implemented on the branch. Merge is Ed's call.
   after adding a state that expands a section — the collapsed `project-overview`
   state never rendered the group rows.
 
+## Deferred follow-ups (raised by the `/simplify` pass, deliberately not done)
+
+1. **Promote a shared open-owner link.** The hover-revealed `ExternalLink`
+   pattern now exists three times: `documentation-record-open-owner`, the
+   ReportTable row action, and `documentation-progress-open` — and they already
+   differ (transition token, and only the newest has the `(hover: none)` touch
+   fallback). It wants one `shared/ui` component plus a `DESIGN_SYSTEM.md`
+   inventory entry, which is its own change across three features.
+2. **Let the backend own the section path.** `sectionDestination()` derives a
+   route from the section key on the frontend. The backend already resolves
+   `table_path` from a template for individual records and already emits the
+   hyphenated `section_anchor`, so a `section_path` field would put the route on
+   the same side of the wire as every other documentation route and turn the
+   fallback into a backend decision. Frontend-side derivation is safe today —
+   it goes through `projectTabPath` and falls back rather than 404ing.
+3. **Retire the amber mixes in `envelope.css` / `climate-workspace.css`.** They
+   use amber at different, stronger percentages for filled surfaces rather than
+   the panel trio, so they are a separate recipe rather than a fourth copy —
+   but they should still be resolved into tokens.
+4. **`DocumentationAxisCounts` alias.** Kept deliberately: the alias preserves
+   the backend Pydantic model's name at the wire boundary while the shared
+   type carries the vocabulary-module name.
+
 ## Open debt
 
 ### typography-eval ceiling (owed, not caused here)
@@ -76,11 +99,15 @@ and the `button` role budget down 18 → 17.
 
 `variantCeiling` is temporarily held at **30** with a `$knownFailure` key in
 `frontend/scripts/typography-rendered-contract.json` so the check still fails
-on a 31st variant while this refactor is in flight. **Owed:** find the 30th
-variant, remove it, restore the ceiling to 29, delete the `$knownFailure` key.
+on a 31st variant while this refactor is in flight. `font-audit-eval.mjs` now
+prints that note on every run — a ceiling held open for known drift must not be
+able to go quiet, which is how 29 went stale in the first place.
 
-Note `typography-eval` is its own GitHub workflow, not part of `make ci` —
-which is likely how the drift went unnoticed.
+**Owed:** find the 30th variant, remove it, restore the ceiling to 29, delete
+the `$knownFailure` key.
+
+Root cause worth fixing separately: `typography-eval` is its own GitHub
+workflow, not part of `make ci`, so ratchet staleness accumulates unseen.
 
 ## Verification
 
@@ -89,4 +116,9 @@ which is likely how the drift went unnoticed.
 - Browser checks via `frontend/scripts/agent-browser.mjs` against the
   `PHN V2 Starter Project` fixture (`49855ee4-…`), which unlike the
   `AGENT-BROWSER` fixture has four populated sections
-- Computed-style probe: `frontend/working/probe-fonts.mjs` (gitignored)
+- Computed-style probe: `frontend/working/probe-fonts.mjs`, interaction-state
+  probe `probe-states.mjs`, navigation probe `probe-nav.mjs` (all gitignored
+  scratch; the durable equivalents are the component tests and
+  `make typography-eval`)
+- `/simplify` (4 agents) applied; `make typography-eval` green at the held
+  ceiling; full frontend suite 2447 passing

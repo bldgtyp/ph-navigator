@@ -78,6 +78,7 @@ Source of truth is `styles/tokens.css` (+ `styles/brand/tokens.css`). Intent:
 | **Semantic** | `--phn-success/-warning/-danger` (+ `-bg`), `--phn-focus`, `--text-on-accent`, `--phn-control-height` | status, focus rings, control sizing |
 | **Charts** | `--chart-axis/-grid`, `--chart-1 … --chart-5` | recharts series (climate graphs) |
 | **Status controls** | `--report-status-needed/-question/-complete/-na` | shared `StatusSelect` / `StatusPill` tones; non-status warnings use `--attention-amber` |
+| **Attention amber** | `--attention-amber` + `-bg` / `-border` / `-text` | the amber panel trio (write-error banner, Overview attention chip). Use the tokens; do not `color-mix()` amber in a feature sheet |
 | **Scrim / overlay** | `--scrim`, `--scrim-slate`, `--surface-black-5`, `--text-on-swatch-muted` | backdrops, subtle black overlays, swatch text |
 | **Data table** | `--data-table-*` sizing + linked-record bg + the `--data-table-tint-*` axis-tint cascade | the DataTable grid |
 | **Info tooltip** | `--info-tooltip-bg/-fg` | shared `<InfoTooltip>` |
