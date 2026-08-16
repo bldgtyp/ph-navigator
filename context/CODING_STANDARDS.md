@@ -485,7 +485,7 @@ Current enforced controls live under `frontend/scripts/`, wired into
   (`scripts/typography-baseline.json`) is empty — the guard runs in
   zero-debt mode and any literal fails CI; never refresh the baseline to
   bless new debt. The rendered counterpart (`make typography-eval`,
-  scheduled/manual `typography-eval.yml` workflow) evaluates the 22-state
+  scheduled/manual `typography-eval.yml` workflow) evaluates the 25-state
   computed-style sweep against
   `frontend/scripts/typography-rendered-contract.json`. Rules and the
   exception registry are documented in `frontend/src/styles/README.md`.

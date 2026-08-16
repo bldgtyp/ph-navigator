@@ -17,13 +17,21 @@
   width: calc(100% - 2 * clamp(var(--space-12), 2vw, var(--space-24)));
   max-width: 1480px;
   min-height: 620px;
-  max-height: calc(100vh - 180px);
   margin: var(--space-20) auto var(--space-32);
   padding: var(--space-14);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
   box-shadow: var(--shadow-workspace-shell);
+}
+
+/* The Builder is a fixed workspace — its sidebar and canvas scroll inside the
+   card — so it is clamped to the viewport. The report sub-tabs are documents
+   that grow with their content and let the page scroll, the same shell shape
+   as `.envelope-body`; clamping them left the content spilling out below the
+   card. */
+.apertures-body--workspace {
+  max-height: calc(100vh - 180px);
 }
 
 .apertures-page__header {

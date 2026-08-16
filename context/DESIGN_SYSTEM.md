@@ -286,7 +286,7 @@ the spec to reproduce.
 | Modal | `ModalDialog` / `DialogActions`; `.modal-backdrop/-panel/-header` | dialogs |
 | Card panel | panels.css recipe (`.auth-panel`, `.status-*`, `.project-list`, …) | bordered card surfaces + blueprint-grid deco |
 | **DataTable** | `shared/ui/data-table` (`<DataTable>`) | the flagship grid — dense, uniform, axis-tinted filter/sort/group |
-| Report table | `shared/ui/report-table` (`report-status-chip`) | status-dot / status-chip report grids |
+| Report table | `shared/ui/report-table` (`report-status-chip`) | status-dot / status-chip report grids. Column **headers use the DataTable's recipe** (`--font-mono`, `--fs-xs`, semibold, uppercase + caps tracking) — one spelling of "table header" app-wide; body cells are `--data-table-font-size` at regular weight, the primary column included. The table is its own horizontal scrollport, and freezes the expand gutter + primary column so a sideways-scrolled row keeps its identity — never wrap it in an outer `overflow-x` div, which cannot help because the clipping happens inside |
 | Hover tooltip | `<Tooltip>` (`shared/ui/tooltip`) | the standard hover/focus hint on a control — dark bubble, `TOOLTIP_HOVER_DELAY.medium/long`, `placement`. Prefer it over a native `title`. A **disabled** button fires no pointer events, so wrap it in an inline-flex span, put the tooltip on the span, and set `pointer-events: none` on the disabled button — otherwise the state that most needs explaining ("why is this greyed out?") is the one with no hint |
 | Canvas hint | `[data-toolbar-tooltip]` (`shared/ui/canvas/canvas-hint-tooltip.css`) | pure-CSS label for drawing-tool toolbar buttons |
 | Info tooltip | `<InfoTooltip>` (ⓘ) | multi-line hover help behind a small ⓘ trigger (U-Value chip, assembly thermal header, status vocabulary). Renders *through* `<Tooltip>`, so it is portalled and collision-aware — an absolutely-positioned panel gets clipped by the first scrolling ancestor |
@@ -320,7 +320,11 @@ the spec to reproduce.
    `.documentation-progress`) so a forgotten size lands somewhere sane, and
    remember the sweep only sees what a state actually renders — the Overview
    group rows hid a 16px fall-through for months because the only Overview
-   state in the manifest was the *collapsed* one.
+   state in the manifest was the *collapsed* one, and the Apertures **sub-tabs**
+   were absent from the manifest entirely, which is how the U-Values section
+   headings kept rendering at the browser's default 18.72px/700. A route that
+   no state visits is a route with no typography contract at all; Glazings,
+   Frames and Installs are still unvisited.
 3. **Reuse first.** Need a button/chip/menu/modal/table? It exists — use the
    class or the `shared/ui` component. Don't reinvent.
 3b. **States are reuse too.** Hover / selected / armed / focus come from
@@ -423,7 +427,9 @@ a ratchet: lower it as consolidation lands, never raise it to bless drift. A
 ceiling held open for *pre-existing* drift carries a `$knownFailure` note in
 `typography-rendered-contract.json`, which the evaluator prints on every run so
 it cannot go quiet — as of 2026-08-16 it is held at 30 pending removal of the
-30th variant.
+30th variant, measured over **25** states (the two Apertures U-Values states
+were added that day; adding them exposed three previously-unswept `ReportTable`
+variants, all consolidated away rather than admitted, so the count held).
 
 ## Related docs
 

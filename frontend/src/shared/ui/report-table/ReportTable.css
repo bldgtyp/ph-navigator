@@ -3,13 +3,43 @@
    Distinct from <DataTable> (the AirTable-style data-entry grid). */
 
 .report-table {
+  --report-table-gutter: 28px;
+  /* Opaque on purpose: the frozen identity lane repaints this while scrolled
+     cells pass underneath, so a translucent value would let them show through.
+     Same rendered color as before — the old translucent mix over this table's
+     own card surface. */
+  --report-table-row-hover-bg: color-mix(in oklab, var(--accent) 4%, var(--bg-card));
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   display: grid;
   font-family: var(--font-primary);
   font-size: var(--data-table-font-size);
-  overflow: hidden;
+  /* The table itself is the horizontal scrollport (same wrap/scroll shape as
+     `.data-table-wrap` / `.data-table-scroll`): head and body are siblings in
+     it, so they scroll in lockstep. `hidden` alone clipped columns off the
+     right with no way to reach them — an outer `overflow-x: auto` wrapper
+     cannot help, because the clipping happened in here first. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Deliberately NOT `scrollbar-width: thin` — setting it makes Blink ignore the
+   `::-webkit-scrollbar` rules below and fall back to the platform's *overlay*
+   scrollbar, which is invisible until you already know to scroll. A read-only
+   report has no other cue that columns continue to the right, so the classic
+   always-visible track is the affordance. */
+.report-table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.report-table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.report-table::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--text-muted) 42%, transparent);
 }
 
 .report-table__head,
@@ -19,11 +49,21 @@
   align-items: center;
   column-gap: var(--space-12);
   padding: 0 var(--space-14);
+  /* Fill for the frozen lane; the row's state rules re-point it. */
+  --report-table-frozen-bg: var(--bg-card);
+  /* Floor each row at the sum of its fixed column widths so wide tables
+     scroll. `min-content` (not `max-content`) keeps flexible `1fr` columns
+     ellipsizing as before — a table whose columns fit never scrolls. */
+  min-width: min-content;
 }
 
+/* Same recipe as the DataTable's column headers (`--font-mono`, `--fs-xs`,
+   semibold, uppercase + caps tracking). It was identical except for the
+   family, which gave the app two spellings of one role. */
 .report-table__head {
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-secondary);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-caps);
@@ -31,17 +71,15 @@
   text-transform: uppercase;
 }
 
+/* Text reads from the left, numbers align on the right. Right-aligning a name
+   column against its neighbouring numbers gave every text value a different
+   starting edge, so nothing scanned vertically. */
 .report-table__head-cell {
-  align-items: flex-end;
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
   gap: 1px;
   line-height: var(--lh-heading);
-  text-align: right;
-}
-
-.report-table__head-cell--primary {
-  align-items: flex-start;
   text-align: left;
 }
 
@@ -50,10 +88,11 @@
   text-align: right;
 }
 
+/* The unit sub-label under a column header — same treatment as the DataTable's. */
 .report-table__head-unit {
   color: var(--text-muted, var(--text-secondary));
   font-size: var(--fs-2xs);
-  font-weight: var(--fw-regular);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-normal);
   text-transform: none;
 }
@@ -79,7 +118,49 @@
 
 .report-table__row--expandable:hover,
 .report-table__row--expanded {
-  background: color-mix(in oklab, var(--accent) 4%, transparent);
+  background: var(--report-table-row-hover-bg);
+  --report-table-frozen-bg: var(--report-table-row-hover-bg);
+}
+
+/* Frozen identity lane. A wide report scrolls sideways (see `.report-table`),
+   and a row of bare numbers whose name has scrolled away is unreadable, so the
+   expand gutter and the primary column pin to the left edge — the same
+   sticky-gutter + frozen-cell shape as the DataTable. The band's fill is what
+   hides the cells travelling underneath, so it must be opaque and it must
+   follow the row's own state. */
+.report-table__head-gutter,
+.report-table__head-cell--primary,
+.report-table__chevron,
+.report-table__cell--primary {
+  position: sticky;
+  z-index: var(--z-base-elevated);
+  background: var(--report-table-frozen-bg);
+}
+
+/* Full-track, full-height so the band has no seams; the two offset shadows
+   extend the fill across the row's left padding and the column gap either
+   side of the gutter. Offset shadows, not a negative margin: sticky pins the
+   *margin* box, so a negative margin makes the cell mis-pin. */
+.report-table__head-gutter,
+.report-table__chevron {
+  left: 0;
+  align-self: stretch;
+  width: auto;
+  height: auto;
+  box-shadow:
+    calc(-1 * var(--space-14)) 0 0 0 var(--report-table-frozen-bg),
+    var(--space-12) 0 0 0 var(--report-table-frozen-bg);
+}
+
+.report-table__head-cell--primary,
+.report-table__cell--primary {
+  left: 0;
+}
+
+/* With an expand gutter the primary column pins after it, plus the column gap. */
+.report-table--expandable .report-table__head-cell--primary,
+.report-table--expandable .report-table__cell--primary {
+  left: calc(var(--report-table-gutter) + var(--space-12));
 }
 
 /* Expanded row + its expansion panel read as one framed unit: a 2px accent
@@ -105,7 +186,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  justify-content: flex-end;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.report-table__cell-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -114,12 +201,14 @@
 
 .report-table__cell--numeric {
   font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
 }
 
+/* Weight matches every other body cell, here and in the DataTable — semibold
+   was this component's alone. The identity column reads by position: leftmost,
+   and frozen when the table scrolls. */
 .report-table__cell--primary {
   color: var(--text-primary);
-  font-weight: var(--fw-semibold);
-  justify-content: flex-start;
 }
 
 .report-table__row-action {
@@ -138,9 +227,10 @@
   pointer-events: auto;
 }
 
+/* Sizing and fill come from the frozen-lane rules above — the button spans its
+   whole gutter track so the pinned band has no seams. */
 .report-table__chevron {
   appearance: none;
-  background: transparent;
   border: 0;
   border-radius: var(--radius-xs);
   color: var(--text-secondary);
@@ -148,15 +238,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
-  width: 24px;
   padding: 0;
-  transition: transform 0.16s var(--ease, ease-out);
 }
 
+/* Collapsed/expanded is an icon swap (ChevronRight → ChevronDown), matching the
+   Overview and Documentation accordions — not a rotated glyph. */
 .report-table__chevron[aria-expanded="true"] {
   color: var(--text-primary);
-  transform: rotate(90deg);
 }
 
 .report-table__expansion {
@@ -164,6 +252,22 @@
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent);
   padding: 14px 22px 18px;
+  /* Share the rows' scrollport rather than opening a second, nested one: an
+     expansion wider than the viewport widens this table's scroll instead. */
+  min-width: min-content;
+}
+
+/* A report table nested in an expansion (the U-Values per-edge breakdown) must
+   therefore not open its own scrollport or freeze its own lane: nested sticky
+   resolves against the outer scrollport, which parks the frozen column over
+   the start of the next one. It scrolls with its parent instead. */
+.report-table__expansion .report-table {
+  overflow: visible;
+}
+
+.report-table__expansion .report-table__head-cell--primary,
+.report-table__expansion .report-table__cell--primary {
+  position: static;
 }
 
 /* Status filter chips (top-of-page filter row) */

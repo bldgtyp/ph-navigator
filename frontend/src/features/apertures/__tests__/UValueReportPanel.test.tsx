@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UValueReportPanel } from "../components/UValueReportPanel";
-import { formatWindowUValue } from "../format-u-value";
+
 import type { ApertureUValueReport } from "../hooks/useApertureUValueReport";
 
 let unitSystem: "SI" | "IP" = "SI";
@@ -26,13 +26,17 @@ describe("UValueReportPanel", () => {
     unitSystem = "SI";
   });
 
-  it("renders sections, chip-parity footer, unfinished treatment, and four edges", () => {
+  it("renders sections, summary-parity footer, unfinished treatment, and four edges", () => {
     const report = makeReport();
     renderPanel(report);
 
     expect(screen.getAllByText("Synthetic Window").length).toBeGreaterThan(0);
-    const footer = screen.getByText(formatWindowUValue(1.2, "si"));
-    expect(footer).toHaveTextContent("Window U-Value: 1.20 W/m²K");
+    // The footer restates the aperture's summary row, so it must print the
+    // same number at the same precision as the U-w column, not the Builder
+    // chip's 2dp rounding.
+    expect(screen.getByText(/^U-w:/)).toHaveTextContent("U-w: 1.2 W/m2-K");
+    expect(screen.getByText(/^Total area:/)).toHaveTextContent("Total area: 2.2 m2");
+    expect(screen.getByText("2 glazed elements · 1 Empty panel excluded")).toBeVisible();
     expect(screen.getByText("Includes 1 element needing attention as U = 0.")).toBeVisible();
     const unfinishedRow = screen.getByText("Unfinished Element").closest('[role="row"]');
     expect(unfinishedRow).not.toBeNull();
@@ -64,8 +68,8 @@ describe("UValueReportPanel", () => {
     );
 
     expect(screen.getAllByText("Btu/(h-ft2-F)").length).toBeGreaterThan(0);
-    expect(screen.getByText(formatWindowUValue(1.2, "ip"))).toBeVisible();
-    expect(screen.getAllByText("ft²").length).toBeGreaterThan(0);
+    expect(screen.getByText(/^U-w:/)).toHaveTextContent("U-w: 0.211 Btu/(h-ft2-F)");
+    expect(screen.getAllByText("ft2").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0.211").length).toBeGreaterThan(0);
     expect(screen.getByText("1.159")).toBeVisible();
   });
@@ -191,8 +195,8 @@ function makeReport(): ApertureUValueReport {
         name: "Synthetic Window",
         overall_width_m: 2.2,
         overall_height_m: 1,
-        element_count: 2,
-        void_count: 0,
+        element_count: 3,
+        void_count: 1,
         unfinished_count: 1,
         total_area_m2: 2.2,
         window_u_value_w_m2k: 1.2,

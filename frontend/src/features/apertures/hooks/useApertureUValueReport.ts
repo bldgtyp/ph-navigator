@@ -51,6 +51,7 @@ export type ApertureUValueReportSection = {
   name: string;
   overall_width_m: number;
   overall_height_m: number;
+  /** Every element in the grid, Empty panels included — NOT `elements.length`. */
   element_count: number;
   void_count: number;
   unfinished_count: number;

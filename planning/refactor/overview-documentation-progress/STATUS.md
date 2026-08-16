@@ -125,6 +125,26 @@ able to go quiet, which is how 29 went stale in the first place.
 **Owed:** find the 30th variant, remove it, restore the ceiling to 29, delete
 the `$knownFailure` key.
 
+**Still owed, but the measurement moved (2026-08-16, Apertures U-Values work).**
+The sweep now covers **25** states, not 23: `project-apertures-u-values` and
+`project-apertures-u-values-edges` were added, because the Apertures sub-tabs
+had no coverage at all — which is how that page's section headings kept
+rendering at the browser default 18.72px/700. Adding them exposed three
+variants the sweep had never seen, all belonging to the shared `ReportTable`,
+and all three were consolidated away rather than admitted:
+
+- report-table column headers were sans at `--fs-xs`/semibold/uppercase —
+  identical to the DataTable's header except for the family. Now `--font-mono`,
+  so the app has one spelling of "table header".
+- the header unit sub-label took the DataTable's weight for the same reason.
+- `.report-table__cell--primary` was the app's only 13px/semibold; body cells
+  are regular weight everywhere else, DataTable included. Dropped.
+
+Net: still exactly 30, so the ceiling holds and the owed item stands — but do
+not go looking for "the 30th variant" against the old 23-state numbers. Whoever
+takes this next should also add the remaining unswept report routes (Glazings,
+Frames, Installs); a route no state visits has no typography contract at all.
+
 Root cause worth fixing separately: `typography-eval` is its own GitHub
 workflow, not part of `make ci`, so ratchet staleness accumulates unseen.
 

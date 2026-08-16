@@ -4,6 +4,20 @@ export function lengthUnitLabel(unitSystem: UnitSystem): string {
   return unitSystem === "IP" ? "in" : "mm";
 }
 
+// These label a *column* whose cells are printed by the matching
+// `lib/units` formatter, so they must spell the unit the way that formatter
+// does — not the way `numberUnits.ts`'s registry does. The two already
+// disagree: the registry's IP heat-flow is `Btu/hr-F`, while
+// `formatHeatFlowFromWK` emits `Btu/(h-F)`. Reading the registry here would
+// put one spelling in the header and another in every cell beneath it.
+export function areaUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "ft2" : "m2";
+}
+
+export function heatFlowUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "Btu/(h-F)" : "W/K";
+}
+
 export function uValueUnitLabel(unitSystem: UnitSystem): string {
   return unitSystem === "IP" ? "Btu/(h-ft2-F)" : "W/m2-K";
 }

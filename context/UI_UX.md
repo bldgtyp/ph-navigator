@@ -171,9 +171,9 @@ CI) keeps the token system honest:
   deliberate `inherit`; the `font:` shorthand is banned except
   `font: inherit`. The debt baseline is **empty** (zero-debt mode since
   the 2026-07 consolidation) — any literal fails CI. The rendered
-  counterpart, `make typography-eval`, sweeps 22 page/modal states and
+  counterpart, `make typography-eval`, sweeps 25 page/modal states and
   asserts the computed-style contract (two families, 0.05em caps
-  tracking, role budgets, 29-variant ceiling) on a scheduled/manual
+  tracking, role budgets, 30-variant ceiling) on a scheduled/manual
   GitHub Actions workflow. Roles, exceptions, and the full authoring
   rules live in `frontend/src/styles/README.md`.
 

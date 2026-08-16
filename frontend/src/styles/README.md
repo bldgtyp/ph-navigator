@@ -126,11 +126,12 @@ migration baseline (`scripts/typography-baseline.json`) was emptied when the
 literal now fails CI directly. (`--update-baseline` exists only for a future
 deliberate migration; never use it to bless new debt.)
 
-The rendered half of the control is `make typography-eval`: a 22-state
+The rendered half of the control is `make typography-eval`: a 25-state
 computed-style sweep evaluated against
 `scripts/typography-rendered-contract.json` (families, weights, tracking,
-token-mapped sizes, role budgets, modal-role reuse, 29-variant ceiling —
-down from the 55-variant 2026-07-17 audit baseline). It runs on a scheduled/
+token-mapped sizes, role budgets, modal-role reuse, 30-variant ceiling —
+down from the 55-variant 2026-07-17 audit baseline; the ceiling is held at 30
+with a `$knownFailure` note, see that file). It runs on a scheduled/
 manual GitHub Actions workflow (`typography-eval.yml`) and is the required
 local closeout gate for typography-affecting work.
 
