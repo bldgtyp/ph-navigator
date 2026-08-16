@@ -33,16 +33,21 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
     });
   };
 
-  const heading = (
+  // Attention lives in a heading, right-aligned, and only when there is work
+  // left — one rule for the pane and every card in it.
+  const heading = (attention = 0) => (
     <div className="status-heading status-pane-heading">
       <h2 id="documentation-progress-title">Documentation progress</h2>
-      <StatusLegend />
+      <div className="documentation-progress-heading-status">
+        <AttentionCount count={attention} />
+        <StatusLegend />
+      </div>
     </div>
   );
   if (!project.active_version_id) {
     return (
       <section className="documentation-progress">
-        {heading}
+        {heading()}
         <p className="status-section-empty">Create a project version to track documentation.</p>
       </section>
     );
@@ -51,7 +56,7 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   if (query.isError || !query.data) {
     return (
       <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-        {heading}
+        {heading()}
         <div className="status-section-error" role="alert">
           <p>{errorMessage(query.error, "Could not load documentation progress.")}</p>
           <button type="button" className="secondary-button" onClick={() => void query.refetch()}>
@@ -63,9 +68,9 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
   }
   return (
     <section className="documentation-progress" aria-labelledby="documentation-progress-title">
-      {heading}
+      {heading(unresolvedCount(query.data.counts))}
       <div className="documentation-progress-total">
-        <MeterRow projectId={project.id} counts={query.data.counts} />
+        <AxisMeters projectId={project.id} counts={query.data.counts} />
       </div>
       <div className="documentation-progress-sections">
         {query.data.sections.map((section) => (
@@ -115,8 +120,9 @@ function SectionRow({
           anchor={section.anchor}
           title={section.title}
         />
+        <AttentionCount count={unresolvedCount(section.counts)} />
       </div>
-      <MeterRow projectId={projectId} anchor={section.anchor} counts={section.counts} />
+      <AxisMeters projectId={projectId} anchor={section.anchor} counts={section.counts} />
       {expanded ? (
         <div className="documentation-progress-groups" id={groupsId}>
           {section.groups.map((group) => (
@@ -137,7 +143,7 @@ function GroupRow({ projectId, group }: { projectId: string; group: Documentatio
       >
         {group.title}
       </Link>
-      <MeterRow projectId={projectId} anchor={group.anchor} counts={group.counts} />
+      <AxisMeters projectId={projectId} anchor={group.anchor} counts={group.counts} />
     </div>
   );
 }
@@ -168,7 +174,7 @@ function OpenInDocumentationLink({
   );
 }
 
-function MeterRow({
+function AxisMeters({
   projectId,
   anchor,
   counts,
@@ -177,19 +183,19 @@ function MeterRow({
   anchor?: string;
   counts: StatusAxisCounts;
 }) {
-  const attention = unresolvedCount(counts);
   const hash = anchor ? `#${anchor}` : "";
   return (
-    <div className="documentation-progress-meters">
-      <StatusAxisRollup
-        counts={counts}
-        linkFor={(axis) => `/projects/${projectId}/documentation?needs=${axis}${hash}`}
-      />
-      {attention > 0 ? (
-        <span className="documentation-progress-attention">{needAttentionLabel(attention)}</span>
-      ) : null}
-    </div>
+    <StatusAxisRollup
+      counts={counts}
+      linkFor={(axis) => `/projects/${projectId}/documentation?needs=${axis}${hash}`}
+    />
   );
+}
+
+/** Nothing at all when the work is done — silence is the "complete" state. */
+function AttentionCount({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return <span className="documentation-progress-attention">{needAttentionLabel(count)}</span>;
 }
 
 function unresolvedCount(counts: StatusAxisCounts): number {
