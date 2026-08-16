@@ -280,7 +280,7 @@ the spec to reproduce.
 | Empty state | `.empty-state` | zero-data placeholder w/ heading + copy |
 | Autocomplete select | `AutocompleteSelect` / `.autocomplete-select*` | typeahead single-select |
 | Status control | `StatusSelect` / `StatusPill` / `.status-select` | editable pill-select and shared read-only pill, including built-in DataTable status cells; tone-colored via `--report-status-*` |
-| Evidence meters | `StatusAxisRollup` (`features/project_document/StatusVocabulary`) | the three Spec./Datasheet/Site-Photo meters, wherever documentation progress is shown. Green at complete, amber count at zero, empty track when the axis tracks nothing. Pass `linkFor` to make each meter a deep link (Overview) or omit it to render in place (Documentation) — that one prop is the *only* sanctioned difference between surfaces. Consumers size their meter column from `--status-rollup-min` |
+| Evidence meters | `StatusAxisRollup` (`features/project_document/StatusVocabulary`) | the three Spec./Datasheet/Site-Photo meters, wherever documentation progress is shown. Green at complete, amber count at zero, empty track when the axis tracks nothing. Two sanctioned variations and no others: `linkFor` makes each meter a deep link (Overview) vs. rendering in place (Documentation), and `plain` drops the meter's chip surface for a rollup sitting directly on the page ground rather than on a card or tinted body. Consumers size their meter column from `--status-rollup-min` |
 | Menus | `.app-menu*` / `.account-menu*` / `.catalog-menu*` | topbar dropdown menus |
 | Forms | `.auth-form`, `.project-form`, `.settings-*`, `.form-error/-note` | labeled field stacks + validation |
 | Modal | `ModalDialog` / `DialogActions`; `.modal-backdrop/-panel/-header` | dialogs |

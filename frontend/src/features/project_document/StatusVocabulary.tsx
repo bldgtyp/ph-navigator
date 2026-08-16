@@ -66,19 +66,26 @@ const ROLLUP_AXES = [
  * The three evidence meters, in canonical axis order.
  *
  * One component serves both surfaces: Documentation renders it in place, and
- * Overview passes `linkFor` to turn each meter into a drill-in deep link. That
- * is the only difference between the two — a meter must not look or count
- * differently depending on which page you are reading it from.
+ * Overview passes `linkFor` to turn each meter into a drill-in deep link. A
+ * meter must not look or count differently depending on which page you are
+ * reading it from.
+ *
+ * `plain` drops the meter's own surface. Each meter is normally a chip lifted
+ * off a card or a tinted body; set this when the rollup sits directly on the
+ * page ground, where that white box has nothing to lift off and reads as a
+ * floating panel instead.
  */
 export function StatusAxisRollup({
   counts,
   linkFor,
+  plain = false,
 }: {
   counts: StatusAxisCounts;
   linkFor?: (axis: DocumentationStatusAxis) => string;
+  plain?: boolean;
 }) {
   return (
-    <div className="status-axis-rollup">
+    <div className={`status-axis-rollup${plain ? " status-axis-rollup--plain" : ""}`}>
       {ROLLUP_AXES.map(({ axis, done, total }) => (
         <StatusAxisMeter
           key={axis}

@@ -57,6 +57,13 @@
   padding: var(--space-6);
 }
 
+/* Directly on the page ground the chip surface has nothing to lift off, so it
+   reads as a floating panel. Padding stays, so the meters still line up with
+   the card contents below them. */
+.status-axis-rollup--plain .status-axis-meter {
+  background: transparent;
+}
+
 .status-axis-meter-copy {
   display: flex;
   gap: var(--space-4);

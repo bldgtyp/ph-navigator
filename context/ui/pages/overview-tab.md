@@ -28,10 +28,14 @@ saved version. Empty sections and groups are omitted.
 **Meters.** The three evidence meters come from the shared `StatusAxisRollup`
 (`features/project_document/StatusVocabulary.tsx`) — the same component the
 Documentation page renders, so a meter never looks or counts differently
-depending on which page you read it from. Its optional `linkFor` prop is the
-only sanctioned variation: supply it and each meter becomes a deep link, omit
-it and the meter renders in place. Overview supplies it for project totals and
-section meters; Documentation and Overview's group rows omit it.
+depending on which page you read it from. It takes exactly two variations:
+`linkFor` (supply it and each meter becomes a deep link; omit it and the meter
+renders in place — Overview supplies it for project totals and section meters,
+Documentation and Overview's group rows omit it) and `plain` (drops the meter's
+chip surface). Project totals set `plain` because they sit on the page ground,
+where the chip's white background has nothing to lift off and reads as a
+floating panel; padding is unchanged so they still align with the card contents
+below.
 
 - `Spec. Status {done}/{total}` → `?needs=spec#{anchor}`;
 - `Datasheets {done}/{total}` → `?needs=datasheet#{anchor}`;

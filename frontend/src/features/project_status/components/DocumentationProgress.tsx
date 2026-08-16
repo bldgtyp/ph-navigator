@@ -67,7 +67,7 @@ function DocumentationProgressForProject({ project }: { project: ProjectDetail }
     return (
       <>
         <div className="documentation-progress-total">
-          <AxisMeters projectId={project.id} counts={rollup.counts} />
+          <AxisMeters projectId={project.id} counts={rollup.counts} plain />
         </div>
         <div className="documentation-progress-sections">
           {rollup.sections.map((section) => (
@@ -219,15 +219,18 @@ function AxisMeters({
   projectId,
   anchor,
   counts,
+  plain,
 }: {
   projectId: string;
   anchor?: string;
   counts: StatusAxisCounts;
+  plain?: boolean;
 }) {
   const hash = anchor ? `#${anchor}` : "";
   return (
     <StatusAxisRollup
       counts={counts}
+      plain={plain}
       linkFor={(axis) => `/projects/${projectId}/documentation?needs=${axis}${hash}`}
     />
   );
