@@ -106,8 +106,8 @@ reorder controls.
 - The pane heading renders in every state — loading, error, empty and loaded —
   so data landing never shifts the layout.
 - Every control in the pane carries a hover **and** a keyboard-focus state from
-  `context/DESIGN_SYSTEM.md` § Interaction states. `frontend/working/` holds
-  throwaway probes for checking this; the durable checks are the component
-  tests plus `make typography-eval`, whose
+  `context/DESIGN_SYSTEM.md` § Interaction states — verify by reading computed
+  style at rest, hover and focus, not by eye. The durable checks are the
+  component tests plus `make typography-eval`, whose
   `project-overview-documentation-groups` state exists specifically to sweep
   the disclosed group rows.

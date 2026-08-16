@@ -135,9 +135,11 @@ workflow, not part of `make ci`, so ratchet staleness accumulates unseen.
 - Browser checks via `frontend/scripts/agent-browser.mjs` against the
   `PHN V2 Starter Project` fixture (`49855ee4-…`), which unlike the
   `AGENT-BROWSER` fixture has four populated sections
-- Computed-style probe: `frontend/working/probe-fonts.mjs`, interaction-state
-  probe `probe-states.mjs`, navigation probe `probe-nav.mjs` (all gitignored
-  scratch; the durable equivalents are the component tests and
-  `make typography-eval`)
+- Throwaway Playwright probes (since deleted) read computed styles at rest /
+  hover / focus, and followed each section-header icon to see where it really
+  landed. They are not worth keeping — the durable equivalents are the
+  component tests and `make typography-eval`. If you need them again, they were
+  ~40 lines each: sign in, navigate, `getComputedStyle` the selectors you care
+  about, print a table.
 - `/simplify` (4 agents) applied; `make typography-eval` green at the held
   ceiling; full frontend suite 2447 passing
