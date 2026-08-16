@@ -38,9 +38,10 @@ test("renders counts-only section meters and disclosed group links", async () =>
     "/projects/proj_1/documentation?needs=spec#equipment",
   ]);
   expect(screen.getAllByText("3 of 6 need attention")[0]).toBeVisible();
-  expect(screen.getByRole("link", { name: "Open in Documentation - Equipment" })).toHaveAttribute(
+  // The header opens the section's own tab; the meters open the evidence.
+  expect(screen.getByRole("link", { name: "Open Equipment" })).toHaveAttribute(
     "href",
-    "/projects/proj_1/documentation#equipment",
+    "/projects/proj_1/equipment",
   );
   await user.click(screen.getByRole("button", { name: "Equipment" }));
   expect(screen.getByRole("link", { name: "Pumps" })).toHaveAttribute(
@@ -48,6 +49,32 @@ test("renders counts-only section meters and disclosed group links", async () =>
     "/projects/proj_1/documentation#pumps",
   );
   expect(sessionStorage.getItem("phn:overview-documentation-groups:proj_1")).toBe('["equipment"]');
+});
+
+test.each([
+  ["apertures", "Open Apertures", "/projects/proj_1/apertures"],
+  ["envelope", "Open Envelope", "/projects/proj_1/envelope"],
+  ["thermal_bridges", "Open Thermal Bridges", "/projects/proj_1/thermal-bridges"],
+  // No such tab — fall back to Documentation rather than route to a 404.
+  [
+    "invented_section",
+    "Open in Documentation - Equipment",
+    "/projects/proj_1/documentation#equipment",
+  ],
+])("section %s header opens %s", async (key, label, href) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      const fixture = rollupFixture();
+      return new Response(
+        JSON.stringify({ ...fixture, sections: [{ ...fixture.sections[0], key }] }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }),
+  );
+  renderProgress();
+
+  expect(await screen.findByRole("link", { name: label })).toHaveAttribute("href", href);
 });
 
 test("keeps the heading in every state, so nothing jumps when data lands", async () => {

@@ -7,6 +7,7 @@ import type {
   DocumentationRollupGroup,
   DocumentationRollupSection,
 } from "../../documentation/types";
+import { PROJECT_TABS, TAB_LABELS } from "../../projects/lib";
 import type { ProjectDetail } from "../../projects/types";
 import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
@@ -136,11 +137,7 @@ function SectionRow({
           </span>
           <span id={titleId}>{section.title}</span>
         </button>
-        <OpenInDocumentationLink
-          projectId={projectId}
-          anchor={section.anchor}
-          title={section.title}
-        />
+        <OpenSectionLink {...sectionDestination(projectId, section)} />
         <AttentionCount counts={section.counts} />
       </div>
       <AxisMeters projectId={projectId} anchor={section.anchor} counts={section.counts} />
@@ -170,26 +167,34 @@ function GroupRow({ projectId, group }: { projectId: string; group: Documentatio
 }
 
 /**
- * "Take me to the records behind this number." The icon is revealed on hover of
- * its header row and mirrors the Documentation page's record open-owner link,
- * so the same gesture means the same thing on both surfaces.
+ * The header means "go to the thing"; a meter means "go to the evidence". So
+ * the header icon opens the section's own tab — Apertures opens Apertures —
+ * while the meters keep deep-linking into Documentation with a `?needs=`
+ * filter.
+ *
+ * Section keys are project-tab slugs written with underscores
+ * (`thermal_bridges` vs the `thermal-bridges` route). Deriving the slug and
+ * checking it against `PROJECT_TABS` means a future section lands on its tab
+ * automatically, and one that names no tab falls back to Documentation rather
+ * than 404ing.
  */
-function OpenInDocumentationLink({
-  projectId,
-  anchor,
-  title,
-}: {
-  projectId: string;
-  anchor: string;
-  title: string;
-}) {
+function sectionDestination(projectId: string, section: DocumentationRollupSection) {
+  const slug = section.key.replace(/_/g, "-");
+  const tab = PROJECT_TABS.find((candidate) => candidate === slug);
+  if (!tab) {
+    return {
+      to: `/projects/${projectId}/documentation#${section.anchor}`,
+      label: `Open in Documentation - ${section.title}`,
+    };
+  }
+  return { to: `/projects/${projectId}/${tab}`, label: `Open ${TAB_LABELS[tab]}` };
+}
+
+/** Revealed on hover of its header row, like the Documentation page's record
+ *  open-owner link, so the same gesture means the same thing on both. */
+function OpenSectionLink({ to, label }: { to: string; label: string }) {
   return (
-    <Link
-      className="documentation-progress-open"
-      to={`/projects/${projectId}/documentation#${anchor}`}
-      aria-label={`Open in Documentation - ${title}`}
-      title="Open in Documentation"
-    >
+    <Link className="documentation-progress-open" to={to} aria-label={label} title={label}>
       <ExternalLink size={14} aria-hidden="true" />
     </Link>
   );
