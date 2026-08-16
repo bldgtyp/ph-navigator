@@ -68,12 +68,18 @@
   line-height: var(--lh-solid);
 }
 
+/* The label yields first: it truncates so the count — the number the meter
+   exists to show — is never the thing that gets clipped. */
 .status-axis-meter-label {
+  min-width: 0;
+  overflow: hidden;
   color: var(--text-secondary);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .status-axis-meter-count {
+  flex: 0 0 auto;
   color: var(--accent-text);
   font-variant-numeric: tabular-nums;
 }
