@@ -13,14 +13,12 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { TOOLTIP_HOVER_DELAY, Tooltip } from "../../../shared/ui/tooltip";
 import { formatLinearPsiFromWmK, useUnitPreference } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
-import { totalApertureWidthMm } from "../aperture-geometry";
-import { BASE_PX_PER_MM, pxFromMm } from "../canvas-constants";
 import {
   apertureGridSignature,
-  installOverlayModel,
   installTintColors,
   installUsageCounts,
   nextInstallForClick,
+  perimeterInstallEdges,
   DEFAULT_TINT_TOKEN,
 } from "../install-overlay";
 import {
@@ -37,20 +35,9 @@ import { APERTURE_INSTALL_DEFAULT_TYPE_ID } from "../install-psi";
 import type { ApertureCommand, ApertureSide, ApertureTypeEntry } from "../types";
 import { useInstallTypeSummaries } from "../hooks/useInstallTypes";
 import { newInstallTypeId, useInstallTypeWrites } from "../installs/useInstallTypeWrites";
-import { ApertureSvgCanvas } from "./ApertureSvgCanvas";
 import { CopyInstallsControl } from "./CopyInstallsControl";
 import { InstallTypeForm } from "./InstallTypeForm";
-
-// Key view fits the aperture to exactly this width, which equals the SVG
-// canvas MIN_CANVAS_WIDTH_PX floor — so the floor can never re-scale the
-// canvas out from under the absolutely-positioned overlay. Tall apertures
-// grow vertically and scroll inside the key-view column.
-const KEY_VIEW_WIDTH_PX = 360;
-
-// Fallback band thickness for a side with no picked frame, in rendered pixels
-// (converted to mm at the key view's zoom). Frame-carrying sides use the drawn
-// strip verbatim, so this only ever backfills an otherwise invisible edge.
-const MIN_BAND_PX = 8;
+import { InstallsPreviewCanvas } from "./InstallsPreviewCanvas";
 
 export function InstallsModal({
   project,
@@ -98,14 +85,6 @@ export function InstallsModal({
     );
   }, [aperture, apertures]);
 
-  const fitZoom =
-    KEY_VIEW_WIDTH_PX / (Math.max(totalApertureWidthMm(aperture), 1) * BASE_PX_PER_MM);
-  const overlay = useMemo(
-    () =>
-      installOverlayModel(stagedAperture, installTypes, MIN_BAND_PX / (BASE_PX_PER_MM * fitZoom)),
-    [stagedAperture, installTypes, fitZoom],
-  );
-
   const handleEdgeClick = (elementId: string, side: ApertureSide, rawSlot: string | null) => {
     if (!canEdit) return;
     const next = nextInstallForClick(rawSlot, armedTypeId);
@@ -116,9 +95,8 @@ export function InstallsModal({
   const handleApplyToAllEdges = () => {
     if (!canEdit || armedTypeId === null) return;
     setDraft((current) =>
-      overlay.reduce(
-        (next, cell) =>
-          cell.kind === "mull" ? next : stageInstall(next, cell.elementId, cell.side, armedTypeId),
+      perimeterInstallEdges(stagedAperture).reduce(
+        (next, edge) => stageInstall(next, edge.elementId, edge.side, armedTypeId),
         current,
       ),
     );
@@ -184,42 +162,15 @@ export function InstallsModal({
     >
       <div className="installs-modal__body">
         <div className="installs-modal__key-view" data-testid="installs-key-view">
-          <div className="installs-modal__canvas" data-armed={armedTypeId ? "true" : undefined}>
-            <ApertureSvgCanvas aperture={aperture} zoom={fitZoom} viewDirection="exterior" />
-            <div className="installs-modal__overlay">
-              {overlay.map((cell) => {
-                // An edge with no explicit slot *is* Default — same name, same
-                // Ψ, same swatch as any other row, so it is described the same
-                // way. There is no separate "cleared" state to explain.
-                const typeName =
-                  cell.kind === "mull"
-                    ? "Mulled edge — Ψ-install 0 (derived)"
-                    : `${cell.resolved.installTypeName ?? defaultTypeName} (${psi(cell.resolved.psiWmk)})`;
-                return (
-                  <button
-                    key={`${cell.elementId}:${cell.side}`}
-                    type="button"
-                    className="installs-modal__edge"
-                    data-testid={`install-edge-${cell.elementId}-${cell.side}`}
-                    data-kind={cell.kind}
-                    disabled={cell.kind === "mull" || saving}
-                    title={typeName}
-                    aria-label={`${cell.side} edge — ${typeName}`}
-                    style={
-                      {
-                        left: `${pxFromMm(cell.rect.x, fitZoom)}px`,
-                        top: `${pxFromMm(cell.rect.y, fitZoom)}px`,
-                        width: `${pxFromMm(cell.rect.width, fitZoom)}px`,
-                        height: `${pxFromMm(cell.rect.height, fitZoom)}px`,
-                        ...(cell.color ? { "--installs-tint": cell.color } : {}),
-                      } as CSSProperties
-                    }
-                    onClick={() => handleEdgeClick(cell.elementId, cell.side, cell.rawSlot)}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          <InstallsPreviewCanvas
+            aperture={stagedAperture}
+            installTypes={installTypes}
+            armed={armedTypeId !== null}
+            disabled={!canEdit || saving}
+            defaultTypeName={defaultTypeName}
+            formatPsi={psi}
+            onEdgeClick={handleEdgeClick}
+          />
           {/* Painting status + its bulk action sit under the drawing they act
               on; the footer is the dialog's own Cancel/Save. */}
           <div className="installs-modal__paint-bar" data-armed={armedTypeId ? "true" : undefined}>

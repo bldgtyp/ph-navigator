@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
-  BASE_PX_PER_MM,
+  containFitZoom,
   MIN_CANVAS_WIDTH_PX,
   nextZoomStep,
   pxFromMm,
@@ -179,10 +179,8 @@ export function ApertureCanvasContainer({
     clearPickPaste,
   ]);
 
-  // Frame the whole unit: pick the largest zoom at which both the aperture's
-  // width and height fit inside the scroll viewport (minus its edge padding),
-  // clamped to the zoom range. Used for the initial auto-fit and the toolbar
-  // Fit button, so a tall unit is never clipped the way a width-only fit was.
+  // Initial auto-fit and toolbar Fit contain both aperture axes inside the
+  // padded viewport, so a tall unit cannot be clipped by width-only sizing.
   const fitZoom = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -199,14 +197,18 @@ export function ApertureCanvasContainer({
     const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
     const availW = container.clientWidth - padX;
     const availH = container.clientHeight - padY;
-    // `!(x > 0)` (not `x <= 0`) so a NaN — e.g. an unmeasured container or a
-    // non-numeric computed padding under jsdom — is treated as "can't fit yet"
-    // and leaves the current zoom untouched rather than propagating NaN.
+    // `!(x > 0)` treats NaN from an unmeasured/jsdom container as "not ready"
+    // and retains the current zoom instead of propagating NaN.
     if (!(availW > 0) || !(availH > 0)) return;
-    const fitW = availW / (widthMm * BASE_PX_PER_MM);
-    const fitH = availH / (heightMm * BASE_PX_PER_MM);
-    const target = Math.min(fitW, fitH);
-    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, target)));
+    const target = containFitZoom({
+      widthMm,
+      heightMm,
+      availableWidthPx: availW,
+      availableHeightPx: availH,
+      minZoom: ZOOM_MIN,
+      maxZoom: ZOOM_MAX,
+    });
+    if (target !== null) setZoom(target);
   }, [aperture, setZoom]);
 
   useLayoutEffect(() => {

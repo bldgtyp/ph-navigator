@@ -15,6 +15,39 @@ export function pxFromMm(mm: number, zoom: number): number {
   return mm * BASE_PX_PER_MM * zoom;
 }
 
+/** Largest zoom that contains both axes inside a measured viewport. */
+export function containFitZoom({
+  widthMm,
+  heightMm,
+  availableWidthPx,
+  availableHeightPx,
+  minZoom = 0,
+  maxZoom = Number.POSITIVE_INFINITY,
+}: {
+  widthMm: number;
+  heightMm: number;
+  availableWidthPx: number;
+  availableHeightPx: number;
+  minZoom?: number;
+  maxZoom?: number;
+}): number | null {
+  if (
+    !(widthMm > 0) ||
+    !(heightMm > 0) ||
+    !(availableWidthPx > 0) ||
+    !(availableHeightPx > 0) ||
+    !(maxZoom > 0) ||
+    maxZoom < minZoom
+  ) {
+    return null;
+  }
+  const fit = Math.min(
+    availableWidthPx / (widthMm * BASE_PX_PER_MM),
+    availableHeightPx / (heightMm * BASE_PX_PER_MM),
+  );
+  return Math.min(maxZoom, Math.max(minZoom, fit));
+}
+
 export function nextZoomStep(current: number): number {
   return ZOOM_STEPS.find((step) => step > current) ?? ZOOM_MAX;
 }

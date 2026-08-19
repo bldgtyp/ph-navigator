@@ -11,19 +11,24 @@ import type { ApertureSide, ApertureTypeEntry, FrameRef, GlazingRef } from "../t
 import { OperationSymbols } from "./OperationSymbols";
 
 export type ApertureViewDirection = "exterior" | "interior";
+export type ApertureCanvasSizingMode = "builder" | "exact";
 
 export function ApertureSvgCanvas({
   aperture,
   zoom,
   viewDirection,
+  sizingMode = "builder",
 }: {
   aperture: ApertureTypeEntry;
   zoom: number;
   viewDirection: ApertureViewDirection;
+  /** Builder preserves its scroll-canvas floor; measured previews render exactly at zoom. */
+  sizingMode?: ApertureCanvasSizingMode;
 }) {
   const rendered = viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture;
   const vb = viewBoxFor(rendered);
-  const pxW = Math.max(MIN_CANVAS_WIDTH_PX, pxFromMm(vb.width, zoom));
+  const fitWidthPx = pxFromMm(vb.width, zoom);
+  const pxW = sizingMode === "builder" ? Math.max(MIN_CANVAS_WIDTH_PX, fitWidthPx) : fitWidthPx;
   const pxH = pxFromMm(vb.height, zoom);
 
   return (
@@ -31,6 +36,7 @@ export function ApertureSvgCanvas({
       className="aperture-svg-canvas"
       data-testid="aperture-svg-canvas"
       data-view-direction={viewDirection}
+      data-render-zoom={zoom}
       viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
       width={pxW}
       height={pxH}
