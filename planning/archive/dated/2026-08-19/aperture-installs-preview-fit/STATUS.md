@@ -1,21 +1,21 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: In review — implemented on branch
+TIME: 19:35 EDT
+STATUS: Complete — implemented and verified on branch
 AUTHOR: Codex
 SCOPE: Current state of Installs preview fitting
 RELATED:
-  - planning/features/aperture-installs-preview-fit/PRD.md
+  - planning/archive/dated/2026-08-19/aperture-installs-preview-fit/PRD.md
 ---
 
 # STATUS — Aperture Installs Preview Fit
 
-**State:** `Implemented on branch`; final format/CI and archive cleanup remain.
+**State:** `Complete`; implementation, verification, docs pass, and archive
+cleanup finished on `codex/aperture-installs-preview-fit`.
 
 ## Next step
 
-Run the final format/CI gate, record the results below, then archive this packet
-through the implement-loop completion cleanup.
+No implementation work remains. Merge/deploy are separate operator decisions.
 
 ## Implementation
 

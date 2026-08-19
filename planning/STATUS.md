@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-08-02
-TIME: 18:54 EDT
+DATE: 2026-08-19
+TIME: 19:35 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -11,6 +11,7 @@ feature-first planning.
 
 | Feature                                | State                                                                                                                                                                                                                                                                                                                                                                                                                     | Current pointer                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Aperture Installs Preview Fit          | Complete / archived — measured width/height contain-fit keeps the exact-size SVG and every install overlay band on one padded viewport across portrait, landscape, resize, and narrow stacked layouts; simplify, docs-pass, Graphify, full CI, and mounted Playwright checks passed                                                                                                                                    | `archive/dated/2026-08-19/aperture-installs-preview-fit/STATUS.md`      |
 | Aperture Psi-Install                   | Active — PHN phases 01–06 complete 2026-08-04 on `feature/aperture-psi-install` (schema v10 install-type library, per-edge resolution + commands + route 3, Installs sub-tab, effective-value display, Installs modal, documentation integration); Ed's phase-05 UI review closed 2026-08-15 (staged-edit/Cancel rework + UI polish, plus the design-system interaction-state language and its guard); phase 07 (GH client, other repo) gated on phase-02 production deploy — Ed's call | `features_v1.1/aperture-psi-install/STATUS.md`                           |
 | Agent Access Kit                       | Complete / archived — user-scoped tokens, browser-approved device login, Dropbox null-marker bootstrap, public Claude plugin 0.1.1, and generated Codex parity shipped; production Claude/Codex cold+warm reads, Linde draft/diff/discard, template bootstrap, and cross-user scope regression all passed | `archive/dated/2026-08-02/agent-access-kit/STATUS.md`                    |
 | Admin All-Projects Dashboard           | Complete / archived — `projects.access.all` holders see every non-deleted project grouped by owner; ordinary users remain owner-filtered and destructive controls remain owner-only; backend/frontend tests, browser acceptance, Graphify, simplify, docs-pass, and full CI passed | `archive/dated/2026-08-01/admin-all-projects-dashboard/STATUS.md`        |

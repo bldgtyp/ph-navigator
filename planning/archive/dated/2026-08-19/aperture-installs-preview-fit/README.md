@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: In review — implemented on branch
+TIME: 19:35 EDT
+STATUS: Complete — implemented and verified on branch
 AUTHOR: Ed May / Codex
 SCOPE: Aperture SVG fit behavior inside the Installs modal
 RELATED:
-  - planning/features/aperture-installs-preview-fit/PRD.md
-  - planning/features/aperture-installs-preview-fit/STATUS.md
+  - planning/archive/dated/2026-08-19/aperture-installs-preview-fit/PRD.md
+  - planning/archive/dated/2026-08-19/aperture-installs-preview-fit/STATUS.md
   - planning/2026-08-19-ui-batch.md
 ---
 

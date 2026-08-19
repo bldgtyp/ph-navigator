@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: In review — implemented on branch
+TIME: 19:35 EDT
+STATUS: Complete — implemented and verified on branch
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for Installs-modal aperture preview fitting
 RELATED:
-  - planning/features/aperture-installs-preview-fit/README.md
-  - planning/features/aperture-installs-preview-fit/STATUS.md
+  - planning/archive/dated/2026-08-19/aperture-installs-preview-fit/README.md
+  - planning/archive/dated/2026-08-19/aperture-installs-preview-fit/STATUS.md
 ---
 
 # PRD — Aperture Installs Preview Fit
