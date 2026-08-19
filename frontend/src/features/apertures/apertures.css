@@ -1485,6 +1485,7 @@
    the panel section. */
 #installs-modal {
   width: min(920px, 94vw);
+  height: min(760px, calc(100vh - 40px));
 }
 
 /* The panel is `--scroll-body`, so the body is the flexible middle. It does not
@@ -1492,7 +1493,7 @@
    the paint bar in place while a long library scrolls. */
 .installs-modal__body {
   display: grid;
-  grid-template-columns: auto minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 400px) minmax(320px, 1fr);
   gap: var(--space-24);
   padding: var(--space-16) 0;
   min-height: 0;
@@ -1503,17 +1504,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-10);
-  max-width: 400px;
-  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.installs-modal__preview {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .installs-modal__canvas {
-  position: relative;
-  display: inline-block;
+  position: absolute;
 }
 
-/* The builder absolutely-positions the SVG inside its canvas stage; here it
-   is the in-flow element that sizes the key view, so restore static flow. */
+/* The builder absolutely-positions the SVG inside its canvas stage; the
+   measured preview's positioned wrapper owns placement here. */
 .installs-modal__canvas .aperture-svg-canvas {
   position: static;
 }
@@ -1909,4 +1917,11 @@
 .installs-modal__copy-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 780px) {
+  .installs-modal__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 1fr) minmax(160px, 0.75fr);
+  }
 }

@@ -50,6 +50,17 @@ export type InstallOverlayCell = {
   color: string | null;
 };
 
+export type InstallOverlaySource = Omit<InstallOverlayCell, "rect"> & {
+  elementRect: RectMm;
+  strip: RectMm;
+};
+
+export type PerimeterInstallEdge = {
+  elementId: string;
+  side: ApertureSide;
+  rawSlot: string | null;
+};
+
 /** Legend-order deterministic color per install type id. */
 export function installTintColors(
   installTypes: readonly ApertureInstallTypeSummary[],
@@ -75,9 +86,17 @@ export function installOverlayModel(
   installTypes: readonly ApertureInstallTypeSummary[],
   minBandMm: number = DEFAULT_MIN_BAND_MM,
 ): InstallOverlayCell[] {
+  return installOverlayBands(installOverlaySources(aperture, installTypes), minBandMm);
+}
+
+/** Resolve scale-independent edge semantics once; resizing only rebuilds band rectangles. */
+export function installOverlaySources(
+  aperture: ApertureTypeEntry,
+  installTypes: readonly ApertureInstallTypeSummary[],
+): InstallOverlaySource[] {
   const resolution = resolveInstallPsiForAperture(aperture, installTypes);
   const colors = installTintColors(installTypes);
-  const cells: InstallOverlayCell[] = [];
+  const cells: InstallOverlaySource[] = [];
   for (const element of aperture.elements) {
     if (element.kind !== "glazed") continue;
     const rect = elementRectMm(aperture, element);
@@ -88,7 +107,8 @@ export function installOverlayModel(
       cells.push({
         elementId: element.id,
         side,
-        rect: bandRect(side, rect, regions[side], minBandMm),
+        elementRect: rect,
+        strip: regions[side],
         kind: resolved.source,
         resolved,
         rawSlot: element.installs[side],
@@ -102,6 +122,31 @@ export function installOverlayModel(
     }
   }
   return cells;
+}
+
+/** Apply the zoom-dependent fallback band thickness to resolved overlay sources. */
+export function installOverlayBands(
+  sources: readonly InstallOverlaySource[],
+  minBandMm: number = DEFAULT_MIN_BAND_MM,
+): InstallOverlayCell[] {
+  return sources.map(({ elementRect, strip, ...cell }) => ({
+    ...cell,
+    rect: bandRect(cell.side, elementRect, strip, minBandMm),
+  }));
+}
+
+/** Glazed perimeter edges that can receive an explicit install assignment. */
+export function perimeterInstallEdges(aperture: ApertureTypeEntry): PerimeterInstallEdge[] {
+  const classes = classifyElementEdges(aperture);
+  const edges: PerimeterInstallEdge[] = [];
+  for (const element of aperture.elements) {
+    if (element.kind !== "glazed") continue;
+    for (const side of APERTURE_SIDES) {
+      if (classes.get(edgeClassKey(element.id, side)) === "interior") continue;
+      edges.push({ elementId: element.id, side, rawSlot: element.installs[side] });
+    }
+  }
+  return edges;
 }
 
 /** Paint-click transition: assign the armed type, or clear back to
@@ -142,14 +187,9 @@ export function apertureGridSignature(aperture: ApertureTypeEntry): string {
 export function installUsageCounts(apertures: readonly ApertureTypeEntry[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const aperture of apertures) {
-    const classes = classifyElementEdges(aperture);
-    for (const element of aperture.elements) {
-      if (element.kind !== "glazed") continue;
-      for (const side of APERTURE_SIDES) {
-        if (classes.get(edgeClassKey(element.id, side)) === "interior") continue;
-        const slot = element.installs[side] ?? APERTURE_INSTALL_DEFAULT_TYPE_ID;
-        counts.set(slot, (counts.get(slot) ?? 0) + 1);
-      }
+    for (const edge of perimeterInstallEdges(aperture)) {
+      const slot = edge.rawSlot ?? APERTURE_INSTALL_DEFAULT_TYPE_ID;
+      counts.set(slot, (counts.get(slot) ?? 0) + 1);
     }
   }
   return counts;

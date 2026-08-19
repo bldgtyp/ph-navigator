@@ -3,6 +3,17 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-08-19
+
+- `aperture-installs-preview-fit` - Replaced the Installs modal's fixed
+  width-only zoom with a measured two-axis contain-fit viewport. The exact-size
+  SVG and install overlay share one centered origin/zoom with at least 16 px
+  padding, retain the last valid measurement through transient zero-size
+  observations, cap scale-up at 300%, and recompute across resize and narrow
+  stacked layouts. Simplify, docs-pass, Graphify, full CI (backend 1,870 passed
+  / 7 skipped; frontend 2,456 passed), and mounted Playwright geometry plus
+  staged-edit persistence checks passed.
+
 ## 2026-08-03
 
 - `attachment-reference-walker-unification` - Derived ordinary attachment row

@@ -1,8 +1,56 @@
 // Installs modal (aperture-psi-install phase 05): arm a type, paint an
 // edge, persistence across reopen, apply-to-all, and the phase-04
 // FrameRow cell reflecting the change.
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createProject, signInForAgent } from "./_helpers";
+
+async function setDimension(page: Page, prefix: "col-w-0" | "row-h-0", value: string) {
+  const valueButton = page.getByTestId(`${prefix}-value`);
+  await expect(valueButton).toBeEnabled();
+  await valueButton.click();
+  const input = page.getByTestId(`${prefix}-input`);
+  await input.fill(value);
+  await input.press("Enter");
+  await expect(valueButton).toBeVisible();
+  await expect(valueButton).toContainText(value);
+  await expect(valueButton).toBeEnabled();
+}
+
+async function expectPreviewContained(dialog: Locator) {
+  const preview = dialog.getByTestId("installs-preview");
+  const svg = dialog.getByTestId("aperture-svg-canvas");
+  const overlay = dialog.getByTestId("installs-preview-overlay");
+  await expect(preview).toHaveAttribute("data-ready", "true");
+  const renderZoom = await svg.getAttribute("data-render-zoom");
+  expect(renderZoom).not.toBeNull();
+  await expect(overlay).toHaveAttribute("data-render-zoom", renderZoom!);
+  await expect.poll(async () => {
+    const previewBox = await preview.boundingBox();
+    const svgBox = await svg.boundingBox();
+    if (!previewBox || !svgBox) return false;
+    return (
+      svgBox.x - previewBox.x >= 15 &&
+      svgBox.y - previewBox.y >= 15 &&
+      previewBox.x + previewBox.width - svgBox.x - svgBox.width >= 15 &&
+      previewBox.y + previewBox.height - svgBox.y - svgBox.height >= 15
+    );
+  }).toBe(true);
+
+  const svgBox = await svg.boundingBox();
+  if (!svgBox) throw new Error("Installs preview SVG has no rendered bounds");
+  const edges = dialog.locator("[data-testid^='install-edge-']");
+  await expect(edges).toHaveCount(4);
+  const edgeCount = await edges.count();
+  for (let index = 0; index < edgeCount; index += 1) {
+    const edge = edges.nth(index);
+    const edgeBox = await edge.boundingBox();
+    if (!edgeBox) throw new Error(`Install edge ${index} has no rendered bounds`);
+    expect(edgeBox.x).toBeGreaterThanOrEqual(svgBox.x - 1);
+    expect(edgeBox.y).toBeGreaterThanOrEqual(svgBox.y - 1);
+    expect(edgeBox.x + edgeBox.width).toBeLessThanOrEqual(svgBox.x + svgBox.width + 1);
+    expect(edgeBox.y + edgeBox.height).toBeLessThanOrEqual(svgBox.y + svgBox.height + 1);
+  }
+}
 
 test("Installs modal paints edges and persists assignments", async ({ page }) => {
   await signInForAgent(page);
@@ -89,4 +137,56 @@ test("Installs modal paints edges and persists assignments", async ({ page }) =>
   await expect(dialog.getByTestId("installs-edit-form")).toContainText(
     "Used on 4 edges in this project",
   );
+});
+
+test("Installs preview contain-fits portrait, landscape, resized, and narrow layouts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await signInForAgent(page);
+  const suffix = Date.now().toString().slice(-8);
+  const projectId = await createProject(page, {
+    name: `Installs Fit ${suffix}`,
+    btNumber: `if-${suffix}`,
+  });
+
+  await page.goto(`/projects/${projectId}/apertures/builder`);
+  await page.locator(".apertures-empty__add").click();
+  await expect(page.locator(".aperture-element-card").first()).toBeVisible();
+  const openModal = () => page.locator("[title='Window install psi-values']").click();
+
+  await setDimension(page, "col-w-0", "900");
+  await setDimension(page, "row-h-0", "3600");
+  await openModal();
+  let dialog = page.getByRole("dialog", { name: /Installs —/ });
+  await expectPreviewContained(dialog);
+  let svgBox = await dialog.getByTestId("aperture-svg-canvas").boundingBox();
+  expect(svgBox!.height).toBeGreaterThan(svgBox!.width * 3);
+
+  const portraitHeight = svgBox!.height;
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await expect.poll(async () => (await dialog.getByTestId("aperture-svg-canvas").boundingBox())?.height)
+    .toBeLessThan(portraitHeight - 100);
+  await expectPreviewContained(dialog);
+
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await setDimension(page, "col-w-0", "3600");
+  await setDimension(page, "row-h-0", "900");
+  await openModal();
+  dialog = page.getByRole("dialog", { name: /Installs —/ });
+  await expectPreviewContained(dialog);
+  svgBox = await dialog.getByTestId("aperture-svg-canvas").boundingBox();
+  expect(svgBox!.width).toBeGreaterThan(svgBox!.height * 3);
+
+  await page.setViewportSize({ width: 700, height: 800 });
+  await expect
+    .poll(() =>
+      dialog
+        .locator(".installs-modal__body")
+        .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length),
+    )
+    .toBe(1);
+  await expectPreviewContained(dialog);
+  await expect(dialog.locator(".installs-modal__type-list")).toHaveCSS("overflow-y", "auto");
 });

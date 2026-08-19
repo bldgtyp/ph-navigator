@@ -150,7 +150,11 @@ Assignment happens in the Builder, not on this page:
 - **Installs modal.** The builder header's `Installs` action opens a
   per-aperture modal: a read-only key-view SVG with per-edge tint overlay,
   a legend of install types (swatch, Ψ, PDF chip, live usage count), and
-  pick-type-then-paint-edges interaction — click an edge to assign the armed
+  pick-type-then-paint-edges interaction. The key view measures its actual
+  container and contain-fits both axes with at least 16 px padding; resize and
+  the narrow stacked layout recompute the one shared SVG/overlay zoom and
+  origin, capped at the builder's 300% maximum. Very tall or wide apertures
+  therefore shrink instead of clipping. Click an edge to assign the armed
   type, click again to clear back to inherit; while a type is armed the key
   view takes the paint-bucket cursor, and the hovered edge takes a neutral
   2px ring plus a saturated fill. "Cleared" is never presented as an absence:
