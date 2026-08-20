@@ -1,13 +1,13 @@
 ---
 DATE: 2026-08-20
 TIME: 07:21 EDT
-STATUS: Implementation complete — archive cleanup next
+STATUS: Complete — archived 2026-08-20
 AUTHOR: Ed May / Codex
 SCOPE: 3D window coloring by Summer/Winter shading factor
 RELATED:
-  - planning/features/model-viewer-shading-factor/PRD.md
-  - planning/features/model-viewer-shading-factor/PLAN.md
-  - planning/features/model-viewer-shading-factor/STATUS.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PRD.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PLAN.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/STATUS.md
   - planning/archive/dated/2026-07-16/viewer-display-modes/
   - planning/archive/dated/2026-06-23/model-viewer-legend-filter/
   - planning/2026-08-19-ui-batch.md

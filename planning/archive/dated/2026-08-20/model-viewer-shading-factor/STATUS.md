@@ -1,22 +1,21 @@
 ---
 DATE: 2026-08-20
 TIME: 07:21 EDT
-STATUS: Complete — all phases accepted
+STATUS: Complete — archived 2026-08-20
 AUTHOR: Codex
 SCOPE: Current state of Model Viewer shading-factor mode
 RELATED:
-  - planning/features/model-viewer-shading-factor/PRD.md
-  - planning/features/model-viewer-shading-factor/PLAN.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PRD.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PLAN.md
 ---
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Complete`; Phases 00–04 accepted. Archive cleanup is next.
+**State:** `Complete`; Phases 00–04 accepted and archived.
 
 ## Next step
 
-Archive this completed packet under the dated planning archive and update its
-index/references.
+None. The implementation is accepted and the packet is archived.
 
 ## Known constraint
 

@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-20
 
+- `model-viewer-shading-factor` - Added nullable Summer/Winter aperture
+  shading factors to immutable `/model_data` artifacts and a Building-only
+  fixed-domain continuous color theme with shareable seasonal URL state,
+  non-filtering legend, Missing count, and dual-value aperture inspection.
+  Structural perf coverage, isolated mixed-factor browser acceptance,
+  three-way simplify reviews, docs-pass, Graphify, and full CI passed (backend
+  1,907 passed / 7 skipped; frontend 2,517 passed; production build passed).
 - `assembly-pdf-and-public-dimensions` - Added read-only Assembly thickness
   dimensions for locked and anonymous viewers plus a capability-gated,
   saved-Version PDF report with one deterministic vector page per Assembly,

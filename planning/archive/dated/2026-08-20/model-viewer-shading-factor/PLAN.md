@@ -5,8 +5,8 @@ STATUS: Complete — Phases 00–04 accepted
 AUTHOR: Codex
 SCOPE: Extraction-first plan for seasonal shading-factor visualization
 RELATED:
-  - planning/features/model-viewer-shading-factor/PRD.md
-  - planning/features/model-viewer-shading-factor/STATUS.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PRD.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/STATUS.md
 ---
 
 # PLAN — Model Viewer Shading Factor
