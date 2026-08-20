@@ -1,13 +1,14 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+TIME: 23:00 EDT
+STATUS: Active — Phase 00 complete; Phase 01 next
 AUTHOR: Ed May / Codex
 SCOPE: Assembly PDF export and read-only thickness dimensions
 RELATED:
   - planning/features/assembly-pdf-and-public-dimensions/PRD.md
   - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
   - planning/features/assembly-pdf-and-public-dimensions/STATUS.md
+  - planning/features/assembly-pdf-and-public-dimensions/decisions.md
   - planning/2026-08-19-ui-batch.md
 ---
 

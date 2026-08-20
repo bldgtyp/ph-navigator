@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready for Phase 00 proof
+STATUS: Active — Phase 00 complete; Phase 01 next
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for bulk Assembly PDF export and public dimensions
 RELATED:

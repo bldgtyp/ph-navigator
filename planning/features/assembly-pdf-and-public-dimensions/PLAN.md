@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Proposed implementation sequence
+STATUS: Active — Phase 00 complete; Phase 01 next
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
@@ -12,6 +12,10 @@ RELATED:
 # PLAN — Assembly PDF and Public Dimensions
 
 ## Phase 00 — Output proof and contract lock
+
+**Status: Complete (2026-08-19).** ReportLab 5 selected; deterministic vector,
+embedded-font, selectable-text proof generated and visually inspected. See
+`decisions.md` and `backend/tests/envelope/test_assembly_pdf_renderer.py`.
 
 - Build one disposable renderer spike from a representative Assembly fixture.
 - Compare viable PDF composition paths against: vector output, selectable text,
@@ -24,6 +28,8 @@ RELATED:
 Exit: a generated one-page artifact demonstrates the full non-raster contract.
 
 ## Phase 01 — Read-only Assembly dimensions
+
+**Status: Next.**
 
 - Characterize the current editor dimension controls.
 - Split dimension presentation from editor controls.
