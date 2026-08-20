@@ -12,6 +12,8 @@ describe("Tooltip", () => {
 
     const trigger = screen.getByRole("button", { name: "Trigger" });
     expect(trigger).not.toHaveAttribute("aria-describedby");
+    expect(trigger).not.toHaveAttribute("aria-haspopup");
+    expect(trigger).not.toHaveAttribute("aria-expanded");
 
     fireEvent.focus(trigger);
 

@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready
+TIME: 20:47 EDT
+STATUS: Complete — implemented, verified, and archived
 AUTHOR: Ed May / Codex
 SCOPE: Shared UI interaction and expanded-row visual contract
 RELATED:
-  - planning/features/shared-interaction-polish/README.md
-  - planning/features/shared-interaction-polish/STATUS.md
+  - planning/archive/dated/2026-08-19/shared-interaction-polish/README.md
+  - planning/archive/dated/2026-08-19/shared-interaction-polish/STATUS.md
   - context/DESIGN_SYSTEM.md
 ---
 

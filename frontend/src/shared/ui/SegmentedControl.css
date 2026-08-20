@@ -32,6 +32,7 @@
   line-height: var(--lh-solid);
   transition:
     background var(--transition-fast) var(--ease),
+    box-shadow var(--transition-fast) var(--ease),
     color var(--transition-fast) var(--ease);
 }
 
@@ -83,6 +84,21 @@
 
 .phn-segmented-control--equal-width.phn-segmented-control--sm span {
   min-width: 32px;
+}
+
+.phn-segmented-control--equal-width.phn-segmented-control--sm
+  .phn-segmented-control__option:hover:not(:has(input:disabled))
+  input:not(:checked)
+  + span {
+  background: var(--state-ghost-hover-bg);
+  color: var(--text-primary);
+}
+
+.phn-segmented-control--equal-width.phn-segmented-control--sm
+  .phn-segmented-control__option:hover
+  input:checked
+  + span {
+  background: var(--accent-dark);
 }
 
 .phn-segmented-control--md {

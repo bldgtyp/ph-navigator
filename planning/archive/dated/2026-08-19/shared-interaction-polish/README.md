@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+TIME: 20:47 EDT
+STATUS: Complete — implemented, verified, and archived
 AUTHOR: Ed May / Codex
 SCOPE: Shared SegmentedControl affordance and expandable ReportTable seams
 RELATED:
-  - planning/features/shared-interaction-polish/PRD.md
-  - planning/features/shared-interaction-polish/STATUS.md
+  - planning/archive/dated/2026-08-19/shared-interaction-polish/PRD.md
+  - planning/archive/dated/2026-08-19/shared-interaction-polish/STATUS.md
   - context/DESIGN_SYSTEM.md
   - planning/2026-08-19-ui-batch.md
 ---

@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-19
 
+- `shared-interaction-polish` - Added tokenized hover and delayed shared
+  tooltips to small equal-width SegmentedControls while preserving native
+  radio semantics and keyboard behavior. Mounted production ReportTable seam,
+  row-action, horizontal-scroll, sticky-lane, and nested-table checks found the
+  current shared CSS already continuous, so no speculative style change was
+  made. Simplify, docs-pass, Graphify, frontend dev checks, 2,467 Vitest tests,
+  and 2 Playwright geometry tests passed.
 - `documentation-na-prioritization` - Stable-partitioned fully N/A Envelope
   Assembly records into one collapsed bottom section for authenticated users,
   omitted those rows, empty groups, empty sections, and attachment URL work for
