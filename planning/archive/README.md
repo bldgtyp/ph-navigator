@@ -5,6 +5,11 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-19
 
+- `version-management-and-diff` - Added safe Version rename/delete lifecycle,
+  timestamps, a dedicated manager, and structured human-readable saved/draft
+  comparison. Dirty-draft and locked-Version browser acceptance, desktop/narrow
+  modal geometry, three-way simplify, docs-pass, Graphify, and full CI passed
+  (backend 1,889 passed / 7 skipped; frontend 2,490 passed).
 - `status-presentation-polish` - Replaced ambiguous Roadmap rail glyphs and the
   duplicate title badge with direct Done / To-Do / N/A labels, reduced Assembly
   condensation status to a compact text action for authenticated users, and
