@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active implementation sequence — Phase 00 complete
+STATUS: Active implementation sequence — Phases 00–01 complete
 AUTHOR: Codex
 SCOPE: Backend-first phase plan for Version management and diff UX
 RELATED:
@@ -20,7 +20,7 @@ RELATED:
 - Lock the PRD's stable error codes, additive structured diff response, and
   saved-From/saved-or-draft-To selector asymmetry.
 
-## Phase 01 — Version rename/delete backend
+## Phase 01 — Version rename/delete backend — Complete
 
 - Extend typed request/response models and services.
 - Add transactional rename validation and audit.

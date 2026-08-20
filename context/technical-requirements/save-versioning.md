@@ -44,12 +44,31 @@ unlocked version.
 | **Switch active version** | If draft is dirty, prompt: Save / Save As / Discard. Then switch. |
 | **Lock / unlock** | Toggle `locked` on a version. Lock = save-protected. Unlock requires confirm. |
 | **Submit / close** | Save As with `kind='submitted'`/`'closed'`, auto-locked. Lifecycle is metadata on the version. |
-| **Delete version** | Soft-delete (`deleted_at`). Cannot delete the active version; switch first. |
-| **Rename version** | Update `name`. Allowed even on locked versions (label-only). |
+| **Delete version** | Physically delete a non-active, non-sole version after exact-name confirmation. Drafts cascade; child versions are preserved with `parent_version_id = null`. |
+| **Rename version** | Update to a trimmed, non-blank name of at most 120 characters, unique within the project. Allowed even on locked versions (label-only). |
 
 There is no single project-level "lifecycle state." The project's
 status is "the kind of its most recent submitted/closed version, if
 any." Versions are the unit of state.
+
+Version metadata mutations lock the owning project row before locking the
+target Version row. Save, Save As, PATCH, and delete share this lock order.
+Delete locks all project Versions in stable ID order and rechecks its safety
+guards inside the same transaction. The sole-Version guard takes precedence
+over the active-Version guard; the stable conflict codes are
+`last_version_delete_blocked` and `active_version_delete_blocked`.
+
+`PATCH /api/v1/projects/{project_id}/versions/{version_id}` accepts supplied
+`name`, `locked`, and `make_active=true` fields and returns the refreshed
+`ProjectDetail`. Duplicate names return `version_name_taken`. A mixed metadata
+patch records all supplied before/after fields in one audit event; a name-only
+patch records `project_version_renamed`.
+
+`POST /api/v1/projects/{project_id}/versions/{version_id}/delete` requires
+`{"confirm_name": "<exact current name>"}`. A mismatch returns
+`version_delete_confirmation_mismatch`. Successful deletion returns the
+refreshed `ProjectDetail` and records `project_version_deleted`, including the
+discarded-draft and detached-child counts.
 
 ### 8.2.1 Denormalized save metadata
 

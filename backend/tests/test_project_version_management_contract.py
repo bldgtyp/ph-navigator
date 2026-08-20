@@ -3,23 +3,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from database import connection
+from features.project_document import repository
 from features.project_document.models import VersionPatchRequest
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
-from tests.project_document_helpers import replace_draft_table_rows
-from tests.test_project_document import ORIGIN, draft_rooms_url, save_as_url, version_url
+from main import app
+from tests.test_project_document import (
+    ORIGIN,
+    create_rooms_draft,
+    draft_rooms_url,
+    save_as_url,
+    save_url,
+    version_url,
+)
 from tests.test_projects import create_project, signed_in_client
 
-PENDING_VERSION_MUTATIONS = pytest.mark.xfail(
-    strict=True,
-    reason="Phase 01 Version rename/delete backend is not implemented.",
-)
 PENDING_STRUCTURED_DIFF = pytest.mark.xfail(
     strict=True,
     reason="Phase 02 structured diff presentation is not implemented.",
@@ -43,18 +48,6 @@ def create_working_copy(
     )
     assert response.status_code == 200
     return response.json()["version"]
-
-
-def create_empty_rooms_draft(client: TestClient, project_id: object, version_id: object) -> None:
-    replace_draft_table_rows(
-        client,
-        project_id,
-        version_id,
-        table_name="rooms",
-        rows_attr="rooms",
-        rows=[],
-        origin=ORIGIN,
-    )
 
 
 @dataclass(frozen=True)
@@ -119,7 +112,6 @@ def test_existing_patch_contract_accepts_explicit_false() -> None:
     assert payload.make_active is None
 
 
-@PENDING_VERSION_MUTATIONS
 def test_version_patch_contract_distinguishes_omitted_name_and_false_activation() -> None:
     renamed = VersionPatchRequest.model_validate({"name": "  Coordination  "})
     assert renamed.model_fields_set == {"name"}
@@ -133,7 +125,6 @@ def test_version_patch_contract_distinguishes_omitted_name_and_false_activation(
         VersionPatchRequest()
 
 
-@PENDING_VERSION_MUTATIONS
 def test_editor_can_rename_locked_version_and_duplicate_name_is_stable(
     clean_document_tables: None,
 ) -> None:
@@ -165,6 +156,24 @@ def test_editor_can_rename_locked_version_and_duplicate_name_is_stable(
     assert details["old_name"] == "Working"
     assert details["new_name"] == "Existing Conditions"
 
+    mixed = client.patch(
+        version_url(project_id, original_id),
+        headers={"Origin": ORIGIN},
+        json={"name": "Design Development", "locked": False, "make_active": True},
+    )
+    assert mixed.status_code == 200
+    mixed_details = audit_details("project_version_patch")
+    assert mixed_details == {
+        "project_id": project_id,
+        "version_id": original_id,
+        "old_name": "Existing Conditions",
+        "new_name": "Design Development",
+        "old_locked": True,
+        "new_locked": False,
+        "old_active_version_id": copy["id"],
+        "new_active_version_id": original_id,
+    }
+
     duplicate = client.patch(
         version_url(project_id, original_id),
         headers={"Origin": ORIGIN},
@@ -174,7 +183,6 @@ def test_editor_can_rename_locked_version_and_duplicate_name_is_stable(
     assert duplicate.json()["error_code"] == "version_name_taken"
 
 
-@PENDING_VERSION_MUTATIONS
 def test_active_version_delete_is_blocked(
     clean_document_tables: None,
 ) -> None:
@@ -194,7 +202,6 @@ def test_active_version_delete_is_blocked(
     assert response.json()["error_code"] == "active_version_delete_blocked"
 
 
-@PENDING_VERSION_MUTATIONS
 def test_sole_version_delete_uses_last_version_guard(
     clean_document_tables: None,
 ) -> None:
@@ -211,7 +218,6 @@ def test_sole_version_delete_uses_last_version_guard(
     assert response.json()["error_code"] == "last_version_delete_blocked"
 
 
-@PENDING_VERSION_MUTATIONS
 def test_non_active_version_delete_discards_draft_and_detaches_child(
     clean_document_tables: None,
 ) -> None:
@@ -220,7 +226,7 @@ def test_non_active_version_delete_discards_draft_and_detaches_child(
     project_id = project["id"]
     parent_id = project["active_version_id"]
     child = create_working_copy(client, project_id, parent_id, "Child Version")
-    create_empty_rooms_draft(client, project_id, parent_id)
+    create_rooms_draft(client, project_id, parent_id)
     assert version_state(parent_id) == VersionState(
         exists=True,
         child_parent_id=str(parent_id),
@@ -251,7 +257,6 @@ def test_non_active_version_delete_discards_draft_and_detaches_child(
     }
 
 
-@PENDING_VERSION_MUTATIONS
 def test_version_delete_confirmation_name_must_match_current_name(
     clean_document_tables: None,
 ) -> None:
@@ -270,6 +275,193 @@ def test_version_delete_confirmation_name_must_match_current_name(
     assert response.status_code == 409
     assert response.json()["error_code"] == "version_delete_confirmation_mismatch"
     assert version_state(original_id).exists is True
+
+
+def test_locked_submitted_version_can_be_deleted(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    original_id = project["active_version_id"]
+    submitted = client.post(
+        save_as_url(project_id, original_id),
+        headers={"Origin": ORIGIN},
+        json={"name": "Round 1 Submit", "kind": "submitted", "locked": False},
+    )
+    assert submitted.status_code == 200
+    submitted_version = submitted.json()["version"]
+    assert submitted_version["locked"] is True
+    create_working_copy(client, project_id, submitted_version["id"], "Coordination")
+
+    deleted = client.post(
+        delete_version_url(project_id, submitted_version["id"]),
+        headers={"Origin": ORIGIN},
+        json={"confirm_name": submitted_version["name"]},
+    )
+
+    assert deleted.status_code == 200
+    assert all(version["id"] != submitted_version["id"] for version in deleted.json()["versions"])
+
+
+def test_version_mutations_require_editor_access_and_project_membership(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    first = create_project(client, bt_number="VM-01")
+    second = create_project(client, bt_number="VM-02")
+
+    anonymous = TestClient(app)
+    unauthenticated = anonymous.post(
+        delete_version_url(first["id"], first["active_version_id"]),
+        headers={"Origin": ORIGIN},
+        json={"confirm_name": "Working"},
+    )
+    wrong_project = client.patch(
+        version_url(first["id"], second["active_version_id"]),
+        headers={"Origin": ORIGIN},
+        json={"name": "Wrong Project"},
+    )
+
+    assert unauthenticated.status_code == 401
+    assert unauthenticated.json()["error_code"] == "not_authenticated"
+    assert wrong_project.status_code == 404
+    assert wrong_project.json()["error_code"] == "project_version_not_found"
+
+
+def test_project_version_mutation_lock_helper_orders_project_before_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def lock_project(_conn: object, _project_id: object) -> dict[str, object]:
+        calls.append("project")
+        return {"id": _project_id}
+
+    def lock_body(_conn: object, _project_id: object, _version_id: object) -> dict[str, object]:
+        calls.append("body")
+        return {"id": _version_id}
+
+    def lock_metadata(_conn: object, _project_id: object, _version_id: object) -> dict[str, object]:
+        calls.append("metadata")
+        return {"id": _version_id}
+
+    monkeypatch.setattr(repository, "lock_project_for_version_mutation", lock_project)
+    monkeypatch.setattr(repository, "get_project_version_for_update", lock_body)
+    monkeypatch.setattr(repository, "get_project_version_metadata_for_update", lock_metadata)
+    project_id = uuid4()
+    version_id = uuid4()
+
+    repository.lock_project_and_version_for_mutation(
+        cast(Any, object()),
+        project_id,
+        version_id,
+        include_body=True,
+    )
+    assert calls == ["project", "body"]
+
+    calls.clear()
+    repository.lock_project_and_version_for_mutation(
+        cast(Any, object()),
+        project_id,
+        version_id,
+        include_body=False,
+    )
+    assert calls == ["project", "metadata"]
+
+
+class RecordingResult:
+    def fetchone(self) -> dict[str, object]:
+        return {"id": uuid4(), "active_version_id": uuid4()}
+
+    def fetchall(self) -> list[dict[str, object]]:
+        return []
+
+
+class RecordingConnection:
+    def __init__(self) -> None:
+        self.statements: list[str] = []
+
+    def execute(self, query: str, _params: object) -> RecordingResult:
+        self.statements.append(query)
+        return RecordingResult()
+
+
+def test_project_version_mutation_repository_queries_lock_rows() -> None:
+    conn = RecordingConnection()
+    project_id = uuid4()
+    version_id = uuid4()
+
+    repository.lock_project_for_version_mutation(cast(Any, conn), project_id)
+    repository.get_project_version_for_update(cast(Any, conn), project_id, version_id)
+    repository.get_project_version_metadata_for_update(cast(Any, conn), project_id, version_id)
+    repository.list_project_versions_for_update(cast(Any, conn), project_id)
+
+    assert len(conn.statements) == 4
+    assert all("FOR UPDATE" in statement for statement in conn.statements)
+    assert "ORDER BY id" in conn.statements[-1]
+
+
+def test_mixed_project_version_mutations_use_shared_lock_boundary(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    original_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, original_id)
+    draft = client.get(draft_rooms_url(project_id, original_id)).json()
+
+    calls: list[str] = []
+    lock_pair = repository.lock_project_and_version_for_mutation
+    lock_project = repository.lock_project_for_version_mutation
+    lock_versions = repository.list_project_versions_for_update
+
+    def record_pair(*args: Any, **kwargs: Any) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        calls.append("project-version")
+        return lock_pair(*args, **kwargs)
+
+    def record_project(*args: Any, **kwargs: Any) -> dict[str, Any] | None:
+        calls.append("project")
+        return lock_project(*args, **kwargs)
+
+    def record_versions(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        calls.append("versions")
+        return lock_versions(*args, **kwargs)
+
+    monkeypatch.setattr(repository, "lock_project_and_version_for_mutation", record_pair)
+    monkeypatch.setattr(repository, "lock_project_for_version_mutation", record_project)
+    monkeypatch.setattr(repository, "list_project_versions_for_update", record_versions)
+
+    saved = client.post(
+        save_url(project_id, original_id),
+        headers={"Origin": ORIGIN, "If-Match": draft["version_etag"]},
+    )
+    assert saved.status_code == 200
+    assert calls[0] == "project-version"
+
+    calls.clear()
+    copy = create_working_copy(client, project_id, original_id, "Lock Order Copy")
+    assert calls[0] == "project-version"
+
+    calls.clear()
+    activated = client.patch(
+        version_url(project_id, original_id),
+        headers={"Origin": ORIGIN},
+        json={"make_active": True},
+    )
+    assert activated.status_code == 200
+    assert calls[0] == "project-version"
+
+    calls.clear()
+    deleted = client.post(
+        delete_version_url(project_id, copy["id"]),
+        headers={"Origin": ORIGIN},
+        json={"confirm_name": copy["name"]},
+    )
+    assert deleted.status_code == 200
+    assert calls[:2] == ["project", "versions"]
 
 
 def rooms_diff_fixture() -> tuple[dict[str, Any], dict[str, Any]]:

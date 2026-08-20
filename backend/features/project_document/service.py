@@ -27,11 +27,12 @@ from features.project_document.store import (
     get_saved_table_slice,
 )
 from features.project_document.validation import document_etag, next_draft_etag, validate_document
-from features.project_document.versions import patch_version
+from features.project_document.versions import delete_version, patch_version
 
 __all__ = [
     "apply_schema_mutation_to_draft",
     "discard_draft",
+    "delete_version",
     "document_etag",
     "get_current_document_view",
     "get_draft_summary",

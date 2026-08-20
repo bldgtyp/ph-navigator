@@ -192,7 +192,7 @@ def tool_save_draft_as(
             "Save As payload is invalid.",
             "fatal",
             ctx,
-            {"errors": exc.errors(include_url=False)},
+            {"errors": [str(error["msg"]) for error in exc.errors()]},
         )
     except HTTPException as exc:
         raise_http_exception_as_mcp_error(
@@ -219,8 +219,18 @@ def tool_update_project(
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
     try:
-        payload = VersionPatchRequest(locked=locked, make_active=make_active)
+        payload = VersionPatchRequest.model_validate(
+            {key: value for key, value in {"locked": locked, "make_active": make_active}.items() if value is not None}
+        )
         return patch_version(parsed_version_id, payload, access, request=None)
+    except ValidationError as exc:
+        raise_mcp_error(
+            "validation_error",
+            "Project version metadata payload is invalid.",
+            "fatal",
+            ctx,
+            {"errors": [str(error["msg"]) for error in exc.errors()]},
+        )
     except HTTPException as exc:
         raise_http_exception_as_mcp_error(
             exc,

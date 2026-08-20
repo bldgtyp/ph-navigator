@@ -221,9 +221,9 @@ including semantic-command tables, but it is the lower-level primitive.
 - `discard_draft(project_id, version_id)` deletes the token owner's draft.
   Calling it when no draft exists returns `discarded=false`.
 - `update_project(project_id, version_id, locked?, make_active?)` patches the
-  current REST version metadata surface and returns `ProjectDetail`. Despite the
-  historical tool name, the shipped backend accepts only `locked` and
-  `make_active` here; project/version naming is not part of this tool.
+  MCP-safe subset of Version metadata and returns `ProjectDetail`. The REST
+  surface also supports Version rename and confirmed deletion, but those
+  mutations are intentionally not exposed as MCP tools.
 
 ### Semantic Project-Document Writes
 

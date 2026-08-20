@@ -29,11 +29,13 @@ from features.project_document.models import (
     ProjectDraftSummary,
     SaveAsDraftRequest,
     SaveDraftResponse,
+    VersionDeleteRequest,
     VersionPatchRequest,
 )
 from features.project_document.schema_mutations import FieldSchemaMutation
 from features.project_document.service import (
     apply_schema_mutation_to_draft,
+    delete_version,
     discard_draft,
     get_draft_summary_or_read_safe,
     get_draft_table_slice,
@@ -288,6 +290,16 @@ def patch_project_version(
     request: Request,
 ) -> ProjectDetail:
     return patch_version(version_id, payload, access, request=request)
+
+
+@router.post("/delete", response_model=ProjectDetail)
+def post_delete_project_version(
+    version_id: UUID,
+    payload: VersionDeleteRequest,
+    access: ProjectEditAccess,
+    request: Request,
+) -> ProjectDetail:
+    return delete_version(version_id, payload, access, request=request)
 
 
 @router.get("/download")

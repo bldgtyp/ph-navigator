@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phase 00 complete; Phase 01 next
+STATUS: Active — Phases 00–01 complete; Phase 02 next
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
@@ -11,27 +11,23 @@ RELATED:
 
 # STATUS — Version Management and Diff
 
-**State:** `Active` implementation. Phase 00 contract fixtures are complete;
-rename/delete and structured browser diffs remain intentionally unimplemented.
+**State:** `Active` implementation. Phase 00 contract fixtures and Phase 01
+rename/delete backend are complete; structured browser diffs remain.
 
 ## Next step
 
-Start Phase 01 by implementing the rename/delete backend against the strict
-contract tests for:
-
-1. rename success/name conflict;
-2. active and sole-Version delete blocks;
-3. non-active deletion with a draft and child Version;
-4. confirmation mismatch, draft cascade, child detachment, and audit details.
-
-Remove only `PENDING_VERSION_MUTATIONS` xfail markers in Phase 01. The
-`PENDING_STRUCTURED_DIFF` markers remain until Phase 02.
+Start Phase 02 by implementing additive structured diff entries for operation,
+before/after values, human table/record/field labels, attachments, and nested
+aperture/envelope records. Preserve the existing raw `changed_paths` contract.
+Remove the remaining `PENDING_STRUCTURED_DIFF` markers only as those contracts
+become real.
 
 ## Known current state
 
 - Timestamp data is already on `ProjectVersion.updated_at`.
 - Diff modal already sets `resizable`, but uses generic width and raw paths.
-- Rename/delete require new backend boundaries and audit events.
+- Rename/delete now use shared project-then-Version row locking, stable conflict
+  codes, refreshed project responses, and audit events.
 - Existing FK behavior supports draft cascade and child preservation but does
   not enforce the product's active/last-Version deletion guards.
 
@@ -41,8 +37,8 @@ Remove only `PENDING_VERSION_MUTATIONS` xfail markers in Phase 01. The
       rename/conflict, delete guards/cascades/audit, structured labels,
       attachments, nested apertures, unchanged-table omission, and raw-path
       compatibility.
-- [ ] Rename API, validation, uniqueness conflict, audit, project refresh.
-- [ ] Delete permission, confirmation, active/last guards, cascades, audit.
+- [x] Rename API, validation, uniqueness conflict, audit, project refresh.
+- [x] Delete permission, confirmation, active/last guards, cascades, audit.
 - [ ] Structured diff operation/value/label fixtures across table families.
 - [ ] Existing MCP/raw diff compatibility decision tested.
 - [ ] Popover timestamp and management-modal RTL.
@@ -66,4 +62,14 @@ intentionally backend-first.
   passed.
 - `make format` — no source changes.
 - `make ci` — passed: backend `1871 passed, 7 skipped, 10 xfailed`;
+  frontend `2475 passed`; production build and structural guards passed.
+
+## Phase 01 evidence
+
+- Focused Version/Save/MCP contract run — `39 passed, 55 deselected, 4 xfailed`.
+- `uv run ruff check` for changed backend files — passed.
+- `uv run ty check` — passed.
+- `make format` — no source changes.
+- `graphify update .` — rebuilt `20,527` nodes and `61,045` edges.
+- `make ci` — passed: backend `1882 passed, 7 skipped, 4 xfailed`;
   frontend `2475 passed`; production build and structural guards passed.

@@ -40,6 +40,7 @@ from features.project_document.validation import (
     enforce_document_body_size,
     validate_document,
 )
+from features.project_document.versions import raise_version_name_taken
 from features.project_document.write_metrics import DocumentWriteMetrics
 from features.project_document.write_spine import apply_document_write, load_draft_context
 from features.projects.access import ProjectAccess, require_editor_user
@@ -235,7 +236,14 @@ def save_draft(
     user = require_editor_user(access)
 
     with transaction() as conn:
-        version = repository.get_project_version_for_update(conn, access.project_id, version_id)
+        project, version = repository.lock_project_and_version_for_mutation(
+            conn,
+            access.project_id,
+            version_id,
+            include_body=True,
+        )
+        if project is None:
+            raise_project_version_not_found()
         if version is None:
             raise_project_version_not_found()
         if version["locked"]:
@@ -308,7 +316,14 @@ def save_draft_as(
 
     try:
         with transaction() as conn:
-            version = repository.get_project_version_for_update(conn, access.project_id, version_id)
+            project, version = repository.lock_project_and_version_for_mutation(
+                conn,
+                access.project_id,
+                version_id,
+                include_body=True,
+            )
+            if project is None:
+                raise_project_version_not_found()
             if version is None:
                 raise_project_version_not_found()
             version_body = validate_document(version["body"])
@@ -338,13 +353,7 @@ def save_draft_as(
                 request,
             )
     except UniqueViolation as exc:
-        if exc.diag.constraint_name != "uq_project_versions_project_name":
-            raise
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "version_name_taken",
-            "A version with that name already exists for this project.",
-        ) from exc
+        raise_version_name_taken(exc)
 
     version_public_model = version_public(saved_row)
     return SaveDraftResponse(

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phase 00 contract fixtures complete
+STATUS: Active — Phases 00–01 complete
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
@@ -29,8 +29,9 @@ changes without reading storage paths or record UUIDs.
 
 - `ProjectVersion` already includes `created_at` and `updated_at`; the current
   `VersionPopover` simply does not render them.
-- `PATCH .../versions/{version_id}` supports `locked` and `make_active` only.
-  Rename and saved-Version delete do not exist.
+- `PATCH .../versions/{version_id}` now supports rename alongside lock and
+  make-active mutations. Confirmed non-active, non-sole Version deletion is
+  available at `POST .../versions/{version_id}/delete`.
 - The database already enforces unique `(project_id, name)`, cascades Version
   deletion to drafts, sets child `parent_version_id` to null, and sets
   `projects.active_version_id` to null if an active Version is deleted. Product
@@ -40,10 +41,10 @@ changes without reading storage paths or record UUIDs.
   resize handle is therefore not evidence of a usable diff design.
 - `backend/features/project_document/diff.py` returns table keys and raw paths,
   with no before/after values or human labels.
-- Phase 00 contracts live in
+- Phase 00/01 contracts live in
   `backend/tests/test_project_version_management_contract.py`. Strict xfail
-  markers keep CI green while `--runxfail` proves Phase 01/02 behavior is
-  absent; remove each marker as its owning phase implements the contract.
+  markers keep CI green while the remaining Phase 02 structured-diff behavior
+  is absent.
 
 ## Primary code anchors
 
