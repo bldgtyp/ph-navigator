@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+TIME: 20:10 EDT
+STATUS: Complete — implemented, verified, and archived
 AUTHOR: Ed May / Codex
 SCOPE: Documentation ordering and anonymous visibility for fully N/A records
 RELATED:
-  - planning/features/documentation-na-prioritization/PRD.md
-  - planning/features/documentation-na-prioritization/STATUS.md
+  - planning/archive/dated/2026-08-19/documentation-na-prioritization/PRD.md
+  - planning/archive/dated/2026-08-19/documentation-na-prioritization/STATUS.md
   - planning/archive/dated/2026-07-19/documentation-page-redesign/
   - planning/2026-08-19-ui-batch.md
 ---

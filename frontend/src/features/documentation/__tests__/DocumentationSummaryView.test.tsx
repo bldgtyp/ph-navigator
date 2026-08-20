@@ -426,7 +426,7 @@ function renderDocumentation(
         <Routes>
           <Route
             path="/projects/:projectId/documentation"
-            element={<DocumentationPage project={project} />}
+            element={<DocumentationPage project={project} audiencePolicy="authenticated" />}
           />
         </Routes>
       </MemoryRouter>

@@ -5,26 +5,31 @@ import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
 import { useAssetUrls } from "../../assets/hooks";
 import type { AssetUrls } from "../../assets/types";
-import { allDocumentationAssetIds } from "../lib";
+import { allDocumentationAssetIds, type DocumentationAudiencePolicy } from "../lib";
 import { useDocumentationSummaryQuery } from "../hooks";
 import { DocumentationSummaryView } from "../components/DocumentationSummaryView";
 
-export function DocumentationPage({ project }: { project: ProjectDetail }) {
+export function DocumentationPage({
+  project,
+  audiencePolicy,
+}: {
+  project: ProjectDetail;
+  audiencePolicy: DocumentationAudiencePolicy;
+}) {
   const query = useDocumentationSummaryQuery(
     project.id,
     project.active_version_id,
     project.access_mode,
   );
   const assetIds = useMemo(
-    () => allDocumentationAssetIds(query.data?.sections ?? []),
-    [query.data?.sections],
+    () => allDocumentationAssetIds(query.data?.sections ?? [], audiencePolicy),
+    [audiencePolicy, query.data?.sections],
   );
   const assetUrls = useAssetUrls(project.id, assetIds);
   const assetUrlById = useMemo<ReadonlyMap<string, AssetUrls>>(
     () => new Map((assetUrls.data ?? []).map((asset) => [asset.asset_id, asset])),
     [assetUrls.data],
   );
-
   if (!project.active_version_id) {
     return (
       <section className="tab-panel documentation-page" aria-label="Documentation">
@@ -60,6 +65,7 @@ export function DocumentationPage({ project }: { project: ProjectDetail }) {
       summary={query.data}
       assetUrlById={assetUrlById}
       assetUrlsPending={assetUrls.isPending}
+      audiencePolicy={audiencePolicy}
     />
   );
 }

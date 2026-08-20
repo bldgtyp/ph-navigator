@@ -8,16 +8,21 @@ import {
   useDocumentationFieldMutation,
   type DocumentationFieldChange,
 } from "../hooks";
-import { filterRecord, sectionRecords, type DocumentationAxis } from "../lib";
+import {
+  documentationGroupKey,
+  documentationRecordKey,
+  sectionHasRecordsForAudience,
+  type DocumentationAudiencePolicy,
+  type DocumentationAxis,
+} from "../lib";
 import type {
   DocumentationAxisCounts,
-  DocumentationGroup,
   DocumentationRecord,
   DocumentationSection,
   ProjectDocumentationSummary,
 } from "../types";
 import { DirectionsModal } from "./DocumentationModals";
-import { DocumentationRecordRow } from "./DocumentationRecordViews";
+import { DocumentationSectionBody } from "./DocumentationSectionBody";
 import { StatusAxisRollup, StatusLegend } from "../../project_document/StatusVocabulary";
 import {
   STATUS_AXIS_LABELS,
@@ -36,11 +41,13 @@ export function DocumentationSummaryView({
   summary,
   assetUrlById,
   assetUrlsPending,
+  audiencePolicy,
 }: {
   project: ProjectDetail;
   summary: ProjectDocumentationSummary;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   assetUrlsPending: boolean;
+  audiencePolicy: DocumentationAudiencePolicy;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,6 +56,9 @@ export function DocumentationSummaryView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => new Set());
+  const [expandedNotApplicableGroups, setExpandedNotApplicableGroups] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [directionsSection, setDirectionsSection] = useState<DocumentationSection | null>(null);
   const attachmentMutation = useDocumentationAttachmentMutation(
     project.id,
@@ -57,6 +67,11 @@ export function DocumentationSummaryView({
   const fieldMutation = useDocumentationFieldMutation(project.id, project.active_version_id);
   const canEdit = project.access_mode === "editor" && project.active_version?.locked !== true;
   const writeError = attachmentMutation.error ?? fieldMutation.error;
+  const visibleSections = useMemo(
+    () =>
+      summary.sections.filter((section) => sectionHasRecordsForAudience(section, audiencePolicy)),
+    [audiencePolicy, summary.sections],
+  );
   const isRecordWriting = (record: DocumentationRecord) =>
     (attachmentMutation.isPending &&
       attachmentMutation.variables?.record.table_key === record.table_key &&
@@ -68,7 +83,7 @@ export function DocumentationSummaryView({
   useEffect(() => {
     if (!location.hash) return;
     const anchor = location.hash.slice(1);
-    const section = summary.sections.find(
+    const section = visibleSections.find(
       (candidate) =>
         candidate.anchor === anchor || candidate.groups.some((group) => group.anchor === anchor),
     );
@@ -84,7 +99,7 @@ export function DocumentationSummaryView({
       const target = document.getElementById(anchor);
       if (target && "scrollIntoView" in target) target.scrollIntoView({ block: "start" });
     });
-  }, [location.hash, summary.sections, summary.version_etag, summary.draft_etag]);
+  }, [location.hash, visibleSections, summary.version_etag, summary.draft_etag]);
 
   const toggleFilter = (axis: DocumentationAxis) => {
     const nextFilters = setWithToggledValue(activeFilters, axis);
@@ -109,6 +124,11 @@ export function DocumentationSummaryView({
   };
   const toggleGroup = (sectionKey: string, groupKey: string) => {
     setExpandedGroups((current) =>
+      setWithToggledValue(current, documentationGroupKey(sectionKey, groupKey)),
+    );
+  };
+  const toggleNotApplicableGroup = (sectionKey: string, groupKey: string) => {
+    setExpandedNotApplicableGroups((current) =>
       setWithToggledValue(current, documentationGroupKey(sectionKey, groupKey)),
     );
   };
@@ -167,13 +187,13 @@ export function DocumentationSummaryView({
           </button>
         ))}
       </div>
-      {summary.sections.every((section) => sectionRecords(section).length === 0) ? (
+      {visibleSections.length === 0 ? (
         <p className="documentation-empty">
           No documentation records are available for this project version.
         </p>
       ) : (
         <div className="documentation-sections">
-          {summary.sections.map((section) => {
+          {visibleSections.map((section) => {
             const expanded = expandedSections.has(section.key);
             return (
               <section
@@ -214,13 +234,16 @@ export function DocumentationSummaryView({
                     projectId={project.id}
                     section={section}
                     activeFilters={activeFilters}
+                    audiencePolicy={audiencePolicy}
                     assetUrlById={assetUrlById}
                     assetUrlsPending={assetUrlsPending}
                     canEdit={canEdit}
                     isRecordWriting={isRecordWriting}
                     expandedGroups={expandedGroups}
                     expandedRecords={expandedRecords}
+                    expandedNotApplicableGroups={expandedNotApplicableGroups}
                     onToggleGroup={toggleGroup}
+                    onToggleNotApplicableGroup={toggleNotApplicableGroup}
                     onToggleRecord={toggleRecord}
                     onDatasheetChange={updateDatasheets}
                     onPhotoChange={updatePhotos}
@@ -250,14 +273,6 @@ function needsFilters(searchParams: URLSearchParams): Set<DocumentationAxis> {
   return new Set(AXIS_FILTERS.map(({ axis }) => axis).filter((axis) => requested.has(axis)));
 }
 
-function documentationRecordKey(record: DocumentationRecord): string {
-  return `${record.table_key}:${record.record_id}`;
-}
-
-function documentationGroupKey(sectionKey: string, groupKey: string): string {
-  return `${sectionKey}:${groupKey}`;
-}
-
 function setWithToggledValue<T>(current: Set<T>, key: T, force?: boolean): Set<T> {
   const hasKey = current.has(key);
   const shouldAdd = force ?? !hasKey;
@@ -271,164 +286,4 @@ function setWithToggledValue<T>(current: Set<T>, key: T, force?: boolean): Set<T
 function attentionLine(counts: DocumentationAxisCounts): string {
   const label = evidenceAttentionLabel(counts);
   return label ? `${label}.` : "All evidence is resolved.";
-}
-
-function DocumentationSectionBody({
-  id,
-  projectId,
-  section,
-  activeFilters,
-  assetUrlById,
-  assetUrlsPending,
-  canEdit,
-  isRecordWriting,
-  expandedGroups,
-  expandedRecords,
-  onToggleGroup,
-  onToggleRecord,
-  onDatasheetChange,
-  onPhotoChange,
-  onFieldChange,
-}: {
-  id: string;
-  projectId: string;
-  section: DocumentationSection;
-  activeFilters: ReadonlySet<DocumentationAxis>;
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-  assetUrlsPending: boolean;
-  canEdit: boolean;
-  isRecordWriting: (record: DocumentationRecord) => boolean;
-  expandedGroups: ReadonlySet<string>;
-  expandedRecords: ReadonlySet<string>;
-  onToggleGroup: (sectionKey: string, groupKey: string) => void;
-  onToggleRecord: (record: DocumentationRecord) => void;
-  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
-  onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
-  onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-}) {
-  const groups = section.groups.length
-    ? section.groups
-    : [
-        {
-          key: section.key,
-          title: section.title,
-          anchor: section.anchor,
-          counts: section.counts,
-          records: section.records,
-        },
-      ];
-  const visibleGroups = groups.filter((group) => group.records.length > 0);
-  if (visibleGroups.length === 0) {
-    return <p className="documentation-group-empty">No records are available in this section.</p>;
-  }
-  return (
-    <div className="documentation-section-body" id={id}>
-      {visibleGroups.map((group) => (
-        <DocumentationGroupView
-          key={group.key}
-          projectId={projectId}
-          sectionKey={section.key}
-          group={group}
-          activeFilters={activeFilters}
-          assetUrlById={assetUrlById}
-          assetUrlsPending={assetUrlsPending}
-          canEdit={canEdit}
-          isRecordWriting={isRecordWriting}
-          expanded={expandedGroups.has(documentationGroupKey(section.key, group.key))}
-          expandedRecords={expandedRecords}
-          onToggleGroup={onToggleGroup}
-          onToggleRecord={onToggleRecord}
-          onDatasheetChange={onDatasheetChange}
-          onPhotoChange={onPhotoChange}
-          onFieldChange={onFieldChange}
-        />
-      ))}
-    </div>
-  );
-}
-
-function DocumentationGroupView({
-  projectId,
-  sectionKey,
-  group,
-  activeFilters,
-  assetUrlById,
-  assetUrlsPending,
-  canEdit,
-  isRecordWriting,
-  expanded,
-  expandedRecords,
-  onToggleGroup,
-  onToggleRecord,
-  onDatasheetChange,
-  onPhotoChange,
-  onFieldChange,
-}: {
-  projectId: string;
-  sectionKey: string;
-  group: DocumentationGroup;
-  activeFilters: ReadonlySet<DocumentationAxis>;
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-  assetUrlsPending: boolean;
-  canEdit: boolean;
-  isRecordWriting: (record: DocumentationRecord) => boolean;
-  expanded: boolean;
-  expandedRecords: ReadonlySet<string>;
-  onToggleGroup: (sectionKey: string, groupKey: string) => void;
-  onToggleRecord: (record: DocumentationRecord) => void;
-  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
-  onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
-  onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-}) {
-  const records = useMemo(
-    () => group.records.filter((record) => filterRecord(record, activeFilters)),
-    [activeFilters, group.records],
-  );
-  const groupId = `documentation-group-${sectionKey}-${group.key}`;
-  const groupBodyId = `documentation-group-body-${sectionKey}-${group.key}`;
-  return (
-    <section className="documentation-group" id={group.anchor} aria-labelledby={groupId}>
-      <header className="documentation-group-header">
-        <button
-          type="button"
-          className="documentation-group-title"
-          aria-expanded={expanded}
-          aria-controls={groupBodyId}
-          onClick={() => onToggleGroup(sectionKey, group.key)}
-        >
-          <span aria-hidden="true">
-            {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-          </span>
-          <span id={groupId}>{group.title}</span>
-        </button>
-        <StatusAxisRollup counts={group.counts} />
-      </header>
-      {expanded ? (
-        <div id={groupBodyId}>
-          {records.length === 0 ? (
-            <p className="documentation-group-empty">No records match the active filters.</p>
-          ) : (
-            <div className="documentation-grid" role="list">
-              {records.map((record) => (
-                <DocumentationRecordRow
-                  key={record.record_id}
-                  projectId={projectId}
-                  record={record}
-                  assetUrlById={assetUrlById}
-                  assetUrlsPending={assetUrlsPending}
-                  canEdit={canEdit}
-                  writing={isRecordWriting(record)}
-                  expanded={expandedRecords.has(documentationRecordKey(record))}
-                  onToggle={() => onToggleRecord(record)}
-                  onDatasheetChange={onDatasheetChange}
-                  onPhotoChange={onPhotoChange}
-                  onFieldChange={onFieldChange}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
-    </section>
-  );
 }

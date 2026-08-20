@@ -12,6 +12,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { ShellMessage } from "../../../shared/ui/ShellMessage";
 import { TopbarAccountMenu, WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
 import { useSessionQuery, useSignOutMutation } from "../../auth/hooks";
+import type { DocumentationAudiencePolicy } from "../../documentation/lib";
 import { projectDownloadUrl } from "../../project_document/api";
 import { VersionControls } from "../../project_document/components/VersionControls";
 import { useDraftSummaryQuery, useProjectDocumentQuery } from "../../project_document/hooks";
@@ -36,6 +37,9 @@ export function ProjectShell() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const activeTab = isProjectTab(tab) ? tab : null;
   const sessionQuery = useSessionQuery();
+  const documentationAudiencePolicy: DocumentationAudiencePolicy = sessionQuery.isSuccess
+    ? "authenticated"
+    : "anonymous-hidden";
   const signOutMutation = useSignOutMutation();
   const projectQuery = useProjectQuery(projectId);
   const projectData = projectQuery.data;
@@ -204,7 +208,11 @@ export function ProjectShell() {
             </Link>
           ))}
         </nav>
-        <ProjectTabContent tab={activeTab ?? "overview"} project={openProject} />
+        <ProjectTabContent
+          tab={activeTab ?? "overview"}
+          project={openProject}
+          audiencePolicy={documentationAudiencePolicy}
+        />
       </section>
       {isSettingsOpen ? (
         <ProjectSettingsModal project={openProject} onClose={() => setIsSettingsOpen(false)} />

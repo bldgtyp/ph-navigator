@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready
+TIME: 20:10 EDT
+STATUS: Complete — acceptance contract satisfied
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for fully N/A Documentation records
 RELATED:
-  - planning/features/documentation-na-prioritization/README.md
-  - planning/features/documentation-na-prioritization/STATUS.md
+  - planning/archive/dated/2026-08-19/documentation-na-prioritization/README.md
+  - planning/archive/dated/2026-08-19/documentation-na-prioritization/STATUS.md
 ---
 
 # PRD — Documentation N/A Prioritization
