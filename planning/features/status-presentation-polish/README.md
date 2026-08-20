@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Roadmap complete, Assembly pending
+STATUS: Active — implementation complete, browser verification pending
 AUTHOR: Ed May / Codex
 SCOPE: Roadmap status controls and Envelope moisture-status presentation
 RELATED:
@@ -34,7 +34,7 @@ status.
 - `frontend/src/features/project_status/project_status.css`
 - `frontend/src/features/project_status/lib.ts`
 - `frontend/src/features/envelope/components/AssemblyHeader.tsx`
-- `frontend/src/features/envelope/components/CondensationStatusChip.tsx`
+- `frontend/src/features/envelope/components/CondensationStatusButton.tsx`
 - `frontend/src/features/envelope/envelope.css`
 
 `StatusItem` also supports `na`; the revised left rail must say `N/A` rather

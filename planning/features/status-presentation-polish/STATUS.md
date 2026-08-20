@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Roadmap complete, Assembly pending
+STATUS: Active — implementation complete, browser verification pending
 AUTHOR: Codex
 SCOPE: Current state of status presentation polish
 RELATED:
@@ -10,8 +10,8 @@ RELATED:
 
 # STATUS — Status Presentation Polish
 
-**State:** `Active`; Roadmap presentation is complete and Assembly moisture
-presentation is next.
+**State:** `Active`; implementation and focused automated verification are
+complete. Integrated browser verification is next.
 
 ## Completed
 
@@ -26,24 +26,35 @@ presentation is next.
   `pnpm --dir frontend exec vitest run src/features/project_status/components/StatusItemRow.test.tsx src/features/project_status/lib.test.ts`
   (14 tests passed).
 
+### Phase 2 — Assembly moisture status
+
+- Replaced the nested condensation chip with a compact text button while
+  preserving all result labels, tones, accessible names, and the detail action.
+- Derived `showMoisture` from the resolved session audience policy and used the
+  same boolean for query enablement, header rendering, and modal rendering.
+- Anonymous/session-unresolved paths render no Moisture wrapper and start no
+  condensation request; authenticated locked-Version and read-only users retain
+  the metric.
+- Recorded the temporary public-moisture boundary in
+  `context/ui/pages/envelope-tab.md` and beside the code guard.
+- Verified with
+  `pnpm --dir frontend exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx src/features/envelope/__tests__/condensation-chip.test.ts`
+  (69 tests passed), TypeScript build, formatting, and lint (0 errors; 18
+  pre-existing Fast Refresh warnings).
+
 ## Next step
 
-Write focused failing tests for:
-
-1. anonymous Assembly header does not render or query Moisture;
-2. signed-in Assembly header retains a compact clickable detail status.
-
-Identify the current session/auth discriminator before implementing the
-anonymous guard; do not approximate it with edit permission.
+Run the desktop/narrow signed-in and signed-out browser checks, then the focused
+frontend gate and Graphify update.
 
 ## Verification
 
 - [x] Roadmap state-cycle and accessible-name RTL.
 - [x] Viewer/static Roadmap state labels.
 - [ ] Desktop/narrow timeline geometry browser checks.
-- [ ] Condensation loading/success/warning/danger/unavailable label tests.
-- [ ] Anonymous no-render/no-query test.
-- [ ] Locked and authenticated read-only visibility test.
+- [x] Condensation loading/success/warning/danger/unavailable label tests.
+- [x] Anonymous no-render/no-query test.
+- [x] Locked and authenticated read-only visibility test.
 - [ ] Mounted signed-in and signed-out Envelope checks after
       `make agent-browser-ready`.
 - [ ] Focused frontend gate and Graphify update.

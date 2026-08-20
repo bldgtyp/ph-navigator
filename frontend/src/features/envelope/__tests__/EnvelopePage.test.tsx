@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-rou
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
+import type { DocumentationAudiencePolicy } from "../../documentation/lib";
 import type { ProjectDetail } from "../../projects/types";
 import type { AssemblyCondensationResponse } from "../condensation-types";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
@@ -537,6 +538,8 @@ describe("EnvelopePage", () => {
     const chip = await screen.findByRole("button", {
       name: "Condensation: needs vapour data (1)",
     });
+    expect(chip).toHaveClass("condensation-status-button");
+    expect(chip).not.toHaveClass("chip");
     await userEvent.click(chip);
 
     const riskDialog = await screen.findByRole("dialog", {
@@ -557,6 +560,39 @@ describe("EnvelopePage", () => {
       name: "Edit material — Wood fiber board",
     });
     expect(within(materialDialog).getByLabelText(/Resistance/)).toHaveFocus();
+  });
+
+  test("authenticated locked and read-only users retain the Moisture metric", async () => {
+    const { unmount } = renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { active_version: { ...project.active_version!, locked: true } },
+    });
+
+    expect(
+      await screen.findByRole("button", { name: "Condensation: needs vapour data (1)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Moisture")).toBeInTheDocument();
+    unmount();
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+
+    expect(
+      await screen.findByRole("button", { name: "Condensation: needs vapour data (1)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Moisture")).toBeInTheDocument();
+  });
+
+  test("anonymous users neither render nor query the Moisture metric", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+      audiencePolicy: "anonymous-hidden",
+    });
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    expect(screen.queryByText("Moisture")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Condensation:/ })).not.toBeInTheDocument();
+    expect(condensationFetchCalls()).toHaveLength(0);
   });
 
   test("membrane correction focuses direct sd instead of mu", async () => {
@@ -2107,7 +2143,10 @@ describe("EnvelopePage", () => {
 
 function renderEnvelope(
   initialEntry: string,
-  options: { projectOverride?: Partial<ProjectDetail> } = {},
+  options: {
+    projectOverride?: Partial<ProjectDetail>;
+    audiencePolicy?: DocumentationAudiencePolicy;
+  } = {},
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -2120,7 +2159,12 @@ function renderEnvelope(
           <Routes>
             <Route
               path="/projects/:projectId/envelope/*"
-              element={<EnvelopePage project={testProject} />}
+              element={
+                <EnvelopePage
+                  project={testProject}
+                  audiencePolicy={options.audiencePolicy ?? "authenticated"}
+                />
+              }
             />
             <Route path="/projects/:projectId/climate" element={<section>Climate</section>} />
           </Routes>
@@ -2185,6 +2229,10 @@ function catalogMaterialFetchCalls() {
   return fetchMock.mock.calls.filter((call) =>
     String(call[0]).includes("/api/v1/catalogs/materials"),
   );
+}
+
+function condensationFetchCalls() {
+  return fetchMock.mock.calls.filter((call) => String(call[0]).includes("/condensation?"));
 }
 
 function commandRequestBodies(): unknown[] {

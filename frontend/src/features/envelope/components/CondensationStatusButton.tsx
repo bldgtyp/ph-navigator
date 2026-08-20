@@ -1,7 +1,7 @@
 import type { AssemblyCondensationResponse } from "../condensation-types";
 import { condensationChipPresentation } from "../condensation-chip";
 
-export function CondensationStatusChip({
+export function CondensationStatusButton({
   result,
   loading,
   unavailable,
@@ -16,13 +16,12 @@ export function CondensationStatusChip({
   return (
     <button
       type="button"
-      className="chip chip--md chip--outline chip--interactive report-status-chip condensation-status-chip"
+      className="link-button condensation-status-button"
       data-tone={presentation.tone}
       data-muted={presentation.muted || undefined}
       aria-label={presentation.label}
       onClick={onClick}
     >
-      <span className="condensation-status-chip__dot" aria-hidden="true" />
       {presentation.label}
     </button>
   );

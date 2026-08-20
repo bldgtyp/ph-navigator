@@ -37,9 +37,8 @@ export function ProjectShell() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const activeTab = isProjectTab(tab) ? tab : null;
   const sessionQuery = useSessionQuery();
-  const documentationAudiencePolicy: DocumentationAudiencePolicy = sessionQuery.isSuccess
-    ? "authenticated"
-    : "anonymous-hidden";
+  const documentationAudiencePolicy: DocumentationAudiencePolicy =
+    sessionQuery.isSuccess && sessionQuery.data !== null ? "authenticated" : "anonymous-hidden";
   const signOutMutation = useSignOutMutation();
   const projectQuery = useProjectQuery(projectId);
   const projectData = projectQuery.data;

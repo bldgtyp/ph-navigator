@@ -24,6 +24,7 @@ export function AssemblyWorkspace({
   zoom,
   autoFitOnMount,
   canEdit,
+  showMoisture,
   thermal,
   thermalLoading,
   condensation,
@@ -61,6 +62,7 @@ export function AssemblyWorkspace({
   zoom: number;
   autoFitOnMount: boolean;
   canEdit: boolean;
+  showMoisture: boolean;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
   condensation: AssemblyCondensationResponse | null;
@@ -142,6 +144,7 @@ export function AssemblyWorkspace({
             condensationLoading={condensationLoading}
             condensationUnavailable={condensationUnavailable}
             canEdit={canEdit}
+            showMoisture={showMoisture}
             busy={commandBusy}
             actions={actions}
             onRename={onRenameActive}
