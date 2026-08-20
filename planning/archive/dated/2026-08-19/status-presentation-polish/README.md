@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Complete — verified; archive pending
+TIME: 21:18 EDT
+STATUS: Complete — archived
 AUTHOR: Ed May / Codex
 SCOPE: Roadmap status controls and Envelope moisture-status presentation
 RELATED:
-  - planning/features/status-presentation-polish/PRD.md
-  - planning/features/status-presentation-polish/STATUS.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/PRD.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/STATUS.md
   - planning/2026-08-19-ui-batch.md
 ---
 

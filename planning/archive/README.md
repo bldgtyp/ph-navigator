@@ -5,6 +5,12 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-19
 
+- `status-presentation-polish` - Replaced ambiguous Roadmap rail glyphs and the
+  duplicate title badge with direct Done / To-Do / N/A labels, reduced Assembly
+  condensation status to a compact text action for authenticated users, and
+  suppressed both its query and rendering for anonymous users. Three-way
+  simplify reviews, docs-pass, Graphify, 2,475 frontend tests, the frontend
+  development gate, and mounted desktop/narrow signed-in/out acceptance passed.
 - `shared-interaction-polish` - Added tokenized hover and delayed shared
   tooltips to small equal-width SegmentedControls while preserving native
   radio semantics and keyboard behavior. Mounted production ReportTable seam,

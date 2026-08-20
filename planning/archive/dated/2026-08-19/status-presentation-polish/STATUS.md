@@ -1,18 +1,17 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Complete — implementation and verification complete; archive next
+TIME: 21:18 EDT
+STATUS: Complete — archived
 AUTHOR: Codex
 SCOPE: Current state of status presentation polish
 RELATED:
-  - planning/features/status-presentation-polish/PRD.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/PRD.md
 ---
 
 # STATUS — Status Presentation Polish
 
 **State:** `Complete`; implementation, simplify, docs-pass, Graphify, automated
-verification, and mounted browser acceptance are complete. Archive cleanup is
-next.
+verification, mounted browser acceptance, and archive cleanup are complete.
 
 ## Completed
 
@@ -65,7 +64,8 @@ next.
 
 ## Next step
 
-Archive this completed packet and update planning indexes.
+None. Future public condensation enablement remains a separately scoped policy
+change.
 
 ## Verification
 
