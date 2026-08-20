@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 22:24 EDT
-STATUS: Active — Phases 00–03 complete
+TIME: 22:34 EDT
+STATUS: Active — Phases 00–04 complete
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
@@ -49,6 +49,10 @@ changes without reading storage paths or record UUIDs.
   to a dedicated manager for opening, renaming, and confirmed deletion. The
   manager preserves pending actions, refreshes stale project state after
   rejected mutations, and explains active deletion guards in visible UI.
+- The browser comparison now consumes the structured response through explicit
+  saved-Version From and saved-Version-or-draft To selectors. Collapsed table
+  counts lead to lazy semantic rows and lazy technical JSON/path disclosure in
+  a wide, viewport-bounded, resizable modal.
 
 ## Primary code anchors
 

@@ -36,7 +36,7 @@ export function ModalDialog({
 }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
       // The dialog consumes the Escape that closes it — this listener is on
       // `document`, so stopping here keeps window-level Escape handlers

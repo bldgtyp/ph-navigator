@@ -288,14 +288,143 @@
   gap: var(--space-16);
 }
 
+#version-diff {
+  width: min(1100px, 94vw);
+  height: min(760px, 92vh);
+  min-width: min(720px, calc(100vw - 40px));
+  min-height: min(480px, calc(100vh - 40px));
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+}
+
+#version-diff > .diff-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.diff-selectors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
+  padding-bottom: var(--space-16);
+}
+
+.diff-results {
+  display: grid;
+  align-content: start;
+  gap: var(--space-12);
+  min-height: 0;
+  overflow: auto;
+  padding-right: var(--space-4);
+}
+
+.diff-state {
+  display: grid;
+  min-height: 180px;
+  margin: 0;
+  place-items: center;
+  color: var(--text-secondary);
+}
+
 .diff-table {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-elev);
+  overflow: clip;
+}
+
+.diff-table > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-12);
+  cursor: pointer;
+}
+
+.diff-table > summary span {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.diff-change-list {
+  display: grid;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.diff-change {
+  min-width: 0;
   padding: var(--space-12);
 }
 
-.diff-table ul {
+.diff-change + .diff-change {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.diff-change-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.diff-operation {
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+}
+
+.diff-value-line {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.diff-value {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.diff-technical {
+  margin-top: var(--space-8);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.diff-technical summary {
+  cursor: pointer;
+}
+
+.diff-technical dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-6) var(--space-12);
   margin: var(--space-8) 0 0;
-  padding-left: var(--space-20);
+}
+
+.diff-technical dt {
+  font-weight: var(--fw-semibold);
+}
+
+.diff-technical dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diff-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 760px) {
+  .diff-selectors {
+    grid-template-columns: 1fr;
+  }
 }

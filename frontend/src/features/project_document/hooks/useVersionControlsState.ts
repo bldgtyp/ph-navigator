@@ -17,6 +17,7 @@ export function useVersionControlsState() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const [versionManagerOpen, setVersionManagerOpen] = useState(false);
+  const [diffFromVersionId, setDiffFromVersionId] = useState<string | null>(null);
   const [diffTarget, setDiffTarget] = useState(DRAFT_DIFF_TARGET);
   const [versionName, setVersionName] = useState("");
   const [versionKind, setVersionKind] = useState<SaveAsVersionKind>("working");
@@ -44,6 +45,25 @@ export function useVersionControlsState() {
     setSaveAsReturnVersionId(null);
   };
 
+  const openDiff = (fromVersionId: string) => {
+    setDiffFromVersionId(fromVersionId);
+    setDiffTarget(DRAFT_DIFF_TARGET);
+    setActionsOpen(false);
+    setVersionsOpen(false);
+    setDiffOpen(true);
+  };
+
+  const changeDiffFrom = (fromVersionId: string) => {
+    setDiffFromVersionId(fromVersionId);
+    setDiffTarget((target) => (target === fromVersionId ? DRAFT_DIFF_TARGET : target));
+  };
+
+  const closeDiff = () => {
+    setDiffOpen(false);
+    setDiffFromVersionId(null);
+    setDiffTarget(DRAFT_DIFF_TARGET);
+  };
+
   return {
     versionsOpen,
     setVersionsOpen,
@@ -51,9 +71,9 @@ export function useVersionControlsState() {
     setActionsOpen,
     saveAsOpen,
     diffOpen,
-    setDiffOpen,
     versionManagerOpen,
     setVersionManagerOpen,
+    diffFromVersionId,
     diffTarget,
     setDiffTarget,
     versionName,
@@ -70,6 +90,9 @@ export function useVersionControlsState() {
     openSaveAs,
     closeSaveAs,
     resetSaveAsForm,
+    openDiff,
+    changeDiffFrom,
+    closeDiff,
     keepRestoredDraft: () => setDraftRestorePrompt(null),
   };
 }

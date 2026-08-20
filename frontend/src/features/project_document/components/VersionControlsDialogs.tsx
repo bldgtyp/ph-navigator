@@ -1,12 +1,9 @@
 import { formatProjectDateTime } from "../../../shared/lib/dates";
-import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { DialogActions } from "../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import type { ProjectVersion } from "../../projects/types";
-import type { DiffSummary } from "../types";
 import type { DraftRestorePrompt, SaveAsVersionKind } from "../types/versionControls";
-import { DRAFT_DIFF_TARGET, SAVE_AS_VERSION_KINDS } from "../types/versionControls";
+import { SAVE_AS_VERSION_KINDS } from "../types/versionControls";
 
 export function DraftRestoreDialog({
   prompt,
@@ -95,69 +92,6 @@ export function SaveAsDialog({
           submitDisabled={versionName.trim().length === 0}
         />
       </form>
-    </ModalDialog>
-  );
-}
-
-export function DiffDialog({
-  activeVersionId,
-  versions,
-  diffTarget,
-  diffData,
-  isLoading,
-  error,
-  onTargetChange,
-  onClose,
-}: {
-  activeVersionId: string | null;
-  versions: ProjectVersion[];
-  diffTarget: string;
-  diffData: DiffSummary | undefined;
-  isLoading: boolean;
-  error: unknown;
-  onTargetChange: (target: string) => void;
-  onClose: () => void;
-}) {
-  return (
-    <ModalDialog
-      title="Diff"
-      titleId="diff-title"
-      onClose={onClose}
-      showHeaderClose
-      dismissOnBackdrop
-      resizable
-    >
-      <div className="diff-panel">
-        <AutocompleteSelect
-          className="diff-target-control"
-          label="Compare current version to"
-          value={diffTarget}
-          options={[
-            { value: DRAFT_DIFF_TARGET, label: "Current draft" },
-            ...versions
-              .filter((version) => version.id !== activeVersionId)
-              .map((version) => ({ value: version.id, label: version.name })),
-          ]}
-          onChange={onTargetChange}
-        />
-        {isLoading ? <p>Loading diff...</p> : null}
-        {error ? (
-          <p className="form-error" role="alert">
-            {errorMessage(error, "Could not load diff.")}
-          </p>
-        ) : null}
-        {diffData?.tables.map((table) => (
-          <section key={table.table} className="diff-table">
-            <h3>{table.table}</h3>
-            <p>{table.change_count} changed paths</p>
-            <ul>
-              {table.changed_paths.slice(0, 12).map((path) => (
-                <li key={path}>{path}</li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
     </ModalDialog>
   );
 }

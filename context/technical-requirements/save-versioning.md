@@ -214,6 +214,14 @@ owns table labels and envelope shapes. Derived computed/inverse-link overlays
 are not presented as user changes. Missing labels fall back to humanized keys
 without dropping the change.
 
+The signed-in browser comparison keeps operand direction explicit: **From** is
+a saved Version only, while **To** is another saved Version or the current
+draft. Self-comparison is excluded. The wide, viewport-bounded modal keeps its
+selectors and Close footer pinned around a scrolling results region. Table
+counts are shown before lazily mounted record/field changes; full JSON, IDs,
+and raw paths are available only in a second lazy Technical details disclosure.
+Empty and whitespace-only strings remain quoted in the primary comparison.
+
 ### 8.5 Concurrency
 
 PHN is optimized for sequential editing by a tiny team, but the same

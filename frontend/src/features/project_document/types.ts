@@ -49,5 +49,21 @@ export type DiffSummary = {
     table: string;
     change_count: number;
     changed_paths: string[];
+    table_label: string;
+    added_count: number;
+    removed_count: number;
+    changed_count: number;
+    changes: DiffChange[];
   }>;
+};
+
+export type DiffChange = {
+  operation: "added" | "removed" | "changed";
+  record_id: string;
+  record_label: string;
+  field_key: string | null;
+  field_label: string | null;
+  before: unknown;
+  after: unknown;
+  raw_paths: string[];
 };

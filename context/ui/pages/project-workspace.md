@@ -129,6 +129,13 @@ Trigger: the version pill in the project header bar.
   and disables Cancel/Escape dismissal. Rejected mutations stay inline and
   refresh project metadata so another-tab deletion or rename can reconcile the
   selected row.
+- **Compare versions…** opens a wide, resizable modal. **From** offers saved
+  Versions only; **To** offers another saved Version or the current draft, and
+  a Version is never offered against itself. Selectors and the footer remain
+  reachable while results scroll. Each collapsed table reports added, removed,
+  and changed counts; opening it shows human record/field labels and
+  before/after values. IDs, raw paths, and full JSON remain behind a lazy
+  Technical details disclosure.
 
 **Open behavior:**
 1. User clicks Open on a non-current version.

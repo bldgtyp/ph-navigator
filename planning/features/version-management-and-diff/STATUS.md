@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 22:24 EDT
-STATUS: Active — Phases 00–03 complete; Phase 04 next
+TIME: 22:34 EDT
+STATUS: Active — Phases 00–04 complete; Phase 05 next
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
@@ -12,13 +12,13 @@ RELATED:
 # STATUS — Version Management and Diff
 
 **State:** `Active` implementation. Backend contracts, Version mutations,
-structured diffs, and the Version Management UI are complete; the structured
-Diff modal redesign is next.
+structured diffs, the Version Management UI, and the structured Diff modal are
+complete. Mounted acceptance and durable closeout remain.
 
 ## Next step
 
-Start Phase 04 with independent saved-Version From and saved-or-draft To
-selectors, then render the structured comparison in a wide, resizable modal.
+Run Phase 05 mounted multi-Version browser acceptance, verify normal and narrow
+Diff layout bounds, then finish durable docs and archive this packet.
 
 ## Known current state
 
@@ -33,6 +33,9 @@ selectors, then render the structured comparison in a wide, resizable modal.
   provides Version-specific Open/Rename/Delete actions, exact-name confirmation,
   visible deletion guards, pending-action dismissal protection, and rejected
   mutation refresh/reconciliation.
+- The Diff modal now has explicit directional selectors, semantic operation /
+  record / field / value rows, lazy table and technical disclosures, quoted
+  string summaries, bounded resize/scroll chrome, and a footer Close action.
 
 ## Verification ledger
 
@@ -47,7 +50,8 @@ selectors, then render the structured comparison in a wide, resizable modal.
 - [x] Popover timestamp and management-modal RTL, including pending dismissal,
       double-submit, rejected rename, stale-row reconciliation, and accessible
       Version-specific action names.
-- [ ] Wide/resizable Diff modal long-content and keyboard tests.
+- [x] Wide/resizable Diff modal semantic, long-string, empty, loading, error,
+      selector-direction, lazy-disclosure, and Escape keyboard tests.
 - [ ] Mounted multi-Version browser acceptance.
 - [ ] Full `make ci`, Graphify update, and save-versioning docs pass.
 
@@ -99,3 +103,17 @@ None external.
 - `graphify update .` — rebuilt `20,557` nodes and `61,147` edges.
 - `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
   `2482 passed`; production build and structural guards passed.
+
+## Phase 04 evidence
+
+- Focused Version manager/Diff RTL and state tests — `16 passed`.
+- Frontend TypeScript, changed-file ESLint, and structural guards — passed.
+- Three-agent simplify review completed; accepted fixes cover shared chip and
+  state reuse, lazy large-diff rendering, selector Escape precedence,
+  assistive before/after semantics, and explicit whitespace values.
+- Mounted computed-style checks at normal and sub-720 px viewport sizes remain
+  assigned to Phase 05 browser acceptance.
+- `make format` — passed with no source changes.
+- `graphify update .` — rebuilt `20,575` nodes and `61,178` edges.
+- `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
+  `2489 passed`; production build and structural guards passed.
