@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import pypdfium2 as pdfium
+from reportlab.pdfbase import pdfmetrics
 
 from features.envelope.assembly_pdf import (
+    _FONT_NAME,
     LETTER_LANDSCAPE_PT,
+    _centered_row_text_layout,
     render_assembly_report_pdf,
     render_renderer_proof,
 )
@@ -129,7 +132,78 @@ def test_report_pdf_fits_extreme_wide_and_deep_geometry_on_the_page() -> None:
     text = document[0].get_textpage().get_text_range()
     assert "Extreme geometry" in text
     assert "393.701 in" in text
+    assert material.name in text
     assert "Needs review: missing material data" in text
+
+
+def test_report_pdf_preserves_dense_material_tables_and_full_names() -> None:
+    materials = [
+        ProjectMaterial.model_validate(
+            project_material(
+                id=f"pmat_{index:03d}",
+                name=f"Material {index:03d} " + "long identifying value " * 6,
+                datasheet_asset_ids=[],
+            )
+        )
+        for index in range(120)
+    ]
+    dense = Assembly.model_validate(
+        assembly(
+            id="asm_dense",
+            name="Dense material table",
+            layers=[
+                {
+                    "id": f"lyr_{index:03d}",
+                    "order": index,
+                    "thickness_mm": 10.0,
+                    "segments": [
+                        {
+                            "id": f"seg_{index:03d}",
+                            "order": 0,
+                            "width_mm": 1000.0,
+                            "is_continuous_insulation": False,
+                            "steel_stud_spacing_mm": None,
+                            "project_material_id": material.id,
+                            "photo_asset_ids": [],
+                            "photo_not_required": False,
+                            "use_site_notes": None,
+                        }
+                    ],
+                }
+                for index, material in enumerate(materials)
+            ],
+        )
+    )
+    report = build_assembly_report(
+        [dense],
+        materials,
+        project_bt_number="BT-DENSE",
+        project_name="Material table QA",
+        version_name="Saved",
+        units="SI",
+    )
+
+    document = pdfium.PdfDocument(render_assembly_report_pdf(report))
+    text = document[0].get_textpage().get_text_range()
+
+    assert len(document) == 1
+    assert document[0].render(scale=0.5).to_pil().getbbox() is not None
+    assert all(material.name in text for material in materials)
+    assert "..." not in text
+
+    row_height = (476.0 - 90.0 - 25.0) / len(materials)
+    row_bottom = 100.0
+    font_size, baseline = _centered_row_text_layout(
+        materials[0].name,
+        font_name=_FONT_NAME,
+        font_size=min(6.0, row_height * 0.55),
+        max_width=76.0,
+        row_bottom=row_bottom,
+        row_height=row_height,
+    )
+    ascent, descent = pdfmetrics.getAscentDescent(_FONT_NAME, font_size)
+    assert baseline + descent >= row_bottom
+    assert baseline + ascent <= row_bottom + row_height
 
 
 def test_report_projects_ordinary_air_barrier_and_renders_legacy_multi_segment_membrane() -> None:

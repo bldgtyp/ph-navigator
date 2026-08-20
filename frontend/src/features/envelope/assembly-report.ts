@@ -1,14 +1,17 @@
-import {
-  formatDensityFromKgM3,
-  formatLengthFromMm,
-  formatNumberWithUnit,
-  formatRPerInFromConductivityWmK,
-  formatSpecificHeatFromJKgK,
-  type UnitSystem,
-} from "../../lib/units";
+import type { UnitSystem } from "../../lib/units";
 import { buildAssemblyCanvasGeometry } from "./canvas-geometry";
-import { assemblyMaterialsInFirstUseOrder, materialById, materialColor } from "./lib";
-import type { Assembly, ProjectMaterial } from "./types";
+import {
+  assemblyMaterialsInFirstUseOrder,
+  formatAssemblyLayerThickness,
+  materialById,
+  materialColor,
+} from "./lib";
+import {
+  assemblyMaterialHeaders,
+  formatAssemblyMaterialValues,
+  type AssemblyMaterialHeader,
+} from "./material-table-presentation";
+import type { Assembly, AssemblyFace, ProjectMaterial } from "./types";
 
 export type AssemblyReportMaterial = {
   project_material_id: string;
@@ -29,9 +32,10 @@ export type AssemblyReportPageProjection = {
   width_mm: number;
   height_mm: number;
   needs_review_missing_material_data: boolean;
+  material_headers: AssemblyMaterialHeader[];
   air_barrier: {
     layer_id: string;
-    face: "interior" | "exterior";
+    face: AssemblyFace;
     y_mm: number;
     width_mm: number;
   } | null;
@@ -83,7 +87,7 @@ export function buildAssemblyReportPage(
     thickness_mm: layerGeometry.layer.thickness_mm,
     thickness_label: layerGeometry.isMembrane
       ? null
-      : formatLengthLabel(layerGeometry.layer.thickness_mm, units),
+      : formatAssemblyLayerThickness(layerGeometry.layer.thickness_mm, units),
     is_membrane: layerGeometry.isMembrane,
     segments: (segmentsByLayerId.get(layerGeometry.layer.id) ?? []).map((segmentGeometry) => {
       const materialId = segmentGeometry.segment.project_material_id;
@@ -115,6 +119,7 @@ export function buildAssemblyReportPage(
     height_mm: geometry.heightMm,
     needs_review_missing_material_data:
       missingMaterial || usedMaterials.some((material) => material.conductivity_w_mk === null),
+    material_headers: assemblyMaterialHeaders(units),
     air_barrier: geometry.airBarrier
       ? {
           layer_id: geometry.airBarrier.layerId,
@@ -129,49 +134,14 @@ export function buildAssemblyReportPage(
 }
 
 function materialRow(material: ProjectMaterial, units: UnitSystem): AssemblyReportMaterial {
+  const labels = formatAssemblyMaterialValues(material, units, "—");
   return {
     project_material_id: material.id,
     name: material.name,
     color: materialColor(material),
-    value_label:
-      units === "IP"
-        ? formatRPerInFromConductivityWmK(material.conductivity_w_mk, {
-            unitSystem: units,
-            empty: "—",
-            fractionDigits: 3,
-            showUnit: false,
-          })
-        : formatNumberWithUnit(material.conductivity_w_mk, "", {
-            unitSystem: units,
-            empty: "—",
-            fractionDigits: 3,
-            showUnit: false,
-          }),
-    density_label: formatDensityFromKgM3(material.density_kg_m3, {
-      unitSystem: units,
-      empty: "—",
-      fractionDigits: 1,
-      showUnit: false,
-    }),
-    specific_heat_label: formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, {
-      unitSystem: units,
-      empty: "—",
-      fractionDigits: units === "IP" ? 3 : 0,
-      showUnit: false,
-    }),
-    emissivity_label: formatNumberWithUnit(material.emissivity, "", {
-      unitSystem: units,
-      empty: "—",
-      fractionDigits: 3,
-      showUnit: false,
-    }),
+    value_label: labels.valueLabel,
+    density_label: labels.densityLabel,
+    specific_heat_label: labels.specificHeatLabel,
+    emissivity_label: labels.emissivityLabel,
   };
-}
-
-function formatLengthLabel(valueMm: number, units: UnitSystem): string {
-  return formatLengthFromMm(valueMm, {
-    unitSystem: units,
-    fractionDigits: units === "IP" ? 3 : 1,
-    showUnit: false,
-  });
 }

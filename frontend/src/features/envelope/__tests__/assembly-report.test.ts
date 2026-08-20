@@ -15,6 +15,20 @@ describe("buildAssemblyReportPage", () => {
     ).toEqual(fixture.expected);
   });
 
+  test("matches the backend IP material and thickness parity contract", () => {
+    const page = buildAssemblyReportPage(
+      fixture.assembly as unknown as Assembly,
+      fixture.materials as unknown as ProjectMaterial[],
+      "IP",
+    );
+
+    expect({
+      material_headers: page.material_headers,
+      layer_thickness_labels: page.layers.map((layer) => layer.thickness_label),
+      materials: page.materials,
+    }).toEqual(fixture.expected_ip);
+  });
+
   test("normalizes valid out-of-order arrays and matches the explicit rounding policy", () => {
     const assembly = fixture.assembly as unknown as Assembly;
     const materials = fixture.materials as unknown as ProjectMaterial[];

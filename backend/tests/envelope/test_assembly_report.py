@@ -19,6 +19,20 @@ def test_backend_projection_matches_frontend_parity_fixture() -> None:
     assert page.model_dump(mode="json") == fixture["expected"]
 
 
+def test_backend_projection_matches_frontend_ip_material_and_thickness_contract() -> None:
+    fixture = json.loads(FIXTURE_PATH.read_text())
+    assembly = Assembly.model_validate(fixture["assembly"])
+    materials = [ProjectMaterial.model_validate(item) for item in fixture["materials"]]
+
+    page = build_assembly_report_page(assembly, materials, units="IP")
+
+    assert {
+        "material_headers": [item.model_dump(mode="json") for item in page.material_headers],
+        "layer_thickness_labels": [item.thickness_label for item in page.layers],
+        "materials": [item.model_dump(mode="json") for item in page.materials],
+    } == fixture["expected_ip"]
+
+
 def test_backend_projection_normalizes_valid_out_of_order_arrays_and_rounds_half_up() -> None:
     fixture = json.loads(FIXTURE_PATH.read_text())
     raw_assembly = fixture["assembly"]

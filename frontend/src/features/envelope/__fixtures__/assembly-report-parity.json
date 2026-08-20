@@ -118,6 +118,14 @@
     "width_mm": 1000,
     "height_mm": 71.7,
     "needs_review_missing_material_data": true,
+    "material_headers": [
+      { "label": "Color", "unit": null },
+      { "label": "Material", "unit": null },
+      { "label": "Conductivity", "unit": "W/(m-K)" },
+      { "label": "Density", "unit": "kg/m3" },
+      { "label": "Specific heat", "unit": "J/(kg-K)" },
+      { "label": "Emissivity", "unit": null }
+    ],
     "air_barrier": null,
     "layers": [
       {
@@ -217,6 +225,37 @@
         "name": "Smart vapor retarder",
         "color": "#3a7bd5",
         "value_label": "0.2",
+        "density_label": "—",
+        "specific_heat_label": "—",
+        "emissivity_label": "—"
+      }
+    ]
+  },
+  "expected_ip": {
+    "material_headers": [
+      { "label": "Color", "unit": null },
+      { "label": "Material", "unit": null },
+      { "label": "Resistivity", "unit": "R/inch" },
+      { "label": "Density", "unit": "lb/ft3" },
+      { "label": "Specific heat", "unit": "Btu/(lb-F)" },
+      { "label": "Emissivity", "unit": null }
+    ],
+    "layer_thickness_labels": ["1.969", null, "0.5"],
+    "materials": [
+      {
+        "project_material_id": "pmat_insulation",
+        "name": "Wood fiber board",
+        "color": "#dce6c8",
+        "value_label": "3.795",
+        "density_label": "10",
+        "specific_heat_label": "0.502",
+        "emissivity_label": "0.9"
+      },
+      {
+        "project_material_id": "pmat_membrane",
+        "name": "Smart vapor retarder",
+        "color": "#3a7bd5",
+        "value_label": "0.721",
         "density_label": "—",
         "specific_heat_label": "—",
         "emissivity_label": "—"

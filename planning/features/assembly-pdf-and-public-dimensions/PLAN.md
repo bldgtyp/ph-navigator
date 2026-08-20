@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–03 complete; Phase 04 next
+DATE: 2026-08-20
+TIME: 00:14 EDT
+STATUS: Complete — all phases verified
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
@@ -76,6 +76,11 @@ errors, and keeps the action absent for viewers.
 Exit: focused frontend tests cover visibility, warning, download, and errors.
 
 ## Phase 04 — Rendered acceptance and docs
+
+**Status: Complete (2026-08-20).** The isolated local fixture passed unlocked,
+locked, and anonymous browser checks in SI/IP; the final two-page vector PDF
+was visually inspected without clipping. Full backend/frontend suites and all
+static/build contract gates pass.
 
 - Run `make agent-browser-ready` before localhost verification.
 - Verify signed-in unlocked, signed-in locked, and signed-out Assembly routes.

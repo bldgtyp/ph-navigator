@@ -1764,7 +1764,7 @@ button:disabled {
   width: 100%;
 }
 
-.app-menu__item:hover:not(:disabled):not([aria-disabled="true"]) {
+.app-menu__item:hover:not(:disabled) {
   background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 

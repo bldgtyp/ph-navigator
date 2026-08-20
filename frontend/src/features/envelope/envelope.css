@@ -2032,5 +2032,5 @@
   display: block;
   color: var(--text-muted);
   font-size: var(--fs-xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }

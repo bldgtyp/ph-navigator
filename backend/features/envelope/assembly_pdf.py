@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib.resources import files
 from io import BytesIO
+from typing import Literal
 
 from reportlab.lib.colors import Color, HexColor
 from reportlab.lib.pagesizes import landscape, letter
@@ -12,38 +13,27 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 
-from features.envelope.assembly_report import AssemblyReport, AssemblyReportPage
+from features.envelope.assembly_report import (
+    AssemblyReport,
+    AssemblyReportMaterialHeader,
+    AssemblyReportPage,
+    assembly_material_headers,
+)
+from features.envelope.phpp_types import UnitSystem
 
 LETTER_LANDSCAPE_PT = landscape(letter)
 PAGE_MARGIN_PT = 36.0
-DRAWING_TABLE_GAP_PT = 24.0
 _FONT_NAME = "PHN-Vera"
 _FONT_BOLD_NAME = "PHN-Vera-Bold"
 _INK = HexColor("#111827")
 _LINE = HexColor("#59636e")
+_WHITE = HexColor("#ffffff")
+_HEADER_BG = HexColor("#e5e7eb")
+_REVIEW = HexColor("#9a3412")
+_HATCH = HexColor("#9ca3af")
 
 
-@dataclass(frozen=True, slots=True)
-class MaterialTableColumnSpec:
-    label_si: str
-    unit_si: str | None
-    width_pt: float
-    label_ip: str | None = None
-    unit_ip: str | None = None
-
-
-MATERIAL_TABLE_COLUMN_SPECS = (
-    MaterialTableColumnSpec("Color", None, 23.0),
-    MaterialTableColumnSpec("Material", None, 82.0),
-    MaterialTableColumnSpec("Conductivity", "W/(m-K)", 65.0, "Resistivity", "R/inch"),
-    MaterialTableColumnSpec("Density", "kg/m3", 46.0, unit_ip="lb/ft3"),
-    MaterialTableColumnSpec("Specific heat", "J/(kg-K)", 68.0, unit_ip="Btu/(lb-F)"),
-    MaterialTableColumnSpec("Emissivity", None, 40.0),
-)
-MATERIAL_TABLE_COLUMNS = tuple(
-    f"{column.label_si} [{column.unit_si}]" if column.unit_si else column.label_si
-    for column in MATERIAL_TABLE_COLUMN_SPECS
-)
+MATERIAL_TABLE_COLUMN_WIDTHS_PT = (23.0, 82.0, 65.0, 46.0, 68.0, 40.0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +89,7 @@ def render_assembly_report_pdf(report: AssemblyReport) -> bytes:
     for page_number, page in enumerate(report.pages, start=1):
         _draw_report_header(pdf, report, page, page_number)
         _draw_report_assembly(pdf, page, report.units)
-        _draw_report_material_table(pdf, page, report.units)
+        _draw_report_material_table(pdf, page)
         pdf.showPage()
     pdf.save()
     return stream.getvalue()
@@ -148,7 +138,7 @@ def _draw_report_header(
     )
 
 
-def _draw_report_assembly(pdf: Canvas, page: AssemblyReportPage, units: str) -> None:
+def _draw_report_assembly(pdf: Canvas, page: AssemblyReportPage, units: UnitSystem) -> None:
     box_left = 86.0
     box_bottom = 102.0
     box_width = 320.0
@@ -212,7 +202,7 @@ def _draw_report_assembly(pdf: Canvas, page: AssemblyReportPage, units: str) -> 
         pdf.line(origin_x, barrier_y, origin_x + page.air_barrier.width_mm * scale, barrier_y)
 
 
-def _draw_report_material_table(pdf: Canvas, page: AssemblyReportPage, units: str) -> None:
+def _draw_report_material_table(pdf: Canvas, page: AssemblyReportPage) -> None:
     left = 432.0
     top = 476.0
     table_width = 324.0
@@ -220,16 +210,17 @@ def _draw_report_material_table(pdf: Canvas, page: AssemblyReportPage, units: st
     review_height = 18.0 if page.needs_review_missing_material_data else 0.0
     available_rows_height = top - 90.0 - header_height - review_height
     row_height = min(24.0, available_rows_height / max(1, len(page.materials)))
-    widths = tuple(column.width_pt for column in MATERIAL_TABLE_COLUMN_SPECS)
+    widths = MATERIAL_TABLE_COLUMN_WIDTHS_PT
     assert sum(widths) == table_width
-    headers = _material_table_headers(units)
+    headers = _material_table_header_lines(page.material_headers)
+    assert len(headers) == len(widths)
 
     pdf.setFillColor(_INK)
     pdf.setFont(_FONT_BOLD_NAME, 9)
     pdf.drawString(left, top + 13.0, "Unique materials")
     x = left
     for lines, width in zip(headers, widths, strict=True):
-        pdf.setFillColor(HexColor("#e5e7eb"))
+        pdf.setFillColor(_HEADER_BG)
         pdf.setStrokeColor(_LINE)
         pdf.rect(x, top - header_height, width, header_height, fill=1, stroke=1)
         line_y = top - 11.0 if len(lines) == 2 else top - 15.0
@@ -246,6 +237,8 @@ def _draw_report_material_table(pdf: Canvas, page: AssemblyReportPage, units: st
             )
         x += width
 
+    pdf.setStrokeColor(_LINE)
+    pdf.setLineWidth(min(0.45, row_height * 0.2))
     for row_index, material in enumerate(page.materials, start=1):
         row_top = top - header_height - row_height * (row_index - 1)
         values = (
@@ -258,29 +251,30 @@ def _draw_report_material_table(pdf: Canvas, page: AssemblyReportPage, units: st
         )
         x = left
         for column_index, (value, width) in enumerate(zip(values, widths, strict=True)):
-            pdf.setFillColor(HexColor("#ffffff"))
-            pdf.setStrokeColor(_LINE)
+            pdf.setFillColor(_WHITE)
             pdf.rect(x, row_top - row_height, width, row_height, fill=1, stroke=1)
             if column_index == 0:
-                swatch = min(12.0, max(3.0, row_height - 6.0))
+                swatch = min(12.0, row_height * 0.65)
                 pdf.setFillColor(_pdf_color(value, fallback="#f3f4f6"))
                 pdf.rect(
                     x + (width - swatch) / 2, row_top - (row_height + swatch) / 2, swatch, swatch, fill=1, stroke=0
                 )
             else:
-                _draw_fitted_text(
-                    pdf,
+                fitted_size, baseline = _centered_row_text_layout(
                     value,
-                    x + 3.0,
-                    row_top - row_height / 2 - 2.0,
-                    width - 6.0,
                     font_name=_FONT_NAME,
-                    font_size=min(6.0, max(3.0, row_height * 0.35)),
+                    font_size=min(6.0, row_height * 0.55),
+                    max_width=width - 6.0,
+                    row_bottom=row_top - row_height,
+                    row_height=row_height,
                 )
+                pdf.setFillColor(_INK)
+                pdf.setFont(_FONT_NAME, fitted_size)
+                pdf.drawString(x + 3.0, baseline, value)
             x += width
 
     if page.needs_review_missing_material_data:
-        pdf.setFillColor(HexColor("#9a3412"))
+        pdf.setFillColor(_REVIEW)
         pdf.setFont(_FONT_BOLD_NAME, 7)
         pdf.drawString(
             left,
@@ -294,7 +288,7 @@ def _draw_missing_hatch(pdf: Canvas, x: float, y: float, width: float, height: f
     path = pdf.beginPath()
     path.rect(x, y, width, height)
     pdf.clipPath(path, stroke=0, fill=0)
-    pdf.setStrokeColor(HexColor("#9ca3af"))
+    pdf.setStrokeColor(_HATCH)
     pdf.setLineWidth(0.35)
     step = 8.0
     offset = -height
@@ -313,45 +307,48 @@ def _draw_fitted_text(
     *,
     font_name: str,
     font_size: float,
-    align: str = "left",
+    align: Literal["left", "right", "center"] = "left",
 ) -> None:
-    measured = pdfmetrics.stringWidth(value, font_name, font_size)
-    fitted_size = max(2.5, min(font_size, font_size * max_width / measured)) if measured else font_size
-    fitted_value = _truncate_text_to_width(value, font_name, fitted_size, max_width)
+    fitted_size = _fitted_font_size(value, font_name, font_size, max_width)
     pdf.setFillColor(_INK)
     pdf.setFont(font_name, fitted_size)
     if align == "right":
-        pdf.drawRightString(x + max_width, y, fitted_value)
+        pdf.drawRightString(x + max_width, y, value)
     elif align == "center":
-        pdf.drawCentredString(x + max_width / 2, y, fitted_value)
+        pdf.drawCentredString(x + max_width / 2, y, value)
     else:
-        pdf.drawString(x, y, fitted_value)
+        pdf.drawString(x, y, value)
 
 
-def _truncate_text_to_width(value: str, font_name: str, font_size: float, max_width: float) -> str:
-    if pdfmetrics.stringWidth(value, font_name, font_size) <= max_width:
-        return value
-    suffix = "..."
-    available = max_width - pdfmetrics.stringWidth(suffix, font_name, font_size)
-    if available <= 0:
-        return ""
-    end = len(value)
-    while end > 0 and pdfmetrics.stringWidth(value[:end], font_name, font_size) > available:
-        end -= 1
-    return f"{value[:end]}{suffix}"
+def _fitted_font_size(value: str, font_name: str, font_size: float, max_width: float) -> float:
+    measured = pdfmetrics.stringWidth(value, font_name, font_size)
+    return min(font_size, font_size * max_width / measured) if measured else font_size
 
 
-def _material_table_headers(units: str) -> tuple[tuple[str, ...], ...]:
-    headers: list[tuple[str, ...]] = []
-    for column in MATERIAL_TABLE_COLUMN_SPECS:
-        label = column.label_ip if units == "IP" and column.label_ip else column.label_si
-        unit = column.unit_ip if units == "IP" else column.unit_si
-        headers.append((label, f"[{unit}]") if unit else (label,))
-    return tuple(headers)
+def _centered_row_text_layout(
+    value: str,
+    *,
+    font_name: str,
+    font_size: float,
+    max_width: float,
+    row_bottom: float,
+    row_height: float,
+) -> tuple[float, float]:
+    fitted_size = _fitted_font_size(value, font_name, font_size, max_width)
+    ascent, descent = pdfmetrics.getAscentDescent(font_name, fitted_size)
+    glyph_height = ascent - descent
+    baseline = row_bottom + (row_height - glyph_height) / 2 - descent
+    return fitted_size, baseline
 
 
 def _pdf_color(value: str, *, fallback: str) -> Color:
     return HexColor(value if value.startswith("#") else fallback)
+
+
+def _material_table_header_lines(
+    headers: list[AssemblyReportMaterialHeader],
+) -> tuple[tuple[str, ...], ...]:
+    return tuple((header.label, f"[{header.unit}]") if header.unit else (header.label,) for header in headers)
 
 
 def _draw_proof_assembly(pdf: Canvas) -> None:
@@ -413,7 +410,7 @@ def _draw_proof_assembly(pdf: Canvas) -> None:
 def _draw_proof_material_table(pdf: Canvas) -> None:
     left = 432.0
     top = 472.0
-    widths = tuple(column.width_pt for column in MATERIAL_TABLE_COLUMN_SPECS)
+    widths = MATERIAL_TABLE_COLUMN_WIDTHS_PT
     row_height = 28.0
     rows = (
         ("#b08968", "Wood stud", "0.120", "480.0", "1600", "0.90"),
@@ -425,7 +422,11 @@ def _draw_proof_material_table(pdf: Canvas) -> None:
     pdf.drawString(left, top + 18.0, "Unique materials")
     x = left
     pdf.setFont(_FONT_BOLD_NAME, 5.2)
-    for lines, width in zip(_material_table_headers("SI"), widths, strict=True):
+    for lines, width in zip(
+        _material_table_header_lines(assembly_material_headers("SI")),
+        widths,
+        strict=True,
+    ):
         pdf.setFillColor(HexColor("#e5e7eb"))
         pdf.rect(x, top - row_height, width, row_height, fill=1, stroke=1)
         pdf.setFillColor(HexColor("#111827"))

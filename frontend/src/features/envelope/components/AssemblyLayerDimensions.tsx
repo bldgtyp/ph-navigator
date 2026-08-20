@@ -2,9 +2,10 @@
 // for every viewer, with editor-only mutation controls layered onto it.
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
+import { parseLengthToMm, type UnitSystem } from "../../../lib/units";
 import { DIMENSION_COLUMN_WIDTH_PX, pxFromMm } from "../canvas-constants";
 import type { AssemblyCanvasLayerGeometry } from "../canvas-geometry";
+import { formatAssemblyLayerThickness } from "../lib";
 import type { AssemblyLayer } from "../types";
 import { CanvasAddButton } from "./CanvasAddButton";
 import type { AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
@@ -52,9 +53,9 @@ export function AssemblyLayerDimensions({
     content = (
       <span
         className="dimension-label-text"
-        aria-label={`Layer ${layerNumber} thickness: ${formatLayerThickness(layer.thickness_mm, unitSystem, true)}`}
+        aria-label={`Layer ${layerNumber} thickness: ${formatAssemblyLayerThickness(layer.thickness_mm, unitSystem, true)}`}
       >
-        {formatLayerThickness(layer.thickness_mm, unitSystem)}
+        {formatAssemblyLayerThickness(layer.thickness_mm, unitSystem)}
       </span>
     );
   }
@@ -144,20 +145,22 @@ function LayerThicknessEditor({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editorUnitSystem, setEditorUnitSystem] = useState<UnitSystem>(unitSystem);
-  const [draft, setDraft] = useState(() => formatLayerThickness(layer.thickness_mm, unitSystem));
+  const [draft, setDraft] = useState(() =>
+    formatAssemblyLayerThickness(layer.thickness_mm, unitSystem),
+  );
   const [error, setError] = useState<string | null>(null);
   const committedRef = useRef(false);
 
   function startEditing(): void {
     setEditorUnitSystem(unitSystem);
-    setDraft(formatLayerThickness(layer.thickness_mm, unitSystem));
+    setDraft(formatAssemblyLayerThickness(layer.thickness_mm, unitSystem));
     setError(null);
     committedRef.current = false;
     setIsEditing(true);
   }
 
   function cancelEditing(): void {
-    setDraft(formatLayerThickness(layer.thickness_mm, editorUnitSystem));
+    setDraft(formatAssemblyLayerThickness(layer.thickness_mm, editorUnitSystem));
     setError(null);
     setIsEditing(false);
   }
@@ -238,15 +241,7 @@ function LayerThicknessEditor({
       aria-label={`Edit layer ${layerNumber} thickness`}
       onClick={startEditing}
     >
-      {formatLayerThickness(layer.thickness_mm, unitSystem)}
+      {formatAssemblyLayerThickness(layer.thickness_mm, unitSystem)}
     </button>
   );
-}
-
-function formatLayerThickness(valueMm: number, unitSystem: UnitSystem, showUnit = false): string {
-  return formatLengthFromMm(valueMm, {
-    unitSystem,
-    showUnit,
-    fractionDigits: unitSystem === "IP" ? 3 : 1,
-  });
 }

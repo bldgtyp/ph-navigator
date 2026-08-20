@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 23:57 EDT
-STATUS: Active — Phases 00–03 complete; Phase 04 next
+DATE: 2026-08-20
+TIME: 00:32 EDT
+STATUS: Complete — implementation and acceptance verified
 AUTHOR: Codex
 SCOPE: Current state of Assembly PDF and public dimensions
 RELATED:
@@ -11,23 +11,22 @@ RELATED:
 
 # STATUS — Assembly PDF and Public Dimensions
 
-**State:** `Active` implementation. Phases 00–03 are complete on
-`codex/assembly-pdf-public-dimensions`.
+**State:** `Complete` on `codex/assembly-pdf-public-dimensions`. All PRD
+acceptance criteria have automated or rendered evidence.
 
 ## Next step
 
-Run PLAN Phase 04: perform rendered signed-in/locked/signed-out acceptance,
-inspect the final multi-page PDF, run final gates, and update the graph/docs.
+Archive this completed packet and open the branch for review/merge.
 
 ## Blockers and risks
 
-- Rendered browser acceptance must still verify the action/menu and public
-  dimension behavior against the isolated local fixture.
+- None for the agreed scope. Alternate page sizes and per-Assembly selection
+  remain explicit non-goals.
 
 ## Verification ledger
 
 - [x] Renderer proof preserves vectors and selectable text. ReportLab 5.0.0;
-  `uv run pytest tests/envelope/test_assembly_pdf_renderer.py -q` → `1 passed`;
+  `uv run pytest tests/envelope/test_assembly_pdf_renderer.py -q` → `5 passed`;
   visual artifact: `working/assembly-pdf-renderer-proof.pdf`.
 - [x] Backend N Assemblies → N deterministic vector PDF pages; focused backend
   report/renderer/route/access suites pass (`18 passed`).
@@ -43,5 +42,14 @@ inspect the final multi-page PDF, run final gates, and update the graph/docs.
   tests prove viewer mode omits the entire Assembly actions menu.
 - [x] Automated renderer fixtures cover extreme geometry, ordinary air-barrier,
   membrane, legacy multi-segment membrane, missing-material, and long-name
-  cases; visual clipping acceptance remains in Phase 04.
-- [ ] Rendered browser and PDF acceptance complete.
+  cases.
+- [x] Rendered browser acceptance: unlocked editor shows SI dimensions and the
+  enabled PDF action; dirty-draft confirm cancels/accepts correctly; locked
+  mode retains the PDF action and semantic dimensions without edit controls;
+  anonymous IP view retains dimensions and omits Assembly actions.
+- [x] Final PDF acceptance: `working/assembly-report-phase04.pdf` is two
+  deterministic US Letter landscape pages with selectable text/vector output;
+  rendered pages show no clipping, membrane thickness label, or table overflow.
+- [x] Full verification: backend `1,903 passed, 7 skipped`; frontend `2,505
+  passed`; Ruff, ty, ESLint (existing warnings only), Prettier, production
+  build, file/feature/style contract checks, and `git diff --check` pass.

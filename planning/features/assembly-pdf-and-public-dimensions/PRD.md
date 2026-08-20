@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–03 complete; Phase 04 next
+DATE: 2026-08-20
+TIME: 00:14 EDT
+STATUS: Complete — accepted on codex/assembly-pdf-public-dimensions
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for bulk Assembly PDF export and public dimensions
 RELATED:

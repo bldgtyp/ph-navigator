@@ -7,14 +7,16 @@ import unicodedata
 from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cmp_to_key
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from features.envelope.membranes import is_membrane_layer
 from features.envelope.phpp_types import UnitSystem
-from features.project_document.document import Assembly, AssemblyLayer, ProjectMaterial
+from features.project_document.document import Assembly, AssemblyFace, AssemblyLayer, AssemblyType, ProjectMaterial
 
 MEMBRANE_BAND_HEIGHT_MM = 9.0
+OrientationLabel = Literal["Exterior", "Interior"]
 _DIGIT_RUN = re.compile(r"([0-9]+)")
 _R_PER_IN_PER_W_MK = 1 / (0.577789317 * 12)
 _LB_FT3_PER_KG_M3 = 0.06242796
@@ -61,11 +63,18 @@ class AssemblyReportMaterial(BaseModel):
     emissivity_label: str
 
 
+class AssemblyReportMaterialHeader(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str
+    unit: str | None
+
+
 class AssemblyReportAirBarrier(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     layer_id: str
-    face: str
+    face: AssemblyFace
     y_mm: float
     width_mm: float
 
@@ -75,12 +84,13 @@ class AssemblyReportPage(BaseModel):
 
     assembly_id: str
     name: str
-    assembly_type: str
-    orientation_top: str
-    orientation_bottom: str
+    assembly_type: AssemblyType
+    orientation_top: OrientationLabel
+    orientation_bottom: OrientationLabel
     width_mm: float
     height_mm: float
     needs_review_missing_material_data: bool
+    material_headers: list[AssemblyReportMaterialHeader]
     air_barrier: AssemblyReportAirBarrier | None
     layers: list[AssemblyReportLayer]
     materials: list[AssemblyReportMaterial]
@@ -201,10 +211,28 @@ def _build_assembly_report_page(
         needs_review_missing_material_data=(
             missing_material or any(material.conductivity_w_mk is None for material in used_materials)
         ),
+        material_headers=assembly_material_headers(units),
         air_barrier=_air_barrier_geometry(assembly, report_layers, width_mm),
         layers=report_layers,
         materials=[_material_row(material, units) for material in used_materials],
     )
+
+
+def assembly_material_headers(units: UnitSystem) -> list[AssemblyReportMaterialHeader]:
+    return [
+        AssemblyReportMaterialHeader(label="Color", unit=None),
+        AssemblyReportMaterialHeader(label="Material", unit=None),
+        AssemblyReportMaterialHeader(
+            label="Resistivity" if units == "IP" else "Conductivity",
+            unit="R/inch" if units == "IP" else "W/(m-K)",
+        ),
+        AssemblyReportMaterialHeader(label="Density", unit="lb/ft3" if units == "IP" else "kg/m3"),
+        AssemblyReportMaterialHeader(
+            label="Specific heat",
+            unit="Btu/(lb-F)" if units == "IP" else "J/(kg-K)",
+        ),
+        AssemblyReportMaterialHeader(label="Emissivity", unit=None),
+    ]
 
 
 def natural_sort_assemblies(assemblies: Sequence[Assembly]) -> list[Assembly]:
