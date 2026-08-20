@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+STATUS: Active — backend extraction complete
 AUTHOR: Ed May / Codex
 SCOPE: 3D window coloring by Summer/Winter shading factor
 RELATED:

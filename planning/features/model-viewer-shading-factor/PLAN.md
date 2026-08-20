@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Proposed implementation sequence
+STATUS: Active — Phases 00–01 complete
 AUTHOR: Codex
 SCOPE: Extraction-first plan for seasonal shading-factor visualization
 RELATED:
@@ -22,15 +22,19 @@ RELATED:
   color-stop policies are already locked in the PRD.
 
 Evidence: `backend/tests/test_model_viewer_extraction.py` includes a mixed
-HBJSON fixture and passing characterization/legacy-contract tests. The two
-Phase 01 wire-contract tests are strict expected failures until the schema is
-implemented.
+HBJSON fixture. The initial `1 passed, 2 xfailed` characterization run proved
+the gap; Phase 01 resolved both expected failures.
 
-## Phase 01 — Backend extraction
+## Phase 01 — Backend extraction — COMPLETE
 
 - Add typed Aperture PH factor schema.
 - Extract/validate factors and preserve null/missing state.
 - Cover full `/model_data` serialization and legacy artifact compatibility.
+
+Evidence: focused extraction tests cover valid, null, absent, out-of-range,
+non-finite, and bounded aggregate-warning cases; the route-level artifact test
+carries distinct seasonal values through gzip serialization and `/model_data`.
+Ruff, Ty, and both focused backend suites pass (`28 passed, 5 deselected`).
 
 ## Phase 02 — Color engine and meta carry-through
 

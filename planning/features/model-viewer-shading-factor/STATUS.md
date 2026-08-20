@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — not started
+STATUS: Active — Phases 00–01 complete
 AUTHOR: Codex
 SCOPE: Current state of Model Viewer shading-factor mode
 RELATED:
@@ -11,13 +11,12 @@ RELATED:
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Active`; Phase 00 complete, Phase 01 next.
+**State:** `Active`; Phases 00–01 complete, Phase 02 next.
 
 ## Next step
 
-Implement Phase 01: add the typed nullable PH factor schema, extraction
-validation/warning aggregation, serialization coverage, and legacy artifact
-compatibility.
+Implement Phase 02: extend frontend wire/render metadata and add the fixed
+five-stop shading-factor color engine with deterministic unit coverage.
 
 ## Known constraint
 
@@ -27,8 +26,8 @@ separate, explicitly authorized operation.
 
 ## Verification ledger
 
-- [ ] Backend valid/null/invalid factor extraction tests.
-- [ ] Legacy artifact compatibility.
+- [x] Backend valid/null/invalid factor extraction tests.
+- [x] Legacy artifact compatibility.
 - [ ] Type/meta carry-through tests.
 - [ ] Fixed continuous-scale unit tests.
 - [ ] Building-only theme registration and URL season parsing.
@@ -48,7 +47,9 @@ until a separate rebuild/re-upload decision is made.
 
 - [x] Phase 00 — source and artifact characterization. Focused extraction run:
   `1 passed, 2 xfailed`; expected failures lock the Phase 01 wire contract.
-- [ ] Phase 01 — backend extraction.
+- [x] Phase 01 — backend extraction. Focused extraction and route artifact
+  coverage verifies valid/null/absent/invalid factors plus bounded aggregate
+  warnings.
 - [ ] Phase 02 — color engine and meta carry-through.
 - [ ] Phase 03 — theme, season, legend, and inspector.
 - [ ] Phase 04 — render/performance acceptance.

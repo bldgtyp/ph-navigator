@@ -42,6 +42,18 @@ PRIMARY_BYTES = (Path(__file__).parent / "fixtures" / "ph_nav_v2_example.hbjson"
 JUNK_HBJSON = json.dumps({"type": "Model", "identifier": "junk", "version": "99.0.0"}).encode()
 
 
+def _primary_bytes_with_distinct_shading_factors() -> bytes:
+    hbjson = json.loads(PRIMARY_BYTES)
+    apertures = [
+        aperture for room in hbjson["rooms"] for face in room["faces"] for aperture in face.get("apertures") or []
+    ]
+    apertures[0]["properties"]["ph"]["summer_shading_factor"] = 0.2
+    apertures[0]["properties"]["ph"]["winter_shading_factor"] = 0.8
+    apertures[1]["properties"]["ph"]["summer_shading_factor"] = None
+    apertures[1]["properties"]["ph"]["winter_shading_factor"] = 0.5
+    return json.dumps(hbjson).encode()
+
+
 def _linked_file(
     client: TestClient,
     storage: FakeR2Client,
@@ -114,7 +126,7 @@ def test_relink_after_delete_keeps_extraction_result(clean_document_tables: None
 def test_model_data_round_trip_headers_and_payload(clean_document_tables: None, fake_r2: FakeR2Client) -> None:
     client = signed_in_client()
     project = create_project(client)
-    file_row = _linked_file(client, fake_r2, project["id"], PRIMARY_BYTES)
+    file_row = _linked_file(client, fake_r2, project["id"], _primary_bytes_with_distinct_shading_factors())
 
     response = client.get(_model_data_url(project["id"], file_row["id"]))
     assert response.status_code == 200
@@ -132,9 +144,17 @@ def test_model_data_round_trip_headers_and_payload(clean_document_tables: None, 
     # D-12: all four thermal fields, opaque + window, on the wire.
     construction = payload["faces"][0]["properties"]["energy"]["construction"]
     assert {"u_factor", "u_value", "r_factor", "r_value"} <= construction.keys()
-    aperture = next(a for f in payload["faces"] for a in f["apertures"])
-    window = aperture["properties"]["energy"]["construction"]
+    apertures = [aperture for face in payload["faces"] for aperture in face["apertures"]]
+    window = apertures[0]["properties"]["energy"]["construction"]
     assert {"u_factor", "u_value", "r_factor", "r_value"} <= window.keys()
+    assert apertures[0]["properties"]["ph"] == {
+        "summer_shading_factor": 0.2,
+        "winter_shading_factor": 0.8,
+    }
+    assert apertures[1]["properties"]["ph"] == {
+        "summer_shading_factor": None,
+        "winter_shading_factor": 0.5,
+    }
 
     # V1 alias names for airflow (m³/s semantics asserted in extraction tests).
     assert {"_v_sup", "_v_eta", "_v_tran"} <= payload["spaces"][0]["properties"]["ph"].keys()

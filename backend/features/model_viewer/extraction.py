@@ -18,7 +18,10 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from importlib import metadata
+from math import isfinite
+from numbers import Real
 from typing import Any
 
 import structlog
@@ -29,7 +32,12 @@ from ladybug_geometry.geometry3d.pointvector import Point3D
 from pydantic import ValidationError
 
 from features.model_viewer.schemas.combined import CombinedModelDataSchema, LoadSummarySchema
-from features.model_viewer.schemas.honeybee import FaceSchema, ShadeGroupSchema, ShadeSchema
+from features.model_viewer.schemas.honeybee import (
+    AperturePhPropertiesSchema,
+    FaceSchema,
+    ShadeGroupSchema,
+    ShadeSchema,
+)
 from features.model_viewer.schemas.honeybee_energy import (
     DetailedOpaqueConstructionSchema,
     FaceConstructionSummarySchema,
@@ -48,6 +56,17 @@ log = structlog.get_logger(__name__)
 # display_name group into one mesh (V1 parity; model units are Meters by
 # the time merging runs, so this is 0.1 µm).
 _SHADE_MERGE_TOLERANCE = 1e-7
+_SHADING_FACTOR_FIELDS = ("summer_shading_factor", "winter_shading_factor")
+_APERTURE_PH_PARSE_DEFAULTS: dict[str, Any] = {
+    "type": "AperturePhPropertiesAbridged",
+    "id_num": 0,
+    "winter_shading_factor": None,
+    "summer_shading_factor": None,
+    "variant_type": "_unnamed_type_",
+    "install_depth": None,
+    "default_monthly_shading_correction_factor": 1.0,
+}
+_MISSING = object()
 
 
 class ModelParseError(Exception):
@@ -69,6 +88,7 @@ def parse_hb_model(hbjson: dict[str, Any]) -> Model:
     """
     declared_version = str(hbjson.get("version", "unknown"))
     backend_pin = metadata.version("honeybee-schema")
+    ph_patches = _patch_incomplete_aperture_ph_properties(hbjson)
     try:
         model = Model.from_dict(hbjson)
     except Exception as exc:
@@ -76,9 +96,65 @@ def parse_hb_model(hbjson: dict[str, Any]) -> Model:
             f"Invalid HBJSON: {exc} (file schema version {declared_version}; "
             f"backend supports honeybee-schema {backend_pin})"
         ) from exc
+    finally:
+        _restore_aperture_ph_properties(ph_patches)
     if model.units != "Meters":
         model.convert_to_units("Meters")
     return model
+
+
+def _patch_incomplete_aperture_ph_properties(
+    hbjson: dict[str, Any],
+) -> list[tuple[dict[str, Any], object]]:
+    """Let honeybee-ph parse Apertures whose optional PH bag is incomplete.
+
+    The extension parser currently indexes every PH key directly. Patch only
+    malformed bags for the synchronous parse, then restore the caller's input.
+    """
+    patches: list[tuple[dict[str, Any], object]] = []
+    for properties in _aperture_properties(hbjson):
+        ph = properties.get("ph")
+        if isinstance(ph, dict) and _APERTURE_PH_PARSE_DEFAULTS.keys() <= ph.keys():
+            continue
+        original = properties.get("ph", _MISSING)
+        patches.append((properties, original))
+        properties["ph"] = {
+            **_APERTURE_PH_PARSE_DEFAULTS,
+            **(ph if isinstance(ph, dict) else {}),
+        }
+    return patches
+
+
+def _restore_aperture_ph_properties(patches: list[tuple[dict[str, Any], object]]) -> None:
+    for properties, original in patches:
+        if original is _MISSING:
+            properties.pop("ph")
+        else:
+            properties["ph"] = original
+
+
+def _aperture_properties(hbjson: dict[str, Any]) -> Iterable[dict[str, Any]]:
+    for room in hbjson.get("rooms", []):
+        for face in room.get("faces", []):
+            for aperture in face.get("apertures") or []:
+                properties = aperture.get("properties")
+                if isinstance(properties, dict):
+                    yield properties
+    for aperture in hbjson.get("orphaned_apertures") or []:
+        properties = aperture.get("properties")
+        if isinstance(properties, dict):
+            yield properties
+
+
+@dataclass
+class _InvalidFactorSummary:
+    count: int = 0
+    aperture_ids: list[str] = dataclass_field(default_factory=list)
+
+    def add(self, aperture_id: str) -> None:
+        self.count += 1
+        if len(self.aperture_ids) < 20:
+            self.aperture_ids.append(aperture_id)
 
 
 @dataclass(frozen=True)
@@ -155,6 +231,7 @@ def _faces_from_model(
     constructions: dict[str, DetailedOpaqueConstructionSchema] = {}
     summaries: dict[str, FaceConstructionSummarySchema] = {}
     non_opaque_identifiers: set[str] = set()
+    invalid_shading_factors = {field: _InvalidFactorSummary() for field in _SHADING_FACTOR_FIELDS}
     for hb_face in model.faces:
         construction = hb_face.properties.energy.construction
         identifier = construction.identifier
@@ -179,7 +256,10 @@ def _faces_from_model(
             summary.air_boundaries_skipped += 1
             continue
 
-        face_dto = FaceSchema(**hb_face.to_dict())
+        face_dict = hb_face.to_dict()
+        for aperture in face_dict.get("apertures", []):
+            aperture["properties"].pop("ph", None)
+        face_dto = FaceSchema(**face_dict)
         face_dto.geometry.mesh = Mesh3DSchema(**hb_face.punched_geometry.triangulated_mesh3d.to_dict())
         face_dto.geometry.area = hb_face.punched_geometry.area
         face_dto.properties.energy.construction = summaries[identifier]
@@ -187,6 +267,17 @@ def _faces_from_model(
         for aperture_dto, hb_aperture in zip(face_dto.apertures, hb_face.apertures, strict=True):
             aperture_dto.geometry.mesh = Mesh3DSchema(**hb_aperture.geometry.triangulated_mesh3d.to_dict())
             aperture_dto.geometry.area = hb_aperture.geometry.area
+            aperture_dto.properties.ph = AperturePhPropertiesSchema(
+                **{
+                    field: _validated_shading_factor(
+                        getattr(hb_aperture.properties.ph, field, None),
+                        field,
+                        hb_aperture.identifier,
+                        invalid_shading_factors,
+                    )
+                    for field in _SHADING_FACTOR_FIELDS
+                }
+            )
             ap_energy_construction = hb_aperture.properties.energy.construction
             try:
                 ap_construction = WindowConstructionSchema(**ap_energy_construction.to_dict())
@@ -200,7 +291,40 @@ def _faces_from_model(
             aperture_dto.properties.energy.construction = ap_construction
 
         face_dtos.append(face_dto)
+    _append_shading_factor_warnings(summary, invalid_shading_factors)
     return face_dtos, constructions
+
+
+def _validated_shading_factor(
+    value: Any,
+    field: str,
+    aperture_id: str,
+    invalid_by_field: dict[str, _InvalidFactorSummary],
+) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, Real) and not isinstance(value, bool):
+        factor = float(value)
+        if isfinite(factor) and 0 <= factor <= 1:
+            return factor
+    invalid_by_field[field].add(aperture_id)
+    return None
+
+
+def _append_shading_factor_warnings(
+    summary: LoadSummarySchema,
+    invalid_by_field: dict[str, _InvalidFactorSummary],
+) -> None:
+    for field, invalid in invalid_by_field.items():
+        if invalid.count == 0:
+            continue
+        season = field.removesuffix("_shading_factor").title()
+        shown = ", ".join(invalid.aperture_ids)
+        omitted = invalid.count - len(invalid.aperture_ids)
+        warning = f"{season} shading factor: {invalid.count} invalid values stored as Missing. Apertures: {shown}."
+        if omitted > 0:
+            warning += f" Omitted identifiers: {omitted}."
+        summary.extraction_warnings.append(warning)
 
 
 def _apply_thermal_fields(dto: FaceConstructionSummarySchema | WindowConstructionSchema, construction: Any) -> None:

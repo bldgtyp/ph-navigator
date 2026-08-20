@@ -25,10 +25,18 @@ class FacePropertiesSchema(BaseModel):
     energy: FaceEnergyPropertiesSchema
 
 
+class AperturePhPropertiesSchema(BaseModel):
+    """Nullable PH shading inputs copied from the source HBJSON."""
+
+    summer_shading_factor: float | None = None
+    winter_shading_factor: float | None = None
+
+
 class AperturePropertiesSchema(BaseModel):
-    """`aperture.properties` extension bag (energy only on this wire)."""
+    """Model Viewer subset of the Aperture extension bag."""
 
     energy: ApertureEnergyPropertiesSchema
+    ph: AperturePhPropertiesSchema | None = None
 
 
 class ApertureSchema(BaseModel):

@@ -72,6 +72,7 @@ def shading_factor_hbjson() -> ShadingFactorFixture:
         (None, 0.5),
         (-0.1, 1.1),
         (float("nan"), float("inf")),
+        ("not-a-number", 0.4),
     ]
     for aperture, (summer, winter) in zip(
         apertures[: len(factor_pairs)],
@@ -242,21 +243,6 @@ def test_primary_geometry_summary() -> None:
 # ----------------------------- wire format ---------------------------------
 
 
-def test_current_extractor_drops_aperture_ph_properties(
-    shading_factor_hbjson: ShadingFactorFixture,
-) -> None:
-    """Phase 00 characterization: the pre-feature artifact loses PH factors."""
-    data = extract_model_data(parse_hb_model(shading_factor_hbjson["hbjson"]))
-    payload = data.model_dump(mode="json", by_alias=True)
-    apertures = [aperture for face in payload["faces"] for aperture in face["apertures"]]
-
-    assert all("ph" not in aperture["properties"] for aperture in apertures)
-
-
-@pytest.mark.xfail(
-    reason="Phase 01 adds the nullable aperture PH factor wire contract",
-    strict=True,
-)
 def test_aperture_shading_factor_wire_contract(
     shading_factor_hbjson: ShadingFactorFixture,
 ) -> None:
@@ -264,7 +250,7 @@ def test_aperture_shading_factor_wire_contract(
     data = extract_model_data(parse_hb_model(shading_factor_hbjson["hbjson"]))
     payload = data.model_dump(mode="json", by_alias=True)
     by_id = {aperture["identifier"]: aperture for face in payload["faces"] for aperture in face["apertures"]}
-    first, missing, out_of_range, non_finite = shading_factor_hbjson["aperture_ids"]
+    first, missing, out_of_range, non_finite, nonnumeric = shading_factor_hbjson["aperture_ids"]
 
     assert by_id[first]["properties"]["ph"] == {
         "summer_shading_factor": 0.2,
@@ -282,12 +268,19 @@ def test_aperture_shading_factor_wire_contract(
         "summer_shading_factor": None,
         "winter_shading_factor": None,
     }
+    assert by_id[nonnumeric]["properties"]["ph"] == {
+        "summer_shading_factor": None,
+        "winter_shading_factor": 0.4,
+    }
+    assert len(data.load_summary.extraction_warnings) == 2
+    assert data.load_summary.extraction_warnings[0].startswith(
+        "Summer shading factor: 3 invalid values stored as Missing."
+    )
+    assert data.load_summary.extraction_warnings[1].startswith(
+        "Winter shading factor: 2 invalid values stored as Missing."
+    )
 
 
-@pytest.mark.xfail(
-    reason="Phase 01 adds optional PH properties to AperturePropertiesSchema",
-    strict=True,
-)
 def test_legacy_aperture_without_ph_properties_loads_as_missing(
     primary_data: CombinedModelDataSchema,
 ) -> None:
@@ -298,6 +291,47 @@ def test_legacy_aperture_without_ph_properties_loads_as_missing(
     legacy = ApertureSchema.model_validate(aperture_payload)
 
     assert legacy.properties.ph is None
+
+
+def test_source_aperture_without_ph_properties_extracts_as_missing() -> None:
+    """Missing source PH data is ordinary Missing, not a parser failure."""
+    hbjson = json.loads(PRIMARY_FIXTURE.read_text())
+    aperture = next(
+        aperture for room in hbjson["rooms"] for face in room["faces"] for aperture in face.get("apertures") or []
+    )
+    aperture["properties"].pop("ph")
+
+    data = extract_model_data(parse_hb_model(hbjson))
+    extracted = next(
+        candidate
+        for face in data.faces
+        for candidate in face.apertures
+        if candidate.identifier == aperture["identifier"]
+    )
+
+    assert extracted.properties.ph is not None
+    assert extracted.properties.ph.summer_shading_factor is None
+    assert extracted.properties.ph.winter_shading_factor is None
+    assert data.load_summary.extraction_warnings == []
+    assert "ph" not in aperture["properties"]
+
+
+def test_shading_factor_warnings_are_aggregated_and_bounded() -> None:
+    hbjson = json.loads(PRIMARY_FIXTURE.read_text())
+    apertures = [
+        aperture for room in hbjson["rooms"] for face in room["faces"] for aperture in face.get("apertures") or []
+    ]
+    for aperture in apertures[:22]:
+        aperture["properties"]["ph"]["summer_shading_factor"] = -0.1
+
+    data = extract_model_data(parse_hb_model(hbjson))
+
+    assert len(data.load_summary.extraction_warnings) == 1
+    warning = data.load_summary.extraction_warnings[0]
+    assert warning.startswith("Summer shading factor: 22 invalid values stored as Missing.")
+    assert "Omitted identifiers: 2." in warning
+    assert apertures[19]["identifier"] in warning
+    assert apertures[20]["identifier"] not in warning
 
 
 def test_airflow_wire_is_m3s_with_v1_alias_names() -> None:
