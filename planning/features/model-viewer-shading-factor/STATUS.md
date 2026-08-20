@@ -11,13 +11,13 @@ RELATED:
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Active` planning; no code written.
+**State:** `Active`; Phase 00 complete, Phase 01 next.
 
 ## Next step
 
-Start Phase 00 with a red extraction test using at least two apertures whose
-Summer and Winter factors differ. Confirm the output currently contains no PH
-factor fields, then add the typed wire contract before touching theme UI.
+Implement Phase 01: add the typed nullable PH factor schema, extraction
+validation/warning aggregation, serialization coverage, and legacy artifact
+compatibility.
 
 ## Known constraint
 
@@ -43,3 +43,12 @@ separate, explicitly authorized operation.
 
 None for implementation. Existing production artifacts will remain Missing
 until a separate rebuild/re-upload decision is made.
+
+## Phase ledger
+
+- [x] Phase 00 — source and artifact characterization. Focused extraction run:
+  `1 passed, 2 xfailed`; expected failures lock the Phase 01 wire contract.
+- [ ] Phase 01 — backend extraction.
+- [ ] Phase 02 — color engine and meta carry-through.
+- [ ] Phase 03 — theme, season, legend, and inspector.
+- [ ] Phase 04 — render/performance acceptance.

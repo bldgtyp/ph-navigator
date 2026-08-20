@@ -11,7 +11,7 @@ RELATED:
 
 # PLAN — Model Viewer Shading Factor
 
-## Phase 00 — Source and artifact characterization
+## Phase 00 — Source and artifact characterization — COMPLETE
 
 - Add HBJSON fixtures with distinct Summer/Winter values, nulls, and invalid
   values.
@@ -20,6 +20,11 @@ RELATED:
   optional/defaulted wire contract.
 - Record the forward-only artifact behavior; the warning aggregation and fixed
   color-stop policies are already locked in the PRD.
+
+Evidence: `backend/tests/test_model_viewer_extraction.py` includes a mixed
+HBJSON fixture and passing characterization/legacy-contract tests. The two
+Phase 01 wire-contract tests are strict expected failures until the schema is
+implemented.
 
 ## Phase 01 — Backend extraction
 
