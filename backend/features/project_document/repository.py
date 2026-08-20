@@ -21,6 +21,23 @@ PROJECT_VERSION_PUBLIC_COLUMNS = """
 """
 
 
+def lock_project_for_version_mutation(
+    conn: Connection[Any],
+    project_id: UUID,
+) -> dict[str, Any] | None:
+    """Acquire the project row before any Version row in mixed mutations."""
+    return conn.execute(
+        """
+        SELECT id, active_version_id
+        FROM projects
+        WHERE id = %(project_id)s
+          AND deleted_at IS NULL
+        FOR UPDATE
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+
+
 def get_project_version_public(
     conn: Connection[Any],
     project_id: UUID,
@@ -60,6 +77,53 @@ def get_project_version_for_update(conn: Connection[Any], project_id: UUID, vers
         """,
         {"project_id": project_id, "version_id": version_id},
     ).fetchone()
+
+
+def get_project_version_metadata_for_update(
+    conn: Connection[Any],
+    project_id: UUID,
+    version_id: UUID,
+) -> dict[str, Any] | None:
+    return conn.execute(
+        f"""
+        SELECT {PROJECT_VERSION_PUBLIC_COLUMNS}
+        FROM project_versions
+        WHERE project_id = %(project_id)s
+          AND id = %(version_id)s
+        FOR UPDATE
+        """,
+        {"project_id": project_id, "version_id": version_id},
+    ).fetchone()
+
+
+def lock_project_and_version_for_mutation(
+    conn: Connection[Any],
+    project_id: UUID,
+    version_id: UUID,
+    *,
+    include_body: bool,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Acquire the shared project-then-Version lock order in one boundary."""
+    project = lock_project_for_version_mutation(conn, project_id)
+    if project is None:
+        return None, None
+    get_version = get_project_version_for_update if include_body else get_project_version_metadata_for_update
+    return project, get_version(conn, project_id, version_id)
+
+
+def list_project_versions_for_update(conn: Connection[Any], project_id: UUID) -> list[dict[str, Any]]:
+    """Lock every Version in stable ID order for guarded deletion."""
+    rows = conn.execute(
+        f"""
+        SELECT {PROJECT_VERSION_PUBLIC_COLUMNS}, parent_version_id
+        FROM project_versions
+        WHERE project_id = %(project_id)s
+        ORDER BY id
+        FOR UPDATE
+        """,
+        {"project_id": project_id},
+    ).fetchall()
+    return list(rows)
 
 
 def get_draft(conn: Connection[Any], version_id: UUID, user_id: UUID) -> dict[str, Any] | None:
@@ -162,6 +226,31 @@ def delete_draft(conn: Connection[Any], version_id: UUID, user_id: UUID) -> bool
         RETURNING version_id
         """,
         {"version_id": version_id, "user_id": user_id},
+    ).fetchone()
+    return row is not None
+
+
+def count_version_drafts(conn: Connection[Any], version_id: UUID) -> int:
+    row = conn.execute(
+        """
+        SELECT count(*) AS count
+        FROM project_version_drafts
+        WHERE version_id = %(version_id)s
+        """,
+        {"version_id": version_id},
+    ).fetchone()
+    return int(row["count"]) if row is not None else 0
+
+
+def delete_project_version(conn: Connection[Any], project_id: UUID, version_id: UUID) -> bool:
+    row = conn.execute(
+        """
+        DELETE FROM project_versions
+        WHERE project_id = %(project_id)s
+          AND id = %(version_id)s
+        RETURNING id
+        """,
+        {"project_id": project_id, "version_id": version_id},
     ).fetchone()
     return row is not None
 
@@ -321,13 +410,15 @@ def patch_version_metadata(
     project_id: UUID,
     version_id: UUID,
     user_id: UUID,
+    name: str | None,
     locked: bool | None,
     make_active: bool,
 ) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_versions
-        SET locked = COALESCE(%(locked)s, locked),
+        SET name = COALESCE(%(name)s, name),
+            locked = COALESCE(%(locked)s, locked),
             updated_at = now(),
             updated_by = %(user_id)s
         WHERE project_id = %(project_id)s
@@ -338,6 +429,7 @@ def patch_version_metadata(
             "project_id": project_id,
             "version_id": version_id,
             "user_id": user_id,
+            "name": name,
             "locked": locked,
         },
     ).fetchone()

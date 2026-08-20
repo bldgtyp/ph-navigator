@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { ProjectActionsMenu, VersionPathControls } from "../components/VersionControlsMenus";
+import {
+  ProjectActionsMenu,
+  VersionPathControls,
+  VersionPopover,
+} from "../components/VersionControlsMenus";
 
 describe("VersionControlsMenus", () => {
   test("version action trigger uses the shared portaled tooltip", async () => {
@@ -35,6 +39,7 @@ describe("VersionControlsMenus", () => {
         busy={false}
         onOpenProjectSettings={vi.fn()}
         onOpenVersions={vi.fn()}
+        onManageVersions={vi.fn()}
         onSave={vi.fn()}
         onSaveAs={vi.fn()}
         onDiscard={vi.fn()}
@@ -55,6 +60,36 @@ describe("VersionControlsMenus", () => {
     expect(tooltip).toHaveTextContent("Open the version list to switch or compare versions.");
     expect(menu.contains(tooltip)).toBe(false);
     expect(portalRoot(tooltip)?.parentElement).toBe(document.body);
+  });
+
+  test("version popover shows last-edited metadata and management entry", () => {
+    render(
+      <VersionPopover
+        versions={[
+          {
+            id: "version-1",
+            project_id: "project-1",
+            name: "Working",
+            kind: "working",
+            locked: false,
+            schema_version: 9,
+            body_size_bytes: 1,
+            created_at: "2026-08-19T12:00:00Z",
+            updated_at: "2026-08-19T18:30:00Z",
+          },
+        ]}
+        activeVersionId="version-1"
+        defaultVersionId="version-1"
+        busy={false}
+        onSaveAs={vi.fn()}
+        onOpenVersion={vi.fn()}
+        onOpenDiff={vi.fn()}
+        onManageVersions={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Last edited/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Manage versions..." })).toBeInTheDocument();
   });
 });
 

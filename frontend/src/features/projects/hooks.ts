@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { climateQueryKeys } from "../climate/query-keys";
+import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import {
   bulkDeleteProjects,
   checkBtNumber,
   createProject,
+  deleteVersion,
   fetchProjectLocation,
   fetchProject,
   geocodeProjectLocation,
@@ -160,16 +162,47 @@ export function usePatchVersionMutation(projectId: string) {
   return useMutation({
     mutationFn: ({
       versionId,
+      name,
       locked,
       makeActive,
     }: {
       versionId: string;
+      name?: string;
       locked?: boolean;
       makeActive?: boolean;
-    }) => patchVersion(projectId, versionId, { locked, make_active: makeActive }),
-    onSuccess: (project) => {
+    }) => patchVersion(projectId, versionId, { name, locked, make_active: makeActive }),
+    onSuccess: async (project, variables) => {
       queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
       invalidateProjectVersionQueries(queryClient, projectId, { detail: false });
+      if (variables.locked !== undefined) {
+        await queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, variables.versionId),
+        });
+      }
+    },
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(projectId) });
+    },
+  });
+}
+
+export function useDeleteVersionMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ versionId, confirmName }: { versionId: string; confirmName: string }) =>
+      deleteVersion(projectId, versionId, confirmName),
+    onSuccess: (project, variables) => {
+      queryClient.setQueryData(projectQueryKeys.detail(project.id), project);
+      invalidateProjectVersionQueries(queryClient, projectId, { detail: false });
+      queryClient.removeQueries({
+        predicate: ({ queryKey }) =>
+          (queryKey[0] === "project-document" || queryKey[0] === "project-document-tables") &&
+          queryKey.includes(projectId) &&
+          queryKey.includes(variables.versionId),
+      });
+    },
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectQueryKeys.detail(projectId) });
     },
   });
 }

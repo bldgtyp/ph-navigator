@@ -44,12 +44,31 @@ unlocked version.
 | **Switch active version** | If draft is dirty, prompt: Save / Save As / Discard. Then switch. |
 | **Lock / unlock** | Toggle `locked` on a version. Lock = save-protected. Unlock requires confirm. |
 | **Submit / close** | Save As with `kind='submitted'`/`'closed'`, auto-locked. Lifecycle is metadata on the version. |
-| **Delete version** | Soft-delete (`deleted_at`). Cannot delete the active version; switch first. |
-| **Rename version** | Update `name`. Allowed even on locked versions (label-only). |
+| **Delete version** | Physically delete a non-active, non-sole version after exact-name confirmation. Drafts cascade; child versions are preserved with `parent_version_id = null`. |
+| **Rename version** | Update to a trimmed, non-blank name of at most 120 characters, unique within the project. Allowed even on locked versions (label-only). |
 
 There is no single project-level "lifecycle state." The project's
 status is "the kind of its most recent submitted/closed version, if
 any." Versions are the unit of state.
+
+Version metadata mutations lock the owning project row before locking the
+target Version row. Save, Save As, PATCH, and delete share this lock order.
+Delete locks all project Versions in stable ID order and rechecks its safety
+guards inside the same transaction. The sole-Version guard takes precedence
+over the active-Version guard; the stable conflict codes are
+`last_version_delete_blocked` and `active_version_delete_blocked`.
+
+`PATCH /api/v1/projects/{project_id}/versions/{version_id}` accepts supplied
+`name`, `locked`, and `make_active=true` fields and returns the refreshed
+`ProjectDetail`. Duplicate names return `version_name_taken`. A mixed metadata
+patch records all supplied before/after fields in one audit event; a name-only
+patch records `project_version_renamed`.
+
+`POST /api/v1/projects/{project_id}/versions/{version_id}/delete` requires
+`{"confirm_name": "<exact current name>"}`. A mismatch returns
+`version_delete_confirmation_mismatch`. Successful deletion returns the
+refreshed `ProjectDetail` and records `project_version_deleted`, including the
+discarded-draft and detached-child counts.
 
 ### 8.2.1 Denormalized save metadata
 
@@ -181,8 +200,27 @@ Two diff surfaces, both v1:
   changed since the parent version was forked. (Cheap to implement: the
   parent's body is the baseline.)
 
-Diff is computed in the backend from the two JSONB bodies. UI displays
-a per-table changed-row list with field-level deltas.
+Diff is computed in the backend from the two JSONB bodies. The response omits
+unchanged tables and preserves the v1 `table`, `change_count`, and
+`changed_paths` fields for compatibility. Each changed table also returns a
+human table label, add/remove/change counts, and structured changes containing
+the operation, record ID/label, optional field key/label, before/after JSON
+values, and diagnostic `raw_paths`.
+
+Added and removed records are one record-level change, including identifiable
+nested records. Edited records are one change per meaningful field. FieldDef
+display names resolve built-in and custom labels; a typed presenter registry
+owns table labels and envelope shapes. Derived computed/inverse-link overlays
+are not presented as user changes. Missing labels fall back to humanized keys
+without dropping the change.
+
+The signed-in browser comparison keeps operand direction explicit: **From** is
+a saved Version only, while **To** is another saved Version or the current
+draft. Self-comparison is excluded. The wide, viewport-bounded modal keeps its
+selectors and Close footer pinned around a scrolling results region. Table
+counts are shown before lazily mounted record/field changes; full JSON, IDs,
+and raw paths are available only in a second lazy Technical details disclosure.
+Empty and whitespace-only strings remain quoted in the primary comparison.
 
 ### 8.5 Concurrency
 

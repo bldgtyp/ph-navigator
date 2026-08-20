@@ -7,9 +7,10 @@ import { useDiffQuery, useDraftSummaryQuery } from "../hooks";
 import { draftLooksRecovered, isReadSafeProjectDocument, wasLocalDraftTouched } from "../lib";
 import { useDraftLifecycle } from "../hooks/useDraftLifecycle";
 import { useVersionControlsState } from "../hooks/useVersionControlsState";
-import { DRAFT_DIFF_TARGET } from "../types/versionControls";
 import { DocumentConfirmationDialog } from "./DocumentConfirmationDialog";
-import { DiffDialog, DraftRestoreDialog, SaveAsDialog } from "./VersionControlsDialogs";
+import { DiffDialog } from "./DiffDialog";
+import { DraftRestoreDialog, SaveAsDialog } from "./VersionControlsDialogs";
+import { VersionManager } from "./VersionManagerDialog";
 import {
   ProjectActionsMenu,
   VersionPathControls,
@@ -49,10 +50,14 @@ export function VersionControls({
   const hasDraft = draftSummary?.source === "draft";
   const diffQuery = useDiffQuery(
     project.id,
-    activeVersionId,
+    state.diffFromVersionId,
     state.diffTarget,
-    state.diffOpen && Boolean(activeVersionId),
+    state.diffOpen && Boolean(state.diffFromVersionId),
   );
+  const openDiff = () => {
+    if (!activeVersionId) return;
+    state.openDiff(activeVersionId);
+  };
   const lifecycle = useDraftLifecycle({
     projectId: project.id,
     activeVersionId,
@@ -162,6 +167,10 @@ export function VersionControls({
             state.setActionsOpen(false);
             state.setVersionsOpen(true);
           }}
+          onManageVersions={() => {
+            state.setActionsOpen(false);
+            state.setVersionManagerOpen(true);
+          }}
           onSave={() => void lifecycle.save()}
           onSaveAs={() => state.openSaveAs()}
           onDiscard={() => {
@@ -171,7 +180,7 @@ export function VersionControls({
           onToggleLock={() => void toggleLock()}
           onOpenDiff={() => {
             state.setActionsOpen(false);
-            state.setDiffOpen(true);
+            openDiff();
           }}
           onClose={() => state.setActionsOpen(false)}
         />
@@ -184,7 +193,11 @@ export function VersionControls({
           busy={busy}
           onSaveAs={() => state.openSaveAs()}
           onOpenVersion={openVersion}
-          onOpenDiff={() => state.setDiffOpen(true)}
+          onOpenDiff={openDiff}
+          onManageVersions={() => {
+            state.setVersionsOpen(false);
+            state.setVersionManagerOpen(true);
+          }}
         />
       ) : null}
     </div>
@@ -255,17 +268,30 @@ export function VersionControls({
       ) : null}
       {state.diffOpen ? (
         <DiffDialog
-          activeVersionId={activeVersionId}
           versions={project.versions}
+          fromVersionId={state.diffFromVersionId ?? activeVersionId ?? ""}
           diffTarget={state.diffTarget}
           diffData={diffQuery.data}
           isLoading={diffQuery.isLoading}
           error={diffQuery.isError ? diffQuery.error : null}
-          onTargetChange={state.setDiffTarget}
-          onClose={() => {
-            state.setDiffTarget(DRAFT_DIFF_TARGET);
-            state.setDiffOpen(false);
+          onFromChange={(versionId) => {
+            state.changeDiffFrom(versionId);
           }}
+          onTargetChange={state.setDiffTarget}
+          onClose={state.closeDiff}
+        />
+      ) : null}
+      {state.versionManagerOpen ? (
+        <VersionManager
+          projectId={project.id}
+          versions={project.versions}
+          activeVersionId={activeVersionId}
+          defaultVersionId={defaultVersionId}
+          onOpenVersion={(versionId) => {
+            state.setVersionManagerOpen(false);
+            openVersion(versionId);
+          }}
+          onClose={() => state.setVersionManagerOpen(false)}
         />
       ) : null}
       {lifecycle.savingVersion ? (

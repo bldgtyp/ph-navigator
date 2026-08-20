@@ -126,10 +126,21 @@ export async function parseProjectLocationEpw(
 export async function patchVersion(
   projectId: string,
   versionId: string,
-  payload: { locked?: boolean; make_active?: boolean },
+  payload: { name?: string; locked?: boolean; make_active?: boolean },
 ): Promise<ProjectDetail> {
   return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}/versions/${versionId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteVersion(
+  projectId: string,
+  versionId: string,
+  confirmName: string,
+): Promise<ProjectDetail> {
+  return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}/versions/${versionId}/delete`, {
+    method: "POST",
+    body: JSON.stringify({ confirm_name: confirmName }),
   });
 }

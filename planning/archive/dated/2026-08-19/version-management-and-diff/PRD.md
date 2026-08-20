@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready for implementation planning
+TIME: 22:41 EDT
+STATUS: Complete — behavior contract implemented and verified
 AUTHOR: Ed May / Codex
 SCOPE: Product and API contract for Version management and diff UX
 RELATED:
-  - planning/features/version-management-and-diff/README.md
-  - planning/features/version-management-and-diff/PLAN.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/README.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PLAN.md
   - context/technical-requirements/save-versioning.md
 ---
 

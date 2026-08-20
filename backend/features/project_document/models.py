@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from features.projects.models import ProjectVersionPublic, VersionKind
+from features.shared.models import strip_blank_string
 
 ProjectDocumentSource = Literal["version", "draft"]
 DiffTarget = Literal["draft"]
@@ -85,8 +86,43 @@ class DiscardDraftResponse(BaseModel):
 class VersionPatchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    name: str | None = Field(default=None, min_length=1, max_length=120)
     locked: bool | None = None
     make_active: bool | None = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, value: object) -> object:
+        return strip_blank_string(value)
+
+    @model_validator(mode="after")
+    def require_meaningful_patch(self) -> Self:
+        if "name" in self.model_fields_set and self.name is None:
+            raise ValueError("Version name cannot be null.")
+        if "locked" in self.model_fields_set and self.locked is None:
+            raise ValueError("Version lock state cannot be null.")
+        if self.name is None and self.locked is None and self.make_active is not True:
+            raise ValueError("No version metadata change supplied.")
+        return self
+
+
+class VersionDeleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm_name: str = Field(min_length=1, max_length=120)
+
+
+class DiffChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    operation: Literal["added", "removed", "changed"]
+    record_id: str
+    record_label: str
+    field_key: str | None = None
+    field_label: str | None = None
+    before: Any = None
+    after: Any = None
+    raw_paths: list[str]
 
 
 class TableDiffSummary(BaseModel):
@@ -95,6 +131,11 @@ class TableDiffSummary(BaseModel):
     table: str
     change_count: int
     changed_paths: list[str]
+    table_label: str
+    added_count: int
+    removed_count: int
+    changed_count: int
+    changes: list[DiffChange]
 
 
 class ProjectDiffResponse(BaseModel):
