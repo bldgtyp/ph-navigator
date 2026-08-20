@@ -9,7 +9,8 @@ import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { HbjsonFile, LoadSummary, ModelViewerLegend, ModelViewerTheme } from "../types";
-import { ThemeMenu } from "./ThemeMenu";
+import { ContinuousLegend } from "./ContinuousLegend";
+import { ModelColorOptions } from "./ModelColorOptions";
 
 type LegendCardProps = {
   model: BuildingModel | null;
@@ -20,13 +21,14 @@ type LegendCardProps = {
 export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const shadingFactorSeason = useModelViewerStore((state) => state.shadingFactorSeason);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const clearLegendFilter = useModelViewerStore((state) => state.clearLegendFilter);
   const [infoOpen, setInfoOpen] = useState(false);
   const closeInfo = useCallback(() => setInfoOpen(false), []);
   const legend = useMemo(
-    () => (model ? legendForModel(model, lens, theme) : null),
-    [lens, model, theme],
+    () => (model ? legendForModel(model, lens, theme, shadingFactorSeason) : null),
+    [lens, model, shadingFactorSeason, theme],
   );
   const canPickTheme = hasThemeMenu(lens);
   const hasActiveLegendFilter = legendFilter?.theme === theme;
@@ -37,7 +39,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
       <>
         {canPickTheme ? (
           <div className="model-view-options-card" aria-label="Model color options">
-            <ThemeMenu lens={lens} theme={theme} />
+            <ModelColorOptions lens={lens} theme={theme} />
           </div>
         ) : null}
         <div className="model-scene-info-root">
@@ -55,12 +57,16 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
         {canPickTheme ? (
           <div className="model-legend-titlebar">
             <div className="model-legend-title-actions">
-              <ThemeMenu lens={lens} theme={theme} />
+              <ModelColorOptions lens={lens} theme={theme} />
             </div>
           </div>
         ) : null}
-        <LegendRows legend={legend} theme={theme} hasHeader={canPickTheme} />
-        {hasActiveLegendFilter ? (
+        {legend.kind === "continuous" ? (
+          <ContinuousLegend legend={legend} />
+        ) : (
+          <LegendRows legend={legend} theme={theme} hasHeader={canPickTheme} />
+        )}
+        {legend.kind !== "continuous" && hasActiveLegendFilter ? (
           <div className="model-legend-footer">
             <button
               type="button"
@@ -95,7 +101,7 @@ function LegendRows({
   theme,
   hasHeader,
 }: {
-  legend: Exclude<ModelViewerLegend, null>;
+  legend: Exclude<Exclude<ModelViewerLegend, null>, { kind: "continuous" }>;
   theme: ModelViewerTheme;
   hasHeader: boolean;
 }) {

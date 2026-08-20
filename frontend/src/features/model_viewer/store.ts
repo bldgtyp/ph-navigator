@@ -8,6 +8,7 @@ import type {
   ModelViewerMeasureLine,
   ModelViewerMeasurePoint,
   ModelViewerTheme,
+  ShadingFactorSeason,
   ViewerLoadPhase,
 } from "./types";
 import { distanceBetweenMeasurePoints } from "./lib/measureDistance";
@@ -28,6 +29,7 @@ type ModelViewerState = {
   activeFileId: string | null;
   lens: ModelViewerLens;
   themesByLens: Record<ModelViewerLens, ModelViewerTheme>;
+  shadingFactorSeason: ShadingFactorSeason;
   hoverId: string | null;
   selectionId: string | null;
   focusedSegmentId: string | null;
@@ -52,8 +54,13 @@ type ModelViewerState = {
   setSunStudyMinutes: (minutes: number) => void;
   setActiveFileId: (fileId: string | null) => void;
   setLens: (lens: ModelViewerLens) => void;
-  setUrlViewState: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
+  setUrlViewState: (
+    lens: ModelViewerLens,
+    theme: ModelViewerTheme,
+    shadingFactorSeason?: ShadingFactorSeason,
+  ) => void;
   setTheme: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
+  setShadingFactorSeason: (season: ShadingFactorSeason) => void;
   /** Toggle a legend filter key. Plain (`additive` false): single-select — isolate
    *  `key`, or clear if it is already the sole key. Shift (`additive` true): add or
    *  remove `key` from the union, clearing the filter when the set empties. */
@@ -78,6 +85,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   activeFileId: null,
   lens: "building",
   themesByLens: DEFAULT_MODEL_VIEWER_THEMES,
+  shadingFactorSeason: "summer",
   hoverId: null,
   selectionId: null,
   focusedSegmentId: null,
@@ -136,15 +144,18 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         ...inactiveMeasureState(),
       };
     }),
-  setUrlViewState: (lens, theme) =>
+  setUrlViewState: (lens, theme, shadingFactorSeason) =>
     set((state) => {
+      const nextSeason = shadingFactorSeason ?? state.shadingFactorSeason;
       const sameLens = state.lens === lens;
       const sameTheme = state.themesByLens[lens] === theme;
-      if (sameLens && sameTheme) return state;
+      const sameSeason = state.shadingFactorSeason === nextSeason;
+      if (sameLens && sameTheme && sameSeason) return state;
       return {
         lens,
         themesByLens: { ...state.themesByLens, [lens]: theme },
-        legendFilter: null,
+        shadingFactorSeason: nextSeason,
+        ...(!sameLens || !sameTheme ? { legendFilter: null } : {}),
         ...(sameLens
           ? {}
           : {
@@ -160,6 +171,10 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       state.themesByLens[lens] === theme
         ? state
         : { themesByLens: { ...state.themesByLens, [lens]: theme }, legendFilter: null },
+    ),
+  setShadingFactorSeason: (season) =>
+    set((state) =>
+      state.shadingFactorSeason === season ? state : { shadingFactorSeason: season },
     ),
   toggleLegendFilterKey: (theme, key, additive = false) =>
     set((state) => {

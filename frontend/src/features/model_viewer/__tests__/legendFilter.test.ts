@@ -72,6 +72,7 @@ describe("bucketKeyForObject", () => {
   test("returns null when the theme does not classify the object", () => {
     // The Boundary theme only colors faces; an aperture has no boundary bucket.
     expect(bucketKeyForObject(aperture("ap:1"), "building", "boundary")).toBeNull();
+    expect(bucketKeyForObject(aperture("ap:1"), "building", "shading-factor")).toBeNull();
   });
 });
 

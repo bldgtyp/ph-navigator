@@ -1,4 +1,4 @@
-import type { ModelViewerLens, ModelViewerTheme } from "../types";
+import type { ModelViewerLens, ModelViewerTheme, ShadingFactorSeason } from "../types";
 
 type ThemeDefinition = {
   id: ModelViewerTheme;
@@ -12,6 +12,7 @@ export const MODEL_VIEWER_THEMES_BY_LENS: Record<ModelViewerLens, ThemeDefinitio
     { id: "boundary", label: "Boundary" },
     { id: "construction", label: "Construction" },
     { id: "window-construction", label: "Window Construction" },
+    { id: "shading-factor", label: "Shading Factor" },
   ],
   spaces: [
     { id: "shaded", label: "Shaded" },
@@ -76,6 +77,10 @@ export function parseModelViewerTheme(
 ): ModelViewerTheme {
   if (!isModelViewerTheme(value)) return defaultThemeForLens(lens);
   return isThemeAllowedForLens(lens, value) ? value : defaultThemeForLens(lens);
+}
+
+export function parseShadingFactorSeason(value: string | null): ShadingFactorSeason {
+  return value === "winter" ? "winter" : "summer";
 }
 
 function isModelViewerTheme(value: string | null): value is ModelViewerTheme {

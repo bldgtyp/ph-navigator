@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–02 complete
+DATE: 2026-08-20
+TIME: 07:08 EDT
+STATUS: Active — Phases 00–03 complete
 AUTHOR: Codex
 SCOPE: Extraction-first plan for seasonal shading-factor visualization
 RELATED:
@@ -46,12 +46,19 @@ Evidence: frontend wire types mirror the optional legacy-safe PH bag, loader
 metadata retains both seasonal factors, and focused Vitest coverage pins the
 five stops, sRGB midpoints, Missing fallback, and deterministic output.
 
-## Phase 03 — Theme, season, legend, and inspector
+## Phase 03 — Theme, season, legend, and inspector — COMPLETE
 
 - Register Shading Factor on the Building lens.
 - Add URL/store seasonal state and Summer/Winter control.
 - Add continuous legend support without disturbing discrete legend filters.
 - Surface both factors in the aperture inspector.
+
+Evidence: the Building-only theme and shared Season segmented control use URL
+and Zustand state; batch subscriptions repaint only the affected aperture
+instances for season-only changes. The continuous legend is non-filtering and
+counts selected-season Missing values, while the inspector formats both values
+to three decimals. Focused Vitest (`40 passed`), TypeScript, targeted ESLint,
+hex-token enforcement, and diff checks pass.
 
 ## Phase 04 — Render/performance acceptance
 

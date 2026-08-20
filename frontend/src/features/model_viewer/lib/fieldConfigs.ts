@@ -10,6 +10,7 @@ import {
   type UnitSystem,
 } from "../../../lib/units";
 import { stripTrailingZeros } from "../../../lib/units/format";
+import { isValidShadingFactor, shadingFactorValue } from "./shadingFactorColors";
 import type { ModelObjectMeta, ModelObjectType } from "../types";
 
 /** D-12 thermal-figure tooltips — shared verbatim by the inspector's
@@ -59,6 +60,23 @@ export const inspectorConfigs: Record<ModelObjectType, InspectorConfig> = {
       {
         title: "Construction",
         fields: constructionFields({ includeRValues: false }),
+      },
+      {
+        title: "Shading Factors",
+        fields: [
+          {
+            id: "summer_shading_factor",
+            label: "Summer",
+            getValue: (meta) => shadingFactorValue(meta, "summer"),
+            format: formatShadingFactor,
+          },
+          {
+            id: "winter_shading_factor",
+            label: "Winter",
+            getValue: (meta) => shadingFactorValue(meta, "winter"),
+            format: formatShadingFactor,
+          },
+        ],
       },
     ],
   },
@@ -391,6 +409,10 @@ function formatAirflow(value: unknown, unitSystem: UnitSystem): string {
 function formatRatio(value: unknown): string {
   const number = numericValue(value);
   return number === null ? "--" : stripTrailingZeros(number.toFixed(2));
+}
+
+function formatShadingFactor(value: unknown): string {
+  return isValidShadingFactor(value) ? value.toFixed(3) : "Missing";
 }
 
 function formatBoolean(value: unknown): string {

@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–02 complete
+DATE: 2026-08-20
+TIME: 07:08 EDT
+STATUS: Active — Phases 00–03 complete
 AUTHOR: Codex
 SCOPE: Current state of Model Viewer shading-factor mode
 RELATED:
@@ -11,12 +11,12 @@ RELATED:
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Active`; Phases 00–02 complete, Phase 03 next.
+**State:** `Active`; Phases 00–03 complete, Phase 04 next.
 
 ## Next step
 
-Implement Phase 03: register the Building-only theme, add shareable seasonal
-state/control, continuous legend, and dual-value aperture inspection.
+Run Phase 04: full verification, performance and mounted browser acceptance,
+then graph/docs closeout.
 
 ## Known constraint
 
@@ -30,10 +30,10 @@ separate, explicitly authorized operation.
 - [x] Legacy artifact compatibility.
 - [x] Type/meta carry-through tests.
 - [x] Fixed continuous-scale unit tests.
-- [ ] Building-only theme registration and URL season parsing.
-- [ ] Summer/Winter repaint without geometry/network work.
-- [ ] Continuous legend and Missing count.
-- [ ] Inspector values.
+- [x] Building-only theme registration and URL season parsing.
+- [x] Summer/Winter repaint without geometry/network work.
+- [x] Continuous legend and Missing count.
+- [x] Inspector values.
 - [ ] Viewer draw-call/FPS performance gate.
 - [ ] Mounted fresh-artifact browser acceptance after agent readiness.
 - [ ] Graphify and durable Model Viewer docs update.
@@ -52,5 +52,7 @@ until a separate rebuild/re-upload decision is made.
   warnings.
 - [x] Phase 02 — color engine and meta carry-through. Fixed-scale and loader
   metadata tests pin the seasonal source values and sRGB output.
-- [ ] Phase 03 — theme, season, legend, and inspector.
+- [x] Phase 03 — theme, season, legend, and inspector. Focused Vitest coverage
+  verifies theme registration, seasonal color selection, continuous legend,
+  control visibility/state, and dual-value inspector formatting (`40 passed`).
 - [ ] Phase 04 — render/performance acceptance.

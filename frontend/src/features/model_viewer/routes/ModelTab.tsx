@@ -8,7 +8,7 @@ import { ModelEmptyState } from "../components/ModelEmptyState";
 import { ModelViewerStagePlaceholder } from "../components/ModelViewerStagePlaceholder";
 import { useHbjsonFilesQuery, useHbjsonUploadFlow } from "../hooks";
 import { parseModelViewerLens } from "../lib/lenses";
-import { parseModelViewerTheme } from "../lib/themeState";
+import { parseModelViewerTheme, parseShadingFactorSeason } from "../lib/themeState";
 import { useModelViewerStore } from "../store";
 
 const loadModelViewerStage = () =>
@@ -17,7 +17,7 @@ const loadModelViewerStage = () =>
   }));
 const ModelViewerStage = lazy(loadModelViewerStage);
 
-/** `?file=`, `&lens=`, and `&theme=` are the shareable viewer state. */
+/** `?file=`, `&lens=`, `&theme=`, and `&season=` are shareable viewer state. */
 export function ModelTab({ project }: { project: ProjectDetail }) {
   const isEditor = project.access_mode === "editor";
   const filesQuery = useHbjsonFilesQuery(project.id);
@@ -27,20 +27,22 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
   const requestedFileId = searchParams.get("file");
   const requestedLens = parseModelViewerLens(searchParams.get("lens"));
   const requestedTheme = parseModelViewerTheme(requestedLens, searchParams.get("theme"));
+  const requestedSeason = parseShadingFactorSeason(searchParams.get("season"));
   const activeFile = files.find((file) => file.id === requestedFileId) ?? files[0] ?? null;
   const activeFileId = activeFile?.id ?? null;
 
   const setActiveFileId = useModelViewerStore((state) => state.setActiveFileId);
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const shadingFactorSeason = useModelViewerStore((state) => state.shadingFactorSeason);
   const setUrlViewState = useModelViewerStore((state) => state.setUrlViewState);
   useEffect(() => {
     setActiveFileId(activeFileId);
   }, [activeFileId, setActiveFileId]);
 
   useEffect(() => {
-    setUrlViewState(requestedLens, requestedTheme);
-  }, [requestedLens, requestedTheme, setUrlViewState]);
+    setUrlViewState(requestedLens, requestedTheme, requestedSeason);
+  }, [requestedLens, requestedSeason, requestedTheme, setUrlViewState]);
 
   useEffect(() => {
     if (!activeFileId) return;
@@ -50,15 +52,22 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
   useEffect(() => {
     setSearchParams(
       (current) => {
-        if (current.get("lens") === lens && current.get("theme") === theme) return current;
+        if (
+          current.get("lens") === lens &&
+          current.get("theme") === theme &&
+          current.get("season") === shadingFactorSeason
+        ) {
+          return current;
+        }
         const next = new URLSearchParams(current);
         next.set("lens", lens);
         next.set("theme", theme);
+        next.set("season", shadingFactorSeason);
         return next;
       },
       { replace: true },
     );
-  }, [lens, setSearchParams, theme]);
+  }, [lens, setSearchParams, shadingFactorSeason, theme]);
 
   const selectFile = (fileId: string) => {
     setSearchParams((current) => {

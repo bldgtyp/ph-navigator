@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — color engine complete
+DATE: 2026-08-20
+TIME: 07:08 EDT
+STATUS: Active — Phases 00–03 complete
 AUTHOR: Ed May / Codex
 SCOPE: 3D window coloring by Summer/Winter shading factor
 RELATED:
@@ -29,16 +29,16 @@ shading factor, with Summer and Winter sub-options.
 - Source HBJSON already carries
   `aperture.properties.ph.summer_shading_factor` and
   `winter_shading_factor`.
-- `backend/features/model_viewer/schemas/honeybee.py` explicitly mirrors only
-  Aperture `energy` properties, so both factors are dropped from the immutable
-  `/model_data` artifact.
-- The browser's `ApertureModelData` and `ApertureMeshFaceMeta` likewise carry
-  energy construction only.
-- The existing `window-construction` mode proves the right rendering path:
-  register a Building theme, color `apertureMeshFace` objects, and derive a
-  legend without creating a second scene.
-- Viewer URL state currently persists `file`, `lens`, and `theme`; seasonal
-  shading selection must join that shareable state.
+- Newly extracted `/model_data` artifacts carry nullable Summer/Winter factors;
+  legacy immutable artifacts safely omit the optional PH property bag and show
+  **Missing**.
+- The Building-only `shading-factor` theme colors only `apertureMeshFace`
+  instances on a fixed five-stop scale; opaque faces retain neutral shaded
+  colors.
+- Viewer URL state persists `file`, `lens`, `theme`, and the valid seasonal
+  choice as `season=summer|winter` (default Summer).
+- The legend is continuous and non-filtering for this theme. The aperture
+  inspector always exposes both factors for direct audit.
 
 ## Primary code anchors
 

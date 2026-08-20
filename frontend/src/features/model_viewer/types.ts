@@ -55,7 +55,9 @@ export type ModelViewerTheme =
   | "window-construction"
   | "ventilation-airflow"
   | "ventilation-unit"
-  | "weighting-factor";
+  | "weighting-factor"
+  | "shading-factor";
+export type ShadingFactorSeason = "summer" | "winter";
 
 export type Mesh3D = {
   vertices: [number, number, number][];
@@ -476,6 +478,14 @@ export type ModelViewerLegend = {
   title: string;
   rows: ModelViewerLegendRow[];
   kind: "theme" | "mini-key";
+} | {
+  title: string;
+  rows: [];
+  kind: "continuous";
+  stops: readonly { value: number; color: string }[];
+  endpointLabels: { minimum: string; maximum: string };
+  missingColor: string;
+  missingCount: number;
 } | null;
 
 /** An active legend filter (NEW-VIEW-2): the matched bucket keys, stamped with
@@ -513,6 +523,7 @@ export type ModelViewerDebugState = {
   sectionClippedObjectIds: () => string[];
   lens: ModelViewerLens;
   theme: ModelViewerTheme;
+  shadingFactorSeason: ShadingFactorSeason;
   legend: ModelViewerLegend;
   /** The active legend filter, keys as an array for `page.evaluate` round-trips. */
   legendFilter: { theme: ModelViewerTheme; keys: string[] } | null;
