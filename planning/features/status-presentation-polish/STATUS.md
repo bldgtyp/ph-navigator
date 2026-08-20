@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — implementation complete, browser verification pending
+STATUS: Complete — implementation and verification complete; archive next
 AUTHOR: Codex
 SCOPE: Current state of status presentation polish
 RELATED:
@@ -10,8 +10,9 @@ RELATED:
 
 # STATUS — Status Presentation Polish
 
-**State:** `Active`; implementation and focused automated verification are
-complete. Integrated browser verification is next.
+**State:** `Complete`; implementation, simplify, docs-pass, Graphify, automated
+verification, and mounted browser acceptance are complete. Archive cleanup is
+next.
 
 ## Completed
 
@@ -42,22 +43,41 @@ complete. Integrated browser verification is next.
   (69 tests passed), TypeScript build, formatting, and lint (0 errors; 18
   pre-existing Fast Refresh warnings).
 
+### Phase 3 — Integrated browser and frontend verification
+
+- Regrouped Total thickness, Thermal, and authenticated Moisture in one metrics
+  list after the mounted desktop check exposed Warning as an unintended row
+  break; Warning now renders in a separate alerts list only when present.
+- Verified Roadmap labels and timeline centers at desktop and 480 px widths;
+  the rail contains no ambiguous glyphs or duplicate status badges.
+- Verified the signed-in Assembly header keeps Total thickness, Thermal, and
+  Moisture aligned at desktop, and wraps the whole Moisture metric after
+  Thermal at 480 px.
+- Verified a mounted signed-out saved Assembly keeps Total thickness and
+  Thermal while rendering no Moisture label, condensation text, action, or
+  blank metric wrapper.
+- Three-way simplify review found no quality, reuse, or efficiency findings.
+- `graphify update .` completed.
+- `pnpm --dir frontend test` passed: 274 files / 2,475 tests.
+- `make frontend-dev-check` passed: formatting, lint (0 errors; 18 existing
+  Fast Refresh warnings), structural checks, TypeScript, production build, and
+  version-marker verification. Vite retained its existing large-chunk warning.
+
 ## Next step
 
-Run the desktop/narrow signed-in and signed-out browser checks, then the focused
-frontend gate and Graphify update.
+Archive this completed packet and update planning indexes.
 
 ## Verification
 
 - [x] Roadmap state-cycle and accessible-name RTL.
 - [x] Viewer/static Roadmap state labels.
-- [ ] Desktop/narrow timeline geometry browser checks.
+- [x] Desktop/narrow timeline geometry browser checks.
 - [x] Condensation loading/success/warning/danger/unavailable label tests.
 - [x] Anonymous no-render/no-query test.
 - [x] Locked and authenticated read-only visibility test.
-- [ ] Mounted signed-in and signed-out Envelope checks after
+- [x] Mounted signed-in and signed-out Envelope checks after
       `make agent-browser-ready`.
-- [ ] Focused frontend gate and Graphify update.
+- [x] Frontend gate, full frontend suite, and Graphify update.
 
 ## Coordination
 
@@ -67,4 +87,4 @@ packet's heading/typography work while changing only the milestone state rail.
 
 ## Blockers
 
-None, once the auth/session seam is confirmed.
+None.

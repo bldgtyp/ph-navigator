@@ -66,14 +66,6 @@ export function AssemblyHeader({
               {formatLengthFromMm(activeAssembly.total_thickness_mm, { unitSystem })}
             </dd>
           </div>
-        </dl>
-        <dl id="assembly-header-alerts" className="assembly-header-alerts">
-          {assemblyWarning ? (
-            <div id="assembly-status-warning" className="assembly-header-warning">
-              <dt>Warning</dt>
-              <dd>{assemblyWarning}</dd>
-            </div>
-          ) : null}
           <div id="assembly-thermal-metric">
             <dt className="assembly-header-metric-label">
               <span>Thermal</span>
@@ -148,6 +140,14 @@ export function AssemblyHeader({
             </div>
           ) : null}
         </dl>
+        {assemblyWarning ? (
+          <dl id="assembly-header-alerts" className="assembly-header-alerts">
+            <div id="assembly-status-warning" className="assembly-header-warning">
+              <dt>Warning</dt>
+              <dd>{assemblyWarning}</dd>
+            </div>
+          </dl>
+        ) : null}
       </div>
     </header>
   );

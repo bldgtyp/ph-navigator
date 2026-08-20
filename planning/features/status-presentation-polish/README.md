@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — implementation complete, browser verification pending
+STATUS: Complete — verified; archive pending
 AUTHOR: Ed May / Codex
 SCOPE: Roadmap status controls and Envelope moisture-status presentation
 RELATED:
@@ -22,6 +22,11 @@ Two status surfaces currently use more chrome than meaning:
 
 This packet replaces both with direct text and keeps one clear interaction per
 status.
+
+Implementation and verification are complete: all 2,475 frontend tests, the
+frontend development gate, Graphify, three-way simplify review, and mounted
+desktop/narrow signed-in and signed-out browser acceptance passed. See
+`STATUS.md` for the evidence ledger.
 
 ## Read order
 
