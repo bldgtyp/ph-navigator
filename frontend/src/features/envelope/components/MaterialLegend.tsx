@@ -1,44 +1,30 @@
-import {
-  formatConductivityFromWmK,
-  formatDensityFromKgM3,
-  formatRPerInFromConductivityWmK,
-  formatSpecificHeatFromJKgK,
-  useUnitPreference,
-} from "../../../lib/units";
+import { useUnitPreference } from "../../../lib/units";
 import type { ProjectMaterial } from "../types";
 import { materialColor } from "../lib";
-
-function formatEmissivity(value: number | null): string {
-  return value === null ? "-" : value.toLocaleString(undefined, { maximumFractionDigits: 3 });
-}
-
-type MaterialLegendHeader = {
-  label: string;
-  unit?: string;
-};
+import {
+  assemblyMaterialHeaders,
+  formatAssemblyMaterialValues,
+  type AssemblyMaterialHeader,
+} from "../material-table-presentation";
 
 export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) {
   const { unitSystem } = useUnitPreference();
   if (materials.length === 0) return null;
-  const valueHeader: MaterialLegendHeader =
-    unitSystem === "IP"
-      ? { label: "Resistivity", unit: "R/inch" }
-      : { label: "Conductivity", unit: "W/(m-K)" };
-  const densityHeader: MaterialLegendHeader =
-    unitSystem === "IP"
-      ? { label: "Density", unit: "lb/ft3" }
-      : { label: "Density", unit: "kg/m3" };
-  const specificHeatHeader: MaterialLegendHeader =
-    unitSystem === "IP"
-      ? { label: "Specific heat", unit: "Btu/(lb-F)" }
-      : { label: "Specific heat", unit: "J/(kg-K)" };
+  const [
+    colorHeader,
+    materialHeader,
+    valueHeader,
+    densityHeader,
+    specificHeatHeader,
+    emissivityHeader,
+  ] = assemblyMaterialHeaders(unitSystem);
   return (
     <aside className="material-legend" aria-label="Material legend">
       <table className="material-legend-table">
         <thead>
           <tr>
-            <th scope="col">Color</th>
-            <th scope="col">Material</th>
+            <th scope="col">{colorHeader?.label}</th>
+            <th scope="col">{materialHeader?.label}</th>
             <th scope="col" aria-label={materialLegendHeaderLabel(valueHeader)}>
               <MaterialLegendHeaderCell header={valueHeader} />
             </th>
@@ -48,39 +34,14 @@ export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) 
             <th scope="col" aria-label={materialLegendHeaderLabel(specificHeatHeader)}>
               <MaterialLegendHeaderCell header={specificHeatHeader} />
             </th>
-            <th scope="col">Emissivity</th>
+            <th scope="col">{emissivityHeader?.label}</th>
           </tr>
         </thead>
         <tbody>
           {materials.map((material) => {
             const valueMissing = material.conductivity_w_mk === null;
-            const valueLabel =
-              unitSystem === "IP"
-                ? formatRPerInFromConductivityWmK(material.conductivity_w_mk, {
-                    unitSystem,
-                    empty: "-",
-                    fractionDigits: 3,
-                    showUnit: false,
-                  })
-                : formatConductivityFromWmK(material.conductivity_w_mk, {
-                    unitSystem,
-                    empty: "-",
-                    fractionDigits: 3,
-                    showUnit: false,
-                  });
-            const densityLabel = formatDensityFromKgM3(material.density_kg_m3, {
-              unitSystem,
-              empty: "-",
-              fractionDigits: 1,
-              showUnit: false,
-            });
-            const specificHeatLabel = formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, {
-              unitSystem,
-              empty: "-",
-              fractionDigits: unitSystem === "IP" ? 3 : 0,
-              showUnit: false,
-            });
-            const emissivityLabel = formatEmissivity(material.emissivity);
+            const { valueLabel, densityLabel, specificHeatLabel, emissivityLabel } =
+              formatAssemblyMaterialValues(material, unitSystem, "-");
             return (
               <tr key={material.id}>
                 <td>
@@ -110,7 +71,7 @@ export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) 
   );
 }
 
-function MaterialLegendHeaderCell({ header }: { header: MaterialLegendHeader }) {
+function MaterialLegendHeaderCell({ header }: { header: AssemblyMaterialHeader }) {
   return (
     <span className="material-legend-heading">
       <span>{header.label}</span>
@@ -119,6 +80,6 @@ function MaterialLegendHeaderCell({ header }: { header: MaterialLegendHeader }) 
   );
 }
 
-function materialLegendHeaderLabel(header: MaterialLegendHeader): string {
+function materialLegendHeaderLabel(header: AssemblyMaterialHeader): string {
   return header.unit ? `${header.label} [${header.unit}]` : header.label;
 }

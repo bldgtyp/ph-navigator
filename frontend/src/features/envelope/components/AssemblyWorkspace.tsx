@@ -14,6 +14,7 @@ import type {
 } from "../types";
 import type { AssemblyCondensationResponse } from "../condensation-types";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
+import { assemblyMaterialsInFirstUseOrder, materialById } from "../lib";
 
 export function AssemblyWorkspace({
   projectId,
@@ -99,7 +100,7 @@ export function AssemblyWorkspace({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const interactionRef = useRef<HTMLDivElement>(null);
   const legendMaterials = useMemo(
-    () => activeAssemblyMaterials(activeAssembly, materials),
+    () => assemblyMaterialsInFirstUseOrder(activeAssembly, materialById(materials)),
     [activeAssembly, materials],
   );
   useOutsidePointerDown(
@@ -177,26 +178,4 @@ export function AssemblyWorkspace({
       </div>
     </div>
   );
-}
-
-function activeAssemblyMaterials(
-  assembly: Assembly,
-  materials: ProjectMaterial[],
-): ProjectMaterial[] {
-  const materialsById = new Map(materials.map((material) => [material.id, material]));
-  const activeMaterials: ProjectMaterial[] = [];
-  const seen = new Set<string>();
-
-  for (const layer of assembly.layers) {
-    for (const segment of layer.segments) {
-      const materialId = segment.project_material_id;
-      if (!materialId || seen.has(materialId)) continue;
-      const material = materialsById.get(materialId);
-      if (!material) continue;
-      seen.add(materialId);
-      activeMaterials.push(material);
-    }
-  }
-
-  return activeMaterials;
 }

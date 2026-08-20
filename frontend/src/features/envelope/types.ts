@@ -131,6 +131,7 @@ export type Assembly = {
 };
 
 export type EnvelopeReadResponse = BaseTableSlice & {
+  saved_assembly_count: number | null;
   assemblies: Assembly[];
   project_materials: ProjectMaterial[];
 };

@@ -69,6 +69,7 @@ const envelopePayload: EnvelopeReadResponse = {
   source: "draft",
   version_etag: "version-etag",
   draft_etag: "draft-etag",
+  saved_assembly_count: 1,
   assemblies: [
     {
       id: "asm_wall_c3",
@@ -1383,7 +1384,14 @@ describe("EnvelopePage", () => {
   test("empty assemblies render the empty state without a redirect loop", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/envelope?"))
-        return Promise.resolve(jsonResponse({ ...envelopePayload, assemblies: [] }));
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            source: "version",
+            saved_assembly_count: 0,
+            assemblies: [],
+          }),
+        );
       return defaultFetchImplementation(url);
     });
 
@@ -1414,7 +1422,9 @@ describe("EnvelopePage", () => {
         );
       }
       if (url.includes("/envelope?")) {
-        return Promise.resolve(jsonResponse({ ...envelopePayload, assemblies: [] }));
+        return Promise.resolve(
+          jsonResponse({ ...envelopePayload, saved_assembly_count: 0, assemblies: [] }),
+        );
       }
       return defaultFetchImplementation(url);
     });
@@ -1868,9 +1878,12 @@ describe("EnvelopePage", () => {
   });
 
   test("locked editor version loads saved source and keeps edit action disabled", async () => {
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
-      projectOverride: { active_version: { ...project.active_version!, locked: true } },
-    });
+    const { container } = renderEnvelope(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+      {
+        projectOverride: { active_version: { ...project.active_version!, locked: true } },
+      },
+    );
 
     expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Rename assembly" })).not.toBeInTheDocument();
@@ -1879,6 +1892,37 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
     );
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm")).toHaveTextContent("50");
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm").tagName).toBe("SPAN");
+    expect(
+      container.querySelectorAll(".assembly-layer-dimension[data-readonly='true']"),
+    ).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: /Edit layer .* thickness/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add layer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delete layer/ })).not.toBeInTheDocument();
+  });
+
+  test("anonymous viewers see semantic layer dimensions without mutation controls", async () => {
+    const { container } = renderEnvelope(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+      {
+        projectOverride: { access_mode: "viewer" },
+        audiencePolicy: "anonymous-hidden",
+      },
+    );
+
+    expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm")).toHaveTextContent("50");
+    expect(screen.getByLabelText("Layer 2 thickness: 38 mm")).toHaveTextContent("38");
+    expect(container.querySelectorAll(".dimension-tick")).toHaveLength(4);
+    expect(
+      screen.queryByRole("button", { name: /Edit layer .* thickness/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add layer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delete layer/ })).not.toBeInTheDocument();
+    expect(commandRequestBodies()).toEqual([]);
   });
 
   test("phase 16 scale fixture keeps edge cases visible and locked mode read-only", async () => {
@@ -1942,6 +1986,134 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope/export/hbjson"),
       expect.objectContaining({ credentials: "include" }),
     );
+  });
+
+  test("Assembly PDF download warns for a draft, requests active units, and honors the server filename", async () => {
+    let downloadedFilename = "";
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedFilename = this.download;
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download assemblies PDF" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("last committed version"));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/envelope/export/assemblies.pdf?units=SI"),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
+    expect(downloadedFilename).toBe("2426-assemblies-SI-Working.pdf");
+  });
+
+  test("Assembly PDF action stays available on a locked Version", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { active_version: { ...project.active_version!, locked: true } },
+    });
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+
+    expect(screen.getByRole("menuitem", { name: "Download assemblies PDF" })).toBeEnabled();
+  });
+
+  test("zero Assemblies keeps the PDF action visible but disabled with explanatory copy", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({ ...envelopePayload, saved_assembly_count: 0, assemblies: [] }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies`);
+
+    expect(await screen.findByText("No assemblies yet")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    const action = screen.getByRole("menuitem", { name: /Download assemblies PDF/ });
+
+    expect(action).toHaveAttribute("aria-disabled", "true");
+    expect(action).toBeEnabled();
+    expect(action).toHaveAccessibleName(
+      "Download assemblies PDF No assemblies in the saved Version.",
+    );
+  });
+
+  test("Assembly PDF availability follows the saved Version, not draft Assembly rows", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({ ...envelopePayload, saved_assembly_count: 1, assemblies: [] }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies`);
+
+    expect(await screen.findByText("No assemblies yet")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    const action = screen.getByRole("menuitem", { name: "Download assemblies PDF" });
+    expect(action).not.toHaveAttribute("aria-disabled");
+
+    await userEvent.click(action);
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/envelope/export/assemblies.pdf?units=SI"),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
+  });
+
+  test("a first draft-only Assembly cannot enable the saved-Version PDF route", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, saved_assembly_count: 0 }));
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    const action = screen.getByRole("menuitem", { name: /Download assemblies PDF/ });
+    expect(action).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(action);
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/envelope/export/assemblies.pdf"),
+      expect.anything(),
+    );
+  });
+
+  test("Assembly PDF request errors surface in the Assembly workspace", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope/export/assemblies.pdf")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error_code: "pdf_failed",
+              message: "PDF composition failed.",
+              request_id: "request-pdf",
+              details: {},
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download assemblies PDF" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("PDF composition failed.");
   });
 
   test("PHPP export downloads directly when every assembly is exportable, passing the active units", async () => {
@@ -2367,6 +2539,17 @@ function defaultFetchImplementation(url: string): Promise<Response> {
   }
   if (url.includes("/envelope/export/phpp")) {
     return Promise.resolve(new Response(new Blob(["zip"]), { status: 200 }));
+  }
+  if (url.includes("/envelope/export/assemblies.pdf")) {
+    return Promise.resolve(
+      new Response(new Blob(["pdf"], { type: "application/pdf" }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": 'attachment; filename="2426-assemblies-SI-Working.pdf"',
+        },
+      }),
+    );
   }
   throw new Error(`Unhandled fetch in EnvelopePage test: ${url}`);
 }

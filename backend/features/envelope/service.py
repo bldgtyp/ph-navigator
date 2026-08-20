@@ -60,6 +60,7 @@ from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import (
     document_etag,
     get_current_document_view,
+    get_saved_and_current_document_view,
     get_saved_document,
 )
 from features.project_document.write_spine import apply_document_write
@@ -88,11 +89,12 @@ def get_envelope_read_model(
             source="version",
             version_etag=document_etag(body),
             draft_etag=None,
+            saved_assembly_count=len(body.tables.assemblies),
             assemblies=assemblies,
             project_materials=project_materials,
         )
 
-    view = get_current_document_view(version_id, access)
+    saved_body, view = get_saved_and_current_document_view(version_id, access)
     assemblies, project_materials = build_envelope_read_parts(view.body)
     return EnvelopeReadResponse(
         project_id=access.project_id,
@@ -100,6 +102,7 @@ def get_envelope_read_model(
         source=view.source,
         version_etag=view.version_etag,
         draft_etag=view.draft_etag,
+        saved_assembly_count=len(saved_body.tables.assemblies),
         assemblies=assemblies,
         project_materials=project_materials,
     )

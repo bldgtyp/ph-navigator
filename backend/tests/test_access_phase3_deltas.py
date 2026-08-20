@@ -116,6 +116,7 @@ def test_anonymous_cannot_reach_bulk_exports(clean_tables: None) -> None:
         f"{base}/envelope/export/hbjson",
         f"{base}/envelope/export/phpp",
         f"{base}/envelope/export/phpp/preflight",
+        f"{base}/envelope/export/assemblies.pdf",
         f"{base}/download",
         f"{base}/download/tables/rooms",
     ]

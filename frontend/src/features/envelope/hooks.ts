@@ -54,7 +54,14 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
       return postEnvelopeCommand(projectId, versionId, current, { command });
     },
     onSuccess: (slice, variables) => {
-      queryClient.setQueryData(envelopeQueryKeys.read(projectId, slice.version_id, "draft"), slice);
+      const mergedSlice = {
+        ...slice,
+        saved_assembly_count: slice.saved_assembly_count ?? variables.current.saved_assembly_count,
+      };
+      queryClient.setQueryData(
+        envelopeQueryKeys.read(projectId, slice.version_id, "draft"),
+        mergedSlice,
+      );
       writeActiveThermalStandard(queryClient, projectId, slice.version_id, variables.command);
       invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);

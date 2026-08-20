@@ -2,6 +2,7 @@ import type { Assembly, AssemblyLayer, EnvelopeReadSource, ProjectMaterial } fro
 import type { ProjectDetail } from "../projects/types";
 import { colorToCss } from "../../shared/lib/color";
 import { naturalSortByName } from "../../shared/lib/sort";
+import { formatLengthFromMm, type UnitSystem } from "../../lib/units";
 
 export function naturalSortAssemblies(assemblies: Assembly[]): Assembly[] {
   return naturalSortByName(assemblies);
@@ -15,6 +16,45 @@ export function envelopeReadSource(project: ProjectDetail): EnvelopeReadSource {
 
 export function materialById(materials: ProjectMaterial[]): Map<string, ProjectMaterial> {
   return new Map(materials.map((material) => [material.id, material]));
+}
+
+export function assemblyMaterialsInFirstUseOrder(
+  assembly: Assembly,
+  materialsById: ReadonlyMap<string, ProjectMaterial>,
+): ProjectMaterial[] {
+  const used: ProjectMaterial[] = [];
+  const seen = new Set<string>();
+  for (const layer of orderedAssemblyLayers(assembly)) {
+    for (const segment of orderedLayerSegments(layer)) {
+      const materialId = segment.project_material_id;
+      if (!materialId || seen.has(materialId)) continue;
+      const material = materialsById.get(materialId);
+      if (!material) continue;
+      seen.add(materialId);
+      used.push(material);
+    }
+  }
+  return used;
+}
+
+export function orderedAssemblyLayers(assembly: Assembly): AssemblyLayer[] {
+  return [...assembly.layers].sort((left, right) => left.order - right.order);
+}
+
+export function orderedLayerSegments(layer: AssemblyLayer): AssemblyLayer["segments"] {
+  return [...layer.segments].sort((left, right) => left.order - right.order);
+}
+
+export function formatAssemblyLayerThickness(
+  valueMm: number,
+  unitSystem: UnitSystem,
+  showUnit = false,
+): string {
+  return formatLengthFromMm(valueMm, {
+    unitSystem,
+    showUnit,
+    fractionDigits: unitSystem === "IP" ? 3 : 1,
+  });
 }
 
 export function layerWidthMm(layer: AssemblyLayer): number {

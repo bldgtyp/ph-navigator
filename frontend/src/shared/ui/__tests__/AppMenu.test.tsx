@@ -80,6 +80,24 @@ describe("AppMenu", () => {
     expect(screen.queryByRole("menuitem", { name: "Configure filters" })).not.toBeInTheDocument();
   });
 
+  it("keeps aria-disabled items focusable without invoking or closing", () => {
+    const onClick = vi.fn();
+    render(
+      <AppMenu label="Aperture actions" defaultOpen>
+        <AppMenuItem aria-disabled onClick={onClick}>
+          Export unavailable
+        </AppMenuItem>
+      </AppMenu>,
+    );
+
+    const item = screen.getByRole("menuitem", { name: "Export unavailable" });
+    expect(item).toBeEnabled();
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(item);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(item).toBeVisible();
+  });
+
   it("renders checkbox items without closing the menu by default", () => {
     const onClick = vi.fn();
     render(

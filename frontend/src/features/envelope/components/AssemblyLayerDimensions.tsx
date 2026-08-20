@@ -1,13 +1,11 @@
-// The section's left-hand dimension column: one control block per layer,
-// carrying the thickness label/editor, the delete action, and the
-// add-layer-above/below buttons. Split out of AssemblyCanvasOverlay.tsx to
-// keep that module under the 500-line guard; the overlay still owns segment
-// hit targets and paint-mode behaviour.
-import { type KeyboardEvent, useRef, useState } from "react";
+// The section's left-hand dimension column: semantic thickness presentation
+// for every viewer, with editor-only mutation controls layered onto it.
+import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { formatLengthFromMm, parseLengthToMm, type UnitSystem } from "../../../lib/units";
+import { parseLengthToMm, type UnitSystem } from "../../../lib/units";
 import { DIMENSION_COLUMN_WIDTH_PX, pxFromMm } from "../canvas-constants";
 import type { AssemblyCanvasLayerGeometry } from "../canvas-geometry";
+import { formatAssemblyLayerThickness } from "../lib";
 import type { AssemblyLayer } from "../types";
 import { CanvasAddButton } from "./CanvasAddButton";
 import type { AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
@@ -16,30 +14,89 @@ export function AssemblyLayerDimensions({
   layerGeometry,
   unitSystem,
   zoom,
+  canEdit,
   actions,
 }: {
   layerGeometry: AssemblyCanvasLayerGeometry;
   unitSystem: UnitSystem;
   zoom: number;
+  canEdit: boolean;
   actions: AssemblyCanvasOverlayActions;
 }) {
   const { layer } = layerGeometry;
   const layerNumber = layer.order + 1;
-  // The cell tracks the drawn band. A membrane's band is the reserved drawing
-  // space from the geometry, which is what keeps its thickness label clickable.
+  if (layerGeometry.isMembrane && !canEdit) return null;
+
+  // The cell tracks the drawn band. A membrane's reserved drawing height keeps
+  // its editor-only delete/add controls aligned without implying a dimension.
   const topPx = pxFromMm(layerGeometry.yMm, zoom);
   const heightPx = pxFromMm(layerGeometry.heightMm, zoom);
+  const className = layerGeometry.isMembrane
+    ? "assembly-layer-dimension assembly-layer-dimension--controls-only"
+    : "assembly-layer-dimension dimension-chrome-cell dimension-chrome-cell--vertical";
+  let content: ReactNode;
+  if (layerGeometry.isMembrane) {
+    content = (
+      <LayerDeleteButton layerNumber={layerNumber} onDelete={() => actions.onDeleteLayer(layer)} />
+    );
+  } else if (canEdit) {
+    content = (
+      <LayerThicknessEditor
+        layer={layer}
+        layerNumber={layerNumber}
+        unitSystem={unitSystem}
+        onDelete={() => actions.onDeleteLayer(layer)}
+        onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
+      />
+    );
+  } else {
+    content = (
+      <span
+        className="dimension-label-text"
+        aria-label={`Layer ${layerNumber} thickness: ${formatAssemblyLayerThickness(layer.thickness_mm, unitSystem, true)}`}
+      >
+        {formatAssemblyLayerThickness(layer.thickness_mm, unitSystem)}
+      </span>
+    );
+  }
+
   return (
     <div
       id={`assembly-layer-dimension-${layer.id}`}
-      className="assembly-layer-dimension dimension-chrome-cell dimension-chrome-cell--vertical"
+      className={className}
+      data-readonly={canEdit ? undefined : "true"}
       style={{
         top: `${topPx}px`,
         width: `${DIMENSION_COLUMN_WIDTH_PX}px`,
         height: `${heightPx}px`,
       }}
-      aria-label={`Layer ${layerNumber} thickness controls`}
+      aria-label={canEdit ? `Layer ${layerNumber} thickness controls` : undefined}
     >
+      {!layerGeometry.isMembrane ? <DimensionTicks /> : null}
+      {content}
+      {canEdit ? (
+        <>
+          <CanvasAddButton
+            id={`assembly-layer-add-above-${layer.id}`}
+            label={`Add layer above layer ${layerNumber}`}
+            className="layer-add-button add-above"
+            onClick={() => actions.onAddLayer(layer, "above")}
+          />
+          <CanvasAddButton
+            id={`assembly-layer-add-below-${layer.id}`}
+            label={`Add layer below layer ${layerNumber}`}
+            className="layer-add-button add-below"
+            onClick={() => actions.onAddLayer(layer, "below")}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function DimensionTicks() {
+  return (
+    <>
       <span
         className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-top"
         aria-hidden="true"
@@ -48,42 +105,11 @@ export function AssemblyLayerDimensions({
         className="dimension-tick dimension-chrome-tick dimension-chrome-tick--vertical dimension-tick-bottom"
         aria-hidden="true"
       />
-      {/* A membrane's real thickness is not what its band shows and drives
-          nothing the user can check, so the number is not offered here — it
-          lives in Segment Properties beside the note that explains it. The
-          delete action stays, because it is otherwise only reachable *through*
-          the thickness editor and a membrane layer must still be removable. */}
-      {layerGeometry.isMembrane ? (
-        <LayerDeleteButton
-          layerNumber={layerNumber}
-          onDelete={() => actions.onDeleteLayer(layer)}
-        />
-      ) : (
-        <LayerThicknessEditor
-          layer={layer}
-          layerNumber={layerNumber}
-          unitSystem={unitSystem}
-          onDelete={() => actions.onDeleteLayer(layer)}
-          onSubmit={(thicknessMm) => actions.onUpdateLayerThickness(layer, thicknessMm)}
-        />
-      )}
-      <CanvasAddButton
-        id={`assembly-layer-add-above-${layer.id}`}
-        label={`Add layer above layer ${layerNumber}`}
-        className="layer-add-button add-above"
-        onClick={() => actions.onAddLayer(layer, "above")}
-      />
-      <CanvasAddButton
-        id={`assembly-layer-add-below-${layer.id}`}
-        label={`Add layer below layer ${layerNumber}`}
-        className="layer-add-button add-below"
-        onClick={() => actions.onAddLayer(layer, "below")}
-      />
-    </div>
+    </>
   );
 }
 
-/** The dimension cell for a membrane layer: delete only, no thickness value. */
+/** A membrane has no physical-thickness dimension; editors only get its controls. */
 function LayerDeleteButton({
   layerNumber,
   onDelete,
@@ -119,20 +145,22 @@ function LayerThicknessEditor({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editorUnitSystem, setEditorUnitSystem] = useState<UnitSystem>(unitSystem);
-  const [draft, setDraft] = useState(() => formatLayerThickness(layer.thickness_mm, unitSystem));
+  const [draft, setDraft] = useState(() =>
+    formatAssemblyLayerThickness(layer.thickness_mm, unitSystem),
+  );
   const [error, setError] = useState<string | null>(null);
   const committedRef = useRef(false);
 
   function startEditing(): void {
     setEditorUnitSystem(unitSystem);
-    setDraft(formatLayerThickness(layer.thickness_mm, unitSystem));
+    setDraft(formatAssemblyLayerThickness(layer.thickness_mm, unitSystem));
     setError(null);
     committedRef.current = false;
     setIsEditing(true);
   }
 
   function cancelEditing(): void {
-    setDraft(formatLayerThickness(layer.thickness_mm, editorUnitSystem));
+    setDraft(formatAssemblyLayerThickness(layer.thickness_mm, editorUnitSystem));
     setError(null);
     setIsEditing(false);
   }
@@ -205,9 +233,6 @@ function LayerThicknessEditor({
     );
   }
 
-  // Membranes never reach here — their band is not their thickness, so the
-  // number would contradict the drawing. This label is always 1:1 with what is
-  // rendered beside it.
   return (
     <button
       id={`assembly-layer-${layer.id}-thickness-editor`}
@@ -216,15 +241,7 @@ function LayerThicknessEditor({
       aria-label={`Edit layer ${layerNumber} thickness`}
       onClick={startEditing}
     >
-      {formatLayerThickness(layer.thickness_mm, unitSystem)}
+      {formatAssemblyLayerThickness(layer.thickness_mm, unitSystem)}
     </button>
   );
-}
-
-function formatLayerThickness(valueMm: number, unitSystem: UnitSystem): string {
-  return formatLengthFromMm(valueMm, {
-    unitSystem,
-    showUnit: false,
-    fractionDigits: unitSystem === "IP" ? 3 : 1,
-  });
 }

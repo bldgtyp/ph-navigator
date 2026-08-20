@@ -1,12 +1,12 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready for Phase 00 proof
+DATE: 2026-08-20
+TIME: 00:14 EDT
+STATUS: Complete — accepted on codex/assembly-pdf-public-dimensions
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for bulk Assembly PDF export and public dimensions
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/README.md
-  - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/README.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PLAN.md
 ---
 
 # PRD — Assembly PDF and Public Dimensions

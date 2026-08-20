@@ -7,8 +7,15 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Header, Query, UploadFile
+from starlette import status
 
-from features.access.capabilities import ENVELOPE_EXPORT_HBJSON, ENVELOPE_EXPORT_PHPP
+from features.access.capabilities import (
+    ENVELOPE_EXPORT_ASSEMBLY_PDF,
+    ENVELOPE_EXPORT_HBJSON,
+    ENVELOPE_EXPORT_PHPP,
+)
+from features.envelope.assembly_pdf import render_assembly_report_pdf
+from features.envelope.assembly_report import build_assembly_report
 from features.envelope.condensation import AssemblyCondensationResponse
 from features.envelope.hbjson_export import export_hbjson_constructions
 from features.envelope.import_models import ImportConstructionsPreviewResponse
@@ -34,14 +41,20 @@ from features.envelope.service import (
     preview_envelope_hbjson_import,
 )
 from features.project_document.models import ProjectDocumentSource
-from features.project_document.service import get_saved_document
+from features.project_document.service import get_saved_document, get_saved_document_with_version
 from features.projects.access import (
     ProjectAccess,
     require_capability,
     require_project_edit_access,
     require_project_view_access,
 )
-from features.shared.responses import json_download_response, zip_download_response
+from features.shared.errors import api_error
+from features.shared.responses import (
+    download_filename_part,
+    json_download_response,
+    pdf_download_response,
+    zip_download_response,
+)
 
 router = APIRouter(
     prefix="/api/v1/projects/{project_id}/versions/{version_id}",
@@ -132,6 +145,40 @@ def export_envelope_phpp(
     body = get_saved_document(version_id, access)
     data = build_phpp_zip(body, units=units)
     return zip_download_response(data, f"phpp-u-values-{units}-{version_id}.zip")
+
+
+@router.get("/envelope/export/assemblies.pdf")
+def export_assemblies_pdf(
+    version_id: UUID,
+    access: ProjectViewAccess,
+    units: Annotated[UnitSystem, Query()] = "SI",
+):
+    require_capability(access, ENVELOPE_EXPORT_ASSEMBLY_PDF)
+    body, version = get_saved_document_with_version(version_id, access)
+    if not body.tables.assemblies:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "no_assemblies",
+            "The saved Version has no Assemblies to export.",
+        )
+    report = build_assembly_report(
+        body.tables.assemblies,
+        body.tables.project_materials,
+        project_bt_number=access.project.bt_number,
+        project_name=access.project.display_name,
+        version_name=version.name,
+        units=units,
+    )
+    return pdf_download_response(
+        render_assembly_report_pdf(report),
+        _assembly_pdf_filename(access.project.bt_number, units, version.name),
+    )
+
+
+def _assembly_pdf_filename(bt_number: str, units: UnitSystem, version_name: str) -> str:
+    bt_slug = download_filename_part(bt_number, "project")
+    version_slug = download_filename_part(version_name, "version")
+    return f"{bt_slug}-assemblies-{units}-{version_slug}.pdf"
 
 
 @router.post("/envelope/import/hbjson/preview", response_model=ImportConstructionsPreviewResponse)

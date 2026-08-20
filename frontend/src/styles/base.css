@@ -1768,7 +1768,8 @@ button:disabled {
   background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
-.app-menu__item:disabled {
+.app-menu__item:disabled,
+.app-menu__item[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.5;
 }

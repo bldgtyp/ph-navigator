@@ -31,6 +31,10 @@ def zip_download_response(data: bytes, filename: str) -> Response:
     return _download_response(data, filename, "application/zip")
 
 
+def pdf_download_response(data: bytes, filename: str) -> Response:
+    return _download_response(data, filename, "application/pdf")
+
+
 def download_filename_part(
     value: str,
     fallback: str,
