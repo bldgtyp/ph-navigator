@@ -1,16 +1,17 @@
 ---
 DATE: 2026-08-19
-TIME: 20:38 EDT
-STATUS: Implemented — ready for review
+TIME: 20:47 EDT
+STATUS: Complete — implemented, verified, and archived
 AUTHOR: Codex
 SCOPE: Current state of shared interaction polish
 RELATED:
-  - planning/features/shared-interaction-polish/PRD.md
+  - planning/archive/dated/2026-08-19/shared-interaction-polish/PRD.md
 ---
 
 # STATUS — Shared Interaction Polish
 
-**State:** `In review`; implementation and verification are complete.
+**State:** `Complete`; implementation, verification, docs pass, and archive
+cleanup finished on `codex/shared-interaction-polish`.
 
 ## Outcome
 
@@ -31,7 +32,7 @@ RELATED:
 
 ## Next step
 
-Review and merge the phase commit.
+No implementation work remains. Merge/deploy are separate operator decisions.
 
 ## Verification
 
