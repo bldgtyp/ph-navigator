@@ -112,12 +112,30 @@ class VersionDeleteRequest(BaseModel):
     confirm_name: str = Field(min_length=1, max_length=120)
 
 
+class DiffChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    operation: Literal["added", "removed", "changed"]
+    record_id: str
+    record_label: str
+    field_key: str | None = None
+    field_label: str | None = None
+    before: Any = None
+    after: Any = None
+    raw_paths: list[str]
+
+
 class TableDiffSummary(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     table: str
     change_count: int
     changed_paths: list[str]
+    table_label: str
+    added_count: int
+    removed_count: int
+    changed_count: int
+    changes: list[DiffChange]
 
 
 class ProjectDiffResponse(BaseModel):

@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef, coerce_link_value
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.labels import humanize_identifier
 from features.project_document.tables.contracts import InverseLinkField, TableContract
 
 InverseLinks = dict[tuple[str, ...], dict[str, dict[str, list[str]]]]
@@ -301,7 +302,7 @@ def _inverse_metadata(contract: TableContract, fields: Iterable[TableFieldDef]) 
         InverseLinkField(
             source_key=source_link_key(contract.table_path, field.field_key),
             source_table_path=list(contract.table_path),
-            source_table_display=_display_table_path(contract.table_path),
+            source_table_display=humanize_identifier(contract.table_path[-1] if contract.table_path else "Table"),
             source_field_key=field.field_key,
             source_field_display_name=field.display_name,
         )
@@ -319,8 +320,3 @@ def _freeze_inverse(
         }
         for target_path, by_row in inverse.items()
     }
-
-
-def _display_table_path(table_path: Sequence[str]) -> str:
-    leaf = table_path[-1] if table_path else "Table"
-    return leaf.replace("_", " ").title()

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phases 00–01 complete
+STATUS: Active — Phases 00–02 complete
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
@@ -39,12 +39,12 @@ changes without reading storage paths or record UUIDs.
 - `DiffDialog` already opts into `ModalDialog resizable`, but starts from the
   generic modal width and renders only `changed_paths` strings. The screenshot's
   resize handle is therefore not evidence of a usable diff design.
-- `backend/features/project_document/diff.py` returns table keys and raw paths,
-  with no before/after values or human labels.
-- Phase 00/01 contracts live in
+- `backend/features/project_document/diff.py` now preserves raw paths while
+  adding operations, before/after values, counts, and human table/record/field
+  labels. Derived overlays are excluded from the structured presentation.
+- Phase 00–02 contracts live in
   `backend/tests/test_project_version_management_contract.py`. Strict xfail
-  markers keep CI green while the remaining Phase 02 structured-diff behavior
-  is absent.
+  scaffolding is fully removed now that the backend contracts are implemented.
 
 ## Primary code anchors
 

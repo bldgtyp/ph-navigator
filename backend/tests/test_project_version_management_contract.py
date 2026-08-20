@@ -25,11 +25,6 @@ from tests.test_project_document import (
 )
 from tests.test_projects import create_project, signed_in_client
 
-PENDING_STRUCTURED_DIFF = pytest.mark.xfail(
-    strict=True,
-    reason="Phase 02 structured diff presentation is not implemented.",
-)
-
 
 def delete_version_url(project_id: object, version_id: object) -> str:
     return f"{version_url(project_id, version_id)}/delete"
@@ -520,7 +515,6 @@ def rooms_diff_fixture() -> tuple[dict[str, Any], dict[str, Any]]:
     return before, after
 
 
-@PENDING_STRUCTURED_DIFF
 def test_structured_diff_resolves_builtin_custom_and_option_labels() -> None:
     from features.project_document.diff import table_diff_summary
 
@@ -549,7 +543,6 @@ def test_structured_diff_resolves_builtin_custom_and_option_labels() -> None:
     assert changes[("changed", "opt_ground", "label")]["field_label"] == "Label"
 
 
-@PENDING_STRUCTURED_DIFF
 @pytest.mark.parametrize(
     ("table", "before", "after", "expected"),
     [
@@ -629,7 +622,50 @@ def test_structured_diff_preserves_complex_values_and_nested_records(
     assert all(change["raw_paths"] for change in summary["changes"])
 
 
-@PENDING_STRUCTURED_DIFF
+@pytest.mark.parametrize(
+    ("before_elements", "after_elements", "operation"),
+    [([], [{"id": "sash", "name": "Sash"}], "added"), ([{"id": "sash", "name": "Sash"}], [], "removed")],
+)
+def test_structured_diff_classifies_nested_record_additions_and_removals(
+    before_elements: list[dict[str, str]],
+    after_elements: list[dict[str, str]],
+    operation: str,
+) -> None:
+    from features.project_document.diff import table_diff_summary
+
+    before = [{"id": "window", "name": "Window", "elements": before_elements}]
+    after = [{"id": "window", "name": "Window", "elements": after_elements}]
+
+    summary = table_diff_summary("apertures", before, after).model_dump(mode="json")
+
+    assert summary[f"{operation}_count"] == 1
+    assert summary["changes"] == [
+        {
+            "operation": operation,
+            "record_id": "sash",
+            "record_label": "Sash",
+            "field_key": None,
+            "field_label": None,
+            "before": {"id": "sash", "name": "Sash"} if operation == "removed" else None,
+            "after": {"id": "sash", "name": "Sash"} if operation == "added" else None,
+            "raw_paths": ["apertures[window].elements[sash]"],
+        }
+    ]
+
+
+def test_structured_diff_does_not_present_derived_only_changes() -> None:
+    from features.project_document.diff import table_diff_summary
+
+    before = [{"id": "room", "computed": {"area": 1.0}}]
+    after = [{"id": "room", "computed": {"area": 2.0}}]
+
+    summary = table_diff_summary("rooms", before, after)
+
+    assert summary.changed_paths == ["rooms[room].computed.area"]
+    assert summary.changes == []
+    assert summary.added_count == summary.removed_count == summary.changed_count == 0
+
+
 def test_diff_response_omits_unchanged_tables_and_keeps_raw_paths(
     clean_document_tables: None,
 ) -> None:

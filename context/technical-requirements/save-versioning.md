@@ -200,8 +200,19 @@ Two diff surfaces, both v1:
   changed since the parent version was forked. (Cheap to implement: the
   parent's body is the baseline.)
 
-Diff is computed in the backend from the two JSONB bodies. UI displays
-a per-table changed-row list with field-level deltas.
+Diff is computed in the backend from the two JSONB bodies. The response omits
+unchanged tables and preserves the v1 `table`, `change_count`, and
+`changed_paths` fields for compatibility. Each changed table also returns a
+human table label, add/remove/change counts, and structured changes containing
+the operation, record ID/label, optional field key/label, before/after JSON
+values, and diagnostic `raw_paths`.
+
+Added and removed records are one record-level change, including identifiable
+nested records. Edited records are one change per meaningful field. FieldDef
+display names resolve built-in and custom labels; a typed presenter registry
+owns table labels and envelope shapes. Derived computed/inverse-link overlays
+are not presented as user changes. Missing labels fall back to humanized keys
+without dropping the change.
 
 ### 8.5 Concurrency
 

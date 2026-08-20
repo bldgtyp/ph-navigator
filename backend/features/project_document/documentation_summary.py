@@ -17,6 +17,7 @@ from features.project_document.envelope_models import (
     ProjectMaterial,
     SpecificationStatus,
 )
+from features.project_document.labels import record_display_name, string_record_value
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
@@ -457,7 +458,7 @@ def _table_record(
         record_id=row.id,
         table_key=table.table_name,
         field_table_key=table.field_table_key,
-        display_name=_display_name(row, custom_values),
+        display_name=record_display_name(row, custom_values),
         sub_label=_sub_label(row, custom_values, option_labels),
         spec_status=spec_status,
         datasheet_status=_evidence_status(row, "datasheet_status"),
@@ -551,18 +552,9 @@ def _group_photo_status(segments: Sequence[AssemblySegment]) -> DocumentationEvi
     return "needed"
 
 
-def _display_name(row: object, custom_values: Mapping[str, object]) -> str:
-    return (
-        _string_value(row, custom_values, "name")
-        or _string_value(row, custom_values, "record_id")
-        or _string_value(row, custom_values, "tag")
-        or "Untitled record"
-    )
-
-
 def _sub_label(row: object, custom_values: Mapping[str, object], option_labels: Mapping[str, str]) -> str | None:
-    manufacturer = _string_value(row, custom_values, "manufacturer")
-    model = _string_value(row, custom_values, "model") or _string_value(row, custom_values, "model_number")
+    manufacturer = string_record_value(row, custom_values, "manufacturer")
+    model = string_record_value(row, custom_values, "model") or string_record_value(row, custom_values, "model_number")
     manufacturer = _option_label(option_labels, manufacturer) or manufacturer
     parts = [part for part in (manufacturer, model) if part]
     return " · ".join(parts) if parts else None
@@ -576,15 +568,6 @@ def _option_label(option_labels: Mapping[str, str], option_id: str | None) -> st
 
 def _option_label_index(view: ProjectDocumentView) -> dict[str, str]:
     return {option.id: option.label for options in view.body.single_select_options.values() for option in options}
-
-
-def _string_value(row: object, custom_values: Mapping[str, object], key: str) -> str | None:
-    value = getattr(row, key, None)
-    if not isinstance(value, str):
-        value = custom_values.get(key)
-    if not isinstance(value, str):
-        return None
-    return value.strip() or None
 
 
 def _asset_ids(row: object, key: str) -> list[str]:

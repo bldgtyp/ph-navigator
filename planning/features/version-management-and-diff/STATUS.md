@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phases 00–01 complete; Phase 02 next
+STATUS: Active — Phases 00–02 complete; Phase 03 next
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
@@ -11,21 +11,20 @@ RELATED:
 
 # STATUS — Version Management and Diff
 
-**State:** `Active` implementation. Phase 00 contract fixtures and Phase 01
-rename/delete backend are complete; structured browser diffs remain.
+**State:** `Active` implementation. Backend contracts, Version mutations, and
+structured diffs are complete; the Version Management UI is next.
 
 ## Next step
 
-Start Phase 02 by implementing additive structured diff entries for operation,
-before/after values, human table/record/field labels, attachments, and nested
-aperture/envelope records. Preserve the existing raw `changed_paths` contract.
-Remove the remaining `PENDING_STRUCTURED_DIFF` markers only as those contracts
-become real.
+Start Phase 03 by adding localized timestamps to the Version popover and a
+management modal with rename, exact-name delete confirmation, refreshed project
+state, and stable API error recovery.
 
 ## Known current state
 
 - Timestamp data is already on `ProjectVersion.updated_at`.
-- Diff modal already sets `resizable`, but uses generic width and raw paths.
+- Diff modal already sets `resizable`, but the frontend still uses generic width
+  and raw paths instead of the new structured response.
 - Rename/delete now use shared project-then-Version row locking, stable conflict
   codes, refreshed project responses, and audit events.
 - Existing FK behavior supports draft cascade and child preservation but does
@@ -39,8 +38,8 @@ become real.
       compatibility.
 - [x] Rename API, validation, uniqueness conflict, audit, project refresh.
 - [x] Delete permission, confirmation, active/last guards, cascades, audit.
-- [ ] Structured diff operation/value/label fixtures across table families.
-- [ ] Existing MCP/raw diff compatibility decision tested.
+- [x] Structured diff operation/value/label fixtures across table families.
+- [x] Existing MCP/raw diff compatibility decision tested.
 - [ ] Popover timestamp and management-modal RTL.
 - [ ] Wide/resizable Diff modal long-content and keyboard tests.
 - [ ] Mounted multi-Version browser acceptance.
@@ -48,8 +47,7 @@ become real.
 
 ## Blockers
 
-None external. The structured-diff presenter is the largest design seam and is
-intentionally backend-first.
+None external.
 
 ## Phase 00 evidence
 
@@ -73,3 +71,13 @@ intentionally backend-first.
 - `graphify update .` — rebuilt `20,527` nodes and `61,045` edges.
 - `make ci` — passed: backend `1882 passed, 7 skipped, 4 xfailed`;
   frontend `2475 passed`; production build and structural guards passed.
+
+## Phase 02 evidence
+
+- Focused Version/diff/document/MCP/inverse suite — `89 passed, 29 deselected`.
+- `uv run ruff check` for changed backend files — passed.
+- `uv run ty check` — passed.
+- `make format` — no source changes.
+- `graphify update .` — rebuilt `20,543` nodes and `61,097` edges.
+- `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
+  `2475 passed`; production build and structural guards passed.

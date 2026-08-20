@@ -166,8 +166,10 @@ once, and every name here must be registered by `build_mcp_server`.
 - `get_project(project_id)` returns project metadata plus version list.
 - `list_versions(project_id)` returns version metadata.
 - `list_status_items(project_id)` returns the relational status tracker.
-- `diff_versions(project_id, from_version_id, to)` returns per-table changed
-  paths for version-vs-version diffs, or version-vs-draft when `to="draft"`.
+- `diff_versions(project_id, from_version_id, to)` returns version-vs-version
+  diffs, or version-vs-draft when `to="draft"`. Existing per-table
+  `changed_paths` remain available; additive structured changes include
+  operations, human labels, before/after values, and diagnostic raw paths.
 - `get_project_location(project_id)` and `get_project_sun_path(project_id)`
   return SI-canonical location and sun-path data.
 
