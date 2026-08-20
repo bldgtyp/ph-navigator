@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+TIME: 20:38 EDT
+STATUS: Implemented — ready for review
 AUTHOR: Ed May / Codex
 SCOPE: Shared SegmentedControl affordance and expandable ReportTable seams
 RELATED:

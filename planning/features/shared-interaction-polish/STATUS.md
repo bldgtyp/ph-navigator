@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — not started
+TIME: 20:38 EDT
+STATUS: Implemented — ready for review
 AUTHOR: Codex
 SCOPE: Current state of shared interaction polish
 RELATED:
@@ -10,30 +10,40 @@ RELATED:
 
 # STATUS — Shared Interaction Polish
 
-**State:** `Active` planning; no code written.
+**State:** `In review`; implementation and verification are complete.
+
+## Outcome
+
+- `SegmentedControlOption<T>` now accepts explicit tooltip content. Small,
+  equal-width controls fall back to `ariaLabel ?? label`, use the shared medium
+  delay, and paint an obvious tokenized hover background without layout shift.
+- Shared `Tooltip` positioning now uses a Radix anchor instead of a trigger, so
+  native radios receive `aria-describedby` without acquiring popover/dialog
+  ARIA or losing their native keyboard contract.
+- The reported ReportTable notch was not reproducible. Mounted Envelope
+  Materials and Aperture U-Values consumers measured a `0px` sibling seam and
+  `0px` left/right edge deltas. First, middle, and last rows all matched; the
+  800px viewport smoke retained opaque sticky lanes after `scrollLeft = 260`.
+  No ReportTable CSS was changed.
+- A Vite-served Playwright fixture mounts the production `ReportTable` and
+  preserves the geometry, row-action/no-action, horizontal-scroll, and nested
+  non-sticky contracts.
 
 ## Next step
 
-Add focused shared-component tests first:
-
-1. a SegmentedControl option exposes shared delayed tooltip content while native
-   radio semantics remain intact;
-2. a mounted ReportTable fixture reproduces and measures the reported visual
-   notch across first/middle/last rows without relying on Envelope-specific CSS.
-
-Then adjust shared CSS and verify representative mounted consumers.
+Review and merge the phase commit.
 
 ## Verification
 
-- [ ] SegmentedControl Vitest: native keyboard/change/disabled behavior.
-- [ ] Tooltip delay, focus reachability, and viewport placement.
-- [ ] Interaction-state guard/baseline update with an explicit reason.
-- [ ] ReportTable structure tests plus rendered seam geometry/screenshot checks.
-- [ ] Browser geometry/screenshots on Envelope Materials and Aperture U-Values.
-- [ ] Horizontal-scroll frozen-lane smoke.
-- [ ] `make frontend-dev-check` plus focused frontend tests.
-- [ ] `graphify update .` and design-system docs pass.
+- [x] SegmentedControl Vitest: native keyboard/change/disabled behavior.
+- [x] Tooltip delay, focus reachability, and viewport placement.
+- [x] Interaction-state guard/baseline update for the new selected-hover rule.
+- [x] Production ReportTable fixture with rendered seam geometry assertions.
+- [x] Browser geometry/screenshots on Envelope Materials and Aperture U-Values.
+- [x] Horizontal-scroll frozen-lane smoke.
+- [x] `make frontend-dev-check` plus focused frontend tests.
+- [x] `graphify update .` after the final docs diff.
 
 ## Blockers
 
-None. Both fixes are frontend-only shared-component work.
+None.

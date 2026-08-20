@@ -150,8 +150,8 @@ export function Tooltip({
   });
 
   return (
-    <Popover.Root open={open} onOpenChange={(nextOpen) => (!nextOpen ? hide() : undefined)}>
-      <Popover.Trigger asChild>{trigger}</Popover.Trigger>
+    <Popover.Root open={open}>
+      <Popover.Anchor asChild>{trigger}</Popover.Anchor>
       <Popover.Portal>
         <Popover.Content
           id={tooltipId}

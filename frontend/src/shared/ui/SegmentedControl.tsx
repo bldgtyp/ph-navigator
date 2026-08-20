@@ -1,9 +1,12 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
+
+import { TOOLTIP_HOVER_DELAY, Tooltip } from "./tooltip";
 
 export type SegmentedControlOption<T extends string> = {
   value: T;
   label: string;
   ariaLabel?: string;
+  tooltip?: ReactNode;
   disabled?: boolean;
   id?: string;
 };
@@ -41,8 +44,8 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div id={id} className={className} role="radiogroup" aria-label={ariaLabel} title={title}>
-      {options.map((option, index) => (
-        <label key={option.value} className="phn-segmented-control__option">
+      {options.map((option, index) => {
+        const input = (
           <input
             id={option.id ?? `${generatedId}-${index}`}
             type="radio"
@@ -53,9 +56,24 @@ export function SegmentedControl<T extends string>({
             disabled={disabled || option.disabled}
             onChange={() => onChange(option.value)}
           />
-          <span>{option.label}</span>
-        </label>
-      ))}
+        );
+        const tooltip =
+          option.tooltip ??
+          (size === "sm" && equalWidth ? (option.ariaLabel ?? option.label) : null);
+
+        return (
+          <label key={option.value} className="phn-segmented-control__option">
+            {tooltip ? (
+              <Tooltip content={tooltip} hoverDelay={TOOLTIP_HOVER_DELAY.medium}>
+                {input}
+              </Tooltip>
+            ) : (
+              input
+            )}
+            <span>{option.label}</span>
+          </label>
+        );
+      })}
     </div>
   );
 }

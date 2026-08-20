@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready
+TIME: 20:38 EDT
+STATUS: Implemented — ready for review
 AUTHOR: Ed May / Codex
 SCOPE: Shared UI interaction and expanded-row visual contract
 RELATED:

@@ -82,6 +82,7 @@
   "src/shared/ui/element-sidebar/element-sidebar.css :: .element-sidebar__row.is-active .element-sidebar__row-actions :: background": 1,
   "src/shared/ui/InlineHeaderNameEditor.css :: .inline-header-name-editor__edit:hover:not(:disabled), .inline-header-name-edito :: background": 1,
   "src/shared/ui/report-table/ReportTable.css :: .report-status-chip[aria-pressed=\"true\"] :: background": 1,
+  "src/shared/ui/SegmentedControl.css :: .phn-segmented-control--equal-width.phn-segmented-control--sm .phn-segmented-con :: background": 1,
   "src/shared/ui/SegmentedControl.css :: .phn-segmented-control--md .phn-segmented-control__option:hover input:checked +  :: background": 1,
   "src/shared/ui/SegmentedControl.css :: .phn-segmented-control--md .phn-segmented-control__option:hover:not(:has(input:d :: background": 1,
   "src/styles/base.css :: .app-menu__item:hover:not(:disabled) :: background": 1,
