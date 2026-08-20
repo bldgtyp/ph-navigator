@@ -271,58 +271,60 @@
   white-space: nowrap;
 }
 
-.condensation-status-chip,
+.condensation-status-button,
 .condensation-risk-summary__chip {
   font-family: var(--font-mono);
   font-weight: var(--fw-medium);
 }
 
-.condensation-status-chip {
-  padding-block: var(--space-4);
+.condensation-status-button {
+  min-height: auto;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--lh-solid);
+  text-transform: none;
+  white-space: nowrap;
 }
 
-.condensation-status-chip__dot {
-  background: var(--text-secondary);
-  border-radius: var(--radius-pill);
-  flex: 0 0 auto;
-  height: 7px;
-  width: 7px;
+.condensation-status-button:hover:not(:disabled) {
+  transform: none;
 }
 
-.condensation-status-chip[data-tone="success"],
-.condensation-risk-summary__chip[data-tone="success"] {
-  background: var(--phn-success-bg);
-  border-color: color-mix(in oklab, var(--phn-success) 42%, var(--border-subtle));
+.condensation-status-button[data-tone="success"] {
   color: var(--phn-success);
 }
 
-.condensation-status-chip[data-tone="success"] .condensation-status-chip__dot {
-  background: var(--phn-success);
+.condensation-risk-summary__chip[data-tone="success"] {
+  border-color: color-mix(in oklab, var(--phn-success) 42%, var(--border-subtle));
+  background: var(--phn-success-bg);
+  color: var(--phn-success);
 }
 
-.condensation-status-chip[data-tone="warning"],
-.condensation-risk-summary__chip[data-tone="warning"] {
-  background: var(--phn-warning-bg);
-  border-color: color-mix(in oklab, var(--phn-warning) 42%, var(--border-subtle));
+.condensation-status-button[data-tone="warning"] {
   color: var(--phn-warning);
 }
 
-.condensation-status-chip[data-tone="warning"] .condensation-status-chip__dot {
-  background: var(--phn-warning);
+.condensation-risk-summary__chip[data-tone="warning"] {
+  border-color: color-mix(in oklab, var(--phn-warning) 42%, var(--border-subtle));
+  background: var(--phn-warning-bg);
+  color: var(--phn-warning);
 }
 
-.condensation-status-chip[data-tone="danger"],
-.condensation-risk-summary__chip[data-tone="danger"] {
-  background: var(--phn-danger-bg);
-  border-color: color-mix(in oklab, var(--phn-danger) 42%, var(--border-subtle));
+.condensation-status-button[data-tone="danger"] {
   color: var(--phn-danger);
 }
 
-.condensation-status-chip[data-tone="danger"] .condensation-status-chip__dot {
-  background: var(--phn-danger);
+.condensation-risk-summary__chip[data-tone="danger"] {
+  border-color: color-mix(in oklab, var(--phn-danger) 42%, var(--border-subtle));
+  background: var(--phn-danger-bg);
+  color: var(--phn-danger);
 }
 
-.condensation-status-chip[data-muted="true"],
+.condensation-status-button[data-muted="true"] {
+  color: var(--text-muted);
+}
+
 .condensation-risk-summary__chip[data-muted="true"] {
   border-style: dashed;
 }

@@ -13,6 +13,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { useMaterialsQuery } from "../../catalogs/hooks";
+import type { DocumentationAudiencePolicy } from "../../documentation/lib";
 import type { ProjectDetail } from "../../projects/types";
 import {
   useAssemblyCondensationQuery,
@@ -69,7 +70,13 @@ import {
 } from "./page-helpers";
 import { materialHasCatalogAction, materialReviewBannerLabel } from "../drift";
 
-export function EnvelopePage({ project }: { project: ProjectDetail }) {
+export function EnvelopePage({
+  project,
+  audiencePolicy,
+}: {
+  project: ProjectDetail;
+  audiencePolicy: DocumentationAudiencePolicy;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -81,6 +88,9 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const isViewer = project.access_mode === "viewer";
   const isLocked = project.active_version?.locked ?? false;
   const canEdit = !isViewer && !isLocked;
+  // Temporary public-moisture boundary: keep this named guard paired with the
+  // query and AssemblyHeader until condensation is supported for public use.
+  const showMoisture = audiencePolicy === "authenticated";
   const source = envelopeReadSource(project);
   const query = useEnvelopeReadQuery(project.id, project.active_version_id, source);
   const materialDriftQuery = useMaterialCatalogDriftQuery(
@@ -151,7 +161,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     project.active_version_id,
     activeAssembly?.id ?? null,
     source,
-    isAssembliesRoute && activeAssembly !== null,
+    showMoisture && isAssembliesRoute && activeAssembly !== null,
   );
   const driftByMaterialId = useMemo(
     () =>
@@ -447,6 +457,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             zoom={zoom}
             autoFitOnMount={!hasSessionZoom}
             canEdit={canEdit}
+            showMoisture={showMoisture}
             thermal={thermalQuery.data ?? null}
             thermalLoading={thermalQuery.isFetching}
             condensation={condensationQuery.data ?? null}
@@ -546,7 +557,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         onReplaceDialog={setDialog}
         onCommand={(command) => void applyCommand(command)}
       />
-      {condensationOpen && activeAssembly ? (
+      {showMoisture && condensationOpen && activeAssembly ? (
         <CondensationRiskModal
           projectId={project.id}
           assembly={activeAssembly}

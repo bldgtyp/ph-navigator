@@ -10,7 +10,7 @@ import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEdito
 import type { AssemblyCondensationResponse } from "../condensation-types";
 import { statusLabel } from "../lib";
 import type { Assembly, AssemblyThermalResponse, ThermalStandard } from "../types";
-import { CondensationStatusChip } from "./CondensationStatusChip";
+import { CondensationStatusButton } from "./CondensationStatusButton";
 
 export function AssemblyHeader({
   activeAssembly,
@@ -20,6 +20,7 @@ export function AssemblyHeader({
   condensationLoading,
   condensationUnavailable,
   canEdit,
+  showMoisture,
   busy,
   actions,
   onRename,
@@ -32,6 +33,7 @@ export function AssemblyHeader({
   condensationLoading: boolean;
   condensationUnavailable: boolean;
   canEdit: boolean;
+  showMoisture: boolean;
   busy: boolean;
   actions?: ReactNode;
   onRename: (name: string) => void;
@@ -64,14 +66,6 @@ export function AssemblyHeader({
               {formatLengthFromMm(activeAssembly.total_thickness_mm, { unitSystem })}
             </dd>
           </div>
-        </dl>
-        <dl id="assembly-header-alerts" className="assembly-header-alerts">
-          {assemblyWarning ? (
-            <div id="assembly-status-warning" className="assembly-header-warning">
-              <dt>Warning</dt>
-              <dd>{assemblyWarning}</dd>
-            </div>
-          ) : null}
           <div id="assembly-thermal-metric">
             <dt className="assembly-header-metric-label">
               <span>Thermal</span>
@@ -119,28 +113,41 @@ export function AssemblyHeader({
             </dt>
             <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
           </div>
-          <div id="assembly-condensation-metric">
-            <dt className="assembly-header-metric-label">
-              <span>Moisture</span>
-              <InfoTooltip id="assembly-condensation-info-button" label="Condensation risk details">
-                <strong>Interstitial condensation risk</strong>
-                <span>
-                  Monthly ISO 13788 screening of surface and interstitial moisture risk. This is a
-                  design screen, not a transient hygrothermal simulation.
-                </span>
-                <em>Open the result to review missing inputs, caveats, and assumptions.</em>
-              </InfoTooltip>
-            </dt>
-            <dd>
-              <CondensationStatusChip
-                result={condensation}
-                loading={condensationLoading}
-                unavailable={condensationUnavailable}
-                onClick={onOpenCondensation}
-              />
-            </dd>
-          </div>
+          {showMoisture ? (
+            <div id="assembly-condensation-metric">
+              <dt className="assembly-header-metric-label">
+                <span>Moisture</span>
+                <InfoTooltip
+                  id="assembly-condensation-info-button"
+                  label="Condensation risk details"
+                >
+                  <strong>Interstitial condensation risk</strong>
+                  <span>
+                    Monthly ISO 13788 screening of surface and interstitial moisture risk. This is a
+                    design screen, not a transient hygrothermal simulation.
+                  </span>
+                  <em>Open the result to review missing inputs, caveats, and assumptions.</em>
+                </InfoTooltip>
+              </dt>
+              <dd>
+                <CondensationStatusButton
+                  result={condensation}
+                  loading={condensationLoading}
+                  unavailable={condensationUnavailable}
+                  onClick={onOpenCondensation}
+                />
+              </dd>
+            </div>
+          ) : null}
         </dl>
+        {assemblyWarning ? (
+          <dl id="assembly-header-alerts" className="assembly-header-alerts">
+            <div id="assembly-status-warning" className="assembly-header-warning">
+              <dt>Warning</dt>
+              <dd>{assemblyWarning}</dd>
+            </div>
+          </dl>
+        ) : null}
       </div>
     </header>
   );

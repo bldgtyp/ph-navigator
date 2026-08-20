@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+TIME: 21:18 EDT
+STATUS: Complete — archived
 AUTHOR: Ed May / Codex
 SCOPE: Roadmap status controls and Envelope moisture-status presentation
 RELATED:
-  - planning/features/status-presentation-polish/PRD.md
-  - planning/features/status-presentation-polish/STATUS.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/PRD.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/STATUS.md
   - planning/2026-08-19-ui-batch.md
 ---
 
@@ -23,6 +23,11 @@ Two status surfaces currently use more chrome than meaning:
 This packet replaces both with direct text and keeps one clear interaction per
 status.
 
+Implementation and verification are complete: all 2,475 frontend tests, the
+frontend development gate, Graphify, three-way simplify review, and mounted
+desktop/narrow signed-in and signed-out browser acceptance passed. See
+`STATUS.md` for the evidence ledger.
+
 ## Read order
 
 1. `PRD.md` — behavior, auth, and accessibility contract.
@@ -34,7 +39,7 @@ status.
 - `frontend/src/features/project_status/project_status.css`
 - `frontend/src/features/project_status/lib.ts`
 - `frontend/src/features/envelope/components/AssemblyHeader.tsx`
-- `frontend/src/features/envelope/components/CondensationStatusChip.tsx`
+- `frontend/src/features/envelope/components/CondensationStatusButton.tsx`
 - `frontend/src/features/envelope/envelope.css`
 
 `StatusItem` also supports `na`; the revised left rail must say `N/A` rather

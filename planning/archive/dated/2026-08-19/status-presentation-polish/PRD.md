@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior contract ready
+TIME: 21:18 EDT
+STATUS: Complete — implemented and verified
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for Roadmap and Assembly status presentation
 RELATED:
-  - planning/features/status-presentation-polish/README.md
-  - planning/features/status-presentation-polish/STATUS.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/README.md
+  - planning/archive/dated/2026-08-19/status-presentation-polish/STATUS.md
 ---
 
 # PRD — Status Presentation Polish

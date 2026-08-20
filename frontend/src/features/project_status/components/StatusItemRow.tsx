@@ -2,7 +2,7 @@ import type { DragEvent, KeyboardEvent } from "react";
 import { ArrowDown, ArrowUp, Ban, Check, Circle, Pencil, Trash2 } from "lucide-react";
 import { formatProjectDate } from "../../../shared/lib/dates";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
-import { nextStatusState, stateSymbol, STATUS_STATE_LABELS } from "../lib";
+import { nextStatusState, STATUS_RAIL_LABELS, STATUS_STATE_LABELS } from "../lib";
 import type { StatusItem } from "../types";
 import { StatusDescription } from "./StatusDescription";
 
@@ -83,14 +83,14 @@ export function StatusItemRow({
             aria-label={`Set ${item.title} to ${STATUS_STATE_LABELS[nextStatusState(item.state)]}`}
             onClick={() => onSetState(nextStatusState(item.state))}
           >
-            {stateSymbol(item.state)}
+            {STATUS_RAIL_LABELS[item.state]}
           </button>
         ) : (
           <span
             className={`status-state-static ${item.state}`}
-            aria-label={STATUS_STATE_LABELS[item.state]}
+            aria-label={STATUS_RAIL_LABELS[item.state]}
           >
-            {stateSymbol(item.state)}
+            {STATUS_RAIL_LABELS[item.state]}
           </span>
         )}
       </div>
@@ -103,9 +103,6 @@ export function StatusItemRow({
           ) : (
             <h3>{item.title}</h3>
           )}
-          <span className={`chip chip--sm status-badge ${item.state}`}>
-            {STATUS_STATE_LABELS[item.state]}
-          </span>
           {item.completion_date && isEditor ? (
             <button type="button" className="chip chip--sm date-pill" onClick={onEdit}>
               {formatProjectDate(item.completion_date)}
