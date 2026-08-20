@@ -39,6 +39,31 @@ function renderRow(
 }
 
 describe("StatusItemRow", () => {
+  test.each([
+    ["todo", "To-Do", "Set CAD files received to Done"],
+    ["done", "Done", "Set CAD files received to N/A"],
+    ["na", "N/A", "Set CAD files received to To do"],
+  ] as const)(
+    "shows the current %s state in the editor rail and announces the next action",
+    (state, visibleLabel, accessibleName) => {
+      renderRow(true, { item: { ...item, state } });
+
+      expect(screen.getByRole("button", { name: accessibleName })).toHaveTextContent(visibleLabel);
+      expect(screen.getAllByText(visibleLabel)).toHaveLength(1);
+    },
+  );
+
+  test.each([
+    ["todo", "To-Do"],
+    ["done", "Done"],
+    ["na", "N/A"],
+  ] as const)("shows the current %s state as a static viewer label", (state, visibleLabel) => {
+    renderRow(false, { item: { ...item, state } });
+
+    expect(screen.getByText(visibleLabel)).toHaveAttribute("aria-label", visibleLabel);
+    expect(screen.getAllByText(visibleLabel)).toHaveLength(1);
+  });
+
   test("puts editor management actions in the overflow menu", async () => {
     const user = userEvent.setup();
     const { props } = renderRow(true);

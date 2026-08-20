@@ -8,6 +8,11 @@ export const STATUS_STATE_LABELS: Record<StatusState, string> = {
   na: "N/A",
 };
 
+export const STATUS_RAIL_LABELS: Record<StatusState, string> = {
+  ...STATUS_STATE_LABELS,
+  todo: "To-Do",
+};
+
 export const STATUS_STATE_OPTIONS = STATUS_STATES.map((state) => ({
   value: state,
   label: STATUS_STATE_LABELS[state],
@@ -21,12 +26,6 @@ export function nextStatusState(state: StatusState): StatusState {
   if (state === "todo") return "done";
   if (state === "done") return "na";
   return "todo";
-}
-
-export function stateSymbol(state: StatusState): string {
-  if (state === "done") return "x";
-  if (state === "na") return "-";
-  return "o";
 }
 
 export function sortStatusItems(items: StatusItem[]): StatusItem[] {

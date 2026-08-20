@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+STATUS: Active — Roadmap complete, Assembly pending
 AUTHOR: Ed May / Codex
 SCOPE: Roadmap status controls and Envelope moisture-status presentation
 RELATED:
