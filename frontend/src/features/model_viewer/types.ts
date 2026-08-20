@@ -158,7 +158,13 @@ export type ApertureModelData = {
     energy: {
       construction: WindowConstruction | null;
     };
+    ph?: AperturePhProperties | null;
   };
+};
+
+export type AperturePhProperties = {
+  summer_shading_factor: number | null;
+  winter_shading_factor: number | null;
 };
 
 export type LoadSummary = {

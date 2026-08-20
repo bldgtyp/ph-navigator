@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phases 00–01 complete
+STATUS: Active — Phases 00–02 complete
 AUTHOR: Codex
 SCOPE: Current state of Model Viewer shading-factor mode
 RELATED:
@@ -11,12 +11,12 @@ RELATED:
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Active`; Phases 00–01 complete, Phase 02 next.
+**State:** `Active`; Phases 00–02 complete, Phase 03 next.
 
 ## Next step
 
-Implement Phase 02: extend frontend wire/render metadata and add the fixed
-five-stop shading-factor color engine with deterministic unit coverage.
+Implement Phase 03: register the Building-only theme, add shareable seasonal
+state/control, continuous legend, and dual-value aperture inspection.
 
 ## Known constraint
 
@@ -28,8 +28,8 @@ separate, explicitly authorized operation.
 
 - [x] Backend valid/null/invalid factor extraction tests.
 - [x] Legacy artifact compatibility.
-- [ ] Type/meta carry-through tests.
-- [ ] Fixed continuous-scale unit tests.
+- [x] Type/meta carry-through tests.
+- [x] Fixed continuous-scale unit tests.
 - [ ] Building-only theme registration and URL season parsing.
 - [ ] Summer/Winter repaint without geometry/network work.
 - [ ] Continuous legend and Missing count.
@@ -50,6 +50,7 @@ until a separate rebuild/re-upload decision is made.
 - [x] Phase 01 — backend extraction. Focused extraction and route artifact
   coverage verifies valid/null/absent/invalid factors plus bounded aggregate
   warnings.
-- [ ] Phase 02 — color engine and meta carry-through.
+- [x] Phase 02 — color engine and meta carry-through. Fixed-scale and loader
+  metadata tests pin the seasonal source values and sRGB output.
 - [ ] Phase 03 — theme, season, legend, and inspector.
 - [ ] Phase 04 — render/performance acceptance.
