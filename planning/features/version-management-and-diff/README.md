@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–02 complete
+TIME: 22:24 EDT
+STATUS: Active — Phases 00–03 complete
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
@@ -45,6 +45,10 @@ changes without reading storage paths or record UUIDs.
 - Phase 00–02 contracts live in
   `backend/tests/test_project_version_management_contract.py`. Strict xfail
   scaffolding is fully removed now that the backend contracts are implemented.
+- The Version popover now renders localized `updated_at` timestamps and links
+  to a dedicated manager for opening, renaming, and confirmed deletion. The
+  manager preserves pending actions, refreshes stale project state after
+  rejected mutations, and explains active deletion guards in visible UI.
 
 ## Primary code anchors
 

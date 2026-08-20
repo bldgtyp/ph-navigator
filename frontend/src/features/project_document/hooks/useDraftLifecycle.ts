@@ -174,7 +174,6 @@ export function useDraftLifecycle({
     await runHeaderAction("Could not unlock version.", async () => {
       await patchVersionMutation.mutateAsync({ versionId: activeVersionId, locked: false });
       setConfirmation(null);
-      await refetchDraftSummary();
     });
   };
 
@@ -182,7 +181,6 @@ export function useDraftLifecycle({
     if (!activeVersionId) return;
     await runHeaderAction("Could not update version lock.", async () => {
       await patchVersionMutation.mutateAsync({ versionId: activeVersionId, locked: true });
-      await refetchDraftSummary();
     });
   };
 

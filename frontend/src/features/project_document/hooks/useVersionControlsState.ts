@@ -16,6 +16,7 @@ export function useVersionControlsState() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
+  const [versionManagerOpen, setVersionManagerOpen] = useState(false);
   const [diffTarget, setDiffTarget] = useState(DRAFT_DIFF_TARGET);
   const [versionName, setVersionName] = useState("");
   const [versionKind, setVersionKind] = useState<SaveAsVersionKind>("working");
@@ -51,6 +52,8 @@ export function useVersionControlsState() {
     saveAsOpen,
     diffOpen,
     setDiffOpen,
+    versionManagerOpen,
+    setVersionManagerOpen,
     diffTarget,
     setDiffTarget,
     versionName,

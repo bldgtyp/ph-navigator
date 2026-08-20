@@ -10,6 +10,7 @@ import { useVersionControlsState } from "../hooks/useVersionControlsState";
 import { DRAFT_DIFF_TARGET } from "../types/versionControls";
 import { DocumentConfirmationDialog } from "./DocumentConfirmationDialog";
 import { DiffDialog, DraftRestoreDialog, SaveAsDialog } from "./VersionControlsDialogs";
+import { VersionManager } from "./VersionManagerDialog";
 import {
   ProjectActionsMenu,
   VersionPathControls,
@@ -162,6 +163,10 @@ export function VersionControls({
             state.setActionsOpen(false);
             state.setVersionsOpen(true);
           }}
+          onManageVersions={() => {
+            state.setActionsOpen(false);
+            state.setVersionManagerOpen(true);
+          }}
           onSave={() => void lifecycle.save()}
           onSaveAs={() => state.openSaveAs()}
           onDiscard={() => {
@@ -185,6 +190,10 @@ export function VersionControls({
           onSaveAs={() => state.openSaveAs()}
           onOpenVersion={openVersion}
           onOpenDiff={() => state.setDiffOpen(true)}
+          onManageVersions={() => {
+            state.setVersionsOpen(false);
+            state.setVersionManagerOpen(true);
+          }}
         />
       ) : null}
     </div>
@@ -266,6 +275,19 @@ export function VersionControls({
             state.setDiffTarget(DRAFT_DIFF_TARGET);
             state.setDiffOpen(false);
           }}
+        />
+      ) : null}
+      {state.versionManagerOpen ? (
+        <VersionManager
+          projectId={project.id}
+          versions={project.versions}
+          activeVersionId={activeVersionId}
+          defaultVersionId={defaultVersionId}
+          onOpenVersion={(versionId) => {
+            state.setVersionManagerOpen(false);
+            openVersion(versionId);
+          }}
+          onClose={() => state.setVersionManagerOpen(false)}
         />
       ) : null}
       {lifecycle.savingVersion ? (

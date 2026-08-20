@@ -102,25 +102,33 @@ Trigger: the version pill in the project header bar.
 │  Versions                                  + Save As…       │
 ├────────────────────────────────────────────────────────────┤
 │  ★ Working                              saved 2 hours ago   │
-│    [Open]                                              ⋯    │
+│    [Open]                                                   │
 │  ───────────────────────────────────────────────────────── │
 │  Round 1 Submit · 🔒                       saved Apr 23     │
-│    [Open]                                              ⋯    │
+│    [Open]                                                   │
 │  ───────────────────────────────────────────────────────── │
 │  Round 2 Submit · 🔒                       saved Oct 6      │
-│    [Open]                                              ⋯    │
+│    [Open]                                                   │
 ├────────────────────────────────────────────────────────────┤
-│  3 versions                            Compare versions…   │
+│  Compare versions…                    Manage versions…    │
 └────────────────────────────────────────────────────────────┘
 ```
 
 - **★** marks the project's default version (`active_version_id` —
   what Dashboard click opens).
 - **🔒** lock icon next to locked versions.
+- Each row shows its kind, lock/default state, and a localized
+  `Last edited …` timestamp sourced from `updated_at`.
 - **Open button** is the *only* mutating control. Clicking the row
   outside the button does nothing.
-- **Row `⋯` menu** per version: Make default, Rename, Lock /
-  Unlock, Delete.
+- **Manage versions…** opens a stable list with Version-specific Open,
+  Rename, and Delete controls. Rename is allowed for locked Versions. Delete
+  requires exact-name confirmation; the default Version and the sole Version
+  cannot be deleted, with the reason rendered beside the disabled control.
+- While rename/delete is pending, the manager keeps the selected action open
+  and disables Cancel/Escape dismissal. Rejected mutations stay inline and
+  refresh project metadata so another-tab deletion or rename can reconcile the
+  selected row.
 
 **Open behavior:**
 1. User clicks Open on a non-current version.

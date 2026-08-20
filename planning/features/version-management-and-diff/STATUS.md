@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Active — Phases 00–02 complete; Phase 03 next
+TIME: 22:24 EDT
+STATUS: Active — Phases 00–03 complete; Phase 04 next
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
@@ -11,14 +11,14 @@ RELATED:
 
 # STATUS — Version Management and Diff
 
-**State:** `Active` implementation. Backend contracts, Version mutations, and
-structured diffs are complete; the Version Management UI is next.
+**State:** `Active` implementation. Backend contracts, Version mutations,
+structured diffs, and the Version Management UI are complete; the structured
+Diff modal redesign is next.
 
 ## Next step
 
-Start Phase 03 by adding localized timestamps to the Version popover and a
-management modal with rename, exact-name delete confirmation, refreshed project
-state, and stable API error recovery.
+Start Phase 04 with independent saved-Version From and saved-or-draft To
+selectors, then render the structured comparison in a wide, resizable modal.
 
 ## Known current state
 
@@ -29,6 +29,10 @@ state, and stable API error recovery.
   codes, refreshed project responses, and audit events.
 - Existing FK behavior supports draft cascade and child preservation but does
   not enforce the product's active/last-Version deletion guards.
+- The Version popover now shows localized last-edited timestamps. The manager
+  provides Version-specific Open/Rename/Delete actions, exact-name confirmation,
+  visible deletion guards, pending-action dismissal protection, and rejected
+  mutation refresh/reconciliation.
 
 ## Verification ledger
 
@@ -40,7 +44,9 @@ state, and stable API error recovery.
 - [x] Delete permission, confirmation, active/last guards, cascades, audit.
 - [x] Structured diff operation/value/label fixtures across table families.
 - [x] Existing MCP/raw diff compatibility decision tested.
-- [ ] Popover timestamp and management-modal RTL.
+- [x] Popover timestamp and management-modal RTL, including pending dismissal,
+      double-submit, rejected rename, stale-row reconciliation, and accessible
+      Version-specific action names.
 - [ ] Wide/resizable Diff modal long-content and keyboard tests.
 - [ ] Mounted multi-Version browser acceptance.
 - [ ] Full `make ci`, Graphify update, and save-versioning docs pass.
@@ -81,3 +87,15 @@ None external.
 - `graphify update .` — rebuilt `20,543` nodes and `61,097` edges.
 - `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
   `2475 passed`; production build and structural guards passed.
+
+## Phase 03 evidence
+
+- Focused Version popover/manager RTL — `9 passed`.
+- Frontend TypeScript and changed-file ESLint checks — passed.
+- Three-agent simplify review completed; accepted fixes cover shared Version
+  summaries/kind labels, targeted query invalidation, pending action safety,
+  stale-error refresh, and accessible action names/guard explanations.
+- `make format` — passed with no source changes.
+- `graphify update .` — rebuilt `20,557` nodes and `61,147` edges.
+- `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
+  `2482 passed`; production build and structural guards passed.

@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { Tooltip, TOOLTIP_HOVER_DELAY } from "../../../shared/ui";
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
+import { VersionSummary } from "./VersionSummary";
 
 const VERSION_TRIGGER_HELP = "Open the version list to switch or compare versions.";
+const VERSION_MANAGER_HELP = "Rename or safely delete saved versions.";
 const DIRTY_STATE_HELP =
   "Your edits are auto-saved as a draft on the server. Use Save Version to write them into the active version as a permanent snapshot.";
 const SAVE_HELP =
@@ -111,6 +113,7 @@ export function ProjectActionsMenu({
   busy,
   onOpenProjectSettings,
   onOpenVersions,
+  onManageVersions,
   onSave,
   onSaveAs,
   onDiscard,
@@ -125,6 +128,7 @@ export function ProjectActionsMenu({
   busy: boolean;
   onOpenProjectSettings?: () => void;
   onOpenVersions: () => void;
+  onManageVersions: () => void;
   onSave: () => void;
   onSaveAs: () => void;
   onDiscard: () => void;
@@ -152,6 +156,9 @@ export function ProjectActionsMenu({
         disabled={!activeVersionId || busy}
       >
         Open version...
+      </MenuActionButton>
+      <MenuActionButton help={VERSION_MANAGER_HELP} onClick={onManageVersions} disabled={busy}>
+        Manage versions...
       </MenuActionButton>
       <MenuActionButton
         help={SAVE_HELP}
@@ -255,6 +262,7 @@ export function VersionPopover({
   onSaveAs,
   onOpenVersion,
   onOpenDiff,
+  onManageVersions,
 }: {
   versions: ProjectVersion[];
   activeVersionId: string | null;
@@ -263,6 +271,7 @@ export function VersionPopover({
   onSaveAs: () => void;
   onOpenVersion: (versionId: string) => void;
   onOpenDiff: () => void;
+  onManageVersions: () => void;
 }) {
   return (
     <div className="version-popover">
@@ -275,14 +284,7 @@ export function VersionPopover({
       <div className="version-list">
         {versions.map((version) => (
           <div className="version-row" key={version.id}>
-            <div>
-              <strong>{version.name}</strong>
-              <span>
-                {version.kind}
-                {version.locked ? " · Locked" : ""}
-                {version.id === defaultVersionId ? " · Default" : ""}
-              </span>
-            </div>
+            <VersionSummary version={version} isDefault={version.id === defaultVersionId} />
             <button
               type="button"
               className="secondary-button"
@@ -296,6 +298,9 @@ export function VersionPopover({
       </div>
       <button type="button" className="text-button" onClick={onOpenDiff}>
         Compare versions...
+      </button>
+      <button type="button" className="text-button" onClick={onManageVersions} disabled={busy}>
+        Manage versions...
       </button>
     </div>
   );

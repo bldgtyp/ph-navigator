@@ -7,6 +7,7 @@ export function DialogActions({
   onClose,
   onConfirm,
   submitDisabled = false,
+  cancelDisabled = false,
   danger = false,
   extraActions,
 }: {
@@ -16,6 +17,7 @@ export function DialogActions({
   onClose: () => void;
   onConfirm?: () => void;
   submitDisabled?: boolean;
+  cancelDisabled?: boolean;
   // Destructive primary: renders the primary as `danger-button` (e.g. a
   // delete confirmation) instead of the accent `primary-button`.
   danger?: boolean;
@@ -32,7 +34,12 @@ export function DialogActions({
         </p>
       ) : null}
       <div className="modal-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onClose}
+          disabled={cancelDisabled}
+        >
           Cancel
         </button>
         {extraActions ? <span className="modal-actions-extra">{extraActions}</span> : null}
