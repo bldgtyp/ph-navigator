@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 23:00 EDT
-STATUS: Active — Phase 00 complete; Phase 01 next
+STATUS: Active — Phases 00–01 complete; Phase 02 next
 AUTHOR: Ed May / Codex
 SCOPE: Assembly PDF export and read-only thickness dimensions
 RELATED:
@@ -33,11 +33,11 @@ without exposing editor controls.
 
 - `frontend/src/features/envelope/routes/EnvelopePage.tsx` owns the existing
   `AppMenu label="Assembly actions"` and saved-version export warning pattern.
-- `frontend/src/features/envelope/components/AssemblyCanvasOverlay.tsx` currently
-  omits all `AssemblyLayerDimensions` when `canEdit` is false.
-- `frontend/src/features/envelope/components/AssemblyLayerDimensions.tsx` mixes
-  visible dimension chrome with edit/delete/add controls and therefore needs a
-  real read-only mode.
+- `frontend/src/features/envelope/components/AssemblyCanvasOverlay.tsx` renders
+  `AssemblyLayerDimensions` for editors and read-only viewers.
+- `frontend/src/features/envelope/components/AssemblyLayerDimensions.tsx`
+  separates semantic dimension presentation from editor-only thickness,
+  add-layer, and delete-layer controls.
 - `frontend/src/features/envelope/components/AssemblySvgCanvas.tsx` and
   `canvas-geometry.ts` own the browser drawing geometry.
 - `frontend/src/features/envelope/components/MaterialLegend.tsx` is the current

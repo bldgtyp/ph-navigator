@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phase 00 complete; Phase 01 next
+STATUS: Active — Phases 00–01 complete; Phase 02 next
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
@@ -29,7 +29,10 @@ Exit: a generated one-page artifact demonstrates the full non-raster contract.
 
 ## Phase 01 — Read-only Assembly dimensions
 
-**Status: Next.**
+**Status: Complete (2026-08-19).** Locked and anonymous viewers now retain
+non-membrane dimension axes and semantic thickness text while every thickness,
+add-layer, and delete-layer control remains absent. Membranes retain their
+editor controls but never expose a thickness dimension.
 
 - Characterize the current editor dimension controls.
 - Split dimension presentation from editor controls.
@@ -40,6 +43,8 @@ Exit: a generated one-page artifact demonstrates the full non-raster contract.
 Exit: browser behavior matches the Apertures read-only pattern.
 
 ## Phase 02 — Canonical report model and PDF composer
+
+**Status: Next.**
 
 - Add the server-side report projection for all Assemblies in sidebar natural
   name order and a browser/backend parity fixture.

@@ -57,17 +57,16 @@ export function AssemblyCanvasOverlay({
         height: heightPx === undefined ? undefined : `${heightPx}px`,
       }}
     >
-      {canEdit
-        ? geometry.layers.map((layerGeometry) => (
-            <AssemblyLayerDimensions
-              key={layerGeometry.layer.id}
-              layerGeometry={layerGeometry}
-              unitSystem={unitSystem}
-              zoom={zoom}
-              actions={actions}
-            />
-          ))
-        : null}
+      {geometry.layers.map((layerGeometry) => (
+        <AssemblyLayerDimensions
+          key={layerGeometry.layer.id}
+          layerGeometry={layerGeometry}
+          unitSystem={unitSystem}
+          zoom={zoom}
+          canEdit={canEdit}
+          actions={actions}
+        />
+      ))}
       {geometry.segments.map((segmentGeometry) => (
         <SegmentOverlay
           key={`${segmentGeometry.layer.id}-${segmentGeometry.segment.id}`}

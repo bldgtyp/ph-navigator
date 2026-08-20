@@ -1868,9 +1868,12 @@ describe("EnvelopePage", () => {
   });
 
   test("locked editor version loads saved source and keeps edit action disabled", async () => {
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
-      projectOverride: { active_version: { ...project.active_version!, locked: true } },
-    });
+    const { container } = renderEnvelope(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+      {
+        projectOverride: { active_version: { ...project.active_version!, locked: true } },
+      },
+    );
 
     expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Rename assembly" })).not.toBeInTheDocument();
@@ -1879,6 +1882,37 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
     );
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm")).toHaveTextContent("50");
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm").tagName).toBe("SPAN");
+    expect(
+      container.querySelectorAll(".assembly-layer-dimension[data-readonly='true']"),
+    ).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: /Edit layer .* thickness/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add layer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delete layer/ })).not.toBeInTheDocument();
+  });
+
+  test("anonymous viewers see semantic layer dimensions without mutation controls", async () => {
+    const { container } = renderEnvelope(
+      `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
+      {
+        projectOverride: { access_mode: "viewer" },
+        audiencePolicy: "anonymous-hidden",
+      },
+    );
+
+    expect(await screen.findByRole("link", { name: /WALL-C3/ })).toBeInTheDocument();
+    expect(screen.getByLabelText("Layer 1 thickness: 50 mm")).toHaveTextContent("50");
+    expect(screen.getByLabelText("Layer 2 thickness: 38 mm")).toHaveTextContent("38");
+    expect(container.querySelectorAll(".dimension-tick")).toHaveLength(4);
+    expect(
+      screen.queryByRole("button", { name: /Edit layer .* thickness/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add layer/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delete layer/ })).not.toBeInTheDocument();
+    expect(commandRequestBodies()).toEqual([]);
   });
 
   test("phase 16 scale fixture keeps edge cases visible and locked mode read-only", async () => {

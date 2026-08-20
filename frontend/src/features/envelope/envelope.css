@@ -608,6 +608,12 @@
   left: 0;
 }
 
+.assembly-layer-dimension--controls-only {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
 .dimension-tick-top {
   top: 0;
 }
@@ -616,10 +622,20 @@
   top: 100%;
 }
 
-.dimension-label-button {
+.dimension-label-button,
+.dimension-label-text {
   left: 4px;
   text-align: right;
   width: 40px;
+}
+
+.dimension-label-text {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-canvas-annotation);
+  line-height: var(--lh-canvas-annotation);
+  position: absolute;
+  z-index: calc(var(--z-base) + 3);
 }
 
 /* Membrane layers show no thickness value, so their cell carries the delete

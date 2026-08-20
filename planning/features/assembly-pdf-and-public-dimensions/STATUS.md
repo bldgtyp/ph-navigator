@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 23:00 EDT
-STATUS: Active — Phase 00 complete; Phase 01 next
+STATUS: Active — Phases 00–01 complete; Phase 02 next
 AUTHOR: Codex
 SCOPE: Current state of Assembly PDF and public dimensions
 RELATED:
@@ -11,13 +11,13 @@ RELATED:
 
 # STATUS — Assembly PDF and Public Dimensions
 
-**State:** `Active` implementation. Phase 00 is complete on
+**State:** `Active` implementation. Phases 00–01 are complete on
 `codex/assembly-pdf-public-dimensions`.
 
 ## Next step
 
-Run PLAN Phase 01, beginning with a failing component test that proves read-only
-`AssemblyCanvasOverlay` currently omits layer dimensions.
+Run PLAN Phase 02: add the canonical backend Assembly report projection,
+cross-language parity fixture, and deterministic N-page composer.
 
 ## Blockers and risks
 
@@ -31,8 +31,10 @@ Run PLAN Phase 01, beginning with a failing component test that proves read-only
   visual artifact: `working/assembly-pdf-renderer-proof.pdf`.
 - [ ] Backend N Assemblies → N PDF pages.
 - [ ] Saved-Version, capability, filename, and dirty-draft behavior.
-- [ ] Editor dimensions and commands unchanged.
-- [ ] Locked and anonymous dimensions visible/read-only.
+- [x] Editor dimensions and commands unchanged; focused component and
+  `EnvelopePage` suites pass (`65 passed`).
+- [x] Locked and anonymous dimensions visible as semantic text with no layer
+  mutation controls; membranes remain dimensionless.
 - [ ] Signed-out export route/menu unavailable.
 - [ ] Extreme geometry and membrane fixtures render without clipping.
 - [ ] Rendered browser and PDF acceptance complete.
