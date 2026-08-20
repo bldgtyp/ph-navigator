@@ -5,10 +5,10 @@ STATUS: Complete — implementation and acceptance verified
 AUTHOR: Ed May / Codex
 SCOPE: Assembly PDF export and read-only thickness dimensions
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/PRD.md
-  - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
-  - planning/features/assembly-pdf-and-public-dimensions/STATUS.md
-  - planning/features/assembly-pdf-and-public-dimensions/decisions.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PRD.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PLAN.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/STATUS.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/decisions.md
   - planning/2026-08-19-ui-batch.md
 ---
 

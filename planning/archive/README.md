@@ -3,6 +3,16 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-08-20
+
+- `assembly-pdf-and-public-dimensions` - Added read-only Assembly thickness
+  dimensions for locked and anonymous viewers plus a capability-gated,
+  saved-Version PDF report with one deterministic vector page per Assembly,
+  SI/IP material tables, membrane and air-barrier semantics, and dirty-draft
+  confirmation. Three-way simplify review, docs-pass, Graphify, rendered
+  unlocked/locked/anonymous browser acceptance, visual two-page PDF inspection,
+  and full CI passed (backend 1,903 passed / 7 skipped; frontend 2,505 passed).
+
 ## 2026-08-19
 
 - `version-management-and-diff` - Added safe Version rename/delete lifecycle,

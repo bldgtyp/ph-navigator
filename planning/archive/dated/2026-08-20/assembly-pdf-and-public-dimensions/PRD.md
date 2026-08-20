@@ -5,8 +5,8 @@ STATUS: Complete — accepted on codex/assembly-pdf-public-dimensions
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for bulk Assembly PDF export and public dimensions
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/README.md
-  - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/README.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PLAN.md
 ---
 
 # PRD — Assembly PDF and Public Dimensions

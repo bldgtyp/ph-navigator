@@ -5,8 +5,8 @@ STATUS: Accepted — Phase 00 renderer and page contract
 AUTHOR: Codex
 SCOPE: Assembly PDF composition dependency and fixed page geometry
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/PRD.md
-  - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PRD.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PLAN.md
 ---
 
 # Decisions — Assembly PDF and Public Dimensions

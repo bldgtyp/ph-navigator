@@ -5,8 +5,8 @@ STATUS: Complete — implementation and acceptance verified
 AUTHOR: Codex
 SCOPE: Current state of Assembly PDF and public dimensions
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/PRD.md
-  - planning/features/assembly-pdf-and-public-dimensions/PLAN.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PRD.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PLAN.md
 ---
 
 # STATUS — Assembly PDF and Public Dimensions
@@ -16,7 +16,7 @@ acceptance criteria have automated or rendered evidence.
 
 ## Next step
 
-Archive this completed packet and open the branch for review/merge.
+Open the archived packet's branch for review/merge.
 
 ## Blockers and risks
 

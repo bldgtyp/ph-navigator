@@ -5,8 +5,8 @@ STATUS: Complete — all phases verified
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
-  - planning/features/assembly-pdf-and-public-dimensions/PRD.md
-  - planning/features/assembly-pdf-and-public-dimensions/STATUS.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/PRD.md
+  - planning/archive/dated/2026-08-20/assembly-pdf-and-public-dimensions/STATUS.md
 ---
 
 # PLAN — Assembly PDF and Public Dimensions
