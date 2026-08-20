@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phases 00–01 complete; Phase 02 next
+STATUS: Active — Phases 00–02 complete; Phase 03 next
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
@@ -44,7 +44,11 @@ Exit: browser behavior matches the Apertures read-only pattern.
 
 ## Phase 02 — Canonical report model and PDF composer
 
-**Status: Next.**
+**Status: Complete (2026-08-19).** Frontend/backend geometry now shares a
+checked JSON projection fixture and portable natural ordering. The protected
+saved-Version endpoint emits one deterministic vector Letter page per
+Assembly, with SI/IP material data, incomplete-data review markers, stable
+filenames, and coverage for membranes, legacy geometry, and extreme scale.
 
 - Add the server-side report projection for all Assemblies in sidebar natural
   name order and a browser/backend parity fixture.

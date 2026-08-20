@@ -17,6 +17,27 @@ export function materialById(materials: ProjectMaterial[]): Map<string, ProjectM
   return new Map(materials.map((material) => [material.id, material]));
 }
 
+export function assemblyMaterialsInFirstUseOrder(
+  assembly: Assembly,
+  materialsById: ReadonlyMap<string, ProjectMaterial>,
+): ProjectMaterial[] {
+  const used: ProjectMaterial[] = [];
+  const seen = new Set<string>();
+  const orderedLayers = [...assembly.layers].sort((left, right) => left.order - right.order);
+  for (const layer of orderedLayers) {
+    const orderedSegments = [...layer.segments].sort((left, right) => left.order - right.order);
+    for (const segment of orderedSegments) {
+      const materialId = segment.project_material_id;
+      if (!materialId || seen.has(materialId)) continue;
+      const material = materialsById.get(materialId);
+      if (!material) continue;
+      seen.add(materialId);
+      used.push(material);
+    }
+  }
+  return used;
+}
+
 export function layerWidthMm(layer: AssemblyLayer): number {
   return layer.segments.reduce((total, segment) => total + segment.width_mm, 0);
 }

@@ -1,0 +1,226 @@
+{
+  "units": "SI",
+  "rounding_cases": {
+    "length_mm": 1.25,
+    "expected_si": "1.3"
+  },
+  "assembly": {
+    "id": "asm_parity",
+    "name": "WALL-2",
+    "type": "wall",
+    "orientation": "first_layer_outside",
+    "exterior_condition": "outdoor_air",
+    "air_barrier": { "layer_id": "lyr_membrane", "face": "exterior" },
+    "layers": [
+      {
+        "id": "lyr_cavity",
+        "order": 0,
+        "thickness_mm": 50,
+        "segments": [
+          {
+            "id": "seg_insulation_a",
+            "order": 0,
+            "width_mm": 800,
+            "is_continuous_insulation": false,
+            "steel_stud_spacing_mm": null,
+            "project_material_id": "pmat_insulation",
+            "photo_asset_ids": [],
+            "use_site_notes": null
+          },
+          {
+            "id": "seg_missing",
+            "order": 1,
+            "width_mm": 200,
+            "is_continuous_insulation": false,
+            "steel_stud_spacing_mm": null,
+            "project_material_id": null,
+            "photo_asset_ids": [],
+            "use_site_notes": null
+          }
+        ]
+      },
+      {
+        "id": "lyr_membrane",
+        "order": 1,
+        "thickness_mm": 0.15,
+        "segments": [
+          {
+            "id": "seg_membrane",
+            "order": 0,
+            "width_mm": 500,
+            "is_continuous_insulation": false,
+            "steel_stud_spacing_mm": null,
+            "project_material_id": "pmat_membrane",
+            "photo_asset_ids": [],
+            "use_site_notes": null
+          }
+        ]
+      },
+      {
+        "id": "lyr_finish",
+        "order": 2,
+        "thickness_mm": 12.7,
+        "segments": [
+          {
+            "id": "seg_insulation_b",
+            "order": 0,
+            "width_mm": 1000,
+            "is_continuous_insulation": false,
+            "steel_stud_spacing_mm": null,
+            "project_material_id": "pmat_insulation",
+            "photo_asset_ids": [],
+            "use_site_notes": null
+          }
+        ]
+      }
+    ]
+  },
+  "materials": [
+    {
+      "id": "pmat_insulation",
+      "name": "Wood fiber board",
+      "category": "insulation",
+      "conductivity_w_mk": 0.038,
+      "density_kg_m3": 160,
+      "specific_heat_j_kgk": 2100,
+      "emissivity": 0.9,
+      "color": "#DCE6C8",
+      "specification_status": "complete",
+      "datasheet_asset_ids": [],
+      "source": null,
+      "url": null,
+      "comments": null,
+      "catalog_origin": null
+    },
+    {
+      "id": "pmat_membrane",
+      "name": "Smart vapor retarder",
+      "category": "Membrane",
+      "conductivity_w_mk": 0.2,
+      "density_kg_m3": null,
+      "specific_heat_j_kgk": null,
+      "emissivity": null,
+      "color": "#3A7BD5",
+      "specification_status": "complete",
+      "datasheet_asset_ids": [],
+      "source": null,
+      "url": null,
+      "comments": null,
+      "catalog_origin": null
+    }
+  ],
+  "expected": {
+    "assembly_id": "asm_parity",
+    "name": "WALL-2",
+    "assembly_type": "wall",
+    "orientation_top": "Exterior",
+    "orientation_bottom": "Interior",
+    "width_mm": 1000,
+    "height_mm": 71.7,
+    "needs_review_missing_material_data": true,
+    "air_barrier": null,
+    "layers": [
+      {
+        "layer_id": "lyr_cavity",
+        "order": 0,
+        "y_mm": 0,
+        "height_mm": 50,
+        "thickness_mm": 50,
+        "thickness_label": "50",
+        "is_membrane": false,
+        "segments": [
+          {
+            "segment_id": "seg_insulation_a",
+            "x_mm": 0,
+            "y_mm": 0,
+            "width_mm": 800,
+            "height_mm": 50,
+            "project_material_id": "pmat_insulation",
+            "material_name": "Wood fiber board",
+            "color": "#dce6c8",
+            "is_missing_material": false,
+            "is_air_barrier": false
+          },
+          {
+            "segment_id": "seg_missing",
+            "x_mm": 800,
+            "y_mm": 0,
+            "width_mm": 200,
+            "height_mm": 50,
+            "project_material_id": null,
+            "material_name": null,
+            "color": "transparent",
+            "is_missing_material": true,
+            "is_air_barrier": false
+          }
+        ]
+      },
+      {
+        "layer_id": "lyr_membrane",
+        "order": 1,
+        "y_mm": 50,
+        "height_mm": 9,
+        "thickness_mm": 0.15,
+        "thickness_label": null,
+        "is_membrane": true,
+        "segments": [
+          {
+            "segment_id": "seg_membrane",
+            "x_mm": 0,
+            "y_mm": 50,
+            "width_mm": 1000,
+            "height_mm": 9,
+            "project_material_id": "pmat_membrane",
+            "material_name": "Smart vapor retarder",
+            "color": "#3a7bd5",
+            "is_missing_material": false,
+            "is_air_barrier": true
+          }
+        ]
+      },
+      {
+        "layer_id": "lyr_finish",
+        "order": 2,
+        "y_mm": 59,
+        "height_mm": 12.7,
+        "thickness_mm": 12.7,
+        "thickness_label": "12.7",
+        "is_membrane": false,
+        "segments": [
+          {
+            "segment_id": "seg_insulation_b",
+            "x_mm": 0,
+            "y_mm": 59,
+            "width_mm": 1000,
+            "height_mm": 12.7,
+            "project_material_id": "pmat_insulation",
+            "material_name": "Wood fiber board",
+            "color": "#dce6c8",
+            "is_missing_material": false,
+            "is_air_barrier": false
+          }
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "project_material_id": "pmat_insulation",
+        "name": "Wood fiber board",
+        "color": "#dce6c8",
+        "value_label": "0.038",
+        "density_label": "160",
+        "specific_heat_label": "2,100",
+        "emissivity_label": "0.9"
+      },
+      {
+        "project_material_id": "pmat_membrane",
+        "name": "Smart vapor retarder",
+        "color": "#3a7bd5",
+        "value_label": "0.2",
+        "density_label": "—",
+        "specific_heat_label": "—",
+        "emissivity_label": "—"
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 export type { UnitFormatOptions, UnitParseResult, UnitSystem } from "./types";
+export { formatNumberWithUnit } from "./format";
 export { UnitPreferenceProvider } from "./preference";
 export { useUnitPreference } from "./useUnitPreference";
 export { formatAirflowFromM3H, formatAirflowFromM3S, m3hToCfm, m3sToCfm } from "./airflow";

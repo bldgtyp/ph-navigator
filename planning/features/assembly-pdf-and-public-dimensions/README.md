@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 23:00 EDT
-STATUS: Active — Phases 00–01 complete; Phase 02 next
+TIME: 23:38 EDT
+STATUS: Active — Phases 00–02 complete; Phase 03 next
 AUTHOR: Ed May / Codex
 SCOPE: Assembly PDF export and read-only thickness dimensions
 RELATED:
@@ -40,11 +40,14 @@ without exposing editor controls.
   add-layer, and delete-layer controls.
 - `frontend/src/features/envelope/components/AssemblySvgCanvas.tsx` and
   `canvas-geometry.ts` own the browser drawing geometry.
-- `frontend/src/features/envelope/components/MaterialLegend.tsx` is the current
-  on-screen material-table contract to mirror in the PDF.
-- `backend/features/envelope/phpp_export.py` is the closest bulk-assembly export
-  precedent for saved-Version and bulk-response mechanics only; its stored
-  document iteration order is explicitly not the PDF/sidebar ordering rule.
+- `frontend/src/features/envelope/assembly-report.ts` projects that geometry
+  into the checked frontend/backend parity fixture.
+- `frontend/src/features/envelope/components/MaterialLegend.tsx` remains the
+  on-screen material-table contract matched by the report projection.
+- `backend/features/envelope/assembly_report.py` owns the canonical saved-Version
+  report model and portable natural ordering.
+- `backend/features/envelope/assembly_pdf.py` composes the deterministic vector
+  pages; `backend/features/envelope/routes.py` owns capability-gated delivery.
 
 ## Scope boundary
 

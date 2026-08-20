@@ -59,15 +59,34 @@ class CurrentDocumentParts:
 
 
 def get_saved_document(version_id: UUID, access: ProjectAccess) -> ProjectDocumentV1:
+    version, db_ms = _load_saved_version_row(version_id, access)
+    body = validate_document(version["body"])
+    _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
+    return body
+
+
+def get_saved_document_with_version(
+    version_id: UUID,
+    access: ProjectAccess,
+) -> tuple[ProjectDocumentV1, ProjectVersionPublic]:
+    """Load a saved body and its public metadata from the same version row."""
+    version, db_ms = _load_saved_version_row(version_id, access)
+    body = validate_document(version["body"])
+    _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
+    public = ProjectVersionPublic.model_validate({field: version[field] for field in ProjectVersionPublic.model_fields})
+    return body, public
+
+
+def _load_saved_version_row(
+    version_id: UUID,
+    access: ProjectAccess,
+) -> tuple[dict[str, Any], float]:
     start = perf_counter()
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-    db_ms = _duration_ms(start)
-    body = validate_document(version["body"])
-    _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
-    return body
+    return version, _duration_ms(start)
 
 
 def get_project_version_public(

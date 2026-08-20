@@ -70,7 +70,8 @@ export function buildAssemblyCanvasGeometry(
   // One record per layer rather than two index-aligned arrays: both facts are
   // needed for every layer before the width is known, and keeping them together
   // removes the chance of the two drifting out of step.
-  const layerFacts = assembly.layers.map((layer) => ({
+  const orderedLayers = [...assembly.layers].sort((left, right) => left.order - right.order);
+  const layerFacts = orderedLayers.map((layer) => ({
     isMembrane: isMembraneLayer(layer, materialsById),
     widthMm: layerWidthMm(layer),
   }));
@@ -80,7 +81,7 @@ export function buildAssemblyCanvasGeometry(
   const segments: AssemblyCanvasSegmentGeometry[] = [];
   let yMm = 0;
 
-  assembly.layers.forEach((layer, layerIndex) => {
+  orderedLayers.forEach((layer, layerIndex) => {
     const facts = layerFacts[layerIndex] ?? { isMembrane: false, widthMm: 0 };
     const isMembrane = facts.isMembrane;
     const heightMm = isMembrane ? MEMBRANE_BAND_HEIGHT_MM : layer.thickness_mm;
@@ -95,21 +96,23 @@ export function buildAssemblyCanvasGeometry(
     const scale = isMembrane && facts.widthMm > 0 ? widthMm / facts.widthMm : 1;
 
     let xMm = 0;
-    layer.segments.forEach((segment) => {
-      const segmentWidthMm = segment.width_mm * scale;
-      segments.push({
-        layer,
-        layerIndex,
-        segment,
-        xMm,
-        yMm,
-        widthMm: segmentWidthMm,
-        heightMm,
-        isMembrane,
-        isAirBarrier,
+    [...layer.segments]
+      .sort((left, right) => left.order - right.order)
+      .forEach((segment) => {
+        const segmentWidthMm = segment.width_mm * scale;
+        segments.push({
+          layer,
+          layerIndex,
+          segment,
+          xMm,
+          yMm,
+          widthMm: segmentWidthMm,
+          heightMm,
+          isMembrane,
+          isAirBarrier,
+        });
+        xMm += segmentWidthMm;
       });
-      xMm += segmentWidthMm;
-    });
 
     yMm += heightMm;
   });

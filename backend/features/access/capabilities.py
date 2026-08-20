@@ -43,6 +43,7 @@ APERTURES_EXPORT_HBJSON = "apertures.export.hbjson"
 APERTURE_EXPORT_U_VALUE_REPORT = "apertures.export.u_value_report"
 ENVELOPE_EXPORT_HBJSON = "envelope.export.hbjson"
 ENVELOPE_EXPORT_PHPP = "envelope.export.phpp"
+ENVELOPE_EXPORT_ASSEMBLY_PDF = "envelope.export.assembly_pdf"
 EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
 MODEL_EXPORT = "model.export"
 DOCUMENT_EXPORT = "document.export"
@@ -73,6 +74,7 @@ EXPORT_CAPS: frozenset[str] = frozenset(
         APERTURE_EXPORT_U_VALUE_REPORT,
         ENVELOPE_EXPORT_HBJSON,
         ENVELOPE_EXPORT_PHPP,
+        ENVELOPE_EXPORT_ASSEMBLY_PDF,
         EQUIPMENT_EXPORT_PHIUS,
         MODEL_EXPORT,
         DOCUMENT_EXPORT,
