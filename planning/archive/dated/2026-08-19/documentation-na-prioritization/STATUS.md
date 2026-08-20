@@ -1,22 +1,24 @@
 ---
 DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: In review — implemented and locally verified
+TIME: 20:10 EDT
+STATUS: Complete — implemented, verified, and archived
 AUTHOR: Codex
 SCOPE: Current state of Documentation N/A prioritization
 RELATED:
-  - planning/features/documentation-na-prioritization/PRD.md
+  - planning/archive/dated/2026-08-19/documentation-na-prioritization/PRD.md
 ---
 
 # STATUS — Documentation N/A Prioritization
 
-**State:** `In review`; implementation and focused verification are green on
+**State:** `Complete`; implementation and repository closeout are green on
 `codex/documentation-na-prioritization`.
 
-## Next step
+## Outcome
 
-Run the repo-wide closeout gate, commit the implementation phase, then complete
-the implement-loop archive cleanup.
+Fully N/A Envelope Assembly records now form one stable, collapsed bottom
+section for authenticated users and are absent from anonymous rendering and
+asset URL resolution. Attention filtering evaluates each raw evidence axis
+independently, and existing rollups remain unchanged.
 
 ## Verification
 
@@ -29,6 +31,8 @@ the implement-loop archive cleanup.
 - [x] Record-detail and Directions modal regressions remain green.
 - [x] `make agent-browser-ready` and signed-in/signed-out Documentation smoke.
 - [x] Focused frontend gate and docs pass.
+- [x] Three-way simplify review and follow-up cleanup.
+- [x] Graphify update, formatting, full CI, and production build.
 
 Focused evidence:
 
@@ -46,6 +50,10 @@ make agent-browser-ready
 cd frontend && node scripts/agent-browser.mjs <signed-in Documentation route> ...
 cd frontend && node scripts/agent-browser.mjs <public Documentation route> --no-signin ...
 # both rendered Documentation status; expected anonymous session probes returned 401
+
+graphify update . && make format && git diff --check && make ci
+# backend: 1,870 passed, 7 skipped
+# frontend: 2,465 passed; production build green
 ```
 
 The seeded browser fixture had an Apertures documentation row only, so the
@@ -60,4 +68,4 @@ page, but merge/rebase must preserve its shared `StatusAxisRollup` work.
 
 ## Blockers
 
-None, once the existing auth/session discriminator is identified.
+None.

@@ -5,6 +5,13 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-08-19
 
+- `documentation-na-prioritization` - Stable-partitioned fully N/A Envelope
+  Assembly records into one collapsed bottom section for authenticated users,
+  omitted those rows, empty groups, empty sections, and attachment URL work for
+  anonymous viewers, and corrected attention filters to evaluate each raw axis
+  independently. Locked/read-only behavior, disclosure state, unchanged
+  rollups, signed-in/out rendering, three-way simplify, docs-pass, Graphify,
+  and full CI passed (backend 1,870 passed / 7 skipped; frontend 2,465 passed).
 - `aperture-installs-preview-fit` - Replaced the Installs modal's fixed
   width-only zoom with a measured two-axis contain-fit viewport. The exact-size
   SVG and install overlay share one centered origin/zoom with at least 16 px
