@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Active — Phases 00–02 complete; Phase 03 next
+STATUS: Active — Phases 00–03 complete; Phase 04 next
 AUTHOR: Codex
 SCOPE: Phase plan for Assembly PDF and public dimensions
 RELATED:
@@ -61,6 +61,12 @@ filenames, and coverage for membranes, legacy geometry, and extreme scale.
 Exit: deterministic N-Assembly/N-page backend tests pass.
 
 ## Phase 03 — Assembly actions integration
+
+**Status: Complete (2026-08-19).** Editors can download the saved-Version PDF
+in active SI/IP units from Assembly actions, including locked Versions. The
+client honors the server filename, confirms dirty drafts, guards against the
+saved Version's actual zero-Assembly count, cancels stale downloads, reports
+errors, and keeps the action absent for viewers.
 
 - Add the menu item and download hook.
 - Reuse the saved-Version/draft warning and busy/error behavior from existing

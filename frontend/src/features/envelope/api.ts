@@ -1,5 +1,5 @@
 import type { UnitSystem } from "../../lib/units/types";
-import { fetchBlob, fetchJson } from "../../shared/api/client";
+import { fetchBlob, fetchDownload, fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
 import { normalizeSpecificationStatusRecord } from "../project_document/specification-status";
 import type { AssemblyCondensationResponse } from "./condensation-types";
@@ -117,6 +117,18 @@ export async function downloadEnvelopePhpp(
 ): Promise<Blob> {
   return fetchBlob(
     `/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/phpp?units=${units}`,
+  );
+}
+
+export async function downloadAssemblyPdf(
+  projectId: string,
+  versionId: string,
+  units: UnitSystem,
+  signal?: AbortSignal,
+): Promise<{ blob: Blob; filename: string | null }> {
+  return fetchDownload(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/assemblies.pdf?units=${units}`,
+    { signal },
   );
 }
 

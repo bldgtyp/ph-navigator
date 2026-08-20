@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
 import { useUnitPreference } from "../../../lib/units";
 import { fetchDownload } from "../../../shared/api/client";
+import { useDownloadExport } from "../../../shared/hooks/useDownloadExport";
 import { downloadBlob } from "../../../shared/lib/downloadBlob";
-import { errorMessage } from "../../../shared/lib/errors";
+import { downloadFilenamePart } from "../../../shared/lib/downloadFilename";
 
 export type ApertureUValueExportFormat = "csv" | "xlsx";
 
@@ -32,56 +32,27 @@ export function useApertureUValueReportExport({
   dependencies?: ExportDependencies;
 }) {
   const { unitSystem } = useUnitPreference();
-  const activeRequest = useRef(false);
-  const requestController = useRef<AbortController | null>(null);
-  const mounted = useRef(true);
-  const [busyFormat, setBusyFormat] = useState<ApertureUValueExportFormat | null>(null);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      requestController.current?.abort();
-    };
-  }, []);
-
-  async function download(format: ApertureUValueExportFormat): Promise<boolean> {
-    if (activeRequest.current) return false;
-    if (!versionId) {
-      onError("Select a saved version before downloading the U-value report.");
-      return false;
-    }
-
-    activeRequest.current = true;
-    const controller = new AbortController();
-    requestController.current = controller;
-    setBusyFormat(format);
-    onError(null);
-    try {
-      const file = await dependencies.fetchFile(
+  const controller = useDownloadExport<ApertureUValueExportFormat>({
+    scopeKey: `${projectId}:${versionId ?? ""}`,
+    request: (format, signal) => {
+      if (!versionId) {
+        throw new Error("Select a saved version before downloading the U-value report.");
+      }
+      return dependencies.fetchFile(
         `/api/v1/projects/${projectId}/versions/${versionId}/apertures/u-values/report/export?format=${format}&units=${unitSystem}`,
-        { signal: controller.signal },
+        { signal },
       );
-      const filename =
-        file.filename ?? fallbackFilename(btNumber, versionLabel, unitSystem, format);
-      if (controller.signal.aborted || !mounted.current) return false;
-      dependencies.saveBlob(file.blob, filename);
-      return true;
-    } catch (error) {
-      if (controller.signal.aborted) return false;
-      onError(errorMessage(error, "Could not download the U-value report."));
-      return false;
-    } finally {
-      activeRequest.current = false;
-      if (requestController.current === controller) requestController.current = null;
-      if (mounted.current) setBusyFormat(null);
-    }
-  }
+    },
+    fallbackFilename: (format) => fallbackFilename(btNumber, versionLabel, unitSystem, format),
+    errorFallback: "Could not download the U-value report.",
+    onError,
+    saveBlob: dependencies.saveBlob,
+  });
 
   return {
-    download,
-    busy: busyFormat !== null,
-    busyFormat,
+    download: controller.download,
+    busy: controller.busy,
+    busyFormat: controller.busyValue,
     unitSystem,
   };
 }
@@ -92,18 +63,8 @@ export function fallbackFilename(
   units: "SI" | "IP",
   format: ApertureUValueExportFormat,
 ): string {
-  return `${filenamePart(btNumber, "project")}-aperture-u-values-${units}-${filenamePart(
+  return `${downloadFilenamePart(btNumber, "project")}-aperture-u-values-${units}-${downloadFilenamePart(
     versionLabel,
     "version",
   )}.${format}`;
-}
-
-function filenamePart(value: string, fallback: string): string {
-  return (
-    value
-      .replace(/[^A-Za-z0-9_-]+/g, "-")
-      .replace(/^[-_]+|[-_]+$/g, "")
-      .slice(0, 80)
-      .replace(/[-_]+$/g, "") || fallback
-  );
 }

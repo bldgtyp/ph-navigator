@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
-TIME: 23:38 EDT
-STATUS: Active — Phases 00–02 complete; Phase 03 next
+TIME: 23:57 EDT
+STATUS: Active — Phases 00–03 complete; Phase 04 next
 AUTHOR: Ed May / Codex
 SCOPE: Assembly PDF export and read-only thickness dimensions
 RELATED:
@@ -31,8 +31,9 @@ without exposing editor controls.
 
 ## Current-code anchors
 
-- `frontend/src/features/envelope/routes/EnvelopePage.tsx` owns the existing
-  `AppMenu label="Assembly actions"` and saved-version export warning pattern.
+- `frontend/src/features/envelope/routes/EnvelopePage.tsx` owns the
+  `AppMenu label="Assembly actions"` placement and saved-Version availability
+  wiring.
 - `frontend/src/features/envelope/components/AssemblyCanvasOverlay.tsx` renders
   `AssemblyLayerDimensions` for editors and read-only viewers.
 - `frontend/src/features/envelope/components/AssemblyLayerDimensions.tsx`
@@ -48,6 +49,9 @@ without exposing editor controls.
   report model and portable natural ordering.
 - `backend/features/envelope/assembly_pdf.py` composes the deterministic vector
   pages; `backend/features/envelope/routes.py` owns capability-gated delivery.
+- `frontend/src/features/envelope/hooks/useAssemblyPdfExport.ts` owns the
+  saved-Version warning and PDF action; the shared download controller handles
+  busy, cancellation, filename, and error behavior.
 
 ## Scope boundary
 

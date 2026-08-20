@@ -40,6 +40,7 @@ export function phase16EnvelopeFixture(
     source,
     version_etag: "phase16-version-etag",
     draft_etag: source === "draft" ? "phase16-draft-etag" : null,
+    saved_assembly_count: assemblies.length,
     assemblies,
     project_materials: projectMaterials,
   };

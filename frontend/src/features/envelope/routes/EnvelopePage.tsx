@@ -6,7 +6,7 @@
 // components so browser and MCP mutations share the semantic command boundary.
 import "../envelope.css";
 import "../condensation.css";
-import { Download, FileSpreadsheet, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
@@ -43,6 +43,7 @@ import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
 import { useEnvelopeCanvasZoom } from "../hooks/useEnvelopeCanvasZoom";
 import { useEnvelopeHbjsonImport } from "../hooks/useEnvelopeHbjsonImport";
 import { useEnvelopePhppExport } from "../hooks/useEnvelopePhppExport";
+import { useAssemblyPdfExport } from "../hooks/useAssemblyPdfExport";
 import {
   EnvelopeEmptyState,
   EnvelopeErrorState,
@@ -114,6 +115,14 @@ export function EnvelopePage({
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
   const phpp = useEnvelopePhppExport(project.id, project.active_version_id);
+  const assemblyPdf = useAssemblyPdfExport({
+    projectId: project.id,
+    versionId: project.active_version_id,
+    btNumber: project.bt_number,
+    versionLabel: project.active_version?.name ?? "version",
+    savedAssemblyCount: query.data?.saved_assembly_count,
+    onError: setCommandError,
+  });
   const importer = useEnvelopeHbjsonImport(project.id, project.active_version_id);
   const attachmentMutation = useEnvelopeAttachmentMutation({
     projectId: project.id,
@@ -315,12 +324,25 @@ export function EnvelopePage({
     await attachmentMutation.mutateAsync({ current, change });
   }
 
-  // HBJSON/PHPP exports are bulk exports → editor-only in beta (CP-7); they
+  // PDF/HBJSON/PHPP exports are bulk exports → editor-only in beta (CP-7); they
   // gate on `!isViewer` rather than `canEdit` so an editor browsing a locked
   // version can still export. Upload is a mutation → `canEdit`. Viewers get no
   // assembly-actions menu at all (every item is hidden for them).
   const assemblyActions = isViewer ? null : (
     <AppMenu label="Assembly actions">
+      <AppMenuItem
+        id="assembly-builder-export-pdf"
+        icon={FileText}
+        aria-disabled={query.data.saved_assembly_count === 0 ? true : undefined}
+        closeOnSelect={query.data.saved_assembly_count !== 0}
+        disabled={assemblyPdf.busy}
+        onClick={() => void assemblyPdf.start(query.data)}
+      >
+        Download assemblies PDF
+        {query.data.saved_assembly_count === 0 ? (
+          <span className="assembly-pdf-action-note">No assemblies in the saved Version.</span>
+        ) : null}
+      </AppMenuItem>
       <AppMenuItem
         id="assembly-builder-export-hbjson"
         icon={Download}
@@ -436,6 +458,7 @@ export function EnvelopePage({
           />
         ) : assemblies.length === 0 || !activeAssembly ? (
           <div>
+            {!isViewer ? <div className="envelope-empty-actions">{assemblyActions}</div> : null}
             <EnvelopeEmptyState />
             {canEdit ? (
               <button

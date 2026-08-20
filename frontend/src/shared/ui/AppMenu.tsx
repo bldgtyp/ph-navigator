@@ -106,6 +106,8 @@ export function AppMenuItem({
   ...buttonProps
 }: AppMenuItemProps) {
   const close = useAppMenuClose();
+  const ariaDisabled =
+    buttonProps["aria-disabled"] === true || buttonProps["aria-disabled"] === "true";
   return (
     <button
       {...buttonProps}
@@ -114,6 +116,10 @@ export function AppMenuItem({
       role={buttonProps.role ?? "menuitem"}
       data-danger={danger ? "true" : undefined}
       onClick={(event) => {
+        if (ariaDisabled) {
+          event.preventDefault();
+          return;
+        }
         if (closeOnSelect) close();
         onClick?.(event);
       }}

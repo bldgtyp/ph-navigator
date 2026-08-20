@@ -113,6 +113,7 @@ class EnvelopeReadResponse(BaseModel):
     source: ProjectDocumentSource
     version_etag: str
     draft_etag: str | None
+    saved_assembly_count: int | None = Field(default=None, ge=0)
     assemblies: list[AssemblyRead] = Field(default_factory=list)
     project_materials: list[ProjectMaterialRead] = Field(default_factory=list)
 

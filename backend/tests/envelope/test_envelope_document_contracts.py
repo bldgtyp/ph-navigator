@@ -274,6 +274,7 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
     saved_json = saved.json()
     assert saved_json["source"] == "version"
     assert saved_json["draft_etag"] is None
+    assert saved_json["saved_assembly_count"] == 2
     assert saved_json["assemblies"][0]["status"]["flags"] == ["missing_material"]
     assert saved_json["project_materials"][0]["use_sites"][0]["use_site_notes"] == "Use over exterior sheathing."
 
@@ -297,6 +298,7 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
     draft_json = draft.json()
     assert draft_json["source"] == "draft"
     assert draft_json["draft_etag"]
+    assert draft_json["saved_assembly_count"] == 2
     assert len(draft_json["project_materials"]) == 3
     assert draft_json["version_etag"] == document_etag(saved_body)
 

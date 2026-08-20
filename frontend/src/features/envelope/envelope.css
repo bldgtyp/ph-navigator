@@ -2021,3 +2021,16 @@
 .thermal-standard-select select:disabled {
   cursor: default;
 }
+
+.envelope-empty-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 var(--space-12);
+}
+
+.assembly-pdf-action-note {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
