@@ -73,6 +73,14 @@ Groups with no records are omitted. If filters hide every record in a populated
 group, the group remains visible with a "No records match the active filters"
 message.
 
+Within each Envelope Assembly group, fully N/A materials (Spec, Datasheet, and
+Photo all N/A) are stable-partitioned into one collapsed **Not applicable**
+disclosure after the actionable records. Its count and expansion state are
+presentation-only; the saved material order and group rollups do not change.
+Attention filters read each requested raw axis independently and omit fully N/A
+records, so Spec N/A does not suppress a Datasheet or Photo axis that is still
+explicitly Needed.
+
 ## Record rows
 
 Rows use a unified evidence grid:
@@ -115,6 +123,11 @@ intentionally render placeholders until BLDGTYP-owned photos are selected.
 ## Access invariants
 
 - Viewer markup has no upload, delete, waiver, or status-edit controls.
+- Authenticated read-only users and locked editors retain the Envelope Assembly
+  Not applicable disclosure. Anonymous viewers receive no fully N/A Assembly
+  row, disclosure, N/A-only group, or empty Envelope section markup. Until the
+  shared session query resolves successfully, the anonymous-hidden policy is
+  used so labels cannot flash before identity is known.
 - Editors see and edit draft evidence here; the standard project workspace
   indicates uncommitted changes and provides the Save Version control.
 - Locked versions keep the standard project locked-version banner behavior.

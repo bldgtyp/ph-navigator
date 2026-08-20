@@ -1,5 +1,5 @@
 import type { ProjectDetail } from "../../projects/types";
-import type { ProjectDocumentationSummary } from "../types";
+import type { DocumentationRecord, ProjectDocumentationSummary } from "../types";
 
 export const PROJECT: ProjectDetail = {
   id: "proj_1",
@@ -139,6 +139,145 @@ export function summaryFixture(): ProjectDocumentationSummary {
         ],
       },
     ],
+  };
+}
+
+export function envelopeNaSummaryFixture({
+  onlyFullyNa = false,
+}: {
+  onlyFullyNa?: boolean;
+} = {}): ProjectDocumentationSummary {
+  const actionableRecords = onlyFullyNa
+    ? []
+    : [
+        documentationRecordFixture({
+          record_id: "material_action_1",
+          display_name: "Actionable insulation",
+          spec_status: "needed",
+          datasheet_status: "needed",
+          photo_status: "needed",
+        }),
+        documentationRecordFixture({
+          record_id: "material_partial_na",
+          display_name: "Partial N/A membrane",
+          spec_status: "na",
+          datasheet_status: "needed",
+          photo_status: "na",
+        }),
+      ];
+  const fullyNaRecords = [
+    documentationRecordFixture({
+      record_id: "material_na_1",
+      display_name: "N/A air gap",
+      spec_status: "na",
+      datasheet_status: "na",
+      photo_status: "na",
+    }),
+    documentationRecordFixture({
+      record_id: "material_na_2",
+      display_name: "N/A finish layer",
+      spec_status: "na",
+      datasheet_status: "na",
+      photo_status: "na",
+    }),
+  ];
+  const mixedRecords = onlyFullyNa
+    ? fullyNaRecords
+    : [actionableRecords[0]!, fullyNaRecords[0]!, actionableRecords[1]!, fullyNaRecords[1]!];
+
+  return {
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "v1",
+    draft_etag: "d1",
+    counts: { spec_done: 3, spec_total: 4, ds_done: 2, ds_total: 4, photo_done: 3, photo_total: 4 },
+    sections: [
+      {
+        key: "envelope",
+        title: "Envelope",
+        anchor: "envelope",
+        counts: {
+          spec_done: 3,
+          spec_total: 4,
+          ds_done: 2,
+          ds_total: 4,
+          photo_done: 3,
+          photo_total: 4,
+        },
+        records: [],
+        groups: [
+          {
+            key: "wall-1",
+            title: "Exterior wall",
+            anchor: "wall-1",
+            counts: {
+              spec_done: 3,
+              spec_total: 4,
+              ds_done: 2,
+              ds_total: 4,
+              photo_done: 3,
+              photo_total: 4,
+            },
+            records: mixedRecords,
+          },
+          {
+            key: "wall-na-only",
+            title: "N/A-only assembly",
+            anchor: "wall-na-only",
+            counts: {
+              spec_done: 1,
+              spec_total: 1,
+              ds_done: 1,
+              ds_total: 1,
+              photo_done: 1,
+              photo_total: 1,
+            },
+            records: [
+              documentationRecordFixture({
+                record_id: "material_na_only",
+                display_name: "N/A-only hidden layer",
+                spec_status: "na",
+                datasheet_status: "na",
+                photo_status: "na",
+              }),
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function documentationRecordFixture({
+  record_id,
+  display_name,
+  spec_status,
+  datasheet_status,
+  photo_status,
+}: {
+  record_id: string;
+  display_name: string;
+  spec_status: DocumentationRecord["spec_status"];
+  datasheet_status: DocumentationRecord["datasheet_status"];
+  photo_status: DocumentationRecord["photo_status"];
+}): DocumentationRecord {
+  return {
+    record_id,
+    table_key: "materials",
+    field_table_key: "materials",
+    display_name,
+    sub_label: null,
+    spec_status,
+    datasheet_status,
+    photo_status,
+    datasheet_asset_ids: [],
+    photo_asset_ids: [],
+    datasheet_not_required: datasheet_status === "na",
+    photo_not_required: photo_status === "na",
+    table_path: `/projects/proj_1/envelope?focus=${record_id}`,
+    segment_ids: [`segment_${record_id}`],
+    material_id: record_id,
   };
 }
 

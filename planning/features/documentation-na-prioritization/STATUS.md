@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — not started
+STATUS: In review — implemented and locally verified
 AUTHOR: Codex
 SCOPE: Current state of Documentation N/A prioritization
 RELATED:
@@ -10,26 +10,47 @@ RELATED:
 
 # STATUS — Documentation N/A Prioritization
 
-**State:** `Active` planning; no code written.
+**State:** `In review`; implementation and focused verification are green on
+`codex/documentation-na-prioritization`.
 
 ## Next step
 
-Add red `DocumentationSummaryView` tests for a mixed Assembly group and a group
-containing only fully N/A records under three identities: editor, authenticated
-read-only/locked, and anonymous. Confirm the exact auth-state seam before using
-it in the component.
+Run the repo-wide closeout gate, commit the implementation phase, then complete
+the implement-loop archive cleanup.
 
 ## Verification
 
-- [ ] Named fully-N/A predicate unit tests.
-- [ ] Stable partition preserves relative order.
-- [ ] Logged-in collapsed bottom section and count.
-- [ ] Attention filter suppresses the section.
-- [ ] Anonymous DOM contains no N/A record labels or empty group.
-- [ ] Rollup counts unchanged.
-- [ ] Record-detail and Directions modal regressions remain green.
-- [ ] `make agent-browser-ready` and signed-in/signed-out Documentation smoke.
-- [ ] Focused frontend gate and docs pass.
+- [x] Named fully-N/A predicate unit tests.
+- [x] Stable partition preserves relative order.
+- [x] Logged-in collapsed bottom section and count.
+- [x] Attention filter suppresses the section.
+- [x] Anonymous DOM contains no N/A record labels or empty group/section.
+- [x] Rollup counts unchanged.
+- [x] Record-detail and Directions modal regressions remain green.
+- [x] `make agent-browser-ready` and signed-in/signed-out Documentation smoke.
+- [x] Focused frontend gate and docs pass.
+
+Focused evidence:
+
+```text
+cd frontend && pnpm exec vitest run \
+  src/features/documentation/__tests__/lib.test.ts \
+  src/features/documentation/__tests__/DocumentationNaPrioritization.test.tsx \
+  src/features/documentation/__tests__/DocumentationSummaryView.test.tsx
+# 17 passed
+
+cd frontend && pnpm run check:all && pnpm run build
+# green
+
+make agent-browser-ready
+cd frontend && node scripts/agent-browser.mjs <signed-in Documentation route> ...
+cd frontend && node scripts/agent-browser.mjs <public Documentation route> --no-signin ...
+# both rendered Documentation status; expected anonymous session probes returned 401
+```
+
+The seeded browser fixture had an Apertures documentation row only, so the
+browser smoke proves authenticated/anonymous page rendering; the mixed and
+N/A-only Envelope Assembly behavior is covered by the focused DOM tests.
 
 ## Coordination
 

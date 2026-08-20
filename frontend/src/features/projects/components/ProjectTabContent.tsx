@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ComponentType } from "react";
+import type { DocumentationAudiencePolicy } from "../../documentation/lib";
 import { TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
 
@@ -43,7 +44,10 @@ const ClimateTab = lazy(() =>
   import("../../climate/routes/ClimateTab").then((module) => ({ default: module.ClimateTab })),
 );
 
-type ProjectTabModule = ComponentType<{ project: ProjectDetail }>;
+type ProjectTabModule = ComponentType<{
+  project: ProjectDetail;
+  audiencePolicy: DocumentationAudiencePolicy;
+}>;
 
 const PROJECT_TAB_MODULES: Record<
   ProjectTab,
@@ -80,12 +84,20 @@ const PROJECT_TAB_MODULES: Record<
   },
 };
 
-export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
+export function ProjectTabContent({
+  tab,
+  project,
+  audiencePolicy,
+}: {
+  tab: ProjectTab;
+  project: ProjectDetail;
+  audiencePolicy: DocumentationAudiencePolicy;
+}) {
   const { Component, className, loadingLabel } = PROJECT_TAB_MODULES[tab];
 
   return (
     <Suspense fallback={<TabLoadingPanel className={className} label={loadingLabel} />}>
-      <Component project={project} />
+      <Component project={project} audiencePolicy={audiencePolicy} />
     </Suspense>
   );
 }
