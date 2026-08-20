@@ -5,8 +5,8 @@ STATUS: Draft — behavior contract ready for implementation planning
 AUTHOR: Ed May / Codex
 SCOPE: Product and API contract for Version management and diff UX
 RELATED:
-  - planning/features/version-management-and-diff/README.md
-  - planning/features/version-management-and-diff/PLAN.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/README.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PLAN.md
   - context/technical-requirements/save-versioning.md
 ---
 

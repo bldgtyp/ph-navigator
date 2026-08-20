@@ -1,12 +1,12 @@
 ---
 DATE: 2026-08-19
-TIME: 22:34 EDT
-STATUS: Active implementation sequence — Phases 00–04 complete
+TIME: 22:41 EDT
+STATUS: Complete — Phases 00–05 verified
 AUTHOR: Codex
 SCOPE: Backend-first phase plan for Version management and diff UX
 RELATED:
-  - planning/features/version-management-and-diff/PRD.md
-  - planning/features/version-management-and-diff/STATUS.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PRD.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/STATUS.md
 ---
 
 # PLAN — Version Management and Diff
@@ -57,7 +57,7 @@ RELATED:
 - Add wide/resizable/viewport-safe layout and standardized footer.
 - Add empty, loading, error, long-value, and technical-disclosure states.
 
-## Phase 05 — Acceptance and durable docs
+## Phase 05 — Acceptance and durable docs — Complete
 
 - Run focused backend and frontend suites followed by full CI because Version
   lifecycle mutations are high-risk.
@@ -65,3 +65,8 @@ RELATED:
   project, including a dirty draft and locked Version.
 - Update `context/technical-requirements/save-versioning.md`, workspace UI docs,
   API docs, Graphify, and the feature status ledger.
+
+Mounted acceptance exercised dirty-draft comparison, locked Submitted Save As
+and rename, saved-to-saved semantic comparison, exact-name deletion, and the
+sole-Version guard. The resizable Diff dialog remained contained with visible
+selectors/footer and scrolling results at both 1280×900 and 640×600.

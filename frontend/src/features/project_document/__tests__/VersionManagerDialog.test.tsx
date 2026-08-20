@@ -60,6 +60,13 @@ describe("VersionManagerDialog", () => {
     expect(screen.getByText(/default version cannot be deleted/i)).toBeInTheDocument();
   });
 
+  test("explains the sole-Version guard before the default-Version guard", () => {
+    renderManager({ versions: [versions[0]!] });
+
+    expect(screen.getByText("A project must retain at least one version.")).toBeInTheDocument();
+    expect(screen.queryByText(/default version cannot be deleted/i)).not.toBeInTheDocument();
+  });
+
   test("renames a locked submitted version with trimmed input", async () => {
     const onRename = vi.fn().mockResolvedValue(undefined);
     renderManager({ onRename });

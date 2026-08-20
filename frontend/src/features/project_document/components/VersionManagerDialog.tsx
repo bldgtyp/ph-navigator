@@ -135,11 +135,12 @@ export function VersionManagerDialog({
             {versions.map((version) => {
               const isDefault = version.id === defaultVersionId;
               const deleteDisabled = isDefault || versions.length === 1;
-              const deleteHelp = isDefault
-                ? "The default version cannot be deleted. Make another version default first."
-                : versions.length === 1
+              const deleteHelp =
+                versions.length === 1
                   ? "A project must retain at least one version."
-                  : undefined;
+                  : isDefault
+                    ? "The default version cannot be deleted. Make another version default first."
+                    : undefined;
               const summaryId = `version-manager-summary-${version.id}`;
               const deleteHelpId = deleteHelp
                 ? `version-manager-delete-help-${version.id}`

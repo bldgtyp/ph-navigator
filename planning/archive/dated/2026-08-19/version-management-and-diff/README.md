@@ -1,13 +1,13 @@
 ---
 DATE: 2026-08-19
-TIME: 22:34 EDT
-STATUS: Active — Phases 00–04 complete
+TIME: 22:41 EDT
+STATUS: Complete — all five phases verified
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
-  - planning/features/version-management-and-diff/PRD.md
-  - planning/features/version-management-and-diff/PLAN.md
-  - planning/features/version-management-and-diff/STATUS.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PRD.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PLAN.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/STATUS.md
   - context/technical-requirements/save-versioning.md
   - context/ui/pages/project-workspace.md
   - planning/2026-08-19-ui-batch.md
@@ -26,6 +26,10 @@ changes without reading storage paths or record UUIDs.
 3. `STATUS.md` — current state and verification ledger.
 
 ## Current truth
+
+- All five phases are complete. Backend and frontend contracts, mounted browser
+  acceptance, durable documentation, Graphify, simplify review, and full CI
+  have been completed; this packet is retained as implementation evidence.
 
 - `ProjectVersion` already includes `created_at` and `updated_at`; the current
   `VersionPopover` simply does not render them.

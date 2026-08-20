@@ -1,24 +1,23 @@
 ---
 DATE: 2026-08-19
-TIME: 22:34 EDT
-STATUS: Active — Phases 00–04 complete; Phase 05 next
+TIME: 22:41 EDT
+STATUS: Complete — all phases verified; ready to archive
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
-  - planning/features/version-management-and-diff/PRD.md
-  - planning/features/version-management-and-diff/PLAN.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PRD.md
+  - planning/archive/dated/2026-08-19/version-management-and-diff/PLAN.md
 ---
 
 # STATUS — Version Management and Diff
 
-**State:** `Active` implementation. Backend contracts, Version mutations,
-structured diffs, the Version Management UI, and the structured Diff modal are
-complete. Mounted acceptance and durable closeout remain.
+**State:** `Complete`. Backend contracts, Version mutations, structured diffs,
+the Version Management UI, the structured Diff modal, mounted acceptance, and
+durable documentation are complete.
 
 ## Next step
 
-Run Phase 05 mounted multi-Version browser acceptance, verify normal and narrow
-Diff layout bounds, then finish durable docs and archive this packet.
+Archive this completed packet under `planning/archive/dated/2026-08-19/`.
 
 ## Known current state
 
@@ -52,8 +51,8 @@ Diff layout bounds, then finish durable docs and archive this packet.
       Version-specific action names.
 - [x] Wide/resizable Diff modal semantic, long-string, empty, loading, error,
       selector-direction, lazy-disclosure, and Escape keyboard tests.
-- [ ] Mounted multi-Version browser acceptance.
-- [ ] Full `make ci`, Graphify update, and save-versioning docs pass.
+- [x] Mounted multi-Version browser acceptance.
+- [x] Full `make ci`, Graphify update, and save-versioning docs pass.
 
 ## Blockers
 
@@ -117,3 +116,27 @@ None external.
 - `graphify update .` — rebuilt `20,575` nodes and `61,178` edges.
 - `make ci` — passed: backend `1889 passed, 7 skipped`; frontend
   `2489 passed`; production build and structural guards passed.
+
+## Phase 05 evidence
+
+- Mounted browser workflow passed against the isolated `AGENT-BROWSER`
+  fixture: restored the dirty draft; compared Working to Current draft; created
+  a locked Submitted Version; renamed it to `Round 1 Submitted`; compared it to
+  Working; deleted Working using exact-name confirmation; and verified the
+  remaining Version's disabled Delete action explains the sole-Version guard.
+- Saved comparison presented `Rooms — 1 removed` and `Agent Browser Room — 8
+  fields`; no post-auth console errors occurred.
+- At 1280×900, the Diff dialog measured 1100×760 at (90, 70), remained fully
+  contained, and retained visible selectors/footer with auto-scrolling results.
+  At 640×600, it measured 600×552 at (20, 24) with the same guarantees.
+- Focused Version manager/Diff/state RTL — `14 passed`; TypeScript and
+  changed-file ESLint checks passed.
+- Three-agent Phase 05 simplify review found no actionable reuse,
+  correctness, accessibility, async, or efficiency issues.
+- Durable save/versioning and workspace UI contracts were updated during
+  Phases 03–04; the final docs-pass found no additional API or operator guide
+  gap.
+- `make format` — passed with no source changes.
+- `graphify update .` — rebuilt `20,536` nodes and `61,142` edges.
+- `make ci` — passed: backend `1889 passed, 7 skipped`; frontend `2490
+  passed`; production build and structural guards passed.
