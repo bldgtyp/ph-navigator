@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — planned, not implemented
+STATUS: Active — Phase 00 contract fixtures complete
 AUTHOR: Ed May / Codex
 SCOPE: Project Version management and human-readable comparison UX
 RELATED:
@@ -40,6 +40,10 @@ changes without reading storage paths or record UUIDs.
   resize handle is therefore not evidence of a usable diff design.
 - `backend/features/project_document/diff.py` returns table keys and raw paths,
   with no before/after values or human labels.
+- Phase 00 contracts live in
+  `backend/tests/test_project_version_management_contract.py`. Strict xfail
+  markers keep CI green while `--runxfail` proves Phase 01/02 behavior is
+  absent; remove each marker as its owning phase implements the contract.
 
 ## Primary code anchors
 

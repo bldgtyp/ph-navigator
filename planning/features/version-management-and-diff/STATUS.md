@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-19
 TIME: 19:05 EDT
-STATUS: Draft — not started
+STATUS: Active — Phase 00 complete; Phase 01 next
 AUTHOR: Codex
 SCOPE: Current state of Version management and Diff redesign
 RELATED:
@@ -11,20 +11,21 @@ RELATED:
 
 # STATUS — Version Management and Diff
 
-**State:** `Active` planning; no implementation exists for rename/delete or
-structured browser diffs.
+**State:** `Active` implementation. Phase 00 contract fixtures are complete;
+rename/delete and structured browser diffs remain intentionally unimplemented.
 
 ## Next step
 
-Start Phase 00 with red contract tests for:
+Start Phase 01 by implementing the rename/delete backend against the strict
+contract tests for:
 
 1. rename success/name conflict;
 2. active and sole-Version delete blocks;
 3. non-active deletion with a draft and child Version;
-4. a structured field change with resolvable record and field labels.
+4. confirmation mismatch, draft cascade, child detachment, and audit details.
 
-Do not redesign the modal against the current raw-path response and promise to
-humanize it later; the backend presentation contract is Phase 02.
+Remove only `PENDING_VERSION_MUTATIONS` xfail markers in Phase 01. The
+`PENDING_STRUCTURED_DIFF` markers remain until Phase 02.
 
 ## Known current state
 
@@ -36,6 +37,10 @@ humanize it later; the backend presentation contract is Phase 02.
 
 ## Verification ledger
 
+- [x] Phase 00 strict contract fixtures for request supplied-field semantics,
+      rename/conflict, delete guards/cascades/audit, structured labels,
+      attachments, nested apertures, unchanged-table omission, and raw-path
+      compatibility.
 - [ ] Rename API, validation, uniqueness conflict, audit, project refresh.
 - [ ] Delete permission, confirmation, active/last guards, cascades, audit.
 - [ ] Structured diff operation/value/label fixtures across table families.
@@ -49,3 +54,16 @@ humanize it later; the backend presentation contract is Phase 02.
 
 None external. The structured-diff presenter is the largest design seam and is
 intentionally backend-first.
+
+## Phase 00 evidence
+
+- `uv run pytest -q tests/test_project_version_management_contract.py` —
+  `1 passed, 10 xfailed`.
+- `uv run pytest -q --runxfail tests/test_project_version_management_contract.py`
+  — `10 failed, 1 passed`, confirming every pending Phase 01/02 contract is
+  genuinely red.
+- `uv run ruff check tests/test_project_version_management_contract.py` —
+  passed.
+- `make format` — no source changes.
+- `make ci` — passed: backend `1871 passed, 7 skipped, 10 xfailed`;
+  frontend `2475 passed`; production build and structural guards passed.
