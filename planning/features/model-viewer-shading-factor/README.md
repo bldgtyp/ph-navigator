@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-20
-TIME: 07:08 EDT
-STATUS: Active — Phases 00–03 complete
+TIME: 07:21 EDT
+STATUS: Implementation complete — archive cleanup next
 AUTHOR: Ed May / Codex
 SCOPE: 3D window coloring by Summer/Winter shading factor
 RELATED:
@@ -54,3 +54,12 @@ shading factor, with Summer and Winter sub-options.
 Before mounted browser work, read the archived Model Viewer browser notes
 referenced by `planning/features/.instructions.md` and run
 `make agent-browser-ready`.
+
+## Acceptance evidence
+
+- `assets/phase-04-summer.png` — fixed scale, Summer control, and Missing count.
+- `assets/phase-04-winter.png` — Winter repaint plus the selected aperture's
+  dual-value inspector.
+- The mounted mixed-factor artifact verified exact stop/Missing colors, URL
+  reload, Building-only registration, stable renderer structure/object IDs,
+  and zero `/model_data` requests during the season switch.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-20
-TIME: 07:08 EDT
-STATUS: Active — Phases 00–03 complete
+TIME: 07:21 EDT
+STATUS: Complete — all phases accepted
 AUTHOR: Codex
 SCOPE: Current state of Model Viewer shading-factor mode
 RELATED:
@@ -11,12 +11,12 @@ RELATED:
 
 # STATUS — Model Viewer Shading Factor
 
-**State:** `Active`; Phases 00–03 complete, Phase 04 next.
+**State:** `Complete`; Phases 00–04 accepted. Archive cleanup is next.
 
 ## Next step
 
-Run Phase 04: full verification, performance and mounted browser acceptance,
-then graph/docs closeout.
+Archive this completed packet under the dated planning archive and update its
+index/references.
 
 ## Known constraint
 
@@ -34,9 +34,9 @@ separate, explicitly authorized operation.
 - [x] Summer/Winter repaint without geometry/network work.
 - [x] Continuous legend and Missing count.
 - [x] Inspector values.
-- [ ] Viewer draw-call/FPS performance gate.
-- [ ] Mounted fresh-artifact browser acceptance after agent readiness.
-- [ ] Graphify and durable Model Viewer docs update.
+- [x] Viewer structural draw-call performance gate and mounted renderer-stability check.
+- [x] Mounted fresh-artifact browser acceptance after agent readiness.
+- [x] Graphify and durable Model Viewer docs update.
 
 ## Blockers
 
@@ -55,4 +55,11 @@ until a separate rebuild/re-upload decision is made.
 - [x] Phase 03 — theme, season, legend, and inspector. Focused Vitest coverage
   verifies theme registration, seasonal color selection, continuous legend,
   control visibility/state, and dual-value inspector formatting (`40 passed`).
-- [ ] Phase 04 — render/performance acceptance.
+- [x] Phase 04 — render/performance acceptance. Structural perf coverage keeps
+  a 4,500-object lens at no more than two batched meshes plus one edge line.
+  Mounted acceptance used a freshly extracted mixed-factor artifact and
+  verified exact Summer/Winter colors, Missing count, inspector values,
+  Building-only registration, zero season-switch model requests, stable object
+  IDs/renderer calls/geometries, URL reload, and no authenticated viewer console
+  errors. Full CI: backend `1907 passed, 7 skipped`; frontend `2517 passed`;
+  production build passed. `graphify update .` completed.

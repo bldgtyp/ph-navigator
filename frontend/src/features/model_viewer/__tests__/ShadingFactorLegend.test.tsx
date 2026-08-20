@@ -44,9 +44,7 @@ describe("shading factor controls and legend", () => {
     );
 
     expect(screen.getByText("Summer shading factor")).toBeInTheDocument();
-    expect(screen.getByLabelText("Shading factor scale")).toHaveTextContent(
-      "00.250.500.751.00",
-    );
+    expect(screen.getByLabelText("Shading factor scale")).toHaveTextContent("00.250.500.751.00");
     expect(screen.getByText("Fully shaded")).toBeInTheDocument();
     expect(screen.getByText("Unshaded")).toBeInTheDocument();
     expect(screen.getByText("Missing").nextElementSibling).toHaveTextContent("3");

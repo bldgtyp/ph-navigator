@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-20
-TIME: 07:08 EDT
-STATUS: Active — Phases 00–03 complete
+TIME: 07:21 EDT
+STATUS: Complete — Phases 00–04 accepted
 AUTHOR: Codex
 SCOPE: Extraction-first plan for seasonal shading-factor visualization
 RELATED:
@@ -60,7 +60,7 @@ counts selected-season Missing values, while the inspector formats both values
 to three decimals. Focused Vitest (`40 passed`), TypeScript, targeted ESLint,
 hex-token enforcement, and diff checks pass.
 
-## Phase 04 — Render/performance acceptance
+## Phase 04 — Render/performance acceptance — COMPLETE
 
 - Run focused backend/frontend tests and the viewer performance gate.
 - Run `make agent-browser-ready`, open a freshly extracted mixed-factor fixture,
@@ -70,3 +70,12 @@ hex-token enforcement, and diff checks pass.
 
 No production artifact rebuild or production data write is authorized by this
 plan.
+
+Evidence: the O(1) structural perf gate passes for 4,500 source objects. After
+`make agent-browser-ready`, an isolated agent project uploaded and freshly
+extracted a mixed-factor HBJSON. Mounted Playwright acceptance verified the
+five stops plus Missing under both seasons, dual-value inspection, Building-only
+theme registration, URL reload, zero season-switch `/model_data` requests, and
+stable object IDs plus renderer call/geometry counts. Summer/Winter screenshots
+are in `assets/`. `graphify update .` completed, and full `make ci` passed
+(`1907 passed, 7 skipped` backend; `2517 passed` frontend; production build).

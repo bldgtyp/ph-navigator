@@ -1,9 +1,6 @@
 import type { ModelViewerLegend } from "../types";
 
-type ContinuousLegendDefinition = Extract<
-  Exclude<ModelViewerLegend, null>,
-  { kind: "continuous" }
->;
+type ContinuousLegendDefinition = Extract<Exclude<ModelViewerLegend, null>, { kind: "continuous" }>;
 
 export function ContinuousLegend({ legend }: { legend: ContinuousLegendDefinition }) {
   const gradient = `linear-gradient(to right, ${legend.stops

@@ -474,19 +474,22 @@ export type ModelViewerLegendRow = {
   count: number;
 };
 
-export type ModelViewerLegend = {
-  title: string;
-  rows: ModelViewerLegendRow[];
-  kind: "theme" | "mini-key";
-} | {
-  title: string;
-  rows: [];
-  kind: "continuous";
-  stops: readonly { value: number; color: string }[];
-  endpointLabels: { minimum: string; maximum: string };
-  missingColor: string;
-  missingCount: number;
-} | null;
+export type ModelViewerLegend =
+  | {
+      title: string;
+      rows: ModelViewerLegendRow[];
+      kind: "theme" | "mini-key";
+    }
+  | {
+      title: string;
+      rows: [];
+      kind: "continuous";
+      stops: readonly { value: number; color: string }[];
+      endpointLabels: { minimum: string; maximum: string };
+      missingColor: string;
+      missingCount: number;
+    }
+  | null;
 
 /** An active legend filter (NEW-VIEW-2): the matched bucket keys, stamped with
  *  the theme they belong to so a filter left over from another theme is ignored
