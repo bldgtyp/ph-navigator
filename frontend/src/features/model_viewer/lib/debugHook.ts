@@ -46,6 +46,7 @@ function useModelViewerDebugHook(
   const errorKind = useModelViewerStore((state) => state.errorKind);
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const shadingFactorSeason = useModelViewerStore((state) => state.shadingFactorSeason);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const selectionId = useModelViewerStore((state) => state.selectionId);
   const hoverId = useModelViewerStore((state) => state.hoverId);
@@ -98,8 +99,8 @@ function useModelViewerDebugHook(
     [lens, model, section],
   );
   const legend = useMemo(
-    () => (model ? legendForModel(model, lens, theme) : null),
-    [lens, model, theme],
+    () => (model ? legendForModel(model, lens, theme, shadingFactorSeason) : null),
+    [lens, model, shadingFactorSeason, theme],
   );
 
   const sunPathReady = sunPath !== null;
@@ -123,6 +124,7 @@ function useModelViewerDebugHook(
       sectionClippedObjectIds,
       lens,
       theme,
+      shadingFactorSeason,
       legend,
       legendFilter: legendFilter
         ? { theme: legendFilter.theme, keys: [...legendFilter.keys] }
@@ -138,7 +140,7 @@ function useModelViewerDebugHook(
       themeColorForObject: (objectId) => {
         const meta = model?.metaById.get(objectId);
         if (!meta) return null;
-        return colorForThemedObject(meta, lens, theme)?.color ?? null;
+        return colorForThemedObject(meta, lens, theme, shadingFactorSeason)?.color ?? null;
       },
       lineHighlightTierForObject: (objectId) =>
         resolveLineHighlightTier(objectId, selectionId, hoverId, focusedSegmentId),
@@ -228,6 +230,7 @@ function useModelViewerDebugHook(
     setSunStudyDay,
     setSunStudyMinutes,
     theme,
+    shadingFactorSeason,
     visibleObjectIds,
   ]);
 }

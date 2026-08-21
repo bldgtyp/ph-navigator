@@ -9,9 +9,16 @@ import {
   viewerBaseOpacity,
 } from "../lib/colors";
 import { colorForThemedObject } from "../lib/themes";
+import { shadingFactorColor, shadingFactorValue } from "../lib/shadingFactorColors";
 import type { BuildingRenderable } from "../loaders/building";
 import { mergeEdges } from "../loaders/merge";
-import type { ModelObjectMeta, ModelObjectType, ModelViewerLens, ModelViewerTheme } from "../types";
+import type {
+  ModelObjectMeta,
+  ModelObjectType,
+  ModelViewerLens,
+  ModelViewerTheme,
+  ShadingFactorSeason,
+} from "../types";
 
 /**
  * The batched substrate for one lens (Phase 03, D-1). A lens's ~thousands of
@@ -39,9 +46,13 @@ export function resolveInstanceColor(
   meta: ModelObjectMeta,
   lens: ModelViewerLens,
   theme: ModelViewerTheme,
+  shadingFactorSeason: ShadingFactorSeason = "summer",
 ): string {
+  if (theme === "shading-factor" && meta.type === "apertureMeshFace") {
+    return shadingFactorColor(shadingFactorValue(meta, shadingFactorSeason));
+  }
   if (theme !== "shaded") {
-    const themed = colorForThemedObject(meta, lens, theme);
+    const themed = colorForThemedObject(meta, lens, theme, shadingFactorSeason);
     if (themed) return themed.color;
   }
   return viewerBaseColor(meta.type);

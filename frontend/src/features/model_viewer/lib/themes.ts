@@ -5,6 +5,13 @@ import {
   VIEWER_PIPE_DISTRIBUTION_COLOR,
   VIEWER_PIPE_RECIRC_COLOR,
 } from "./colorTokens";
+import {
+  isValidShadingFactor,
+  shadingFactorColor,
+  shadingFactorValue,
+  VIEWER_SHADING_FACTOR_COLOR_STOPS,
+  VIEWER_SHADING_FACTOR_MISSING_COLOR,
+} from "./shadingFactorColors";
 import { isThemeAllowedForLens, themeLabel } from "./themeState";
 import type { BuildingModel, LineRenderable, ModelRenderable } from "../loaders/building";
 import type {
@@ -13,6 +20,7 @@ import type {
   ModelViewerLegendRow,
   ModelViewerLens,
   ModelViewerTheme,
+  ShadingFactorSeason,
 } from "../types";
 
 type ColorDefinition = {
@@ -79,6 +87,7 @@ export function colorForThemedObject(
   meta: ModelObjectMeta,
   lens: ModelViewerLens,
   theme: ModelViewerTheme,
+  shadingFactorSeason: ShadingFactorSeason = "summer",
 ): ColorDefinition | null {
   if (!isThemeAllowedForLens(lens, theme) || theme === "shaded") return null;
   switch (theme) {
@@ -114,6 +123,14 @@ export function colorForThemedObject(
             weightingFactorCategory(meta.weighting_factor),
           )
         : null;
+    case "shading-factor":
+      return meta.type === "apertureMeshFace"
+        ? colorDefinition(
+            "__shading_factor__",
+            "Shading factor",
+            shadingFactorColor(shadingFactorValue(meta, shadingFactorSeason)),
+          )
+        : null;
   }
 }
 
@@ -121,10 +138,14 @@ export function legendForModel(
   model: BuildingModel,
   lens: ModelViewerLens,
   theme: ModelViewerTheme,
+  shadingFactorSeason: ShadingFactorSeason = "summer",
 ): ModelViewerLegend {
   if (lens === "ventilation") return miniKeyLegend("Ventilation", ventilationMiniKeyRows(model));
   if (lens === "hot-water") return miniKeyLegend("Hot Water", hotWaterMiniKeyRows(model));
   if (theme === "shaded" || !isThemeAllowedForLens(lens, theme)) return null;
+  if (theme === "shading-factor") {
+    return shadingFactorLegend(model, shadingFactorSeason);
+  }
 
   const rows = legendRowsForTheme(model.objects, lens, theme);
   if (rows.length === 0) return null;
@@ -132,6 +153,30 @@ export function legendForModel(
     title: themeLabel(theme),
     kind: "theme",
     rows,
+  };
+}
+
+function shadingFactorLegend(
+  model: BuildingModel,
+  season: ShadingFactorSeason,
+): Exclude<ModelViewerLegend, null> {
+  let missingCount = 0;
+  for (const object of model.buildingObjects) {
+    if (
+      object.meta.type === "apertureMeshFace" &&
+      !isValidShadingFactor(shadingFactorValue(object.meta, season))
+    ) {
+      missingCount += 1;
+    }
+  }
+  return {
+    title: `${season === "summer" ? "Summer" : "Winter"} shading factor`,
+    kind: "continuous",
+    rows: [],
+    stops: VIEWER_SHADING_FACTOR_COLOR_STOPS,
+    endpointLabels: { minimum: "Fully shaded", maximum: "Unshaded" },
+    missingColor: VIEWER_SHADING_FACTOR_MISSING_COLOR,
+    missingCount,
   };
 }
 
@@ -315,6 +360,7 @@ function staticThemeColorMap(theme: ModelViewerTheme): Record<string, ColorDefin
     case "construction":
     case "window-construction":
     case "ventilation-unit":
+    case "shading-factor":
     case "shaded":
       return null;
   }

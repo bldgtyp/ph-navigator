@@ -957,6 +957,28 @@
   box-shadow: var(--shadow-hud-2);
 }
 
+.model-color-options {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.model-shading-season-control {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.model-shading-season-label,
+.model-continuous-legend-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-normal);
+}
+
 .model-scene-info-root {
   bottom: 14px;
 }
@@ -980,6 +1002,10 @@
 .model-legend-title-actions .model-theme-menu {
   flex: 1 1 auto;
   max-width: 100%;
+}
+
+.model-legend-title-actions .model-color-options {
+  width: 100%;
 }
 
 .model-legend-title-actions .model-theme-trigger {
@@ -1072,6 +1098,50 @@
 .model-legend-count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.model-continuous-legend {
+  display: grid;
+  gap: var(--space-6);
+  padding: 0 var(--space-8) var(--space-10);
+}
+
+.model-continuous-legend-gradient {
+  height: var(--space-12);
+  border: 1px solid color-mix(in oklab, var(--text-primary) 18%, transparent);
+  border-radius: var(--radius-2xs);
+}
+
+.model-continuous-legend-ticks,
+.model-continuous-legend-endpoints {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.model-continuous-legend-ticks span:not(:first-child):not(:last-child) {
+  text-align: center;
+}
+
+.model-continuous-legend-ticks span:last-child,
+.model-continuous-legend-endpoints span:last-child {
+  text-align: right;
+}
+
+.model-continuous-legend-endpoints {
+  grid-template-columns: 1fr 1fr;
+}
+
+.model-continuous-legend-missing {
+  display: grid;
+  grid-template-columns: var(--space-12) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
 }
 
 .model-legend-footer {

@@ -14,7 +14,13 @@ import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../
 import type { BuildingModel, BuildingRenderable } from "../loaders/building";
 import { mergeRenderableGeometries } from "../loaders/merge";
 import { useModelViewerStore } from "../store";
-import type { LegendFilter, ModelObjectMeta, ModelViewerLens, ModelViewerTheme } from "../types";
+import type {
+  LegendFilter,
+  ModelObjectMeta,
+  ModelViewerLens,
+  ModelViewerTheme,
+  ShadingFactorSeason,
+} from "../types";
 import { buildLensBatch, resolveInstanceColor, type LensBatch } from "./LensBatch";
 
 type BatchedLensProps = {
@@ -104,22 +110,33 @@ function useBatchColors(
       return color;
     };
 
-    const repaint = (theme: ModelViewerTheme) => {
+    const repaint = (
+      theme: ModelViewerTheme,
+      shadingFactorSeason: ShadingFactorSeason,
+      aperturesOnly = false,
+    ) => {
       for (const [id, locations] of batch.batchForId) {
         const meta = metaById.get(id);
         if (!meta) continue;
-        const color = colorFor(resolveInstanceColor(meta, lens, theme));
+        if (aperturesOnly && meta.type !== "apertureMeshFace") continue;
+        const color = colorFor(resolveInstanceColor(meta, lens, theme, shadingFactorSeason));
         for (const location of locations) location.mesh.setColorAt(location.instanceId, color);
       }
       invalidate();
     };
 
     // Initial paint honors the theme the store already holds.
-    repaint(store.getState().themesByLens[lens]);
+    const initial = store.getState();
+    repaint(initial.themesByLens[lens], initial.shadingFactorSeason);
 
     return store.subscribe((state, previous) => {
       if (state.themesByLens[lens] !== previous.themesByLens[lens]) {
-        repaint(state.themesByLens[lens]);
+        repaint(state.themesByLens[lens], state.shadingFactorSeason);
+      } else if (
+        state.themesByLens[lens] === "shading-factor" &&
+        state.shadingFactorSeason !== previous.shadingFactorSeason
+      ) {
+        repaint(state.themesByLens[lens], state.shadingFactorSeason, true);
       }
     });
   }, [batch, metaById, lens, invalidate]);

@@ -78,6 +78,14 @@ describe("resolveInstanceColor", () => {
     type: "faceMesh",
     face_type: "Wall",
   } as unknown as ModelObjectMeta;
+  const apertureMeta = {
+    id: "aperture:window",
+    type: "apertureMeshFace",
+    properties: {
+      energy: { construction: null },
+      ph: { summer_shading_factor: 0.25, winter_shading_factor: 0.75 },
+    },
+  } as unknown as ModelObjectMeta;
 
   // Highlight (hover/selection) is now drawn by the flat `HighlightOverlay`, not
   // by the batch color — so `resolveInstanceColor` only resolves resting color.
@@ -88,5 +96,17 @@ describe("resolveInstanceColor", () => {
   test("a color-by theme uses the themed color", () => {
     // Surface Type colors a Wall face with the FACE_TYPE_COLORS Wall hue.
     expect(resolveInstanceColor(wallMeta, "building", "surface-type")).toBe("#E6B43C");
+  });
+
+  test("shading factor theme repaints the aperture for the selected season", () => {
+    expect(resolveInstanceColor(apertureMeta, "building", "shading-factor", "summer")).toBe(
+      "#3B496C",
+    );
+    expect(resolveInstanceColor(apertureMeta, "building", "shading-factor", "winter")).toBe(
+      "#B9B862",
+    );
+    expect(resolveInstanceColor(wallMeta, "building", "shading-factor", "summer")).toBe(
+      viewerBaseColor("faceMesh"),
+    );
   });
 });

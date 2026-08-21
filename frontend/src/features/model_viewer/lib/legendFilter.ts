@@ -31,6 +31,7 @@ export function bucketKeyForMeta(
   lens: ModelViewerLens,
   theme: ModelViewerTheme,
 ): string | null {
+  if (theme === "shading-factor") return null;
   return colorForThemedObject(meta, lens, theme)?.key ?? null;
 }
 

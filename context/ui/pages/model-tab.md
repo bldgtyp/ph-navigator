@@ -21,21 +21,29 @@ takes the surface instead (with an upload affordance for editors).
 - **Top-center — lens bar** (`LensBar`) + theme menu (`ThemeMenu`): switches
   the active "lens" (view mode — building, and others gated by
   `lensAvailability` for the loaded model, e.g. site-sun). Lens digits `1..n`
-  and the theme are URL state (`&lens=`, `&theme=`); lens + theme are the
-  shareable viewer state.
+  and the theme are URL state (`&lens=`, `&theme=`). The Building-only
+  **Shading Factor** theme adds a Summer/Winter segmented control; its valid
+  choice persists as `&season=summer|winter` even while another theme is active.
 - **Bottom-left — legend card** (`LegendCard`): the color legend for the
-  active lens, with click-to-filter; a load summary line reports what was
-  parsed.
+  active lens. Discrete rows support click-to-filter. Shading Factor instead
+  uses a fixed, non-filtering `0.00`–`1.00` continuous scale and reports the
+  selected season's Missing aperture count.
 - **Bottom-right — camera cluster** (`CameraCluster`) + measure toggle:
   fit / home camera moves and the two-point measure tool.
 - **Right — inspector** (`InspectorPanel` / `ElementInspectorPanel`): slides
   in when an element is selected, showing its metadata and (for opaque
-  constructions) the layered assembly. Selection styling uses the brand
-  `--highlight` token family.
+  constructions) the layered assembly. Apertures report both seasonal shading
+  factors to three decimals, or **Missing** for legacy/null artifact values.
+  Selection styling uses the brand `--highlight` token family.
 
 Selection and camera state live in the Zustand `store.ts`. Geometry is built
 by `loaders/` (`building.ts` → a per-lens `BatchedMesh` substrate; see the
 project memory note) and disposed on file/unmount.
+
+Shading Factor repainting stays on that substrate: changing the theme repaints
+the existing batch, while changing only the season rewrites aperture instance
+colors without rebuilding geometry or fetching the artifact again. Opaque
+Building faces retain their neutral shaded colors.
 
 ## Interaction (keyboard, on the canvas)
 

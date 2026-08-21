@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { DEFAULT_MODEL_VIEWER_THEMES, parseModelViewerTheme } from "../lib/themeState";
 import {
+  DEFAULT_MODEL_VIEWER_THEMES,
+  parseModelViewerTheme,
+  parseShadingFactorSeason,
+  themesForLens,
+} from "../lib/themeState";
+import {
+  colorForThemedObject,
   constructionColor,
   cyrb53,
   legendForModel,
@@ -10,12 +16,14 @@ import {
 } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
+import type { ModelObjectMeta } from "../types";
 
 afterEach(() => {
   useModelViewerStore.setState({
     activeFileId: null,
     lens: "building",
     themesByLens: { ...DEFAULT_MODEL_VIEWER_THEMES },
+    shadingFactorSeason: "summer",
     hoverId: null,
     selectionId: null,
     measureActive: false,
@@ -40,6 +48,66 @@ describe("model viewer themes", () => {
     expect(parseModelViewerTheme("spaces", "ventilation-unit")).toBe("ventilation-unit");
     expect(parseModelViewerTheme("floor-areas", "ventilation-unit")).toBe("ventilation-unit");
     expect(parseModelViewerTheme("building", "ventilation-unit")).toBe("shaded");
+    expect(parseModelViewerTheme("building", "shading-factor")).toBe("shading-factor");
+    expect(parseModelViewerTheme("spaces", "shading-factor")).toBe("shaded");
+    expect(parseShadingFactorSeason("winter")).toBe("winter");
+    expect(parseShadingFactorSeason("summer")).toBe("summer");
+    expect(parseShadingFactorSeason("invalid")).toBe("summer");
+    expect(parseShadingFactorSeason(null)).toBe("summer");
+    expect(themesForLens("building").at(-1)).toEqual({
+      id: "shading-factor",
+      label: "Shading Factor",
+    });
+  });
+
+  test("colors only apertures by the selected seasonal shading factor", () => {
+    const aperture = mesh("aperture:1", "building", "apertureMeshFace", {
+      shadingFactors: { summer: 0.25, winter: 0.75 },
+    }).meta as unknown as ModelObjectMeta;
+    const wall = mesh("face:1", "building", "faceMesh", {}).meta as unknown as ModelObjectMeta;
+
+    expect(colorForThemedObject(aperture, "building", "shading-factor", "summer")?.color).toBe(
+      "#3B496C",
+    );
+    expect(colorForThemedObject(aperture, "building", "shading-factor", "winter")?.color).toBe(
+      "#B9B862",
+    );
+    expect(colorForThemedObject(wall, "building", "shading-factor", "summer")).toBeNull();
+  });
+
+  test("builds the fixed continuous legend and counts selected-season missing values", () => {
+    const model = {
+      objects: [
+        mesh("aperture:1", "building", "apertureMeshFace", {
+          shadingFactors: { summer: 0.25, winter: 0.75 },
+        }),
+        mesh("aperture:2", "building", "apertureMeshFace", {
+          shadingFactors: { summer: null, winter: 0.5 },
+        }),
+        mesh("face:1", "building", "faceMesh", {}),
+      ],
+    } as unknown as BuildingModel;
+    model.buildingObjects = model.objects as BuildingModel["buildingObjects"];
+
+    expect(legendForModel(model, "building", "shading-factor", "summer")).toEqual({
+      title: "Summer shading factor",
+      kind: "continuous",
+      rows: [],
+      stops: [
+        { value: 0, color: "#00224E" },
+        { value: 0.25, color: "#3B496C" },
+        { value: 0.5, color: "#7D7C78" },
+        { value: 0.75, color: "#B9B862" },
+        { value: 1, color: "#FDE737" },
+      ],
+      endpointLabels: { minimum: "Fully shaded", maximum: "Unshaded" },
+      missingColor: "#9CA3AF",
+      missingCount: 1,
+    });
+    const winterLegend = legendForModel(model, "building", "shading-factor", "winter");
+    expect(winterLegend?.kind).toBe("continuous");
+    if (winterLegend?.kind !== "continuous") throw new Error("continuous legend is missing");
+    expect(winterLegend.missingCount).toBe(0);
   });
 
   test("colors spaces by ventilation unit with stable hashed hues (Item 15)", () => {
@@ -170,6 +238,23 @@ describe("model viewer themes", () => {
     expect(state.lens).toBe("building");
     expect(state.themesByLens.building).toBe("boundary");
   });
+
+  test("season switches preserve selection and persist across other themes", () => {
+    const store = useModelViewerStore.getState();
+    store.setSelectionId("aperture:1");
+    store.setShadingFactorSeason("winter");
+    store.setTheme("building", "boundary");
+    expect(useModelViewerStore.getState()).toMatchObject({
+      selectionId: "aperture:1",
+      shadingFactorSeason: "winter",
+    });
+
+    store.setUrlViewState("building", "shading-factor", "summer");
+    expect(useModelViewerStore.getState()).toMatchObject({
+      selectionId: "aperture:1",
+      shadingFactorSeason: "summer",
+    });
+  });
 });
 
 function legendModel(): BuildingModel {
@@ -193,6 +278,7 @@ function mesh(
     weightingFactor?: number;
     airflow?: { sup?: number | null; eta?: number | null };
     ventUnit?: { id?: string | null; name?: string | null };
+    shadingFactors?: { summer?: number | null; winter?: number | null };
   },
 ) {
   return {
@@ -207,7 +293,15 @@ function mesh(
       face_type: "Wall",
       boundary_condition: options.boundary ? { type: options.boundary } : null,
       area: null,
-      properties: { energy: { construction: { identifier: "WALL-C3" } } },
+      properties: {
+        energy: { construction: { identifier: "WALL-C3" } },
+        ph: options.shadingFactors
+          ? {
+              summer_shading_factor: options.shadingFactors.summer ?? null,
+              winter_shading_factor: options.shadingFactors.winter ?? null,
+            }
+          : null,
+      },
       vertices: [],
       weighting_factor: options.weightingFactor,
       airflow: options.airflow

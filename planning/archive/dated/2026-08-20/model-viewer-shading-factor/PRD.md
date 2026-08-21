@@ -1,12 +1,12 @@
 ---
-DATE: 2026-08-19
-TIME: 19:05 EDT
-STATUS: Draft — behavior and data contract ready
+DATE: 2026-08-20
+TIME: 07:21 EDT
+STATUS: Complete — behavior accepted 2026-08-20
 AUTHOR: Ed May / Codex
 SCOPE: Product contract for seasonal shading-factor coloring
 RELATED:
-  - planning/features/model-viewer-shading-factor/README.md
-  - planning/features/model-viewer-shading-factor/PLAN.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/README.md
+  - planning/archive/dated/2026-08-20/model-viewer-shading-factor/PLAN.md
 ---
 
 # PRD — Model Viewer Shading Factor

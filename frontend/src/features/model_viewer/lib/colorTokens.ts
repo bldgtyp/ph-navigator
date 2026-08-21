@@ -14,6 +14,14 @@ export const VIEWER_PIPE_DISTRIBUTION_COLOR = "#9a4f1f";
 export const VIEWER_PIPE_RECIRC_COLOR = "#d4952f";
 export const VIEWER_SHADE_COLOR = "#a8aca7";
 export const VIEWER_SHADE_EDGE_COLOR = "#7d837d";
+export const VIEWER_SHADING_FACTOR_MISSING_COLOR = "#9CA3AF";
+export const VIEWER_SHADING_FACTOR_COLOR_STOPS = [
+  { value: 0, color: "#00224E" },
+  { value: 0.25, color: "#3B496C" },
+  { value: 0.5, color: "#7D7C78" },
+  { value: 0.75, color: "#B9B862" },
+  { value: 1, color: "#FDE737" },
+] as const;
 export const VIEWER_SITE_COMPASS_COLOR = "#5f6760";
 export const VIEWER_SUN_PATH_COLOR = VIEWER_HIGHLIGHT_FALLBACK;
 /** Sun-study amber: the "sun right now" marker, the daylight band, and the
