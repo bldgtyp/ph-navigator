@@ -204,6 +204,14 @@ The `rows` argument accepts:
 - a bare row array when the table has no required side payload, or when the
   existing draft/version already carries the option lists needed by those rows.
 
+**Strip the read-only blocks before writing them back.** `get_table` rows carry derived
+`computed` and `inverse_links` objects, and the write schema forbids extra keys — resubmitting
+rows verbatim fails with `validation_error` / "Extra inputs are not permitted", one pair of
+errors per row. Remove `computed` and `inverse_links` from every row and keep everything else
+(`id`, `custom_values`, `custom_links`, `catalog_origin`, `notes`, and the table's own fields).
+Also: table names are the lowercase registered keys (`rooms`, not `Rooms`). Verified end to end
+on a production draft-only round trip, 2026-08-02.
+
 For envelope/aperture structural edits, prefer the semantic command tools
 (`apply_envelope_command`, `apply_aperture_command`). `replace_table` remains
 available for browser-parity table replacement on all registered tables,

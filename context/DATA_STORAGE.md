@@ -285,7 +285,36 @@ key scheme.
 projects/{project_id}/assets/{asset_id}/file.{ext}          # the file
 projects/{project_id}/assets/{asset_id}/thumb.png           # generated thumbnail
 projects/_orphaned/{project_id}/{asset_id}/{name}           # GC-quarantined
+derived/{asset_id}/model_data.json.gz                       # extracted viewer artifact
 ```
+
+#### Derived artifacts are immutably cached — extraction changes do not backfill
+
+The 3D model viewer does not parse the HBJSON per request. `GET /model_data`
+streams a precomputed gzip artifact at `derived/{asset_id}/model_data.json.gz`
+(`features/model_viewer/model_data.py`, `_load_artifact`). Once
+`project_hbjson_files.extraction_status == 'success'`, that artifact is served
+**forever**, `Cache-Control: immutable`.
+
+**Consequence:** changing `extraction.py` or the viewer schemas does *not*
+regenerate artifacts that already exist. New uploads get the new shape; every
+already-extracted model keeps the old one. So:
+
+- Design the frontend to degrade gracefully when a newly-added field is absent
+  (fall back to an "unassigned" rendering rather than throwing).
+- The read path self-heals only when the row is **not** `'success'` **or** the
+  bytes are missing — never when the artifact is merely schema-stale.
+
+To force re-extraction (dev or prod), do either:
+
+```sql
+UPDATE project_hbjson_files SET extraction_status = 'pending' WHERE ...;
+```
+
+or delete the derived object from R2/MinIO. `_extract_and_persist` regenerates
+and re-persists on the next read. Only extraction must run the new code — the
+served bytes come from the stored object, so no backend restart is needed for
+the content itself.
 
 ### 4.3 Asset kinds (`features/assets/registry.py`)
 

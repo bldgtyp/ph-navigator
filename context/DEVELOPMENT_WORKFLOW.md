@@ -138,6 +138,43 @@ For auth, upload, R2, custom-domain, or admin-user changes, add a browser smoke
 on `https://www.ph-nav.com` and check Render logs for errors with the matching
 `request_id`.
 
+## Working in a shared tree (other agents, and Ed)
+
+This repo is worked concurrently — Ed edits the frontend while an agent works,
+and multiple agents run against the same checkout. The working tree, the git
+index, and `HEAD` are **not yours alone**. Three failure modes, all observed:
+
+**1. The index is shared, so `git add && git commit` commits other people's
+files.** A plain `git commit` commits the *whole index*, including files someone
+else already staged. This has twice bundled unrelated WIP under an agent's
+commit message.
+
+Commit **path-scoped** — this is the only form that reliably isolates your work:
+
+```bash
+git commit -m "<message>" -- <your paths>
+```
+
+The `-- <paths>` is what guarantees only your paths land, ignoring anything else
+already staged. `git add <paths>` first is optional and does not by itself help.
+
+**2. The branch can be swapped under you.** It is a single shared worktree with
+one `HEAD`; a concurrent process may `git checkout` a different branch mid-task,
+carrying your unstaged changes with it — so your commit lands on *their* branch.
+Run `git branch --show-current` immediately before committing; don't assume
+you're still on the branch you created.
+
+**3. Don't do history surgery on a bundle.** If your commit came out bundled
+with someone else's files, leave it — Ed has twice chosen "leave it bundled",
+and a reset/amend races the other actor. Removing *your own* accidental commit
+from someone else's branch (restore it to its prior SHA, working tree intact) is
+cleanup you created, and is fine.
+
+Related: UI tweaks that Ed is watching on the `:5173` dev server must be made in
+the **primary repo directory** — the dev server serves only that directory, so a
+change made in a separate worktree is invisible to him. That is about *where you
+edit*, not about skipping the branch policy above.
+
 ## Agent Notes
 
 - Do not end a task by pushing directly to `main` unless that was explicitly the
