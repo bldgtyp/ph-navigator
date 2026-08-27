@@ -38,6 +38,7 @@ import { ThermalStandardSelect } from "../components/ThermalStandardSelect";
 import { EnvelopeEditorDialogs } from "../components/EnvelopeEditorDialogs";
 import { PhppExportWarningDialog } from "../components/PhppExportWarningDialog";
 import { ImportConstructionsDialog } from "../components/dialogs/ImportConstructionsDialog";
+import { useEnvelopeCommandJournal } from "../hooks/useEnvelopeCommandJournal";
 import { usePaintMode } from "../hooks/usePaintMode";
 import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
 import { useEnvelopeCanvasZoom } from "../hooks/useEnvelopeCanvasZoom";
@@ -113,6 +114,14 @@ export function EnvelopePage({
     closeRefresh,
   } = useEnvelopeDialogs();
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
+  const commandJournal = useEnvelopeCommandJournal({
+    projectId: project.id,
+    versionId: project.active_version_id,
+    source,
+    slice: query.data,
+    refetch: query.refetch,
+    setCommandError,
+  });
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
   const phpp = useEnvelopePhppExport(project.id, project.active_version_id);
   const assemblyPdf = useAssemblyPdfExport({
@@ -265,14 +274,23 @@ export function EnvelopePage({
     );
   }
 
+  // Field-level status writes render on click and queue behind the shared draft
+  // write coordinator, so they never block the grid and are never dropped.
+  // Structural commands stay awaited — they close dialogs, navigate, and change
+  // the assembly list — but run on the same queue so the two cannot interleave.
+  // `commandInFlightRef` therefore stays: on the awaited path it is a
+  // double-submit guard for dialog actions, not a dropped-keystroke bug.
   async function applyCommand(command: EnvelopeCommand): Promise<boolean> {
     const current = query.data;
     if (!current) return false;
+    setCommandError(null);
+    if (commandJournal.submit(command)) return true;
     if (commandInFlightRef.current || commandMutation.isPending) return false;
     commandInFlightRef.current = true;
-    setCommandError(null);
     try {
-      const next = await commandMutation.mutateAsync({ current, command });
+      const next = await commandJournal.enqueue(command.kind, () =>
+        commandMutation.mutateAsync({ current, command }),
+      );
       setDialog(null);
       const createdAssemblyId = createdAssemblyIdFromCommand(command, current, next);
       if (createdAssemblyId) {
@@ -288,6 +306,15 @@ export function EnvelopePage({
     } finally {
       commandInFlightRef.current = false;
     }
+  }
+
+  // A batch gesture is one write: the whole run is journaled as a single entry
+  // and leaves as one request, rather than N commands racing the queue.
+  function applyCommandBatch(commands: EnvelopeCommand[]): void {
+    if (commands.length === 0) return;
+    setCommandError(null);
+    if (commandJournal.submitAll(commands)) return;
+    for (const command of commands) void applyCommand(command);
   }
 
   async function exportHbjson(): Promise<void> {
@@ -453,6 +480,7 @@ export function EnvelopePage({
             busy={commandMutation.isPending || attachmentMutation.isPending}
             error={commandError}
             onCommand={(command) => void applyCommand(command)}
+            onCommandBatch={applyCommandBatch}
             onAttachmentChange={(args) => applyAttachmentChange(args)}
             onRefreshMaterial={setRefreshMaterialId}
           />

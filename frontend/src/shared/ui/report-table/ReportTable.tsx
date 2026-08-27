@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { Fragment } from "react";
+import type { ReportTableSelection } from "./useReportSelection";
 
 export type ReportTableColumn<T> = {
   key: string;
@@ -21,6 +22,8 @@ export function ReportTable<T>({
   renderExpansion,
   renderRowAction,
   emptyMessage,
+  selection,
+  getRowLabel,
 }: {
   rows: T[];
   columns: ReportTableColumn<T>[];
@@ -30,9 +33,18 @@ export function ReportTable<T>({
   renderExpansion?: (row: T) => ReactNode;
   renderRowAction?: (row: T) => ReactNode;
   emptyMessage?: ReactNode;
+  /**
+   * Row selection is opt-in and stateless here: the parent owns the set,
+   * because a page can render several report tables (in-scope / N/A / unused)
+   * that share one selection and one bulk action. See `useReportSelection`.
+   */
+  selection?: ReportTableSelection;
+  getRowLabel?: (row: T) => string;
 }) {
   const expandable = Boolean(onToggleExpand && renderExpansion);
+  const selectable = selection !== undefined;
   const templateColumns = [
+    selectable ? "var(--report-table-select)" : null,
     expandable ? "var(--report-table-gutter)" : null,
     ...columns.map((col) => col.width ?? "minmax(0, 1fr)"),
   ]
@@ -42,7 +54,13 @@ export function ReportTable<T>({
   // Column widths are page-authored data, so they cross into CSS as a custom
   // property. Where the frozen primary column pins is *not* — the stylesheet
   // owns both the gutter width and the gap, so it derives that from this class.
-  const tableClassName = expandable ? "report-table report-table--expandable" : "report-table";
+  const tableClassName = [
+    "report-table",
+    expandable ? "report-table--expandable" : null,
+    selectable ? "report-table--selectable" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const gridStyle: CSSProperties = {
     "--report-table-columns": templateColumns,
   } as CSSProperties;
@@ -51,6 +69,7 @@ export function ReportTable<T>({
     return (
       <div className={tableClassName} role="status">
         <div className="report-table__head" style={gridStyle}>
+          {selectable ? <span className="report-table__head-select" /> : null}
           {expandable ? <span className="report-table__head-gutter" /> : null}
           {columns.map((col) => (
             <span key={col.key} className="report-table__head-cell">
@@ -59,7 +78,9 @@ export function ReportTable<T>({
           ))}
         </div>
         <div className="report-table__row" style={gridStyle}>
-          <span className="report-table__cell">{emptyMessage ?? "No rows"}</span>
+          <span className="report-table__cell report-table__cell--empty">
+            {emptyMessage ?? "No rows"}
+          </span>
         </div>
       </div>
     );
@@ -68,6 +89,7 @@ export function ReportTable<T>({
   return (
     <div className={tableClassName} role="table" style={gridStyle}>
       <div className="report-table__head" role="row" style={gridStyle}>
+        {selectable ? <span aria-hidden="true" className="report-table__head-select" /> : null}
         {expandable ? <span aria-hidden="true" className="report-table__head-gutter" /> : null}
         {columns.map((col) => {
           const headClassName = [
@@ -89,10 +111,12 @@ export function ReportTable<T>({
         {rows.map((row) => {
           const id = getRowId(row);
           const isExpanded = expandedRowId === id;
+          const isSelected = selection?.rowIds.has(id) === true;
           const rowClass = [
             "report-table__row",
             expandable ? "report-table__row--expandable" : null,
             isExpanded ? "report-table__row--expanded" : null,
+            isSelected ? "report-table__row--selected" : null,
           ]
             .filter(Boolean)
             .join(" ");
@@ -104,6 +128,18 @@ export function ReportTable<T>({
                 style={gridStyle}
                 onClick={expandable ? () => onToggleExpand?.(id) : undefined}
               >
+                {selectable ? (
+                  <span className="report-table__select">
+                    <input
+                      type="checkbox"
+                      className="phn-check report-table__select-input"
+                      aria-label={`Select ${getRowLabel?.(row) ?? id}`}
+                      checked={isSelected}
+                      onChange={() => selection?.onToggle(id)}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  </span>
+                ) : null}
                 {expandable ? (
                   <button
                     type="button"

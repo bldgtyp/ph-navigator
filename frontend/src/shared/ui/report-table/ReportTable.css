@@ -4,6 +4,12 @@
 
 .report-table {
   --report-table-gutter: 28px;
+  --report-table-select: 24px;
+  /* Where the frozen identity lane ends, so the primary column knows where to
+     pin. Each optional leading gutter widens it; stated once here rather than
+     as one `left:` rule per combination of gutters. */
+  --report-table-lane-expand: 0px;
+  --report-table-lane-primary: 0px;
   /* Opaque on purpose: the frozen identity lane repaints this while scrolled
      cells pass underneath, so a translucent value would let them show through.
      Same rendered color as before — the old translucent mix over this table's
@@ -143,7 +149,7 @@
    *margin* box, so a negative margin makes the cell mis-pin. */
 .report-table__head-gutter,
 .report-table__chevron {
-  left: 0;
+  left: var(--report-table-lane-expand);
   align-self: stretch;
   width: auto;
   height: auto;
@@ -154,13 +160,52 @@
 
 .report-table__head-cell--primary,
 .report-table__cell--primary {
-  left: 0;
+  left: var(--report-table-lane-primary);
 }
 
-/* With an expand gutter the primary column pins after it, plus the column gap. */
-.report-table--expandable .report-table__head-cell--primary,
-.report-table--expandable .report-table__cell--primary {
-  left: calc(var(--report-table-gutter) + var(--space-12));
+.report-table--expandable {
+  --report-table-lane-primary: calc(var(--report-table-gutter) + var(--space-12));
+}
+
+.report-table--selectable {
+  --report-table-lane-expand: calc(var(--report-table-select) + var(--space-12));
+  --report-table-lane-primary: calc(var(--report-table-select) + var(--space-12));
+}
+
+.report-table--selectable.report-table--expandable {
+  --report-table-lane-primary: calc(
+    var(--report-table-select) + var(--report-table-gutter) + 2 * var(--space-12)
+  );
+}
+
+/* Selected rows are the grid family's teal wash, the same pair the DataTable
+   uses — stated after the hover rule so selection beats hover. */
+.report-table__row--selected,
+.report-table__row--expandable.report-table__row--selected:hover {
+  background: var(--data-table-selected-bg);
+  --report-table-frozen-bg: var(--data-table-selected-bg);
+}
+
+/* The select box is always visible here, unlike the DataTable's hover-revealed
+   gutter: this table has no row-number column to reveal it from, so a hidden
+   checkbox would leave the bulk action with no discoverable way in. The header
+   cell is an empty spacer — select-all spans every section of a report and so
+   lives in the page toolbar, not in one table's head. */
+.report-table__head-select,
+.report-table__select {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-base-elevated);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--report-table-frozen-bg);
+  box-shadow: calc(-1 * var(--space-14)) 0 0 0 var(--report-table-frozen-bg);
+}
+
+.report-table__select-input {
+  flex: 0 0 auto;
 }
 
 /* Expanded row + its expansion panel read as one framed unit: a 2px accent
@@ -197,6 +242,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The empty-state row has one cell for a whole sentence, so it spans the grid.
+   Left to auto-placement it landed in column 1 — the expand gutter — and the
+   message was clipped to a couple of characters. */
+.report-table__cell--empty {
+  grid-column: 1 / -1;
 }
 
 .report-table__cell--numeric {
@@ -268,200 +320,4 @@
 .report-table__expansion .report-table__head-cell--primary,
 .report-table__expansion .report-table__cell--primary {
   position: static;
-}
-
-/* Status filter chips (top-of-page filter row) */
-.report-status-filters {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  justify-content: space-between;
-  margin-top: var(--space-16);
-  margin-bottom: var(--space-12);
-}
-
-.report-status-filters__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-}
-
-.report-status-filters__summary {
-  align-items: center;
-  color: var(--text-secondary);
-  display: flex;
-  font-size: var(--fs-sm);
-  gap: var(--space-8);
-}
-
-.report-group-toolbar {
-  align-items: center;
-  background: color-mix(in oklab, var(--bg-card) 92%, var(--bg-elev));
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  justify-content: flex-start;
-  margin: 0 0 var(--space-12);
-  min-height: 40px;
-  padding: var(--space-6) var(--space-8);
-}
-
-.report-group-toolbar__label,
-.report-group-toolbar__direction {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--space-6);
-}
-
-.report-group-toolbar__label {
-  color: var(--text-secondary);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-}
-
-.report-group-toolbar__select select,
-.report-group-toolbar__direction {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  color: var(--text-primary);
-  font: inherit;
-  min-height: 28px;
-}
-
-.report-group-toolbar__select select {
-  min-width: 150px;
-  padding: 0 var(--space-24) 0 var(--space-10);
-}
-
-.report-group-toolbar__direction {
-  cursor: pointer;
-  padding: 0 var(--space-10);
-}
-
-.report-group-toolbar__direction:disabled {
-  color: var(--text-muted, var(--text-secondary));
-  cursor: default;
-  opacity: 0.56;
-}
-
-.report-table-groups {
-  display: grid;
-  gap: var(--space-12);
-}
-
-.report-table-group {
-  display: grid;
-  gap: var(--space-6);
-}
-
-.report-table-group__header {
-  align-items: center;
-  color: var(--text-secondary);
-  display: flex;
-  font-size: var(--fs-sm);
-  gap: var(--space-8);
-  justify-content: space-between;
-  min-height: 26px;
-  padding-inline: var(--space-2);
-}
-
-.report-table-group__header span {
-  color: var(--text-primary);
-  font-weight: var(--fw-bold);
-  overflow-wrap: anywhere;
-}
-
-.report-table-group__header em {
-  color: var(--text-muted, var(--text-secondary));
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-style: normal;
-}
-
-/* Composes `.chip .chip--md .chip--outline .chip--interactive`; only the
-   filter-chip specifics remain here. */
-.report-status-chip {
-  appearance: none;
-  font-weight: var(--fw-medium);
-  gap: var(--space-8);
-}
-
-.report-status-chip[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
-  border-color: color-mix(in oklab, var(--accent) 55%, var(--border-subtle));
-}
-
-.report-status-chip__count {
-  color: var(--text-secondary);
-  font-weight: var(--fw-medium);
-}
-
-/* Status pill (per-row Status cell) + the dot used by chips and pills */
-.report-status-dot {
-  border-radius: var(--radius-pill);
-  display: inline-block;
-  flex-shrink: 0;
-  height: 8px;
-  width: 8px;
-}
-
-.report-status-dot[data-status="needed"] {
-  background: var(--report-status-needed);
-}
-
-.report-status-dot[data-status="question"] {
-  background: var(--report-status-question);
-}
-
-.report-status-dot[data-status="complete"] {
-  background: var(--report-status-complete);
-}
-
-.report-status-dot[data-status="na"] {
-  background: var(--report-status-na);
-}
-
-.report-status-pill {
-  align-items: center;
-  display: inline-flex;
-  font-size: var(--fs-sm);
-  gap: var(--space-6);
-  line-height: var(--lh-solid);
-}
-
-/* Compact attachment chip — used in dense column cells.
-   Click is delegated to the row (expansion); this is display-only.
-   Binary state: missing (empty) vs attached (have a file). */
-.report-attachment-chip {
-  align-items: center;
-  background: transparent;
-  border: 1px dashed var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  /* Missing state: faded well below the solid accent has-files chip so the
-     have-vs-missing contrast reads at a glance. */
-  color: color-mix(in oklab, var(--text-muted) 55%, var(--bg-card));
-  display: inline-flex;
-  justify-content: center;
-  line-height: var(--lh-solid);
-  min-height: 24px;
-  min-width: 28px;
-  padding: 0 var(--space-6);
-}
-
-.report-attachment-chip[data-has-files="true"] {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
-  border-style: solid;
-  color: var(--accent-text, var(--text-primary));
-}
-
-.report-attachment-chip__glyph {
-  flex: 0 0 auto;
-  height: 14px;
-  width: 14px;
 }

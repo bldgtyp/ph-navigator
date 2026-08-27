@@ -1,4 +1,5 @@
 import { ApiRequestError } from "../../shared/api/client";
+import { errorMessage } from "../../shared/lib/errors";
 import type { ProjectDocumentReadSafeEnvelope } from "./types";
 
 const PROJECT_DOCUMENT_ERROR_CODES = {
@@ -64,6 +65,19 @@ export function draftConflictMessage(error: unknown, rejectedCount: number): str
 
 export function discardedWritesMessage(rejectedCount: number): string {
   return `${rejectedCount} unsaved ${rejectedCount === 1 ? "change was" : "changes were"} discarded.`;
+}
+
+/**
+ * What a drained write journal says when the failure was *not* a draft
+ * conflict. The conflict case is `draftConflictMessage`; every journal shares
+ * both so one error vocabulary covers every surface.
+ */
+export function discardedWriteFailureMessage(
+  error: unknown,
+  rejectedCount: number,
+  fallback: string,
+): string {
+  return `${errorMessage(error, fallback)} ${discardedWritesMessage(rejectedCount)}`;
 }
 
 export function isVersionStaleError(error: unknown): boolean {

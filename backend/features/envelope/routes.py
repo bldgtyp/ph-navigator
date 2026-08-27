@@ -203,7 +203,7 @@ def post_envelope_command(
     return apply_envelope_command(
         version_id,
         access,
-        payload.command,
+        payload.commands,
         if_match=if_match,
         if_match_version=if_match_version,
     )

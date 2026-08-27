@@ -4,10 +4,12 @@ import type { DraftWriteCoordinator } from "../../../../features/project_documen
 import { canRetryWriteMetadata } from "../../../../features/project_document/conflictRetry";
 import {
   classifyDraftConflict,
+  discardedWriteFailureMessage,
   discardedWritesMessage,
   draftConflictMessage,
   isDraftStaleError,
 } from "../../../../features/project_document/lib";
+import { refreshInvalidatedBase } from "../../../../features/project_document/journalBase";
 import {
   mergeSlicePayload,
   SliceWriteJournal,
@@ -19,6 +21,8 @@ import {
 import { errorMessage } from "../../../lib/errors";
 import { clearMountedDataTableHistories } from "../historyEvents";
 import type { SliceTableController } from "./types";
+
+const TABLE_WRITE_FALLBACK = "Could not update the table.";
 
 export type JournalCommitOptions<TSlice, TPayload> = {
   batchable?: boolean;
@@ -48,49 +52,41 @@ export function useJournaledSliceCommit<TSlice, TPayload>(args: {
   const journal = useMemo(
     () =>
       args.coordinator && args.queryKey
-        ? new SliceWriteJournal<TSlice, TPayload>(
-            latest.current.slice,
-            args.coordinator,
-            (slice, payload) =>
+        ? new SliceWriteJournal<TSlice, TPayload>(latest.current.slice, {
+            coordinator: args.coordinator,
+            applyPayload: (slice, payload) =>
               mergeSlicePayload(slice as TSlice & object, payload as Partial<TSlice>) as TSlice,
-            (current, payload) =>
+            transport: (current, payload) =>
               latest.current.mutate({ current, payload, cachePolicy: "journal-managed" }),
-            (rendered) => args.queryClient.setQueryData(args.queryKey!, rendered),
-            (error, rejectedCount, baseRefreshed) => {
+            render: (rendered) => args.queryClient.setQueryData(args.queryKey!, rendered),
+            onFailure: (error, rejectedCount, baseRefreshed) => {
               if (latest.current.versionId) {
                 clearMountedDataTableHistories({
                   projectId: latest.current.projectId,
                   versionId: latest.current.versionId,
                 });
               }
-              const discarded = discardedWritesMessage(rejectedCount);
               const observed = latest.current.runWithConflictHandling(
                 () => Promise.reject(error),
                 draftConflictMessage(error, rejectedCount),
-                `Could not update the table. ${discarded}`,
+                `${TABLE_WRITE_FALLBACK} ${discardedWritesMessage(rejectedCount)}`,
                 baseRefreshed,
               );
               void observed.catch(() => {
                 if (!isDraftStaleError(error)) {
                   latest.current.setActionError(
-                    `${errorMessage(error, "Could not update the table.")} ${discarded}`,
+                    discardedWriteFailureMessage(error, rejectedCount, TABLE_WRITE_FALLBACK),
                   );
                 }
               });
             },
-            async (lastAcked, forceRefresh) => {
-              const current = latest.current;
-              if (
-                !current.queryKey ||
-                (!forceRefresh &&
-                  !current.queryClient.getQueryState(current.queryKey)?.isInvalidated)
-              ) {
-                return lastAcked;
-              }
-              return refetchResultData<TSlice>(await current.refetch()) ?? lastAcked;
-            },
-            hashKey(args.queryKey),
-            async (error, metadata) => {
+            prepareBase: refreshInvalidatedBase<TSlice>(() => ({
+              queryClient: latest.current.queryClient,
+              queryKey: latest.current.queryKey,
+              refetch: latest.current.refetch,
+            })),
+            coalesceKey: hashKey(args.queryKey),
+            recoverBase: async (error, metadata) => {
               if (classifyDraftConflict(error) !== "draft-etag") return null;
               const fresh = refetchResultData<TSlice>(await latest.current.refetch());
               return fresh
@@ -100,7 +96,7 @@ export function useJournaledSliceCommit<TSlice, TPayload>(args: {
                   }
                 : null;
             },
-          )
+          })
         : null,
     [args.coordinator, args.queryClient, args.queryKey],
   );

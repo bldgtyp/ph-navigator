@@ -89,7 +89,7 @@ export function GridGutter({
         {showCheckbox ? (
           <input
             type="checkbox"
-            className="data-table-gutter-checkbox"
+            className="phn-check data-table-gutter-checkbox"
             aria-label={`Select row ${rowNumber}`}
             checked={selected}
             // Re-driven by onClick so we can read modifier keys; React's

@@ -10,11 +10,26 @@ the frontend and the MCP server both call. There is no general
 
 - REST: `POST /api/v1/projects/{project_id}/versions/{version_id}/draft/envelope/commands`
 
-Request body:
+Request body — either one command, or a run of them:
 
 ```json
 { "command": { "kind": "<command_kind>", ... } }
+{ "commands": [ { "kind": "<command_kind>", ... }, ... ] }
 ```
+
+A `commands` run is applied in order inside **one** document write: one
+draft-basis parse, one ETag, one draft row rewrite, one audit entry, one
+response. Either the whole run lands or none of it does — a command that
+fails mid-run rolls the batch back. At most
+`MAX_ENVELOPE_COMMAND_BATCH` (200) commands per request. The fold is linear
+inside that boundary (each command re-validates the whole document, ~1.5 ms
+on a 69 KiB document), so a batch trades N round trips for one, not N
+validations for one.
+
+The browser sends a run when its write queue coalesces adjacent status edits;
+MCP and every awaited editor action send the singular form. The audit row
+carries `command_kind` (null only for a mixed run), `command_kinds`, and
+`command_count` either way.
 
 Concurrency:
 

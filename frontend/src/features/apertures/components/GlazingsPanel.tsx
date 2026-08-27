@@ -14,6 +14,7 @@ export function GlazingsPanel({
   busy,
   driftEntries,
   onCommand,
+  onCommandBatch,
   onAttachmentChange,
   onRefreshEntry,
 }: {
@@ -24,6 +25,7 @@ export function GlazingsPanel({
   busy: boolean;
   driftEntries: ApertureDriftEntry[];
   onCommand: (command: ApertureProductCommand) => void;
+  onCommandBatch: (commands: ApertureProductCommand[]) => void;
   onAttachmentChange: (change: ApertureAttachmentChangeArgs) => Promise<void> | void;
   onRefreshEntry: (entry: ApertureDriftEntry) => void;
 }) {
@@ -40,6 +42,7 @@ export function GlazingsPanel({
       busy={busy}
       driftEntries={driftEntries}
       onCommand={onCommand}
+      onCommandBatch={onCommandBatch}
       onAttachmentChange={onAttachmentChange}
       onRefreshEntry={onRefreshEntry}
     />

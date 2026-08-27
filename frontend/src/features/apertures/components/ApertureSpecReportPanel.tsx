@@ -12,12 +12,14 @@ import { naturalSortByName } from "../../../shared/lib/sort";
 import {
   AttachmentChipCell,
   ReportTable,
+  BulkStatusAction,
   StatusFilterChips,
   StatusPill,
   type ReportStatusKey,
   type ReportTableColumn,
   type StatusFilterOption,
   type StatusFilterValue,
+  useReportSelection,
 } from "../../../shared/ui/report-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
@@ -131,6 +133,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   busy,
   driftEntries,
   onCommand,
+  onCommandBatch,
   onAttachmentChange,
   onRefreshEntry,
 }: {
@@ -145,6 +148,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   busy: boolean;
   driftEntries: ApertureDriftEntry[];
   onCommand: (command: ApertureProductCommand) => void;
+  onCommandBatch: (commands: ApertureProductCommand[]) => void;
   onAttachmentChange: (change: ApertureAttachmentChangeArgs) => Promise<void> | void;
   onRefreshEntry: (entry: ApertureDriftEntry) => void;
 }) {
@@ -223,6 +227,12 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     if (useSitesProductId && !useSitesRow) setUseSitesProductId(null);
   }, [useSitesProductId, useSitesRow]);
 
+  const { selection, bulkAction } = useReportSelection({
+    selectableIds: filteredRows.map((row) => row.id),
+    makeStatusCommand: productConfig.makeUpdateCommand,
+    onCommandBatch,
+  });
+
   if (visibleRows.length === 0) {
     return (
       <div className="envelope-empty" role="status">
@@ -288,6 +298,8 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       expandedRowId={expandedProductId}
       onToggleExpand={(id) => setExpandedProductId((current) => (current === id ? null : id))}
       emptyMessage={message}
+      selection={canEdit ? selection : undefined}
+      getRowLabel={(row) => row.name}
       renderRowAction={canEdit && options.unused ? (row) => renderRowAction(row, true) : undefined}
       renderExpansion={(row) => {
         const rowDriftEntries = driftByProductId.get(row.id) ?? [];
@@ -428,7 +440,13 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
         options={filterOptions}
         value={statusFilter}
         onChange={setStatusFilter}
-        summary={<StatusRollupSummary resolved={resolvedCount} total={totalCount} />}
+        summary={
+          canEdit && bulkAction.selectedCount > 0 ? (
+            <BulkStatusAction {...bulkAction} disabled={busy} />
+          ) : (
+            <StatusRollupSummary resolved={resolvedCount} total={totalCount} />
+          )
+        }
       />
       {kind === "frame" ? (
         <FrameGroupingToolbar grouping={frameGrouping} onChange={setFrameGrouping} />

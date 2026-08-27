@@ -133,6 +133,7 @@ function renderGlazings(rows: ProjectGlazingRead[], options: { isViewer?: boolea
         busy={false}
         driftEntries={DRIFT_ENTRIES}
         onCommand={vi.fn()}
+        onCommandBatch={vi.fn()}
         onAttachmentChange={vi.fn()}
         onRefreshEntry={vi.fn()}
       />
@@ -162,6 +163,7 @@ function renderFrames(
         busy={false}
         driftEntries={DRIFT_ENTRIES}
         onCommand={options.onCommand ?? vi.fn()}
+        onCommandBatch={vi.fn()}
         onAttachmentChange={options.onAttachmentChange ?? vi.fn()}
         onRefreshEntry={vi.fn()}
       />

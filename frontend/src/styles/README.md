@@ -178,7 +178,8 @@ into these shared sheets:
 | `styles/modals.css` | `.modal-backdrop`, `.modal-panel` (+ `--resizable`), `.modal-header*`, `.modal-form`, `.modal-lede`, `.modal-actions*`, `.modal-subtitle`. **`.modal-form` owns the body stack and `.modal-header`/`.modal-actions` own their hairline separators for every dialog in the app** — feature CSS may retune the gap, never re-declare the border. Modal contract in `context/DESIGN_SYSTEM.md`: `ModalDialog` + `DialogActions` only; footer Cancel is the dismiss; header Close/backdrop-dismiss are viewer opt-ins. |
 | `styles/panels.css` | the shared **card-panel recipe** (border + radius + card bg) used by `.auth-panel`, `.modal-panel`, `.project-list`, `.data-table-wrap`, `.status-*`, … + the blueprint-grid decoration |
 | `shared/ui/data-table/DataTable.css` | the DataTable grid |
-| `shared/ui/report-table/ReportTable.css` | report tables + status pills/chips |
+| `shared/ui/report-table/ReportTable.css` | the report-table grid itself |
+| `shared/ui/report-table/ReportStatusChrome.css` | filter chips, group headers, status dots/pills, attachment chips |
 | `shared/ui/info-tooltip/InfoTooltip.css` | the `ⓘ` hover tooltip |
 | `shared/ui/InlineHeaderNameEditor.css` | the inline rename header control; a feature reveals the edit affordance by putting `data-reveal-edit-on-hover` on its header element |
 | `shared/ui/SegmentedControl.css` | `.phn-segmented-control*`: native-radio inline single-selects in compact chrome and content-pill sizes |

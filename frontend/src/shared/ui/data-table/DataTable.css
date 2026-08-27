@@ -1461,46 +1461,14 @@
   column-gap: 5px;
 }
 
+/* Paint comes from `.phn-check` (styles/base.css); this owns only where the
+   box sits in the gutter grid and when it is revealed. */
 .data-table-gutter-checkbox {
   grid-column: 1;
   grid-row: 1;
   justify-self: start;
-  appearance: none;
-  display: inline-grid;
-  place-content: center;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  border: 1px solid color-mix(in oklab, var(--text-muted) 52%, var(--bg-card));
-  border-radius: var(--radius-2xs);
-  background: var(--bg-card);
-  cursor: pointer;
   opacity: 0;
   pointer-events: none;
-}
-
-.data-table-gutter-checkbox::before {
-  content: "";
-  width: 6px;
-  height: 4px;
-  border-left: 1.5px solid var(--bg-card);
-  border-bottom: 1.5px solid var(--bg-card);
-  transform: translateY(-0.5px) rotate(-45deg) scale(0);
-  transform-origin: center;
-}
-
-.data-table-gutter-checkbox:checked {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-.data-table-gutter-checkbox:checked::before {
-  transform: translateY(-0.5px) rotate(-45deg) scale(1);
-}
-
-.data-table-gutter-checkbox:focus-visible {
-  outline: none;
-  box-shadow: var(--phn-focus);
 }
 
 .data-table-gutter-number {

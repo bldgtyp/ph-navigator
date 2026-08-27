@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from features.envelope.boundary_conditions import HeatFlowDirection
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
@@ -681,12 +681,41 @@ EnvelopeCommand = Annotated[
 ]
 
 
+# One request folds at most this many commands. The fold is linear — each
+# command re-dumps and re-validates the whole document (~1.5 ms on a 69 KiB
+# document, measured 2026-08-26) — so this bounds one request's server time
+# rather than expressing anything about the write itself.
+MAX_ENVELOPE_COMMAND_BATCH = 200
+
+
 class EnvelopeCommandRequest(BaseModel):
-    """Single semantic command sent by the canvas editor."""
+    """One or more semantic commands sent by the canvas editor.
+
+    The wire accepts either ``{"command": {...}}`` — the original single form,
+    and still what MCP and every awaited editor action sends — or
+    ``{"commands": [...]}``. Both normalize to ``commands`` here, so callers
+    read one field. A run is applied inside one document write: one draft row
+    rewrite, one ETag, one audit entry, and one round trip for the whole
+    batch, though each command in it still costs a full document
+    dump-and-validate.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    command: EnvelopeCommand
+    commands: list[EnvelopeCommand] = Field(min_length=1, max_length=MAX_ENVELOPE_COMMAND_BATCH)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_single_command_form(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        raw: dict[str, Any] = {str(key): value for key, value in data.items()}
+        if "command" not in raw:
+            return raw
+        if raw.get("commands") is not None:
+            raise ValueError("Send either 'command' or 'commands', not both.")
+        raw["commands"] = [raw.pop("command")]
+        return raw
 
 
 class AssemblySegmentTableRow(BaseModel):

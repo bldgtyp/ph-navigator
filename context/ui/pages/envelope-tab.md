@@ -597,6 +597,34 @@ canvas's segment modal → Detach to a new material."*
   tab is most useful as a "what's pending / what's documented"
   view; n/a cards are noise for external readers.
 
+**Spec-status write behavior** (2026-08-26):
+
+Setting a spec status is optimistic and queued, not awaited. The pill takes
+the new value on change; the write goes through the shared draft write
+journal (`SliceWriteJournal` + `DraftWriteCoordinator`), the same queue the
+DataTable-backed tables use. Consequences a reader should rely on:
+
+- **No control is disabled by a status write.** The user can run down the
+  column as fast as they can click. There is no "pending" or "saving" state
+  on the row — the value the user chose is already what renders, so a marker
+  would report nothing they cannot see.
+- **Nothing is dropped.** Writes queue in order behind the coordinator; a
+  second change made during the first round trip is not discarded.
+- **Save and Discard see them.** Outstanding writes are flushed before the
+  save endpoint is called, and they arm the `beforeunload` guard.
+- **Failure reverts and says so.** A rejected write rolls the affected rows
+  back to the last server-acknowledged values and renders the shared
+  discarded-writes / draft-conflict message above the filter chips.
+- **A status-only change refetches nothing thermal.** Thermal and
+  condensation queries are invalidated only when the command carries a
+  conductivity, density, specific-heat, emissivity, air-permeance, or vapour
+  field.
+
+Structural commands (create/duplicate/delete assembly, remove material, the
+full material editor, catalog refresh, import) stay awaited and still disable
+the grid while they run — the row set is about to change. They are scheduled
+on the same queue, so they cannot interleave with journaled writes.
+
 **Locked-version rendering:**
 
 - Spec-status `<Select>` disabled.

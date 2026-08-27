@@ -317,6 +317,47 @@ a:focus-visible {
   accent-color: var(--accent);
 }
 
+/* The app's square check mark. One recipe, two consumers: the DataTable's row
+   gutter and the report tables' select column. Each owns its own placement and
+   reveal rules and adds this class for the paint, so a checkbox reads the same
+   in both grids. */
+.phn-check {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid color-mix(in oklab, var(--text-muted) 52%, var(--bg-card));
+  border-radius: var(--radius-2xs);
+  background: var(--bg-card);
+  cursor: pointer;
+}
+
+.phn-check::before {
+  content: "";
+  width: 6px;
+  height: 4px;
+  border-left: 1.5px solid var(--bg-card);
+  border-bottom: 1.5px solid var(--bg-card);
+  transform: translateY(-0.5px) rotate(-45deg) scale(0);
+  transform-origin: center;
+}
+
+.phn-check:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.phn-check:checked::before {
+  transform: translateY(-0.5px) rotate(-45deg) scale(1);
+}
+
+.phn-check:focus-visible {
+  outline: none;
+  box-shadow: var(--phn-focus);
+}
+
 .topbar {
   position: sticky;
   top: 0;
@@ -1716,6 +1757,19 @@ button:disabled {
   min-height: 28px;
   padding: 0;
   width: 28px;
+}
+
+/* Labelled variant: the menu *is* the action, so the trigger reads like a
+   control rather than an overflow dot-stack. Same height and hover as the
+   icon-only trigger; only the box grows to hold the label. */
+.app-menu__trigger--labelled {
+  border-color: var(--border-subtle);
+  font-family: var(--font-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  gap: var(--space-6);
+  padding: 0 var(--space-10);
+  width: auto;
 }
 
 .app-menu__trigger:hover,

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UnitSystem } from "../../lib/units/types";
 import { downloadBlob } from "../../shared/lib/downloadBlob";
 import { errorMessage } from "../../shared/lib/errors";
@@ -17,13 +17,13 @@ import {
   previewEnvelopeHbjsonImport,
   fetchThermalStandards,
 } from "./api";
+import { applyEnvelopeCommandCacheEffects, mergeEnvelopeCommandSlice } from "./command-cache";
 import { envelopeQueryKeys } from "./query-keys";
 import type {
   EnvelopeAttachmentChange,
   EnvelopeCommand,
   EnvelopeReadResponse,
   EnvelopeReadSource,
-  ThermalStandardsResponse,
 } from "./types";
 
 export function useEnvelopeReadQuery(
@@ -54,29 +54,17 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
       return postEnvelopeCommand(projectId, versionId, current, { command });
     },
     onSuccess: (slice, variables) => {
-      const mergedSlice = {
-        ...slice,
-        saved_assembly_count: slice.saved_assembly_count ?? variables.current.saved_assembly_count,
-      };
       queryClient.setQueryData(
         envelopeQueryKeys.read(projectId, slice.version_id, "draft"),
-        mergedSlice,
+        mergeEnvelopeCommandSlice(variables.current, slice),
       );
-      writeActiveThermalStandard(queryClient, projectId, slice.version_id, variables.command);
-      invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
-      invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
-      invalidateCondensationQueries(queryClient, projectId, slice.version_id, variables.command);
-      if (documentationSummaryInvalidationCommands.has(variables.command.kind)) {
-        queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.documentation(projectId),
-        });
-      }
-      if (slice.draft_etag !== variables.current.draft_etag) {
-        markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
-        queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-        });
-      }
+      applyEnvelopeCommandCacheEffects(
+        queryClient,
+        projectId,
+        variables.current,
+        slice,
+        variables.command,
+      );
     },
   });
 }
@@ -264,107 +252,3 @@ export function useEnvelopeAttachmentMutation({
     },
   });
 }
-
-// The active standard lives in its own query rather than the command's response
-// slice, and `thermal-standards` is a sibling of the `thermal` key, not a child
-// — so neither line above refreshes it, and the selector kept showing the
-// previous standard until a save changed the query's key.
-//
-// Written rather than invalidated so the select never flashes back to the old
-// label while a refetch is in flight. Writing the requested value is safe: the
-// backend resolves the film table *before* storing it, so a success means this
-// exact standard landed, and availability is a deployment fact that no command
-// can change.
-function writeActiveThermalStandard(
-  queryClient: QueryClient,
-  projectId: string,
-  versionId: string,
-  command: EnvelopeCommand,
-): void {
-  if (command.kind !== "set_thermal_standard") return;
-  queryClient.setQueryData<ThermalStandardsResponse>(
-    envelopeQueryKeys.thermalStandards(projectId, versionId, "draft"),
-    (current) => (current ? { ...current, active: command.thermal_standard } : current),
-  );
-}
-
-function invalidateThermalQueries(
-  queryClient: QueryClient,
-  projectId: string,
-  versionId: string,
-  command: EnvelopeCommand,
-): void {
-  if (command.kind === "set_condensation_settings") return;
-  if ("assembly_id" in command && !broadThermalInvalidationCommands.has(command.kind)) {
-    queryClient.invalidateQueries({
-      queryKey: envelopeQueryKeys.thermal(projectId, versionId, command.assembly_id, "draft"),
-    });
-    return;
-  }
-  queryClient.invalidateQueries({ queryKey: [...envelopeQueryKeys.all(projectId), "thermal"] });
-}
-
-function invalidateCondensationQueries(
-  queryClient: QueryClient,
-  projectId: string,
-  versionId: string,
-  command: EnvelopeCommand,
-): void {
-  if ("assembly_id" in command && !broadCondensationInvalidationCommands.has(command.kind)) {
-    queryClient.invalidateQueries({
-      queryKey: envelopeQueryKeys.condensation(projectId, versionId, command.assembly_id, "draft"),
-    });
-    return;
-  }
-  queryClient.invalidateQueries({
-    queryKey: envelopeQueryKeys.condensationScope(projectId, versionId, "draft"),
-  });
-}
-
-function invalidateMaterialDriftQueries(
-  queryClient: QueryClient,
-  projectId: string,
-  versionId: string,
-  command: EnvelopeCommand,
-): void {
-  if (!materialDriftInvalidationCommands.has(command.kind)) return;
-  queryClient.invalidateQueries({
-    queryKey: envelopeQueryKeys.materialDrift(projectId, versionId, "draft"),
-  });
-}
-
-const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
-  // Not an assembly edit, but it re-resolves the films for every one of them.
-  "set_thermal_standard",
-  "create_assembly",
-  "duplicate_assembly",
-  "delete_assembly",
-  "update_project_material",
-  "refresh_project_material_from_catalog",
-  "remove_unused_project_materials",
-  "remove_project_material",
-]);
-
-const broadCondensationInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
-  ...broadThermalInvalidationCommands,
-  "set_condensation_settings",
-]);
-
-const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
-  "pick_catalog_material",
-  "update_project_material",
-  "refresh_project_material_from_catalog",
-  "remove_unused_project_materials",
-  "remove_project_material",
-  "import_envelope_constructions",
-]);
-
-const documentationSummaryInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
-  "pick_catalog_material",
-  "hand_enter_material",
-  "update_project_material",
-  "refresh_project_material_from_catalog",
-  "remove_unused_project_materials",
-  "remove_project_material",
-  "import_envelope_constructions",
-]);

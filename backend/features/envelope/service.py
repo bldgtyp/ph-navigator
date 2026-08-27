@@ -13,6 +13,7 @@ helpers so browser and MCP callers share one mutation boundary.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
@@ -308,23 +309,34 @@ def get_phpp_export_preflight(version_id: UUID, access: ProjectAccess) -> PhppPr
 def apply_envelope_command(
     version_id: UUID,
     access: ProjectAccess,
-    command: EnvelopeCommand,
+    commands: Sequence[EnvelopeCommand],
     if_match: str | None,
     if_match_version: str | None,
     updated_via: Literal["browser", "mcp"] = "browser",
 ) -> EnvelopeReadResponse:
-    """Apply one editor-authorized semantic command to the active draft.
+    """Apply a run of editor-authorized semantic commands to the active draft.
+
+    The commands are folded in order inside one document write, so the batch
+    costs one draft-basis parse, one ETag, one draft row rewrite, one audit
+    entry and one response build rather than N of each -- and either the whole
+    run lands or none of it does. The fold itself stays linear: each command
+    re-dumps and re-validates the whole document on its way through
+    ``ops.replace_*`` (~1.5 ms on a 69 KiB document), so a batch trades N round
+    trips for one, not N validations for one.
 
     The draft ETag protects in-flight edits, while the saved-version ETag
-    protects the baseline when no draft exists yet. Commands that leave
-    the body unchanged return the current read model without writing a new
-    draft row, and successful writes tag their audit path with
-    `updated_via` so browser and MCP edits remain distinguishable.
+    protects the baseline when no draft exists yet. Commands that leave the
+    body unchanged return the current read model without writing a new draft
+    row, and successful writes tag their audit path with `updated_via` so
+    browser and MCP edits remain distinguishable.
     """
     user = require_editor_user(access)
 
     def mutate(conn: Connection[Any], base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, dict[str, object]]:
-        return dispatch_envelope_command(conn, base_body, command), {"command_kind": command.kind}
+        body = base_body
+        for command in commands:
+            body = dispatch_envelope_command(conn, body, command)
+        return body, _envelope_command_audit_details(commands)
 
     def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
         log_document_action(conn, "envelope_command", access, version_id, user.id, None, extra_details=details)
@@ -350,6 +362,22 @@ def apply_envelope_command(
         assemblies=assemblies,
         project_materials=project_materials,
     )
+
+
+def _envelope_command_audit_details(commands: Sequence[EnvelopeCommand]) -> dict[str, object]:
+    """One shape for every row, batch or not.
+
+    ``command_kind`` is the key rows written before batching existed carry, so
+    it stays and keeps meaning what it always did: the kind this entry applied.
+    It is null only for a mixed run, which the editor never sends. Readers that
+    want to be exact use ``command_kinds``.
+    """
+    kinds = sorted({command.kind for command in commands})
+    return {
+        "command_kind": kinds[0] if len(kinds) == 1 else None,
+        "command_kinds": kinds,
+        "command_count": len(commands),
+    }
 
 
 # Construction libraries are tiny (the example file is a few KB); this cap is a

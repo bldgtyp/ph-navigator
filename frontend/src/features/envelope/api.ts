@@ -5,6 +5,7 @@ import { normalizeSpecificationStatusRecord } from "../project_document/specific
 import type { AssemblyCondensationResponse } from "./condensation-types";
 import type {
   AssemblyThermalResponse,
+  EnvelopeCommand,
   EnvelopeCommandBody,
   EnvelopeReadResponse,
   EnvelopeReadSource,
@@ -26,6 +27,10 @@ export async function fetchEnvelopeReadModel(
     { signal },
   );
   return normalizeEnvelopeReadResponse(response);
+}
+
+export function envelopeCommandBody(commands: readonly EnvelopeCommand[]): EnvelopeCommandBody {
+  return commands.length === 1 ? { command: commands[0]! } : { commands: [...commands] };
 }
 
 export async function postEnvelopeCommand(

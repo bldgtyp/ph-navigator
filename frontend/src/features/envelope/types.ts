@@ -357,9 +357,10 @@ export type EnvelopeCommand =
       material_resolutions: MaterialResolution[];
     };
 
-export type EnvelopeCommandBody = {
-  command: EnvelopeCommand;
-};
+// The endpoint takes either form. A run sent as `commands` is applied inside
+// one document write, so a batch of status edits costs one draft rewrite
+// instead of N; single writes keep the original shape.
+export type EnvelopeCommandBody = { command: EnvelopeCommand } | { commands: EnvelopeCommand[] };
 
 // --- HBJSON construction import (preview + apply) -------------------------
 

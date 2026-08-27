@@ -6,3 +6,5 @@ export {
   type StatusFilterValue,
 } from "./StatusFilterChips";
 export { AttachmentChipCell } from "./AttachmentChipCell";
+export { BulkStatusAction } from "./BulkStatusAction";
+export { useReportSelection, type ReportTableSelection } from "./useReportSelection";

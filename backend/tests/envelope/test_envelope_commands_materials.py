@@ -286,3 +286,145 @@ def test_pick_project_material_assigns_existing_material_and_rejects_unknown(
     )
     assert missing.status_code == 409
     assert missing.json()["error_code"] == "project_material_not_found"
+
+
+def test_command_batch_applies_in_order_as_one_draft_write(
+    clean_envelope_material_tables: None,
+) -> None:
+    """A run of status edits is one document rewrite, not one per row."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "commands": [
+                {
+                    "kind": "update_project_material",
+                    "project_material_id": "pmat_insul",
+                    "specification_status": "complete",
+                },
+                {
+                    "kind": "update_project_material",
+                    "project_material_id": "pmat_duplicate_name",
+                    "specification_status": "question",
+                },
+                {
+                    "kind": "update_project_material",
+                    "project_material_id": "pmat_insul",
+                    "specification_status": "na",
+                },
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    statuses = {material["id"]: material["specification_status"] for material in response.json()["project_materials"]}
+    # The last write for a row wins, so order is preserved.
+    assert statuses["pmat_insul"] == "na"
+    assert statuses["pmat_duplicate_name"] == "question"
+
+    with transaction() as conn:
+        rows = conn.execute(
+            "SELECT details FROM user_action_log WHERE action = 'envelope_command' ORDER BY id"
+        ).fetchall()
+    assert len(rows) == 1, "a batch must write one audit row, not one per command"
+    details = rows[0]["details"]
+    assert details["command_count"] == 3
+    assert details["command_kinds"] == ["update_project_material"]
+    # One audit shape for every row: a homogeneous run still names its kind.
+    assert details["command_kind"] == "update_project_material"
+
+
+def test_command_batch_is_all_or_nothing(clean_envelope_material_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "commands": [
+                {
+                    "kind": "update_project_material",
+                    "project_material_id": "pmat_insul",
+                    "specification_status": "complete",
+                },
+                {
+                    "kind": "update_project_material",
+                    "project_material_id": "pmat_missing",
+                    "specification_status": "complete",
+                },
+            ]
+        },
+    )
+
+    assert response.status_code == 409
+    read = client.get(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/envelope?source=draft",
+        headers={"Origin": ORIGIN},
+    ).json()
+    statuses = {material["id"]: material["specification_status"] for material in read["project_materials"]}
+    assert statuses["pmat_insul"] == "needed", "the first command must not survive a failed batch"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {
+            "command": {"kind": "delete_assembly", "assembly_id": "asm_wall_c3"},
+            "commands": [{"kind": "delete_assembly", "assembly_id": "asm_roof_r1"}],
+        },
+        {"commands": []},
+    ],
+)
+def test_command_request_requires_exactly_one_form(
+    clean_envelope_material_tables: None, payload: dict[str, object]
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    saved_body = envelope_body()
+    write_saved_body(project["active_version_id"], saved_body)
+
+    response = client.post(
+        command_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+
+def test_journaled_evidence_fields_are_not_catalog_overrides() -> None:
+    """The frontend applies these fields optimistically and skips the derived-value refetches.
+
+    Both are safe only while the fields are pure documentation metadata: not
+    catalog-override fields (which would make the server also rewrite
+    ``catalog_origin.local_overrides``, something the client does not mirror)
+    and not inputs to any U-value, condensation, or drift result. The frontend
+    holds the other side of this pin in
+    ``features/envelope/__tests__/command-journal.test.ts`` and
+    ``features/apertures/__tests__/command-journal.test.ts``.
+    """
+    from features.envelope.commands.aperture_products import (
+        _PROJECT_FRAME_OVERRIDE_FIELDS,
+        _PROJECT_GLAZING_OVERRIDE_FIELDS,
+    )
+    from features.envelope.material_fields import PROJECT_MATERIAL_OVERRIDE_FIELDS
+
+    journaled_material_fields = {"specification_status", "datasheet_not_required"}
+    journaled_product_fields = {"specification_status", "datasheet_not_required", "photo_not_required"}
+
+    assert journaled_material_fields.isdisjoint(PROJECT_MATERIAL_OVERRIDE_FIELDS)
+    assert journaled_product_fields.isdisjoint(_PROJECT_GLAZING_OVERRIDE_FIELDS)
+    assert journaled_product_fields.isdisjoint(_PROJECT_FRAME_OVERRIDE_FIELDS)

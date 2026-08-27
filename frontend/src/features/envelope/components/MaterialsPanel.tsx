@@ -7,9 +7,7 @@ import {
   formatSpecificHeatFromJKgK,
   useUnitPreference,
 } from "../../../lib/units";
-import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import {
   conductivityUnitLabel,
   densityUnitLabel,
@@ -18,20 +16,18 @@ import {
 import { StatusSelect } from "../../../shared/ui";
 import {
   AttachmentChipCell,
+  BulkStatusAction,
   ReportTable,
   StatusFilterChips,
+  useReportSelection,
   type ReportStatusKey,
   type ReportTableColumn,
   type StatusFilterOption,
   type StatusFilterValue,
 } from "../../../shared/ui/report-table";
-import {
-  MaterialCatalogAction,
-  MaterialDriftFlag,
-  MaterialReviewBanner,
-} from "./MaterialCatalogStatus";
+import { MaterialDriftFlag, MaterialReviewBanner } from "./MaterialCatalogStatus";
 import { ProjectMaterialEditorModal } from "./ProjectMaterialEditorModal";
-import { materialHasCatalogAction, materialNeedsCatalogReview } from "../drift";
+import { materialNeedsCatalogReview } from "../drift";
 import { sortProjectMaterials, viewerVisibleMaterials } from "../lib";
 import type {
   EnvelopeAttachmentChange,
@@ -40,12 +36,8 @@ import type {
   ProjectMaterialDriftItem,
   SpecificationStatus,
 } from "../types";
-import { UseSiteRow } from "./materials/UseSiteRow";
-import {
-  buildUseSitePhotoChanges,
-  countGroupedUseSitePhotos,
-  groupMaterialUseSites,
-} from "./materials/use-site-groups";
+import { MaterialExpansion } from "./materials/MaterialExpansion";
+import { countGroupedUseSitePhotos } from "./materials/use-site-groups";
 import {
   SPECIFICATION_STATUSES,
   SPECIFICATION_STATUS_LABELS,
@@ -64,6 +56,7 @@ export function MaterialsPanel({
   busy,
   error,
   onCommand,
+  onCommandBatch,
   onAttachmentChange,
   onRefreshMaterial,
 }: {
@@ -75,6 +68,7 @@ export function MaterialsPanel({
   busy: boolean;
   error: string | null;
   onCommand: (command: EnvelopeCommand) => void;
+  onCommandBatch: (commands: EnvelopeCommand[]) => void;
   onAttachmentChange: (args: EnvelopeAttachmentChange) => Promise<void> | void;
   onRefreshMaterial: (projectMaterialId: string) => void;
 }) {
@@ -129,6 +123,16 @@ export function MaterialsPanel({
     }
     return { activeMaterials: active, backgroundMaterials: background, unusedMaterials: unused };
   }, [filteredMaterials]);
+
+  const selectableIds = useMemo(
+    () => filteredMaterials.map((material) => material.id),
+    [filteredMaterials],
+  );
+  const { selection, bulkAction } = useReportSelection({
+    selectableIds,
+    makeStatusCommand: makeMaterialStatusCommand,
+    onCommandBatch,
+  });
 
   const attachmentAssetIds = useMemo(
     () => collectSpecificationAssetIds(visibleMaterials),
@@ -317,113 +321,44 @@ export function MaterialsPanel({
       expandedRowId={expandedMaterialId}
       onToggleExpand={(id) => setExpandedMaterialId((current) => (current === id ? null : id))}
       emptyMessage={emptyMessage}
+      selection={canEdit ? selection : undefined}
+      getRowLabel={(m) => m.name}
       renderRowAction={
         canEdit
           ? (material) => renderMaterialRowAction(material, options.unused === true)
           : undefined
       }
-      renderExpansion={(material) => {
-        const driftItem = driftByMaterialId.get(material.id) ?? null;
-        const useSiteGroups = groupMaterialUseSites(material.use_sites);
-        return (
-          <div className="spec-expansion">
-            {materialHasCatalogAction(driftItem) ? (
-              <header className="spec-expansion__header">
-                <MaterialCatalogAction
-                  item={driftItem}
-                  canEdit={canEdit}
-                  busy={busy}
-                  onReview={() => onRefreshMaterial(material.id)}
-                />
-              </header>
-            ) : null}
-            <div className="spec-expansion__columns">
-              <div className="spec-expansion__left">
-                <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
-                  <h3>Datasheet</h3>
-                  <AttachmentCell
-                    projectId={projectId}
-                    value={material.datasheet_asset_ids}
-                    config={DATASHEET_ATTACHMENT_CONFIG}
-                    readOnly={!canEdit || material.specification_status === "na" || busy}
-                    assetUrlById={assetUrlById}
-                    assetUrlsPending={assetUrls.isPending}
-                    variant="card"
-                    showInlineEmptyButton={canEdit && material.specification_status !== "na"}
-                    onChange={(nextAssetIds) =>
-                      onAttachmentChange({
-                        tableKey: "project_materials",
-                        rowId: material.id,
-                        fieldKey: "datasheet_asset_ids",
-                        currentAssetIds: material.datasheet_asset_ids,
-                        nextAssetIds,
-                      })
-                    }
-                  />
-                </section>
-                {!canEdit && material.comments ? (
-                  <p className="spec-notes">{material.comments}</p>
-                ) : null}
-              </div>
-              <div className="spec-expansion__right">
-                <section className="spec-evidence" aria-label={`${material.name} site photos`}>
-                  <h3>Site Photos</h3>
-                  {material.use_sites.length === 0 ? (
-                    <p className="spec-evidence__empty">Not used by an assembly.</p>
-                  ) : (
-                    <ul className="spec-expansion__use-sites">
-                      {useSiteGroups.map((group) => {
-                        const site = group.site;
-                        return (
-                          <UseSiteRow
-                            key={group.key}
-                            siteKey={group.key}
-                            site={site}
-                            whereLabel={group.whereLabel}
-                            projectId={projectId}
-                            assetUrlById={assetUrlById}
-                            assetUrlsPending={assetUrls.isPending}
-                            canEdit={canEdit}
-                            canEditNote={group.canEditNotes}
-                            busy={busy}
-                            isEditing={editingSiteKey === group.key}
-                            onToggleEdit={() =>
-                              setEditingSiteKey((current) =>
-                                current === group.key ? null : group.key,
-                              )
-                            }
-                            onSubmit={(use_site_notes) =>
-                              onCommand({
-                                kind: "update_segment_use_site_notes",
-                                assembly_id: site.assembly_id,
-                                layer_id: site.layer_id,
-                                segment_id: site.segment_id,
-                                use_site_notes,
-                              })
-                            }
-                            onPhotoChange={(nextAssetIds) => {
-                              const changes = buildUseSitePhotoChanges(group, nextAssetIds);
-                              if (changes.length === 0) return undefined;
-                              return onAttachmentChange(
-                                changes.length === 1 ? changes[0]! : changes,
-                              );
-                            }}
-                          />
-                        );
-                      })}
-                    </ul>
-                  )}
-                </section>
-              </div>
-            </div>
-          </div>
-        );
-      }}
+      renderExpansion={(material) => (
+        <MaterialExpansion
+          material={material}
+          driftItem={driftByMaterialId.get(material.id) ?? null}
+          projectId={projectId}
+          canEdit={canEdit}
+          busy={busy}
+          assetUrlById={assetUrlById}
+          assetUrlsPending={assetUrls.isPending}
+          editingSiteKey={editingSiteKey}
+          onToggleEditSite={(siteKey) =>
+            setEditingSiteKey((current) => (current === siteKey ? null : siteKey))
+          }
+          onCommand={onCommand}
+          onAttachmentChange={onAttachmentChange}
+          onRefreshMaterial={onRefreshMaterial}
+        />
+      )}
     />
   );
 
   return (
     <div className="materials-panel">
+      {/* Mirrors the assemblies route, where the same `commandError` is shown
+          under the canvas unless a dialog is already carrying it. Without this
+          a rejected status write reverted its pill and said nothing. */}
+      {error && !editingMaterial ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <MaterialReviewBanner
         count={reviewCount}
         filtered={reviewFilterActive}
@@ -433,7 +368,13 @@ export function MaterialsPanel({
         options={filterOptions}
         value={statusFilter}
         onChange={setStatusFilter}
-        summary={<StatusRollupSummary resolved={resolvedCount} total={totalCount} />}
+        summary={
+          canEdit && bulkAction.selectedCount > 0 ? (
+            <BulkStatusAction {...bulkAction} disabled={busy} />
+          ) : (
+            <StatusRollupSummary resolved={resolvedCount} total={totalCount} />
+          )
+        }
       />
       <div className="materials-panel__sections">
         {showActiveSection ? (
@@ -486,6 +427,13 @@ export function MaterialsPanel({
       ) : null}
     </div>
   );
+}
+
+function makeMaterialStatusCommand(
+  project_material_id: string,
+  specification_status: SpecificationStatus,
+): EnvelopeCommand {
+  return { kind: "update_project_material", project_material_id, specification_status };
 }
 
 function collectSpecificationAssetIds(materials: ProjectMaterial[]): string[] {

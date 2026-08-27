@@ -10,11 +10,13 @@ import type { UnitSystem } from "../../../lib/units";
 import type { DocumentationAudiencePolicy } from "../../documentation/lib";
 import type { ProjectDetail } from "../../projects/types";
 import type { AssemblyCondensationResponse } from "../condensation-types";
+import { resetDraftWriteCoordinatorsForTests } from "../../project_document/draftWriteCoordinator";
 import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type {
   AssemblyThermalResponse,
   EnvelopeReadResponse,
+  SpecificationStatus,
   ThermalStandardsResponse,
 } from "../types";
 import {
@@ -296,6 +298,9 @@ const driftPayload = {
 
 beforeEach(() => {
   resetEnvelopeCanvasZoomForTests();
+  // Envelope writes now share the process-wide draft write coordinator, so a
+  // queue left behind by one test would otherwise order the next one.
+  resetDraftWriteCoordinatorsForTests();
   fetchMock.mockReset();
   fetchMock.mockImplementation(defaultFetchImplementation);
   vi.stubGlobal("fetch", fetchMock);
@@ -1253,6 +1258,248 @@ describe("EnvelopePage", () => {
     expect(within(statusSelect).getByRole("option", { name: "Question" })).toBeInTheDocument();
     expect(within(statusSelect).getByRole("option", { name: "Complete" })).toBeInTheDocument();
     expect(within(statusSelect).getByRole("option", { name: "N/A" })).toBeInTheDocument();
+  });
+
+  test("status writes render on click, stay interactive, and queue in order", async () => {
+    const pending: { command: MaterialStatusCommand; resolve: () => void }[] = [];
+    let serverMaterials = envelopePayload.project_materials;
+    let draftEtagCounter = 0;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (!url.includes("/draft/envelope/commands")) return defaultFetchImplementation(url);
+      const { command } = JSON.parse(String(init?.body)) as { command: MaterialStatusCommand };
+      return new Promise<Response>((resolveResponse) => {
+        pending.push({
+          command,
+          resolve: () => {
+            serverMaterials = serverMaterials.map((material) =>
+              material.id === command.project_material_id
+                ? { ...material, specification_status: command.specification_status }
+                : material,
+            );
+            draftEtagCounter += 1;
+            resolveResponse(
+              jsonResponse({
+                ...envelopePayload,
+                project_materials: serverMaterials,
+                draft_etag: `draft-etag-${draftEtagCounter}`,
+              }),
+            );
+          },
+        });
+      });
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+    const woodFiber = await findMaterialStatusSelect("Wood fiber board");
+    const cellulose = findRenderedMaterialStatusSelect("Dense-pack cellulose");
+
+    fireEvent.change(woodFiber, { target: { value: "complete" } });
+    // The pill moves while the request is still unanswered, and nothing else
+    // goes inert: this is the whole point of the journal (PRD S-1, S-3).
+    await waitFor(() => expect(woodFiber).toHaveValue("complete"));
+    expect(pending).toHaveLength(1);
+    expect(woodFiber).not.toBeDisabled();
+    expect(cellulose).not.toBeDisabled();
+
+    // A second change inside the first round trip used to be discarded (S-2);
+    // it is now rendered at once and queued behind the first.
+    fireEvent.change(cellulose, { target: { value: "question" } });
+    await waitFor(() => expect(cellulose).toHaveValue("question"));
+    expect(pending).toHaveLength(1);
+
+    pending[0]!.resolve();
+    await waitFor(() => expect(pending).toHaveLength(2));
+    pending[1]!.resolve();
+
+    await waitFor(() => expect(commandRequestBodies()).toHaveLength(2));
+    expect(commandRequestBodies()).toEqual([
+      {
+        command: {
+          kind: "update_project_material",
+          project_material_id: "pmat_insul",
+          specification_status: "complete",
+        },
+      },
+      {
+        command: {
+          kind: "update_project_material",
+          project_material_id: "pmat_cellulose",
+          specification_status: "question",
+        },
+      },
+    ]);
+    // The queued write re-based onto the acknowledged draft rather than
+    // re-sending the ETag the first write consumed.
+    expect(commandRequestHeaders()[1]?.get("If-Match")).toBe("draft-etag-1");
+    expect(woodFiber).toHaveValue("complete");
+    expect(cellulose).toHaveValue("question");
+  });
+
+  test("writes queued behind an in-flight one coalesce into a single request", async () => {
+    const pending: { resolve: () => void }[] = [];
+    let serverMaterials = envelopePayload.project_materials;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (!url.includes("/draft/envelope/commands")) return defaultFetchImplementation(url);
+      const body = JSON.parse(String(init?.body)) as
+        | { command: MaterialStatusCommand }
+        | { commands: MaterialStatusCommand[] };
+      const commands = "commands" in body ? body.commands : [body.command];
+      return new Promise<Response>((resolveResponse) => {
+        pending.push({
+          resolve: () => {
+            for (const command of commands) {
+              serverMaterials = serverMaterials.map((material) =>
+                material.id === command.project_material_id
+                  ? { ...material, specification_status: command.specification_status }
+                  : material,
+              );
+            }
+            resolveResponse(
+              jsonResponse({ ...envelopePayload, project_materials: serverMaterials }),
+            );
+          },
+        });
+      });
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+    const woodFiber = await findMaterialStatusSelect("Wood fiber board");
+    const cellulose = findRenderedMaterialStatusSelect("Dense-pack cellulose");
+
+    // The first change occupies the wire; the next two queue behind it.
+    fireEvent.change(woodFiber, { target: { value: "complete" } });
+    await waitFor(() => expect(pending).toHaveLength(1));
+    fireEvent.change(cellulose, { target: { value: "question" } });
+    fireEvent.change(woodFiber, { target: { value: "na" } });
+    await waitFor(() => expect(woodFiber).toHaveValue("na"));
+
+    pending[0]!.resolve();
+    await waitFor(() => expect(pending).toHaveLength(2));
+    pending[1]!.resolve();
+
+    // Three clicks, two round trips — the queued pair drained as one command run.
+    await waitFor(() => expect(commandRequestBodies()).toHaveLength(2));
+    expect(commandRequestBodies()[1]).toEqual({
+      commands: [
+        {
+          kind: "update_project_material",
+          project_material_id: "pmat_cellulose",
+          specification_status: "question",
+        },
+        {
+          kind: "update_project_material",
+          project_material_id: "pmat_insul",
+          specification_status: "na",
+        },
+      ],
+    });
+    expect(woodFiber).toHaveValue("na");
+    expect(cellulose).toHaveValue("question");
+  });
+
+  test("selecting rows and setting a status is one gesture and one request", async () => {
+    let serverMaterials = envelopePayload.project_materials;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (!url.includes("/draft/envelope/commands")) return defaultFetchImplementation(url);
+      const body = JSON.parse(String(init?.body)) as { commands: MaterialStatusCommand[] };
+      for (const command of body.commands) {
+        serverMaterials = serverMaterials.map((material) =>
+          material.id === command.project_material_id
+            ? { ...material, specification_status: command.specification_status }
+            : material,
+        );
+      }
+      return Promise.resolve(
+        jsonResponse({ ...envelopePayload, project_materials: serverMaterials }),
+      );
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+    const woodFiber = await findMaterialStatusSelect("Wood fiber board");
+    const cellulose = findRenderedMaterialStatusSelect("Dense-pack cellulose");
+
+    // No selection yet: the toolbar still shows the progress rollup.
+    expect(screen.queryByText(/selected$/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Select Wood fiber board"));
+    fireEvent.click(screen.getByLabelText("Select Dense-pack cellulose"));
+    expect(await screen.findByText("2 selected")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Set spec. status for 2 selected/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Complete" }));
+
+    await waitFor(() => expect(woodFiber).toHaveValue("complete"));
+    expect(cellulose).toHaveValue("complete");
+    // Two rows, one round trip — the run is journaled as a single entry.
+    expect(commandRequestBodies()).toHaveLength(1);
+    expect(commandRequestBodies()[0]).toEqual({
+      commands: [
+        {
+          kind: "update_project_material",
+          project_material_id: "pmat_insul",
+          specification_status: "complete",
+        },
+        {
+          kind: "update_project_material",
+          project_material_id: "pmat_cellulose",
+          specification_status: "complete",
+        },
+      ],
+    });
+    // The selection clears, handing the toolbar back to the rollup.
+    await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeInTheDocument());
+  });
+
+  test("select all takes only the rows the active filter shows", async () => {
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (!url.includes("/draft/envelope/commands")) return defaultFetchImplementation(url);
+      void init;
+      return Promise.resolve(jsonResponse(envelopePayload));
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+    await screen.findByText("Wood fiber board");
+
+    // Unfiltered, "select all" offers every visible material.
+    fireEvent.click(await screen.findByLabelText("Select Wood fiber board"));
+    expect(await screen.findByRole("button", { name: "Select all 3" })).toBeInTheDocument();
+
+    // Filter to Needed and the same gesture is scoped to what the filter shows:
+    // one row, so the whole set is already selected and no "select all" is offered.
+    fireEvent.click(screen.getByRole("button", { name: /^Needed/ }));
+    expect(await screen.findByText("1 selected")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Select all/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Set spec. status for 1 selected/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Complete" }));
+
+    await waitFor(() => expect(commandRequestBodies()).toHaveLength(1));
+    expect(commandRequestBodies()[0]).toEqual({
+      command: {
+        kind: "update_project_material",
+        project_material_id: "pmat_insul",
+        specification_status: "complete",
+      },
+    });
+  });
+
+  test("a failed status write reverts the row and reports the discard", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (!url.includes("/draft/envelope/commands")) return defaultFetchImplementation(url);
+      return Promise.resolve(
+        new Response(JSON.stringify({ detail: { message: "Nope." } }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+    const woodFiber = await findMaterialStatusSelect("Wood fiber board");
+
+    fireEvent.change(woodFiber, { target: { value: "complete" } });
+    await waitFor(() => expect(woodFiber).toHaveValue("needed"));
+    expect(await screen.findByText(/1 unsaved change was discarded\./)).toBeInTheDocument();
   });
 
   /**
@@ -2411,6 +2658,29 @@ function commandRequestBodies(): unknown[] {
   return fetchMock.mock.calls
     .filter((call) => String(call[0]).includes("/draft/envelope/commands"))
     .map((call) => JSON.parse(call[1]?.body as string));
+}
+
+function commandRequestHeaders(): Headers[] {
+  return fetchMock.mock.calls
+    .filter((call) => String(call[0]).includes("/draft/envelope/commands"))
+    .map((call) => new Headers(call[1]?.headers as HeadersInit));
+}
+
+type MaterialStatusCommand = {
+  kind: "update_project_material";
+  project_material_id: string;
+  specification_status: SpecificationStatus;
+};
+
+async function findMaterialStatusSelect(materialName: string): Promise<HTMLSelectElement> {
+  await screen.findByText(materialName);
+  return findRenderedMaterialStatusSelect(materialName);
+}
+
+function findRenderedMaterialStatusSelect(materialName: string): HTMLSelectElement {
+  const row = screen.getByText(materialName).closest("[role='row']");
+  if (!row) throw new Error(`Expected a table row for ${materialName}.`);
+  return within(row as HTMLElement).getByLabelText("Spec. Status") as HTMLSelectElement;
 }
 
 // A deployment where an operator HAS published the ASHRAE table, so the standard

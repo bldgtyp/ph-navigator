@@ -27,11 +27,13 @@ describe("SliceWriteJournal", () => {
     });
     const journal = new SliceWriteJournal<Slice, Payload>(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      transport,
-      (slice) => renders.push(slice),
-      vi.fn(),
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport,
+        render: (slice) => renders.push(slice),
+        onFailure: vi.fn(),
+      },
     );
 
     const a = journal.accept(append("A"));
@@ -53,17 +55,19 @@ describe("SliceWriteJournal", () => {
     const renders: Slice[] = [];
     const journal = new SliceWriteJournal(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      vi
-        .fn()
-        .mockImplementationOnce(() => first.promise)
-        .mockImplementation(async (_slice, payload) => ({
-          draft_etag: "etag-2",
-          rows: payload.rows,
-        })),
-      (slice) => renders.push(slice),
-      vi.fn(),
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport: vi
+          .fn()
+          .mockImplementationOnce(() => first.promise)
+          .mockImplementation(async (_slice, payload) => ({
+            draft_etag: "etag-2",
+            rows: payload.rows,
+          })),
+        render: (slice) => renders.push(slice),
+        onFailure: vi.fn(),
+      },
     );
     const a = journal.accept(append("raw"));
     const b = journal.accept(append("next"));
@@ -85,11 +89,13 @@ describe("SliceWriteJournal", () => {
       }));
     const journal = new SliceWriteJournal(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      transport,
-      (slice) => renders.push(slice),
-      onFailure,
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport,
+        render: (slice) => renders.push(slice),
+        onFailure,
+      },
     );
     const a = journal.accept(append("A"));
     const b = journal.accept(append("B"));
@@ -108,17 +114,18 @@ describe("SliceWriteJournal", () => {
     const requests: Payload[] = [];
     const journal = new SliceWriteJournal<Slice, Payload>(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      async (_slice, payload) => {
-        requests.push(payload);
-        if (requests.length === 1) return first.promise;
-        return { draft_etag: "etag-2", rows: payload.rows };
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport: async (_slice, payload) => {
+          requests.push(payload);
+          if (requests.length === 1) return first.promise;
+          return { draft_etag: "etag-2", rows: payload.rows };
+        },
+        render: vi.fn(),
+        onFailure: vi.fn(),
+        coalesceKey: "rows",
       },
-      vi.fn(),
-      vi.fn(),
-      undefined,
-      "rows",
     );
     const a = journal.accept(append("A", true));
     const b = journal.accept(append("B", true));
@@ -144,14 +151,14 @@ describe("SliceWriteJournal", () => {
     }));
     const journal = new SliceWriteJournal<Slice, Payload>(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      transport,
-      vi.fn(),
-      vi.fn(),
-      undefined,
-      null,
-      recover,
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport,
+        render: vi.fn(),
+        onFailure: vi.fn(),
+        recoverBase: recover,
+      },
     );
     const handle = journal.accept({ ...append("A"), metadata: { kind: "cell" } });
     await expect(handle.settled).resolves.toEqual({
@@ -169,17 +176,17 @@ describe("SliceWriteJournal", () => {
     const transport = vi.fn().mockRejectedValue(stale);
     const journal = new SliceWriteJournal<Slice, Payload>(
       { draft_etag: "etag-0", rows: [] },
-      new DraftWriteCoordinator("test"),
-      mergeSlicePayload,
-      transport,
-      (slice) => renders.push(slice),
-      onFailure,
-      undefined,
-      null,
-      async () => ({
-        base: { draft_etag: "etag-fresh", rows: ["REMOTE"] },
-        retryAllowed: false,
-      }),
+      {
+        coordinator: new DraftWriteCoordinator("test"),
+        applyPayload: mergeSlicePayload,
+        transport,
+        render: (slice) => renders.push(slice),
+        onFailure,
+        recoverBase: async () => ({
+          base: { draft_etag: "etag-fresh", rows: ["REMOTE"] },
+          retryAllowed: false,
+        }),
+      },
     );
 
     await expect(journal.accept(append("A")).settled).rejects.toBe(stale);

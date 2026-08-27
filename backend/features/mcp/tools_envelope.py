@@ -273,7 +273,7 @@ def tool_apply_envelope_command(
         response = apply_envelope_command(
             parsed_version_id,
             access,
-            payload.command,
+            payload.commands,
             if_match=if_match,
             if_match_version=if_match_version,
             updated_via="mcp",

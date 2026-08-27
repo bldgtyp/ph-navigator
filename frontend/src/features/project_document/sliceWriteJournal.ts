@@ -18,36 +18,61 @@ type JournalEntry<TSlice, TPayload> = Omit<JournalWrite<TSlice, TPayload>, "reco
 
 export type JournalRecovery<TSlice> = { base: TSlice; retryAllowed: boolean };
 
+export type SliceWriteJournalOptions<TSlice, TPayload> = {
+  /** Serializes transport across every surface writing the same draft. */
+  coordinator: DraftWriteCoordinator;
+  /** Reproduce a payload's server effect on a slice, for optimistic rendering. */
+  applyPayload: (slice: TSlice, payload: TPayload) => TSlice;
+  /** Send one payload against an acknowledged base and return the new acknowledgement. */
+  transport: (slice: TSlice, payload: TPayload) => Promise<TSlice>;
+  /** Publish the current optimistic projection (typically into the query cache). */
+  render: (slice: TSlice) => void;
+  /** Called once per drained batch after outstanding writes have been reverted. */
+  onFailure: (error: unknown, rejectedCount: number, baseRefreshed: boolean) => void;
+  /** Refresh the acknowledged base before dispatching. Defaults to using it as-is. */
+  prepareBase?: (slice: TSlice, forceRefresh: boolean) => Promise<TSlice>;
+  /** Set to enable `batchable` writes to coalesce; `null` (default) disables batching. */
+  coalesceKey?: string | null;
+  /** Rebase onto an authoritative slice after a conflict. Defaults to no recovery. */
+  recoverBase?: (
+    error: unknown,
+    metadata: readonly unknown[],
+  ) => Promise<JournalRecovery<TSlice> | null>;
+};
+
 export class SliceWriteJournal<TSlice, TPayload> {
   private lastAcked: TSlice;
   private currentRendered: TSlice;
   private outstanding: JournalEntry<TSlice, TPayload>[] = [];
   private nextId = 1;
   private failureBaseRefreshed = false;
+  private readonly coordinator: DraftWriteCoordinator;
+  private readonly applyPayload: (slice: TSlice, payload: TPayload) => TSlice;
+  private readonly transport: (slice: TSlice, payload: TPayload) => Promise<TSlice>;
+  private readonly render: (slice: TSlice) => void;
+  private readonly onFailure: (
+    error: unknown,
+    rejectedCount: number,
+    baseRefreshed: boolean,
+  ) => void;
+  private readonly prepareBase: (slice: TSlice, forceRefresh: boolean) => Promise<TSlice>;
+  private readonly coalesceKey: string | null;
+  private readonly recoverBase: (
+    error: unknown,
+    metadata: readonly unknown[],
+  ) => Promise<JournalRecovery<TSlice> | null>;
 
-  constructor(
-    initial: TSlice,
-    private readonly coordinator: DraftWriteCoordinator,
-    private readonly applyPayload: (slice: TSlice, payload: TPayload) => TSlice,
-    private readonly transport: (slice: TSlice, payload: TPayload) => Promise<TSlice>,
-    private readonly render: (slice: TSlice) => void,
-    private readonly onFailure: (
-      error: unknown,
-      rejectedCount: number,
-      baseRefreshed: boolean,
-    ) => void,
-    private readonly prepareBase: (
-      slice: TSlice,
-      forceRefresh: boolean,
-    ) => Promise<TSlice> = async (slice) => slice,
-    private readonly coalesceKey: string | null = null,
-    private readonly recoverBase: (
-      error: unknown,
-      metadata: readonly unknown[],
-    ) => Promise<JournalRecovery<TSlice> | null> = async () => null,
-  ) {
+  constructor(initial: TSlice, options: SliceWriteJournalOptions<TSlice, TPayload>) {
     this.lastAcked = initial;
     this.currentRendered = initial;
+    this.coordinator = options.coordinator;
+    this.applyPayload = options.applyPayload;
+    this.transport = options.transport;
+    this.render = options.render;
+    this.onFailure = options.onFailure;
+    this.prepareBase = options.prepareBase ?? (async (slice) => slice);
+    this.coalesceKey = options.coalesceKey ?? null;
+    this.recoverBase = options.recoverBase ?? (async () => null);
   }
 
   syncAcknowledgedSlice(slice: TSlice): void {

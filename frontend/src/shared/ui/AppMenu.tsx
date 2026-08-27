@@ -31,6 +31,7 @@ export function AppMenu({
   className,
   defaultOpen = false,
   triggerIcon: TriggerIcon = MoreVertical,
+  triggerLabel,
 }: {
   label: string;
   title?: string;
@@ -43,6 +44,13 @@ export function AppMenu({
   className?: string;
   defaultOpen?: boolean;
   triggerIcon?: LucideIcon;
+  /**
+   * Renders the trigger as a labelled control instead of an icon-only one, for
+   * a menu that *is* the action rather than an overflow affordance ("Set spec.
+   * status ▾"). Icon-only stays the default: an unlabelled overflow menu is
+   * still what most chrome wants.
+   */
+  triggerLabel?: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(defaultOpen);
@@ -53,13 +61,16 @@ export function AppMenu({
   const trigger = (
     <button
       type="button"
-      className="app-menu__trigger"
+      className={
+        triggerLabel ? "app-menu__trigger app-menu__trigger--labelled" : "app-menu__trigger"
+      }
       aria-label={label}
       aria-expanded={open}
       title={tooltip ? undefined : title}
       onClick={() => setOpen((current) => !current)}
     >
-      <TriggerIcon size={18} aria-hidden="true" />
+      {triggerLabel ? <span>{triggerLabel}</span> : null}
+      <TriggerIcon size={triggerLabel ? 14 : 18} aria-hidden="true" />
     </button>
   );
 
@@ -92,6 +103,12 @@ export function AppMenu({
 
 type AppMenuItemProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   icon?: LucideIcon;
+  /**
+   * Fills the leading icon cell with something that is not a Lucide glyph — a
+   * status dot, a swatch. Takes precedence over `icon`; both keep the item's
+   * label aligned with every other menu's.
+   */
+  leading?: ReactNode;
   children: ReactNode;
   closeOnSelect?: boolean;
   danger?: boolean;
@@ -99,6 +116,7 @@ type AppMenuItemProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className
 
 export function AppMenuItem({
   icon: Icon,
+  leading,
   children,
   closeOnSelect = true,
   danger = false,
@@ -124,7 +142,13 @@ export function AppMenuItem({
         onClick?.(event);
       }}
     >
-      <AppMenuIcon icon={Icon} />
+      {leading ? (
+        <span className="app-menu__item-icon" aria-hidden="true">
+          {leading}
+        </span>
+      ) : (
+        <AppMenuIcon icon={Icon} />
+      )}
       <span className="app-menu__item-label">{children}</span>
     </button>
   );

@@ -122,6 +122,17 @@ Envelope → Materials. Editors can update status, attach/detach datasheets,
 refresh catalog drift, and remove unused project frames. Viewer and locked
 version behavior is read-only with N/A/unused rows hidden in viewer mode.
 
+**Evidence write behavior** (2026-08-26): identical to Envelope → Materials,
+and the same mechanism — see `envelope-tab.md` §2.7.3 for the full contract.
+Setting a spec status, or clearing a datasheet/photo requirement, on either
+report is optimistic and queued: the pill takes the new value on change, no
+control is disabled, queued writes coalesce into one request, Save flushes them,
+and a rejected write reverts the affected rows and renders the shared
+discarded-writes message. An evidence-only write refetches nothing else — it
+moves no geometry, U-value, or catalog-drift input. Removing a glazing or frame
+changes which rows exist, so it stays awaited and still disables the report
+while it runs.
+
 ## 2.6.4 Installs
 
 Installs is the project library of **window-install Ψ types**

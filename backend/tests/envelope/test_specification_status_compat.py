@@ -42,7 +42,7 @@ def test_public_commands_normalize_cached_client_inputs_to_canonical_needed(
     command["specification_status"] = input_status
     parsed = EnvelopeCommandRequest.model_validate({"command": command})
 
-    assert parsed.command.model_dump(mode="json")["specification_status"] == "needed"
+    assert parsed.commands[0].model_dump(mode="json")["specification_status"] == "needed"
 
 
 @pytest.mark.parametrize(

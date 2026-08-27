@@ -1,0 +1,221 @@
+/* Page furniture around a report table: the status filter-chip row, group
+   headers, the status dot/pill vocabulary those chips and the per-row Status
+   cell share, and the compact attachment chip. Split out of ReportTable.css
+   (which owns the grid itself) when that file passed the 500-line guard. */
+
+/* Status filter chips (top-of-page filter row) */
+.report-status-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  justify-content: space-between;
+  margin-top: var(--space-16);
+  margin-bottom: var(--space-12);
+}
+
+.report-status-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.report-status-filters__summary {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  font-size: var(--fs-sm);
+  gap: var(--space-8);
+}
+
+.report-group-toolbar {
+  align-items: center;
+  background: color-mix(in oklab, var(--bg-card) 92%, var(--bg-elev));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  justify-content: flex-start;
+  margin: 0 0 var(--space-12);
+  min-height: 40px;
+  padding: var(--space-6) var(--space-8);
+}
+
+.report-group-toolbar__label,
+.report-group-toolbar__direction {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-6);
+}
+
+.report-group-toolbar__label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.report-group-toolbar__select select,
+.report-group-toolbar__direction {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  color: var(--text-primary);
+  font: inherit;
+  min-height: 28px;
+}
+
+.report-group-toolbar__select select {
+  min-width: 150px;
+  padding: 0 var(--space-24) 0 var(--space-10);
+}
+
+.report-group-toolbar__direction {
+  cursor: pointer;
+  padding: 0 var(--space-10);
+}
+
+.report-group-toolbar__direction:disabled {
+  color: var(--text-muted, var(--text-secondary));
+  cursor: default;
+  opacity: 0.56;
+}
+
+.report-table-groups {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.report-table-group {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.report-table-group__header {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  font-size: var(--fs-sm);
+  gap: var(--space-8);
+  justify-content: space-between;
+  min-height: 26px;
+  padding-inline: var(--space-2);
+}
+
+.report-table-group__header span {
+  color: var(--text-primary);
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
+.report-table-group__header em {
+  color: var(--text-muted, var(--text-secondary));
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-style: normal;
+}
+
+/* Composes `.chip .chip--md .chip--outline .chip--interactive`; only the
+   filter-chip specifics remain here. */
+.report-status-chip {
+  appearance: none;
+  font-weight: var(--fw-medium);
+  gap: var(--space-8);
+}
+
+.report-status-chip[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--border-subtle));
+}
+
+.report-status-chip__count {
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+/* Status pill (per-row Status cell) + the dot used by chips and pills */
+.report-status-dot {
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+.report-status-dot[data-status="needed"] {
+  background: var(--report-status-needed);
+}
+
+.report-status-dot[data-status="question"] {
+  background: var(--report-status-question);
+}
+
+.report-status-dot[data-status="complete"] {
+  background: var(--report-status-complete);
+}
+
+.report-status-dot[data-status="na"] {
+  background: var(--report-status-na);
+}
+
+.report-status-pill {
+  align-items: center;
+  display: inline-flex;
+  font-size: var(--fs-sm);
+  gap: var(--space-6);
+  line-height: var(--lh-solid);
+}
+
+/* Compact attachment chip — used in dense column cells.
+   Click is delegated to the row (expansion); this is display-only.
+   Binary state: missing (empty) vs attached (have a file). */
+.report-attachment-chip {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  /* Missing state: faded well below the solid accent has-files chip so the
+     have-vs-missing contrast reads at a glance. */
+  color: color-mix(in oklab, var(--text-muted) 55%, var(--bg-card));
+  display: inline-flex;
+  justify-content: center;
+  line-height: var(--lh-solid);
+  min-height: 24px;
+  min-width: 28px;
+  padding: 0 var(--space-6);
+}
+
+.report-attachment-chip[data-has-files="true"] {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
+  border-style: solid;
+  color: var(--accent-text, var(--text-primary));
+}
+
+.report-attachment-chip__glyph {
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+/* Selection + bulk action, rendered in the filter row's summary slot while
+   rows are selected (see BulkStatusAction). */
+.report-bulk-action {
+  align-items: center;
+  display: flex;
+  gap: var(--space-10);
+}
+
+.report-bulk-action__count {
+  color: var(--text-secondary);
+  font-family: var(--font-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
+.report-bulk-action__menu.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}

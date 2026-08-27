@@ -3,6 +3,27 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+New packets (2026-08-26 onward) archive **flat by slug** to
+`archive/<feature-slug>/`; each row here carries the archival date and the
+closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
+the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
+
+## 2026-08-27
+
+- `spec-status-batch-editing` - Made Spec. Status editing responsive and
+  batchable on the Envelope Materials and Apertures Glazings/Frames reports.
+  Status writes now render on click and queue on the shared `SliceWriteJournal`
+  + `DraftWriteCoordinator` instead of blocking the whole grid for a ~200-350 ms
+  production round trip and silently dropping a concurrent change; the command
+  endpoint gained a `commands: [...]` form applied as one document write so
+  queued writes coalesce; and `ReportTable` gained row selection plus a bulk
+  "Set spec. status" action that sends the whole run as one request. Closes
+  S-1 through S-5, S-7 and S-8; S-6 (Documentation spec-status optimism)
+  deliberately deferred. Four reviews per phase, browser-verified batch gesture
+  against 12 seeded materials, full CI green (backend 1,913 passed / 7 skipped;
+  frontend 2,545 passed; production build passed). Two browser checks still
+  owed against a project with real apertures - the local fixture has none.
+
 ## 2026-08-20
 
 - `model-viewer-shading-factor` - Added nullable Summer/Winter aperture

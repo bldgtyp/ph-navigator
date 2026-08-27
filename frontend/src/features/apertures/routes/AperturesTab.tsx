@@ -33,6 +33,7 @@ import {
   useApertureSpecReportQuery,
   useAperturesSliceQuery,
 } from "../hooks";
+import { useApertureCommandJournal } from "../hooks/useApertureCommandJournal";
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureUValues } from "../hooks/useApertureUValues";
@@ -140,6 +141,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     project.id,
     project.active_version_id,
   );
+  const productCommandJournal = useApertureCommandJournal({
+    projectId: project.id,
+    versionId: project.active_version_id,
+    source: reportSource,
+    slice: specReportQuery.data,
+    refetch: specReportQuery.refetch,
+    setActionError,
+  });
   const reportRefreshMutation = useApertureReportRefreshMutation(
     project.id,
     project.active_version_id,
@@ -245,17 +254,33 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     setSelectedId(remainder[0]?.id ?? null);
   };
 
+  // Evidence-only writes render on change and queue behind the shared draft
+  // write coordinator, so the report never goes inert and a fast second change
+  // is not lost. Removing a glazing or frame changes which rows exist, so it
+  // stays awaited — on the same queue, so the two cannot interleave.
   const applyProductCommand = async (command: ApertureProductCommand): Promise<boolean> => {
     const current = specReportQuery.data;
     if (!current) return false;
     setActionError(null);
+    if (productCommandJournal.submit(command)) return true;
     try {
-      await productCommandMutation.mutateAsync({ current, command });
+      await productCommandJournal.enqueue(command.kind, () =>
+        productCommandMutation.mutateAsync({ current, command }),
+      );
       return true;
     } catch (error) {
       setActionError(errorMessage(error, "Could not update aperture specification."));
       return false;
     }
+  };
+
+  // A batch gesture is one write: the whole run is journaled as a single entry
+  // and leaves as one request, rather than N commands racing the queue.
+  const applyProductCommandBatch = (commands: ApertureProductCommand[]): void => {
+    if (commands.length === 0) return;
+    setActionError(null);
+    if (productCommandJournal.submitAll(commands)) return;
+    for (const command of commands) void applyProductCommand(command);
   };
 
   const applyReportAttachmentChange = async (
@@ -526,6 +551,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         busy={reportBusy}
                         driftEntries={driftEntries}
                         onCommand={(command) => void applyProductCommand(command)}
+                        onCommandBatch={applyProductCommandBatch}
                         onAttachmentChange={(change) => applyReportAttachmentChange(change)}
                         onRefreshEntry={setRefreshEntry}
                       />
@@ -538,6 +564,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         busy={reportBusy}
                         driftEntries={driftEntries}
                         onCommand={(command) => void applyProductCommand(command)}
+                        onCommandBatch={applyProductCommandBatch}
                         onAttachmentChange={(change) => applyReportAttachmentChange(change)}
                         onRefreshEntry={setRefreshEntry}
                       />

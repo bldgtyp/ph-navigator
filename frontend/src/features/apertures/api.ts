@@ -16,6 +16,7 @@ import type {
 
 type DraftWriteResult = {
   version_id: string;
+  version_etag: string;
   draft_etag: string | null;
 };
 
@@ -69,12 +70,30 @@ export async function applyApertureProductCommand(
   current: ApertureSpecReportResponse,
   command: ApertureProductCommand,
 ): Promise<DraftWriteResult> {
+  return applyApertureProductCommands(projectId, versionId, current, [command]);
+}
+
+/**
+ * Apply a run of product commands as one document write.
+ *
+ * The endpoint answers with the *envelope* read model, not the aperture spec
+ * report, so only the write result is typed here; the caller already knows what
+ * the rows became.
+ */
+export async function applyApertureProductCommands(
+  projectId: string,
+  versionId: string,
+  current: ApertureSpecReportResponse,
+  commands: readonly ApertureProductCommand[],
+): Promise<DraftWriteResult> {
   return fetchJson<DraftWriteResult>(
     `/api/v1/projects/${projectId}/versions/${versionId}/draft/envelope/commands`,
     {
       method: "POST",
       headers: draftWriteHeaders(current),
-      body: JSON.stringify({ command }),
+      body: JSON.stringify(
+        commands.length === 1 ? { command: commands[0]! } : { commands: [...commands] },
+      ),
     },
   );
 }
