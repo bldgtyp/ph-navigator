@@ -21,8 +21,9 @@ Read order:
 - `code-reviews/<YYYY-MM-DD>/` - dated review artifacts that are not
   feature-local.
 - `archive/README.md` - chronological index of completed feature packets.
-- `archive/dated/<YYYY-MM-DD>/` - historical dated plans and completed feature
-  packets preserved for reference.
+- `archive/<feature-slug>/` - completed feature packets, flat by slug.
+- `archive/dated/<YYYY-MM-DD>/` - frozen legacy dated archive; nothing new
+  lands here.
 - `ROADMAP.html` - active/historical implementation roadmap.
 
 Stable contracts live in `context/`. Local scratch lives in gitignored

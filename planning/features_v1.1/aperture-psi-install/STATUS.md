@@ -2,13 +2,15 @@
 
 **State:** 🟢 PHN side complete — phases 01–06 implemented and Ed's phase-05
 UI review closed 2026-08-15 (five rounds of polish on
-`feature/aperture-psi-install`). One gate remains, Ed's:
+`feature/aperture-psi-install`).
 
-1. **Phase 07** (GH client, `honeybee_grasshopper_ph_plus` repo) is gated on
-   deploying phase 02's route-3 changes to production — deploys are Ed's
-   call, never an agent's.
-
-The packet stays in the active planning area until phase 07 closes.
+**Phase 07** (GH client) is scoped as of 2026-08-26. It is a
+`honeybee_grasshopper_ph_plus` feature and its spec of record now lives **in that
+repo**, at `planning/features/phn-psi-install-per-edge/` — trace, PRD, decisions,
+and a three-phase plan. Its old deploy gate is closed: route 3's `installs` block
+was confirmed live on `localhost:8000` against BT 1234 on 2026-08-26. Nothing in
+PH-Navigator needs a product change. This packet stays in the active planning area
+until phase 07 closes.
 
 **Accepted design:** `decisions.md` (D-1…D-10) is the authority; PRD.md holds
 the rationale + wireframe; research.md holds all code citations.
@@ -23,7 +25,7 @@ the rationale + wireframe; research.md holds all code citations.
 | 04 Effective-value display | PHN frontend | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; TS mirrors (paired suites + reciprocal backend pointers); element card gained a dedicated 6th `Ψ-inst` column (assigned/default/mull states, muted inheritance); U-Values Ψ-INSTALL column verified live; screenshots `frame-row-psi-phase04.png` + `u-values-psi-phase04.png` |
 | 05 Installs modal (+ Ed's UI review) | PHN frontend | ✅ Done 2026-08-04; review closed 2026-08-15 | `feature/aperture-psi-install`; `InstallsModal` (key-view overlay on the phase-04 resolver, paint/clear, apply-all, copy-to popover, inline unit-aware create via shared payload builders); vitest overlay suite + e2e paint/persist spec green; screenshots `working/agent-browser/installs-modal-phase05.png` + `installs-modal-phase05-painted.png`; as-built notes in phase doc. **Ed's review (2026-08-15)** added: staged edits with a real Cancel (`installs-draft.ts`, written on Save), edit-in-place, frame-tracing tint bands, tool placement + Default vocabulary, project-wide usage in the row editor, app-standard tooltips, and a scrolling type list with a pinned footer |
 | 06 Documentation integration + docs sync | PHN both | ✅ Done 2026-08-04 | `feature/aperture-psi-install`; Installs group in the documentation summary (via `_aperture_table` `status_source` param) + `ROWS_KEY_BY_TABLE` write entry + contractor-directions copy; context docs synced (apertures-tab §2.6.4, GLOSSARY, data-model v10); backend summary test + e2e deep-link test green; screenshot `working/agent-browser/documentation-installs-phase06.png`; as-built notes in phase doc |
-| 07 GH client per-edge fidelity | honeybee_grasshopper_ph_plus | Not started — gated on 02 deployed | — |
+| 07 GH client per-edge fidelity | honeybee_grasshopper_ph_plus | Scoped 2026-08-26 — spec of record is `honeybee_grasshopper_ph_plus/planning/features/phn-psi-install-per-edge/` | Route-3 `installs` block verified live on `localhost:8000` (BT 1234) 2026-08-26, so the deploy gate is closed. Break located: the GH V1 schema never parses `installs`. **`phases/phase-07-gh-client-per-edge.md` §3 is superseded** by that folder's D-1: per-edge Ψ lands on the aperture (`AperturePhProperties.install_types`), not on duplicated construction frame elements — the upstream refactor shipped 2026-08-12, nine days after that doc was written, and deleted the duplication mechanism (`honeybee_grasshopper_ph` issue #59) |
 
 ## Coordination
 
