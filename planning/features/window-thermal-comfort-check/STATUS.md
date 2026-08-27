@@ -10,6 +10,8 @@ RELATED:
 
 # STATUS — Window Thermal Comfort Check
 
+**Issue:** [#72](https://github.com/bldgtyp/ph-navigator/issues/72)
+
 **State:** `Deferred` — PRD drafted 2026-08-18, no code written, no phases
 planned.
 

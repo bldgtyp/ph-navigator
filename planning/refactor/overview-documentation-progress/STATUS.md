@@ -13,6 +13,8 @@ RELATED:
 
 # Overview → Documentation progress refactor
 
+**Issue:** [#75](https://github.com/bldgtyp/ph-navigator/issues/75)
+
 Branch: `feature/overview-documentation-progress-refactor`
 
 ## Why

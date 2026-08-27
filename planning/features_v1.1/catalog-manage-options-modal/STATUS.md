@@ -9,6 +9,8 @@ RELATED: ./README.md, ./PRD.md
 
 # STATUS — Catalog "Manage Options" Modal
 
+**Issue:** [#77](https://github.com/bldgtyp/ph-navigator/issues/77)
+
 ## State
 
 `Deferred` — pulled out of the completed

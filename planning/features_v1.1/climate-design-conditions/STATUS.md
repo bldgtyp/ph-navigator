@@ -13,6 +13,8 @@ RELATED:
 
 # Design conditions + metrics — Status
 
+**Issue:** [#78](https://github.com/bldgtyp/ph-navigator/issues/78)
+
 ## Current state
 
 **Deferred (gated) — narrowed 2026-06-21 (D-CL-25).** The EPW-metrics

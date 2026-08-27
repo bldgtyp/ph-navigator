@@ -16,6 +16,8 @@ RELATED:
 
 # Status — Specification-status value unification
 
+**Issue:** [#76](https://github.com/bldgtyp/ph-navigator/issues/76)
+
 ## Current state
 
 **Shipped.** Commit `ef97b483` was deployed to production on 2026-07-19 (manual

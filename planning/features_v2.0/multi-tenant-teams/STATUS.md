@@ -11,6 +11,8 @@ RELATED:
 
 # STATUS — Multi-Tenant Teams
 
+**Issue:** [#87](https://github.com/bldgtyp/ph-navigator/issues/87)
+
 **State:** Deferred / speculative. Thinking captured; **no code, no schema, no
 schedule.** Recorded 2026-06-14 from a feasibility review of auth/user/team +
 the RBC partnership idea.

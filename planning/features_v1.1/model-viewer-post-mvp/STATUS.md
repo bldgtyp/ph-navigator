@@ -17,6 +17,8 @@ RELATED:
 
 # Model Viewer Post-MVP - Status
 
+**Issue:** [#81](https://github.com/bldgtyp/ph-navigator/issues/81)
+
 ## Status
 
 Roster triaged 2026-06-13. The buildable candidates now have their own

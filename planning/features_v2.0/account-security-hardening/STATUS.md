@@ -12,6 +12,8 @@ RELATED:
 
 # STATUS - Account Security Hardening
 
+**Issue:** [#86](https://github.com/bldgtyp/ph-navigator/issues/86)
+
 **State:** Deferred / post-MVP. No code, no schema, no schedule.
 
 ## Where Things Stand

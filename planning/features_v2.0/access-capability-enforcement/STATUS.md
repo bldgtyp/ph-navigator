@@ -12,6 +12,8 @@ RELATED:
 
 # STATUS — Access-Capability Enforcement (deferred Phase 5)
 
+**Issue:** [#84](https://github.com/bldgtyp/ph-navigator/issues/84)
+
 **State:** Deferred / speculative. The access-capability-model **beta**
 (Phases 1–4b) is complete and archived; this captures the enforcement work it
 left for the trigger. **No new code, no schema applied, no schedule.**

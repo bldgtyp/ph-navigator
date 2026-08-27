@@ -8,6 +8,12 @@ New packets (2026-08-26 onward) archive **flat by slug** to
 closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
 the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
+## 2026-08-27 (cont.)
+
+- `2026-07-15-ui-batch.md` / `2026-08-19-ui-batch.md` - Index files for the
+  two dictated UI batches; every packet they route to shipped and archived, so
+  the indexes moved here flat by name (archived 2026-08-27).
+
 ## 2026-08-27
 
 - `spec-status-batch-editing` - Made Spec. Status editing responsive and

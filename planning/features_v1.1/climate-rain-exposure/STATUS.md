@@ -14,6 +14,8 @@ RELATED:
 
 # Rain Exposure Class — STATUS
 
+**Issue:** [#79](https://github.com/bldgtyp/ph-navigator/issues/79)
+
 **Status:** `Deferred` — candidate captured for later evaluation. Not
 scheduled. Originated from Ed's 2026-06-21 research into Straube's rain-control
 framework + the PNNL BASC / BEMMI annual-rainfall thresholds.

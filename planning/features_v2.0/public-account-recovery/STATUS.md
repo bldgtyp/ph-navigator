@@ -12,6 +12,8 @@ RELATED:
 
 # STATUS - Public Account Recovery / Email Delivery
 
+**Issue:** [#88](https://github.com/bldgtyp/ph-navigator/issues/88)
+
 **State:** Deferred / post-MVP. No code, no schema beyond the MVP
 `account_tokens` foundation, no schedule.
 

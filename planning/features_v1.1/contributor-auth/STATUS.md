@@ -9,6 +9,8 @@ RELATED: README.md, PRD.md, research.md, planning/archive/dated/2026-07-19/docum
 
 # Contributor auth — STATUS
 
+**Issue:** [#80](https://github.com/bldgtyp/ph-navigator/issues/80)
+
 **State:** Deferred — v1.1 candidate (Ed, 2026-07-18). site-photos v1 ships
 on the current editor/viewer model and does not depend on this. Research is
 complete and current (`research.md`): auth/access code survey + Cloudflare

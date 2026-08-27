@@ -1,5 +1,7 @@
 # STATUS — aperture-psi-install
 
+**Issue:** [#73](https://github.com/bldgtyp/ph-navigator/issues/73)
+
 **State:** 🟢 PHN side complete — phases 01–06 implemented and Ed's phase-05
 UI review closed 2026-08-15 (five rounds of polish on
 `feature/aperture-psi-install`).

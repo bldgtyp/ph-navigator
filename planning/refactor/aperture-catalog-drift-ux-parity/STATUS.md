@@ -11,6 +11,8 @@ RELATED:
 
 # STATUS — Aperture catalog-drift UX parity
 
+**Issue:** [#74](https://github.com/bldgtyp/ph-navigator/issues/74)
+
 ## Current state
 
 `Deferred`. Scoped and audited on 2026-08-03 while shipping the equivalent

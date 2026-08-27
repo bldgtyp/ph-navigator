@@ -9,6 +9,8 @@ RELATED: ./README.md, ./PRD.md
 
 # STATUS — Table CSV Download Follow-ups
 
+**Issue:** [#82](https://github.com/bldgtyp/ph-navigator/issues/82)
+
 ## State
 
 `Deferred` — the parent feature shipped in v1 (archived at
