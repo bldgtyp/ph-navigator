@@ -2,6 +2,7 @@
 name = "ph-navigator-v2-backend"
 version = "0.1.0"
 description = "PH-Navigator V2 backend — FastAPI service for versioned project documents."
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.11"
 dependencies = [
     "certifi>=2024.8",

@@ -80,3 +80,10 @@ See `Makefile` (`make help`) for the full recipe list.
    is available; use it to drive the frontend in a browser.
 
 Full rules: `CLAUDE.md`, `AGENTS.md`, `context/ENVIRONMENT.md`.
+
+## License
+
+PH-Navigator is copyright BLDGTYP, LLC and licensed under the GNU Affero General Public
+License v3.0 or later. See `LICENSE` for the text, `LICENSING.md` for what that means
+for self-hosting, hosted forks, and commercial licensing, and `CLA.md` for the
+contributor agreement required before outside contributions are merged.
