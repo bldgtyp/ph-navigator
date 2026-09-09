@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-08
 TIME: 22:01 EDT
-STATUS: In review (verified locally 2026-09-09)
+STATUS: In review; pushed, deploy pending Ed (verified locally 2026-09-09)
 AUTHOR: Codex for Claude
 SCOPE: Web implementation and verification handoff
 RELATED: README.md, PRD.md, ph-navigator-sketchup shared-material-library phase 04
@@ -47,7 +47,11 @@ tools because the sandbox blocks the global uv cache. No dependencies or global
 configuration were changed. Full command evidence is in the requested handoff
 artifact `report.md`.
 
-Next for Claude: review the diff, run the database-backed gates outside this
-sandbox, and review the consumer integration. No commit, push, or deployment
-was requested. Do not archive this packet until the repository completion
-criteria are met.
+Claude reviewed the diff, ran the database-backed gates against Docker Postgres
+(desktop suite and full backend suite, Ruff, `ty`) and committed and pushed the
+branch (a6020f3c). The consumer side is proven: the SketchUp extension's phase 4
+and phase 5 gates passed against a synthetic server that mirrors these endpoints
+(device flow, bearer catalog read, 401 on revoke). Pending Ed: deploy this branch
+(migration `20260909_0014`) and the real sign-in from the extension per the
+extension packet's phase 5 step 10. Do not archive this packet until the
+repository completion criteria are met.
