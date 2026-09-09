@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-08
 TIME: 22:01 EDT
-STATUS: In review; pushed, deploy pending Ed (verified locally 2026-09-09)
+STATUS: Merged to main via PR #91 (2026-09-09); production deploy and migration pending Ed
 AUTHOR: Codex for Claude
 SCOPE: Web implementation and verification handoff
 RELATED: README.md, PRD.md, ph-navigator-sketchup shared-material-library phase 04
@@ -9,6 +9,13 @@ ISSUE: https://github.com/bldgtyp/ph-navigator/issues/90
 ---
 
 # Status
+
+Merged to `main` through [PR #91](https://github.com/bldgtyp/ph-navigator/pull/91) on
+2026-09-09 (squash) after GitHub Actions CI passed on the pull request. Merging does not deploy:
+production still needs the Deploy Production workflow and migration `20260909_0014`, then the
+real sign-in from the extension per the consumer packet's phase 5 step 10. Both are Ed's
+decision. Archive this packet after that closeout.
+
 
 Verification outside the build sandbox (Claude, 2026-09-09, local Docker Postgres):
 `tests/test_desktop.py` 27 passed (the inactive-user case now deactivates through `deleted_at`,

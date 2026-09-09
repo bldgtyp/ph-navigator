@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-08
 TIME: 22:01 EDT
-STATUS: In review
+STATUS: Merged to main via PR #91 (2026-09-09); deploy pending Ed
 AUTHOR: Codex for Claude
 SCOPE: Additive desktop material catalog reads
 RELATED: context/mcp.md, context/technical-requirements/api.md, ph-navigator-sketchup shared-material-library phase 04
