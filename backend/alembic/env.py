@@ -30,7 +30,7 @@ def _alembic_url() -> str:
 config.set_main_option("sqlalchemy.url", _alembic_url())
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 NAMING_CONVENTION = {
     "ix": "ix_%(table_name)s_%(column_0_N_name)s",
