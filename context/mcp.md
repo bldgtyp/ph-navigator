@@ -19,7 +19,7 @@ PH-Navigator accepts two MCP bearer-token principals:
 - **User-scoped agent tokens** apply the same scope strings across every
   project their issuing user can currently access.
 
-Tokens must include `project:read`; write-capable tokens also include
+Project/asset grants must include `project:read`; write-capable tokens also include
 `project:write`. Every project-scoped tool re-checks the current token record at
 call time, so revoked or expired tokens fail closed before a write or commit
 runs. Both principal types act as their issuing user: read/data tools intersect
@@ -29,6 +29,14 @@ is transferred or the issuer loses elevated reach, the next call returns
 structured `project_not_found` with `recoverability: "refresh"`.
 Delete, restore, and hard-delete are stricter: they re-check the issuer and
 remain owner-only even when the issuer holds all-project reach.
+
+`catalog:read` permits user-scoped tokens to read the shared active material
+library and session metadata through `/api/v1/desktop` (see
+[`technical-requirements/api.md`](technical-requirements/api.md#desktop-catalog-reads)).
+A device request may use only `["catalog:read"]`; this grants no project or
+asset access and does not change the project `READ_ONLY_SCOPES` default.
+Project/asset scopes still require `project:read`, including when combined
+with `catalog:read`.
 
 Project-document writes land in the issuing editor's draft, not directly in the
 saved version. The normal write loop is:

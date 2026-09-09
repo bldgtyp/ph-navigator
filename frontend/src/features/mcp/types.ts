@@ -1,4 +1,9 @@
-export type McpScope = "project:read" | "project:write" | "asset:read" | "asset:write";
+export type McpScope =
+  | "project:read"
+  | "project:write"
+  | "asset:read"
+  | "asset:write"
+  | "catalog:read";
 
 export type McpTokenRecord = {
   id: string;

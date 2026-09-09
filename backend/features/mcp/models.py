@@ -11,11 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from features.project_status.models import StatusItemPublic
 from features.projects.models import ProjectSummary, ProjectVersionPublic
 
-McpScope = Literal["project:read", "project:write", "asset:read", "asset:write"]
+McpScope = Literal["project:read", "project:write", "asset:read", "asset:write", "catalog:read"]
 McpRecoverability = Literal["retry", "refresh", "reauthenticate", "forbidden", "fatal"]
 McpDeviceAuthorizationStatus = Literal["pending", "approved", "denied", "expired", "redeemed"]
 READ_ONLY_SCOPES: tuple[McpScope, ...] = ("project:read",)
-ALL_MCP_SCOPES: tuple[McpScope, ...] = ("project:read", "project:write", "asset:read", "asset:write")
+ALL_MCP_SCOPES: tuple[McpScope, ...] = ("project:read", "project:write", "asset:read", "asset:write", "catalog:read")
 
 
 class McpTokenGrantRequest(BaseModel):
@@ -40,7 +40,9 @@ class McpTokenGrantRequest(BaseModel):
             if scope not in seen:
                 seen.add(scope)
                 result.append(scope)
-        if "project:read" not in result:
+        # Desktop catalog grants need no project access. Existing project/asset
+        # combinations retain their project:read requirement.
+        if "project:read" not in result and result != ["catalog:read"]:
             raise ValueError("MCP tokens must include project:read.")
         return result
 

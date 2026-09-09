@@ -721,6 +721,10 @@ GET    /api/v1/gh/projects/{bt_number}/constructions/hbjson
 GET    /api/v1/gh/projects/{bt_number}/aperture-types
 GET    /api/v1/gh/projects/{bt_number}/aperture-constructions/hbjson
 GET    /api/v1/gh/projects/{bt_number}/tables/{table_name}
+
+# desktop — backend/features/desktop/routes.py (SketchUp shared library reads)
+GET    /api/v1/desktop/session
+GET    /api/v1/desktop/catalogs/materials
 ```
 
 The ApertureCommand union includes batched `setElementKind`
@@ -736,3 +740,45 @@ grid signature). The `/gh/.../aperture-types` payload carries a per-side
 `installs` block with the resolved effective values, while every
 `frame_type.psi_install_w_mk` emits the uniform project-Default value
 (never per-edge-varying — the current GH client dedups frames by name).
+
+### Desktop catalog reads
+
+Both desktop routes require `DesktopToken`: an `Authorization: Bearer` token
+validated through the existing MCP token service (including `last_used_at`).
+The issuer must be active, `project_id` must be null, and scopes must contain
+`catalog:read`. Browser session cookies do not authenticate these routes.
+
+- Missing, malformed, expired, revoked, or inactive-issuer credentials return
+  `401 invalid_token`, message `Bearer token is invalid, expired, or revoked.`
+- Project-scoped or insufficient-scope credentials return `403 forbidden`.
+- The existing device-poll per-IP limiter is applied as a router dependency;
+  reads share its configured budget with device polling and return
+  `429 rate_limited` when exhausted.
+
+`GET /api/v1/desktop/session` returns `{ token_label, scopes, expires_at,
+user_email }`. Expiry is an ISO timestamp or null for a non-expiring stored
+token. No secret, hash, or token prefix is returned.
+
+`GET /api/v1/desktop/catalogs/materials` returns:
+
+```json
+{
+  "kind": "materials",
+  "library_id": "ph-navigator-web:materials",
+  "server_time": "2026-09-09T12:00:00Z",
+  "rows": []
+}
+```
+
+`rows` uses the existing `CatalogMaterialListItem` projection, SI values and
+stable material ids, via `list_materials(include_inactive=False)`. Only active
+rows are exposed; `include_inactive` is not a supported parameter and cannot
+enable inactive rows. The pilot library is global, matching the existing
+catalog; no catalog writes, organization isolation, frames, or glazing are
+introduced. Existing browser catalog and GH routes keep their auth behavior.
+
+Migration `20260909_0014_catalog_read_scope.py` expands both token/device scope
+CHECK constraints without rewriting rows. Downgrade deletes grants carrying
+`catalog:read` from both tables, then restores the old scope arrays. Those
+deleted credentials cannot be restored by upgrading again; the user must
+authorize a new grant. Grants without the new scope are preserved.
