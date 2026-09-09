@@ -4,6 +4,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { TopbarAccountMenu, WorkspaceTopbar } from "../../../shared/ui/WorkspaceTopbar";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
+import { CATALOG_READ_SCOPE_LABEL } from "../constants";
 import { useDecideDeviceAuthorizationMutation, useDeviceAuthorizationQuery } from "../hooks";
 
 const PROJECT_ACCESS_ALL = "projects.access.all";
@@ -18,6 +19,7 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
   const authorization = authorizationQuery.data;
   const isPending = authorization?.status === "pending";
   const hasTenantWideReach = session.capabilities.includes(PROJECT_ACCESS_ALL);
+  const hasProjectRead = authorization?.scopes.includes("project:read");
 
   const handleSignOut = () => {
     const next = encodeURIComponent(`/approve-agent?code=${userCode}`);
@@ -71,7 +73,13 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
                   </div>
                   <div>
                     <dt>Requested scopes</dt>
-                    <dd>{authorization.scopes.join(", ")}</dd>
+                    <dd>
+                      {authorization.scopes
+                        .map((scope) =>
+                          scope === "catalog:read" ? CATALOG_READ_SCOPE_LABEL : scope,
+                        )
+                        .join(", ")}
+                    </dd>
                   </div>
                   <div>
                     <dt>Expires</dt>
@@ -79,10 +87,12 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
                   </div>
                 </dl>
                 <p className="form-note">
-                  Approval creates a revocable credential valid for one year across every project
-                  your account can access. The secret is delivered only to the requesting agent.
+                  {hasProjectRead
+                    ? "Approval creates a revocable credential valid for one year across every project your account can access."
+                    : "Approval creates a revocable credential valid for one year to read the shared material library."}{" "}
+                  The secret is delivered only to the requesting agent.
                 </p>
-                {hasTenantWideReach ? (
+                {hasTenantWideReach && hasProjectRead ? (
                   <p className="form-error" role="alert">
                     Your account has tenant-wide project access. This credential will inherit that
                     reach.

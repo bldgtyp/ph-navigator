@@ -25,6 +25,7 @@ from features.auth.cookies import sliding_session_cookie_middleware
 from features.auth.routes import router as auth_router
 from features.catalogs import routers as catalog_routers
 from features.climate.routes import router as climate_router
+from features.desktop.routes import router as desktop_router
 from features.envelope.routes import router as envelope_router
 from features.gh_api.routes import router as gh_api_router
 from features.heat_pumps.routes import router as heat_pumps_router
@@ -109,4 +110,5 @@ app.include_router(aperture_u_value_router)
 app.include_router(aperture_hbjson_export_router)
 app.include_router(aperture_drift_router)
 app.include_router(gh_api_router)
+app.include_router(desktop_router)
 app.mount("/mcp", phn_mcp.streamable_http_app())

@@ -114,6 +114,15 @@ output. Per-logger `propagate=False` is set on `uvicorn.error`,
 `uvicorn.access`, and `sqlalchemy.engine` so records flow through the
 root handler exactly once.
 
+`alembic/env.py` loads `alembic.ini`'s logging section with
+`fileConfig(..., disable_existing_loggers=False)`. The stdlib default
+(`True`) marks every logger that already exists as disabled, so an
+in-process migration (the test bootstrap, or a test that exercises a
+downgrade/upgrade round trip) would silently mute any application logger
+that had already emitted in that process. Symptom: a log-capture test
+passes alone and fails only in an xdist worker that ran a migration
+first.
+
 ## Backend Configuration
 
 Logging is configured exactly once, at process start, from
