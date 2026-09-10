@@ -4,20 +4,22 @@ The direct reverse of ``hbjson_export.py`` for the
 ``PHNavigatorOpaqueConstructionLibrary`` shape (PRD §2A). The file only
 *mimics* the Honeybee object model, so there is no honeybee runtime
 dependency here — ``json.loads`` plus the field mapping below. The raw
-Honeybee-PH front-end (PRD §2B) lands in Phase 2 and will normalize into
-the same :class:`ParsedConstructionLibrary` IR so the matching/apply
-stages stay source-agnostic.
+Honeybee-PH front-end (PRD §2B) normalizes a single ``OpaqueConstruction``,
+a name-keyed group, or a full ``Model`` into the same
+:class:`ParsedConstructionLibrary` IR so the matching/apply stages stay
+source-agnostic.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, TypeVar, cast, get_args
 
 from starlette import status
 
 from features.catalogs.materials.models import MEMBRANE_CATEGORY_ID
 from features.envelope.honeybee_specification_status import from_external_ref_status
+from features.project_document.custom_fields import normalize_display_name
 from features.project_document.envelope_models import (
     SPECIFICATION_STATUSES,
     AssemblyFace,
@@ -29,6 +31,19 @@ from features.project_document.envelope_models import (
 from features.shared.errors import api_error
 
 LIBRARY_TYPE = "PHNavigatorOpaqueConstructionLibrary"
+
+# ``Model.to_dict()`` writes the abridged form; a single object or a "dump
+# objects" group writes the full one. Both are read.
+_OPAQUE_CONSTRUCTION_TYPES: frozenset[str] = frozenset({"OpaqueConstruction", "OpaqueConstructionAbridged"})
+
+# Two rejections a *foreign* file survives one construction at a time (in a
+# native file they are still a 422, like every other parse error).
+IMPORT_UNSUPPORTED_LAYER_TYPE = "import_unsupported_layer_type"
+IMPORT_MATERIAL_UNRESOLVED = "import_material_unresolved"
+
+# A honeybee-PH division grid holds one spacing for the whole layer, so an
+# imported segment cannot know whether it is the stud or the cavity beside it.
+WARN_STEEL_STUD_SPACING_FROM_GRID = "steel_stud_spacing_from_grid"
 
 # Default span for a homogeneous (single-segment) layer. The width of a
 # full-width segment is thermally irrelevant (it is 100% of the layer); the
@@ -106,6 +121,9 @@ class ImportedLayer:
     thickness_mm: float
     segments: list[ImportedSegment]
     source_layer_id: str | None
+    # Codes for values the parser had to approximate (see `WARN_*`). Surfaced
+    # on the construction's preview row so the user can correct them.
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -125,6 +143,26 @@ class ImportedConstruction:
     # foreign file or an assembly with no designation.
     air_barrier: dict[str, Any] | None = None
 
+    @property
+    def warnings(self) -> list[str]:
+        """Codes for values the parser had to approximate, layer codes deduped."""
+        return list(dict.fromkeys(warning for layer in self.layers for warning in layer.warnings))
+
+
+@dataclass(frozen=True)
+class SkippedConstruction:
+    """A foreign construction PH-Navigator cannot represent.
+
+    Reported in the preview as its own row (action `skip`, non-overridable)
+    rather than failing the file: a honeybee model mixes constructions this
+    app can hold with ones it cannot, and importing the readable ones is
+    worth more than an all-or-nothing rejection.
+    """
+
+    resolution_key: str
+    name: str
+    reason: str
+
 
 @dataclass
 class ParsedConstructionLibrary:
@@ -132,6 +170,7 @@ class ParsedConstructionLibrary:
     constructions: list[ImportedConstruction]
     materials: dict[str, ImportedMaterial]
     warnings: list[str] = field(default_factory=list)
+    skipped: list[SkippedConstruction] = field(default_factory=list)
 
 
 def parse_construction_library(raw: object, *, current_schema_version: int) -> ParsedConstructionLibrary:
@@ -181,40 +220,65 @@ def _parse_native_library(envelope: dict[str, Any], current_schema_version: int)
 
 
 def _parse_foreign_constructions(envelope: dict[str, Any], current_schema_version: int) -> ParsedConstructionLibrary:
+    payloads, materials_by_identifier = _foreign_constructions(envelope)
     materials: dict[str, ImportedMaterial] = {}
-    constructions = [
-        _parse_construction(identifier, payload, materials)
-        for identifier, payload in _foreign_constructions(envelope).items()
-    ]
+    constructions: list[ImportedConstruction] = []
+    skipped: list[SkippedConstruction] = []
+    for identifier, payload in payloads.items():
+        # Stage the material registrations so a construction that fails
+        # mid-parse leaves no orphan material behind for the planner to create.
+        staged = dict(materials)
+        try:
+            resolved = _resolve_layer_materials(payload, materials_by_identifier)
+            constructions.append(_parse_construction(identifier, resolved, staged))
+        except ImportParseError as error:
+            skipped.append(
+                SkippedConstruction(
+                    resolution_key=identifier,
+                    name=_construction_name(payload, identifier),
+                    reason=error.code,
+                )
+            )
+        else:
+            materials = staged
     # Foreign files carry no PHN schema; tag them with the current version so the
     # preview/response shape is consistent (there is nothing to "upgrade").
     return ParsedConstructionLibrary(
         schema_version=current_schema_version,
         constructions=constructions,
         materials=materials,
+        skipped=skipped,
     )
 
 
-def _foreign_constructions(envelope: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Extract ``{identifier: OpaqueConstruction-dict}`` from a honeybee file."""
+def _foreign_constructions(envelope: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Extract the opaque constructions and the material table of a honeybee file.
+
+    The second element resolves the *abridged* form: ``Model.to_dict()`` writes
+    every construction as an ``OpaqueConstructionAbridged`` whose ``materials``
+    are identifier strings, with the material dicts themselves in a sibling
+    ``properties.energy.materials`` list. Only a model carries that list, so the
+    single-object and group shapes resolve against an empty one.
+    """
     file_type = envelope.get("type")
-    if file_type == "OpaqueConstruction":
-        return {_as_optional_str(envelope.get("identifier")) or "Imported construction": envelope}
+    if file_type in _OPAQUE_CONSTRUCTION_TYPES:
+        return {_as_optional_str(envelope.get("identifier")) or "Imported construction": envelope}, {}
 
     if file_type == "Model":
-        opaque = _opaque_from_list(_as_dict(_as_dict(envelope.get("properties")).get("energy")).get("constructions"))
+        energy = _as_dict(_as_dict(envelope.get("properties")).get("energy"))
+        opaque = _opaque_from_list(energy.get("constructions"))
         if not opaque:
             raise ImportParseError("import_no_constructions", "The model has no opaque constructions to import.")
-        return opaque
+        return opaque, _materials_by_identifier(energy.get("materials"))
 
     # A honeybee "dump objects" group: a name-keyed dict of object dicts.
     group = {
         identifier: cast(dict[str, Any], value)
         for identifier, value in envelope.items()
-        if isinstance(value, dict) and value.get("type") == "OpaqueConstruction"
+        if isinstance(value, dict) and value.get("type") in _OPAQUE_CONSTRUCTION_TYPES
     }
     if group:
-        return group
+        return group, {}
     raise ImportParseError(
         "import_wrong_file_type",
         "File is not a PH-Navigator construction library or a recognizable honeybee opaque construction.",
@@ -226,8 +290,48 @@ def _opaque_from_list(value: object) -> dict[str, dict[str, Any]]:
     return {
         _as_optional_str(item.get("identifier")) or f"Imported construction {index}": cast(dict[str, Any], item)
         for index, item in enumerate(_as_list(value))
-        if isinstance(item, dict) and item.get("type") == "OpaqueConstruction"
+        if isinstance(item, dict) and item.get("type") in _OPAQUE_CONSTRUCTION_TYPES
     }
+
+
+def _materials_by_identifier(value: object) -> dict[str, dict[str, Any]]:
+    return {
+        identifier: cast(dict[str, Any], item)
+        for item in _as_list(value)
+        if isinstance(item, dict) and (identifier := _as_optional_str(item.get("identifier"))) is not None
+    }
+
+
+def _resolve_layer_materials(
+    construction: dict[str, Any],
+    materials_by_identifier: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Replace an abridged construction's material identifiers with their dicts.
+
+    A construction naming a material the file does not carry is skipped rather
+    than guessed at: inventing a layer would silently change the assembly's
+    U-value.
+    """
+    resolved = [
+        _material_by_identifier(layer, materials_by_identifier) if isinstance(layer, str) else layer
+        for layer in _as_list(construction.get("materials"))
+    ]
+    return {**construction, "materials": resolved}
+
+
+def _material_by_identifier(identifier: str, materials_by_identifier: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    material = materials_by_identifier.get(identifier)
+    if material is None:
+        raise ImportParseError(
+            IMPORT_MATERIAL_UNRESOLVED,
+            "A construction layer references a material the file does not contain.",
+            {"identifier": identifier},
+        )
+    return material
+
+
+def _construction_name(construction: dict[str, Any], identifier: str) -> str:
+    return str(construction.get("display_name") or identifier)
 
 
 def parse_or_422(file: object, *, current_schema_version: int) -> ParsedConstructionLibrary:
@@ -255,7 +359,7 @@ def _parse_construction(
     if not isinstance(payload, dict):
         raise ImportParseError("import_invalid_file", "Each construction must be a JSON object.", {"id": identifier})
     construction = cast(dict[str, Any], payload)
-    ph_nav = _as_dict(construction.get("ph_nav"))
+    ph_nav = _ph_nav(construction)
 
     layers_outside_in = [
         _parse_layer(layer_payload, materials) for layer_payload in _as_list(construction.get("materials"))
@@ -272,11 +376,10 @@ def _parse_construction(
     # of ``_layers_outside_to_inside``), so a round-trip yields identical rows.
     layers = list(reversed(layers_outside_in)) if orientation == "last_layer_outside" else layers_outside_in
 
-    name = construction.get("display_name") or identifier
     return ImportedConstruction(
         resolution_key=identifier,
         source_assembly_id=_as_optional_str(ph_nav.get("assembly_id")),
-        name=str(name),
+        name=_construction_name(construction, identifier),
         type=_resolve_assembly_type(ph_nav.get("assembly_type"), identifier),
         orientation=orientation,
         # Honeybee keeps boundary conditions on faces, so a foreign file has no
@@ -397,6 +500,15 @@ def _parse_layer(
     if not isinstance(payload, dict):
         raise ImportParseError("import_invalid_file", "Each layer material must be a JSON object.")
     material = cast(dict[str, Any], payload)
+    if material.get("thickness") is None:
+        # `EnergyMaterialNoMass` — the core of honeybee-PH's declared-U
+        # sandwich — carries a bare R-value, and a PH-Navigator layer has
+        # nowhere to hold one.
+        raise ImportParseError(
+            IMPORT_UNSUPPORTED_LAYER_TYPE,
+            "A construction layer uses a honeybee material with no thickness.",
+            {"type": _as_optional_str(material.get("type"))},
+        )
     thickness_mm = _meters_to_mm(material.get("thickness"))
     divisions = _as_dict(_as_dict(_as_dict(material.get("properties")).get("ph")).get("divisions"))
 
@@ -412,7 +524,7 @@ def _parse_homogeneous_layer(
     thickness_mm: float,
     materials: dict[str, ImportedMaterial],
 ) -> ImportedLayer:
-    ph_nav = _as_dict(material.get("ph_nav"))
+    ph_nav = _ph_nav(material)
     source_key = _register_material(material, materials)
     segment = ImportedSegment(
         source_material_key=source_key,
@@ -440,31 +552,57 @@ def _parse_hybrid_layer(
         # foreign multi-row grid we do not model (V1 also rejected this).
         raise ImportParseError("import_unsupported_divisions", "Multi-row layer divisions are not supported.")
 
-    cells = _as_list(divisions.get("cells"))
+    # Widths live on the grid, not the cell: `PhDivisionCell.to_dict` writes
+    # `{row, column, material}`, and the web download format writes
+    # `column_widths` alongside its own per-cell copy.
+    column_widths = _as_list(divisions.get("column_widths"))
+    grid_spacing = _as_optional_float(divisions.get("steel_stud_spacing_mm"))
+    cells = [
+        cell for cell in map(_as_dict, _as_list(divisions.get("cells"))) if not _as_optional_float(cell.get("row"))
+    ]
     if not cells:
         raise ImportParseError("import_invalid_file", "A hybrid layer must carry at least one division cell.")
 
+    warnings: list[str] = []
     segments: list[ImportedSegment] = []
-    for cell in cells:
-        cell_dict = _as_dict(cell)
+    for index, cell_dict in enumerate(cells):
         cell_material = _as_dict(cell_dict.get("material"))
         if not cell_material:
             raise ImportParseError("import_missing_cell_material", "A division cell is missing its material.")
-        cell_ph_nav = _as_dict(cell_dict.get("ph_nav"))
+        cell_ph_nav = _ph_nav(cell_dict)
+        spacing = _as_optional_float(cell_ph_nav.get("steel_stud_spacing_mm"))
+        if spacing is None and grid_spacing is not None:
+            # The grid's spacing describes the whole layer, so it lands on every
+            # segment; the warning tells the user to trim it to the studs.
+            spacing = grid_spacing
+            warnings.append(WARN_STEEL_STUD_SPACING_FROM_GRID)
         segments.append(
             ImportedSegment(
                 source_material_key=_register_material(cell_material, materials),
-                width_mm=_meters_to_mm(cell_dict.get("column_width")),
+                width_mm=_cell_width_mm(cell_dict, column_widths, index),
                 is_continuous_insulation=bool(cell_ph_nav.get("is_continuous_insulation", False)),
-                steel_stud_spacing_mm=_as_optional_float(cell_ph_nav.get("steel_stud_spacing_mm")),
+                steel_stud_spacing_mm=spacing,
                 source_segment_id=_as_optional_str(cell_ph_nav.get("segment_id")),
             )
         )
     return ImportedLayer(
         thickness_mm=thickness_mm,
         segments=segments,
-        source_layer_id=_as_optional_str(_as_dict(material.get("ph_nav")).get("layer_id")),
+        source_layer_id=_as_optional_str(_ph_nav(material).get("layer_id")),
+        warnings=list(dict.fromkeys(warnings)),
     )
+
+
+def _cell_width_mm(cell: dict[str, Any], column_widths: list[Any], index: int) -> float:
+    """The width of the grid column this cell sits in.
+
+    honeybee-PH names the column; the web download format omits it and emits
+    the cells in column order, so the position stands in.
+    """
+    column = int(_as_optional_float(cell.get("column")) or index)
+    if 0 <= column < len(column_widths):
+        return _meters_to_mm(column_widths[column])
+    raise ImportParseError("import_invalid_file", "A division cell has no width.", {"column": column})
 
 
 def _register_material(material: dict[str, Any], materials: dict[str, ImportedMaterial]) -> str:
@@ -472,20 +610,52 @@ def _register_material(material: dict[str, Any], materials: dict[str, ImportedMa
 
     Native files share one ``pmat_*`` per distinct material, so the first
     occurrence wins and later layers referencing the same id collapse onto it
-    (PRD §5 intra-file dedup). Materials without an id get a synthetic key off
-    their identifier so two truly distinct anonymous materials stay separate.
+    (PRD §5 intra-file dedup). A foreign material has no such id, and its
+    honeybee identifier is per-layer (one product used in three layers is three
+    identifiers), so it keys on the values that make it that product instead.
     """
-    ph_nav = _as_dict(material.get("ph_nav"))
-    source_key = _as_optional_str(ph_nav.get("project_material_id")) or f"__anon__{material.get('identifier', '')}"
+    ph_nav = _ph_nav(material)
+    imported = _imported_material(material, ph_nav)
+    source_key = _project_material_id(material, ph_nav) or _value_key(imported)
     if source_key not in materials:
-        materials[source_key] = _imported_material(source_key, material, ph_nav)
+        materials[source_key] = replace(imported, source_key=source_key)
     return source_key
 
 
-def _imported_material(source_key: str, material: dict[str, Any], ph_nav: dict[str, Any]) -> ImportedMaterial:
+def _project_material_id(material: dict[str, Any], ph_nav: dict[str, Any]) -> str | None:
+    """The material's PH-Navigator id, from either slot an exporter writes it to.
+
+    The download format puts it in its own `ph_nav` block; the Grasshopper
+    export has only honeybee objects to work with and puts it in honeybee-ref's
+    external identifiers, which survives a Rhino round trip.
+    """
+    external = _as_dict(_as_dict(_as_dict(material.get("properties")).get("ref")).get("external_identifiers"))
+    return _as_optional_str(ph_nav.get("project_material_id")) or _as_optional_str(external.get("ph_nav"))
+
+
+def _value_key(material: ImportedMaterial) -> str:
+    """Identity for a material with no PH-Navigator id: name plus its values.
+
+    Thickness stays out of it — that belongs to the layer, not the product —
+    so the same insulation at two depths is still one project material.
+    """
+    values = (
+        material.conductivity_w_mk,
+        material.density_kg_m3,
+        material.specific_heat_j_kgk,
+        material.emissivity,
+        material.color,
+    )
+    return "__value__" + "|".join(
+        [normalize_display_name(material.name), *("" if value is None else str(value) for value in values)]
+    )
+
+
+def _imported_material(material: dict[str, Any], ph_nav: dict[str, Any]) -> ImportedMaterial:
+    """The IR record, before it is keyed. `_register_material` stamps the key."""
     catalog_origin = ph_nav.get("catalog_origin")
     return ImportedMaterial(
-        source_key=source_key,
+        source_key="",
         name=str(material.get("display_name") or material.get("identifier") or "Imported material"),
         catalog_origin=catalog_origin if isinstance(catalog_origin, dict) else None,
         conductivity_w_mk=_as_optional_float(material.get("conductivity")),
@@ -535,6 +705,18 @@ def _meters_to_mm(value: object) -> float:
     if number is None or number <= 0:
         raise ImportParseError("import_invalid_file", "A dimension is missing or non-positive.", {"value": value})
     return number * 1000.0
+
+
+def _ph_nav(payload: dict[str, Any]) -> dict[str, Any]:
+    """The additive PH-Navigator block, from either slot it can occupy.
+
+    The web download format puts it on a top-level ``ph_nav`` key, which it can
+    do because that format is not a honeybee object. A honeybee ``Model``
+    preserves only ``user_data``, so PH-Navigator for SketchUp writes the same
+    block, in the same shape, under ``user_data["ph_nav"]``. The rule is the
+    same for constructions, layer materials, and division cells.
+    """
+    return _as_dict(payload.get("ph_nav")) or _as_dict(_as_dict(payload.get("user_data")).get("ph_nav"))
 
 
 def _as_dict(value: object) -> dict[str, Any]:

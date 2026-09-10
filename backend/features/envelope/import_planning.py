@@ -92,7 +92,22 @@ def build_import_plan(
                 name=construction.name,
                 action=action,
                 target_assembly_id=target_id,
-                warnings=warnings,
+                warnings=[*warnings, *construction.warnings],
+            )
+        )
+
+    # Constructions the parser could not represent are rows too: the user sees
+    # what the file held and why it did not land, instead of a short list they
+    # have to diff against the source model themselves.
+    for skipped in library.skipped:
+        counts.constructions_skip += 1
+        construction_items.append(
+            ConstructionPlanItem(
+                resolution_key=skipped.resolution_key,
+                source_assembly_id=None,
+                name=skipped.name,
+                action="skip",
+                unsupported=skipped.reason,
             )
         )
 

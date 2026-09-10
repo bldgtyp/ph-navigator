@@ -8,8 +8,11 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from honeybee.model import Model
+from honeybee.room import Room
 from honeybee_energy.construction.opaque import OpaqueConstruction
-from honeybee_energy.material.opaque import EnergyMaterial
+from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
+from honeybee_energy_ph.properties.materials.opaque import PhDivisionGrid
 
 from database import transaction
 from features.project_document.document import ProjectDocumentV1
@@ -647,8 +650,12 @@ def _hb_material(name: str, *, conductivity: float = 0.04, thickness_m: float = 
     return EnergyMaterial(name, thickness_m, conductivity, 40, 1000)
 
 
+def _hb_opaque(identifier: str, *materials: EnergyMaterial) -> OpaqueConstruction:
+    return OpaqueConstruction(identifier, list(materials))
+
+
 def _hb_construction(identifier: str, *materials: EnergyMaterial) -> dict[str, Any]:
-    return OpaqueConstruction(identifier, list(materials)).to_dict()
+    return _hb_opaque(identifier, *materials).to_dict()
 
 
 def test_foreign_single_construction_creates_assembly_and_material(clean_import_tables: None) -> None:
@@ -791,3 +798,198 @@ def test_apply_command_validates_etag(clean_import_tables: None) -> None:
     # The matching etag applies cleanly.
     ok = _apply(client, project_id, version_id, payload, version_etag=document_etag(body))
     assert ok.status_code == 200, ok.text
+
+
+# --- honeybee `Model` files (PH-Navigator for SketchUp, Grasshopper) -------
+
+
+def _hb_model(*constructions: OpaqueConstruction) -> dict[str, Any]:
+    """The construction half of a model, in the shape `Model.to_dict()` writes.
+
+    Abridged constructions — their `materials` are identifier strings — over a
+    shared `properties.energy.materials` list, each piece produced by honeybee's
+    own serializer. `test_a_real_honeybee_model_imports` proves the envelope
+    around them matches a genuine `Model`; the rest of these tests use this
+    lighter fixture so a construction is one readable line.
+    """
+    materials = {
+        material.identifier: material.to_dict() for construction in constructions for material in construction.materials
+    }
+    return {
+        "type": "Model",
+        "identifier": "House",
+        "properties": {
+            "energy": {
+                "constructions": [construction.to_dict(abridged=True) for construction in constructions],
+                "materials": list(materials.values()),
+            }
+        },
+    }
+
+
+def _hb_framed_material(
+    identifier: str,
+    widths_m: list[float],
+    *,
+    steel_stud_spacing_mm: float | None = None,
+) -> EnergyMaterial:
+    """One layer carrying a honeybee-PH division grid, built by honeybee-PH itself."""
+    grid = PhDivisionGrid()
+    grid.set_row_heights([1.0])
+    grid.set_column_widths(widths_m)
+    grid.steel_stud_spacing_mm = steel_stud_spacing_mm
+    for column, width in enumerate(widths_m):
+        grid.set_cell_material(column, 0, _hb_material(f"{identifier}_s{column}", conductivity=0.04 + width))
+    material = _hb_material(identifier)
+    material.properties.ph.divisions = grid
+    return material
+
+
+def _declared_u_construction(identifier: str) -> OpaqueConstruction:
+    """honeybee-PH's declared-U sandwich: mass shells around a no-mass core."""
+    shell = _hb_material("declared_shell", conductivity=100.0, thickness_m=0.01)
+    return OpaqueConstruction(identifier, [shell, EnergyMaterialNoMass("declared_core", 6.5), shell])
+
+
+def test_a_real_honeybee_model_imports(clean_import_tables: None) -> None:
+    """The one fixture built by honeybee end to end, so the shape cannot drift."""
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    room = Room.from_box("R1", 5, 5, 3)
+    room[1].properties.energy.construction = _hb_opaque("W_Wall", _hb_material("Batt"))
+    payload = Model("House", [room]).to_dict()
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert [item["name"] for item in preview["constructions"]] == ["W_Wall"]
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assert applied["assemblies"][0]["name"] == "W_Wall"
+
+
+def test_model_with_abridged_constructions_resolves_its_material_table(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_model(_hb_opaque("W_Wall", _hb_material("Batt")))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert [item["name"] for item in preview["constructions"]] == ["W_Wall"]
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assembly_ = applied["assemblies"][0]
+    assert assembly_["type"] == "wall"
+    assert applied["project_materials"][0]["name"] == "Batt"
+    assert assembly_["layers"][0]["segments"][0]["project_material_id"] == applied["project_materials"][0]["id"]
+
+
+def test_construction_ph_nav_is_read_from_user_data(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    construction = _hb_opaque("Roof", _hb_material("Batt"))
+    # A honeybee Model preserves only `user_data`, so PH-Navigator for SketchUp
+    # writes the block there instead of on a top-level `ph_nav` key.
+    construction.user_data = {
+        "ph_nav": {
+            "source": "ph-navigator-sketchup",
+            "assembly_id": "asm_sketchup",
+            "assembly_type": "roof",
+            "orientation": "first_layer_outside",
+            "exterior_condition": "ground",
+            "air_barrier": {"layer_id": "lyr_wrb", "face": "exterior"},
+            "membrane_layers": [
+                {
+                    "outside_index": 0,
+                    "layer_id": "lyr_wrb",
+                    "segment_id": "seg_wrb",
+                    "thickness_mm": 1.0,
+                    "width_mm": 1000.0,
+                    "material": {"project_material_id": "mat_wrb", "name": "WRB", "category": "membrane"},
+                }
+            ],
+        }
+    }
+    payload = _hb_model(construction)
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+
+    assembly_ = applied["assemblies"][0]
+    assert (assembly_["type"], assembly_["exterior_condition"]) == ("roof", "ground")
+    # The membrane is spliced back at its recorded index, keeping its own ids,
+    # so the air-barrier designation still resolves.
+    assert [layer["id"] for layer in assembly_["layers"]][0] == "lyr_wrb"
+    assert assembly_["air_barrier"] == {"layer_id": "lyr_wrb", "face": "exterior"}
+    assert {material["name"] for material in applied["project_materials"]} == {"Batt", "WRB"}
+
+
+def test_honeybee_ph_division_grid_takes_its_widths_from_the_grid(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_model(_hb_opaque("W_Framed", _hb_framed_material("framed", [0.4, 0.6])))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+
+    segments = applied["assemblies"][0]["layers"][0]["segments"]
+    assert [segment["width_mm"] for segment in segments] == [400.0, 600.0]
+
+
+def test_grid_steel_stud_spacing_lands_on_every_segment_with_a_warning(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_model(_hb_opaque("W_Studs", _hb_framed_material("studs", [0.4, 0.6], steel_stud_spacing_mm=406)))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert preview["constructions"][0]["warnings"] == ["steel_stud_spacing_from_grid"]
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    segments = applied["assemblies"][0]["layers"][0]["segments"]
+    # The grid holds one spacing for the whole layer, so every segment takes it
+    # and the warning tells the user to trim it to the studs.
+    assert [segment["steel_stud_spacing_mm"] for segment in segments] == [406.0, 406.0]
+
+
+def test_no_mass_layer_skips_only_its_own_construction(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_model(_declared_u_construction("Slab_Declared"), _hb_opaque("W_Wall", _hb_material("Batt")))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    skipped = next(item for item in preview["constructions"] if item["name"] == "Slab_Declared")
+    assert skipped["action"] == "skip"
+    assert skipped["unsupported"] == "import_unsupported_layer_type"
+    assert preview["counts"]["constructions_skip"] == 1
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assert [assembly_["name"] for assembly_ in applied["assemblies"]] == ["W_Wall"]
+    # The skipped construction leaves no orphan materials behind.
+    assert [material["name"] for material in applied["project_materials"]] == ["Batt"]
+
+
+def test_construction_naming_a_missing_material_is_skipped(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_model(_hb_opaque("W_Wall", _hb_material("Batt")))
+    payload["properties"]["energy"]["materials"] = []
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert preview["constructions"][0]["unsupported"] == "import_material_unresolved"
+
+
+def test_one_product_in_several_layers_imports_as_one_material(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    # A SketchUp export identifies each layer's material by the layer it sits
+    # in, so one product reaches the file under several identifiers — and at
+    # more than one thickness, which does not make it a different product.
+    first = _hb_material("phn_lyr_a", thickness_m=0.1)
+    second = _hb_material("phn_lyr_b", thickness_m=0.2)
+    first.display_name = second.display_name = "Plywood"
+    payload = _hb_model(_hb_opaque("W_Wall", first, second))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert [item["name"] for item in preview["materials"]] == ["Plywood"]
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assert len(applied["project_materials"]) == 1
+    layers = applied["assemblies"][0]["layers"]
+    assert [layer["thickness_mm"] for layer in layers] == [100.0, 200.0]
+    assert len({layer["segments"][0]["project_material_id"] for layer in layers}) == 1

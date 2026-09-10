@@ -187,7 +187,10 @@ Multi-segment (hybrid) layers emit a wrapper `EnergyMaterial` whose:
 
 Segments are sorted by `order` before emission. `column_widths` is
 authoritative for cell layout; `column_width` on each cell repeats the
-value so a consumer reading only `cells[]` is self-sufficient. The
+value so a consumer reading only `cells[]` is self-sufficient. Our own
+importer no longer needs the repeat — it reads `column_widths` for both
+this shape and honeybee-PH's `{row, column, material}` cell — so the
+per-cell copy is now for third-party consumers only. The
 hybrid wrapper `EnergyMaterial` also carries `ph_nav.layer_id`; the
 per-cell `ph_nav` carries the segment identity (round-trip fields).
 

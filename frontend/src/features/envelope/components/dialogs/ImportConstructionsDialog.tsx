@@ -97,14 +97,22 @@ export function ImportConstructionsDialog({
           {constructions.map((item) => (
             <li key={item.resolution_key} className="envelope-import__row">
               <span className="envelope-import__name">{item.name}</span>
-              <ActionControl
-                item={item}
-                value={effectiveAction(item)}
-                onChange={(action) =>
-                  setOverrides((prev) => ({ ...prev, [item.resolution_key]: action }))
-                }
-              />
-              <RowWarnings warnings={item.warnings} />
+              {item.unsupported ? (
+                // Nothing to choose: the construction cannot become an
+                // assembly, so the row reports the reason instead.
+                <span className="chip chip--sm chip--outline">
+                  {CONSTRUCTION_ACTION_LABELS.skip}
+                </span>
+              ) : (
+                <ActionControl
+                  item={item}
+                  value={effectiveAction(item)}
+                  onChange={(action) =>
+                    setOverrides((prev) => ({ ...prev, [item.resolution_key]: action }))
+                  }
+                />
+              )}
+              <RowWarnings warnings={item.unsupported ? [item.unsupported] : item.warnings} />
             </li>
           ))}
         </ImportSection>
