@@ -8,6 +8,32 @@ New packets (2026-08-26 onward) archive **flat by slug** to
 closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
 the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
+## 2026-09-10
+
+- `hbjson-import-honeybee-models` - Taught the Envelope HBJSON importer to read
+  what honeybee actually writes, so a **PH-Navigator for SketchUp** export
+  imports. Filed as one fallback read (issue #92: take a construction's
+  `ph_nav` from `user_data`); testing the real export found that was the third
+  of four blockers and the file was rejected before the block was ever read.
+  All four fixed with no change to any export: abridged constructions resolved
+  against `properties.energy.materials`; `ph_nav` read from `user_data` at
+  every site (construction, layer material, division cell); division-cell
+  widths taken from the grid's `column_widths` so honeybee-PH's
+  `{row, column, material}` reads, with grid-level `steel_stud_spacing_mm`
+  reaching the segments under a warning; and a construction with a
+  thickness-less layer (`EnergyMaterialNoMass`, a declared-U sandwich) reported
+  as one skipped preview row instead of failing the whole file. Material
+  identity also gained the `properties.ref.external_identifiers` slot and a
+  value-identity fallback, so one product across several layers stops importing
+  as several project materials. `make ci` and PR CI green (backend 1,948 passed
+  / 7 skipped; frontend 2,547 passed); verified in place against three private
+  SketchUp host-gate artifacts. Contract in
+  `context/technical-requirements/envelope-hbjson-import.md`. Merged 2026-09-10
+  via [PR #94](https://github.com/bldgtyp/ph-navigator/pull/94), closing
+  [#92](https://github.com/bldgtyp/ph-navigator/issues/92) (archived
+  2026-09-10). Browser pass on the preview dialog not run; the dialog change is
+  covered by its unit test.
+
 ## 2026-08-27 (cont.)
 
 - `2026-07-15-ui-batch.md` / `2026-08-19-ui-batch.md` - Index files for the

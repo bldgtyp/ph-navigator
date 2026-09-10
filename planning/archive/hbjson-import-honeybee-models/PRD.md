@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-10
 TIME: 12:42 EDT
-STATUS: Implemented on branch (2026-09-10)
+STATUS: Complete
 AUTHOR: Claude (with Ed May)
 SCOPE: Behavior contract for importing a honeybee `Model` HBJSON into Envelope → Assemblies
 RELATED: README.md, PLAN.md, context/technical-requirements/envelope-hbjson-import.md

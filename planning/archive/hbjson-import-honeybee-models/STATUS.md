@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-10
 TIME: 12:42 EDT
-STATUS: Implemented on branch `feature/hbjson-import-honeybee-models` (2026-09-10)
+STATUS: Complete - merged to `main` 2026-09-10 via PR #94
 AUTHOR: Claude (with Ed May)
 SCOPE: State ledger for the honeybee `Model` HBJSON import packet
 RELATED: README.md, PRD.md, PLAN.md
@@ -10,8 +10,13 @@ ISSUE: https://github.com/bldgtyp/ph-navigator/issues/92
 
 # Status
 
-**Implemented on branch** `feature/hbjson-import-honeybee-models`
-(2026-09-10). All six changes in [`PLAN.md`](PLAN.md) are in, with the
+**Complete.** Merged to `main` on 2026-09-10 as `25a9698a` through
+[PR #94](https://github.com/bldgtyp/ph-navigator/pull/94) (squash), which closed
+[#92](https://github.com/bldgtyp/ph-navigator/issues/92). GitHub Actions CI
+passed on the pull request (backend and frontend). Merging does not deploy:
+production still needs the Deploy Production workflow, which is Ed's call.
+
+All six changes in [`PLAN.md`](PLAN.md) are in, with the
 contract doc and the page doc updated. D1, D2 and D3 were accepted as
 recommended (see [`PRD.md`](PRD.md) § Decisions); D4 remains a note to the
 SketchUp repo, not a blocker.
@@ -33,8 +38,7 @@ Three refinements came out of the `simplify` review and are worth knowing:
 
 ## Next step
 
-Ed's call: PR against `main` (`Closes #92`), then merge. Deploy is separate
-and also Ed's. Archive the packet flat-by-slug after it lands.
+None. Deploy to production is a separate, Ed-triggered decision.
 
 ## Blockers
 
