@@ -10,6 +10,12 @@ token.
 
 ## Approve agent
 
+The approval screen uses a centered, width-constrained card (640px maximum),
+a compact page heading, separated label/value rows, a monospace verification
+code, and wrapping scope chips. Tenant-wide reach appears in an amber notice;
+Deny and Approve sit together in the card footer. On narrow screens the
+detail labels stack above their values.
+
 `/approve-agent?code=XXXX-XXXX` is opened by the requesting agent's device
 flow. The page:
 

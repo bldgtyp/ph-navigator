@@ -1351,9 +1351,9 @@ describe("App", () => {
         expect(screen.queryByText(/across every project/)).not.toBeInTheDocument();
         expect(screen.queryByText(/tenant-wide project access/)).not.toBeInTheDocument();
       } else {
-        expect(
-          screen.getByText("project:read, project:write, asset:read, asset:write"),
-        ).toBeVisible();
+        for (const scope of scopes) {
+          expect(screen.getByText(scope, { exact: true })).toBeVisible();
+        }
         expect(screen.getByText(/across every project/)).toBeVisible();
       }
       await user.click(screen.getByRole("button", { name: "Approve" }));

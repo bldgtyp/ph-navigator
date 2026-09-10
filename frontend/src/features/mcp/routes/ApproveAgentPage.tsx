@@ -6,6 +6,7 @@ import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CATALOG_READ_SCOPE_LABEL } from "../constants";
 import { useDecideDeviceAuthorizationMutation, useDeviceAuthorizationQuery } from "../hooks";
+import "../approve-agent.css";
 
 const PROJECT_ACCESS_ALL = "projects.access.all";
 
@@ -36,18 +37,20 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
           <TopbarAccountMenu label={session.user.display_name} onSignOut={handleSignOut} />
         }
       />
-      <section className="dashboard-page" aria-labelledby="approve-agent-title">
-        <div className="dashboard-sections">
-          <header className="page-heading">
+      <section className="agent-approval-page" aria-labelledby="approve-agent-title">
+        <div className="agent-approval">
+          <header className="agent-approval-heading">
             <div>
               <p className="eyebrow">Agent access</p>
               <h1 id="approve-agent-title">Approve this agent?</h1>
+              <p className="agent-approval-intro">
+                Review the request below to connect an agent to PH-Navigator.
+              </p>
             </div>
           </header>
-          <section className="settings-section" aria-labelledby="agent-request-title">
-            <div className="settings-section-heading">
-              <h3 id="agent-request-title">Device request</h3>
-              <span>{userCode || "Missing code"}</span>
+          <section className="agent-approval-card" aria-labelledby="agent-request-title">
+            <div className="agent-approval-card-heading">
+              <h2 id="agent-request-title">Device request</h2>
             </div>
             {!userCode ? (
               <p className="form-error" role="alert">
@@ -62,44 +65,46 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
             ) : null}
             {authorization ? (
               <>
-                <dl className="metadata-grid">
+                <dl className="agent-approval-details">
                   <div>
                     <dt>Machine / agent</dt>
                     <dd>{authorization.label}</dd>
                   </div>
                   <div>
                     <dt>User code</dt>
-                    <dd>{authorization.user_code}</dd>
-                  </div>
-                  <div>
-                    <dt>Requested scopes</dt>
                     <dd>
-                      {authorization.scopes
-                        .map((scope) =>
-                          scope === "catalog:read" ? CATALOG_READ_SCOPE_LABEL : scope,
-                        )
-                        .join(", ")}
+                      <code className="agent-approval-code">{authorization.user_code}</code>
                     </dd>
                   </div>
                   <div>
-                    <dt>Expires</dt>
+                    <dt>Requested scopes</dt>
+                    <dd className="agent-approval-scopes">
+                      {authorization.scopes.map((scope) => (
+                        <span className="chip chip--sm chip--outline" key={scope}>
+                          {scope === "catalog:read" ? CATALOG_READ_SCOPE_LABEL : scope}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Request expires</dt>
                     <dd>{formatProjectDateTime(authorization.expires_at)}</dd>
                   </div>
                 </dl>
-                <p className="form-note">
+                <p className="agent-approval-note">
                   {hasProjectRead
                     ? "Approval creates a revocable credential valid for one year across every project your account can access."
                     : "Approval creates a revocable credential valid for one year to read the shared material library."}{" "}
                   The secret is delivered only to the requesting agent.
                 </p>
                 {hasTenantWideReach && hasProjectRead ? (
-                  <p className="form-error" role="alert">
+                  <p className="agent-approval-warning" role="alert">
                     Your account has tenant-wide project access. This credential will inherit that
                     reach.
                   </p>
                 ) : null}
                 {isPending ? (
-                  <div className="modal-actions">
+                  <div className="agent-approval-actions">
                     <button
                       type="button"
                       className="secondary-button"
@@ -122,7 +127,7 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
                     </button>
                   </div>
                 ) : (
-                  <p role="status">
+                  <p className="agent-approval-status" role="status">
                     Request status: <strong>{authorization.status}</strong>. You may close this tab.
                   </p>
                 )}
@@ -134,7 +139,7 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
               </>
             ) : null}
           </section>
-          <p className="form-note">
+          <p className="agent-approval-manage">
             <Link to="/account/agent-tokens">Manage my agent tokens</Link>
           </p>
         </div>

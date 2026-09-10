@@ -170,6 +170,7 @@
   --state-ring-width: 2px;
   --state-ring-offset: -2px;
   --font-primary: "Geist", sans-serif;
+  --agent-approval-width: 640px;
   --font-table: "Geist", sans-serif;
   /* Type scale (rem). 8 steps — the only font sizes allowed in component
      CSS (via var()), plus the named semantic exceptions below. Enforced by
