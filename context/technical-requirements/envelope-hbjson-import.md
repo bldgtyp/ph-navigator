@@ -216,4 +216,7 @@ existing envelope-command rail. See `frontend/src/features/envelope/`
 
 - `context/technical-requirements/envelope-hbjson-export.md` — the format
   this reverses, including the additive `ph_nav` round-trip fields.
-- `planning/features/envelope-hbjson-import/` — PRD, decisions, phases.
+- `planning/archive/dated/2026-06-23/envelope-hbjson-import/` — the original
+  packet: PRD, decisions, phases.
+- `planning/archive/hbjson-import-honeybee-models/` — the honeybee `Model`
+  follow-up (issue #92): the four gaps and their evidence.

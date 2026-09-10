@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-10
 TIME: 12:42 EDT
-STATUS: Implemented on branch (2026-09-10)
+STATUS: Complete
 AUTHOR: Claude (with Ed May)
 SCOPE: Router for the packet that makes a real honeybee `Model` HBJSON importable on Envelope → Assemblies
 RELATED: context/technical-requirements/envelope-hbjson-import.md, context/technical-requirements/envelope-hbjson-export.md, planning/archive/envelope-hbjson-import/
