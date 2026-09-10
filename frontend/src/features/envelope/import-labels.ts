@@ -25,6 +25,14 @@ const IMPORT_WARNING_LABELS: Record<string, string> = {
   ambiguous_name_in_project: "Several project materials share this name.",
   reused_material_values_differ:
     "The reused project material's values differ from the file — the project's values are kept.",
+  import_unsupported_layer_type:
+    "A layer uses a honeybee material with no thickness (a declared-U layer, for example) — skipped.",
+  import_material_unresolved: "A layer references a material the file does not contain — skipped.",
+  import_unsupported_divisions: "This layer's divisions have more than one row — skipped.",
+  import_missing_cell_material: "A layer division is missing its material — skipped.",
+  import_invalid_file: "This construction could not be read — skipped.",
+  steel_stud_spacing_from_grid:
+    "Steel-stud spacing was recorded for the whole layer — it was applied to every segment, so trim it to the studs.",
 };
 
 export function importWarningLabel(code: string): string {

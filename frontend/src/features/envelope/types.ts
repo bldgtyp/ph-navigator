@@ -393,6 +393,9 @@ export type ImportConstructionPlanItem = {
   action: ConstructionImportAction;
   target_assembly_id: string | null;
   warnings: string[];
+  // Set when the file held a construction PH-Navigator cannot represent: the
+  // row is informational, always skipped, and offers no action control.
+  unsupported: string | null;
 };
 
 export type ImportMaterialPlanItem = {

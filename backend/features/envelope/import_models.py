@@ -79,6 +79,11 @@ class ConstructionPlanItem(BaseModel):
     action: ConstructionAction
     target_assembly_id: str | None = None
     warnings: list[str] = Field(default_factory=list)
+    # Why this construction cannot be imported at all (a `SkippedConstruction`
+    # reason code), or None for an importable one. The action is `skip` and the
+    # client offers no override: an `Assembly` needs at least one layer, so
+    # "add" here could only produce a document the validator rejects.
+    unsupported: str | None = None
 
 
 class ImportPlanCounts(BaseModel):

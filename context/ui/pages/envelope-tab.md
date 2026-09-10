@@ -225,7 +225,10 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
   When any assembly is blocked, a confirm/cancel modal
   (`PhppExportWarningDialog`) lists them with friendly reasons before the
   download proceeds ("Download anyway" / "Cancel").
-- **Upload constructions HBJSON** (editors only).
+- **Upload constructions HBJSON** (editors only). The preview dialog lists one
+  row per construction in the file; a construction PH-Navigator cannot
+  represent (a declared-U sandwich, for example) shows a **Skip** chip with the
+  reason instead of an action control, and the rest of the file still imports.
 
 Both downloads target the **saved version**, not the draft; if an unsaved draft
 exists they first warn ("…reads the last committed version…"). Read-only

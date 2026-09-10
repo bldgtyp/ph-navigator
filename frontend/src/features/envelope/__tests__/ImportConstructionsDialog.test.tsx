@@ -28,6 +28,7 @@ function plan(overrides: Partial<ImportConstructionsPreview> = {}): ImportConstr
         action: "replace",
         target_assembly_id: "asm_a",
         warnings: [],
+        unsupported: null,
       },
       {
         resolution_key: "W_NewWall",
@@ -36,6 +37,7 @@ function plan(overrides: Partial<ImportConstructionsPreview> = {}): ImportConstr
         action: "add_new",
         target_assembly_id: null,
         warnings: [],
+        unsupported: null,
       },
     ],
     materials: [
@@ -162,6 +164,7 @@ describe("ImportConstructionsDialog", () => {
               action: "skip",
               target_assembly_id: "asm_a",
               warnings: [],
+              unsupported: null,
             },
           ],
         })}
@@ -173,5 +176,32 @@ describe("ImportConstructionsDialog", () => {
     );
 
     expect(screen.getByRole("button", { name: "Nothing to import" })).toBeDisabled();
+  });
+
+  test("an unsupported construction shows its reason and offers no action control", () => {
+    render(
+      <ImportConstructionsDialog
+        plan={plan({
+          constructions: [
+            {
+              resolution_key: "Slab Declared",
+              source_assembly_id: null,
+              name: "Slab Declared",
+              action: "skip",
+              target_assembly_id: null,
+              warnings: [],
+              unsupported: "import_unsupported_layer_type",
+            },
+          ],
+        })}
+        busy={false}
+        error={null}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("combobox", { name: "Action for Slab Declared" })).toBeNull();
+    expect(screen.getByText(/declared-U layer/)).toBeInTheDocument();
   });
 });

@@ -12,10 +12,54 @@ dispatches on the envelope):
   of the export; id/catalog provenance preserved.
 - **Raw honeybee-PH** — a single `OpaqueConstruction`, a name-keyed group
   ("dump objects"), or a full `Model` (its opaque constructions are sifted).
-  No `ph_nav`; materials key on `identifier`, `catalog_origin = null`; the
-  assembly type comes from the `W_/R_/F_` identifier prefix (else `other`),
-  overridable in the preview. Parsed from the honeybee **dict shape**
-  directly — no honeybee runtime dependency.
+  `catalog_origin = null`; the assembly type comes from the `W_/R_/F_`
+  identifier prefix (else `other`), overridable in the preview. Parsed from the
+  honeybee **dict shape** directly — no honeybee runtime dependency.
+  A file written by **PH-Navigator for SketchUp** is this shape and does carry
+  a `ph_nav` block (see below).
+
+### Reading what honeybee actually writes
+
+- **Abridged constructions.** `Model.to_dict()` writes each construction as an
+  `OpaqueConstructionAbridged` whose `materials` are identifier *strings*, with
+  the material dicts in a sibling `properties.energy.materials` list. Both
+  types are accepted and the identifiers resolve against that list; only a
+  `Model` carries one, so the single-object and group shapes must inline their
+  materials. A layer naming a material the file does not contain skips that
+  construction (`import_material_unresolved`).
+- **`ph_nav` from `user_data`.** A honeybee `Model` preserves only `user_data`,
+  so PH-Navigator for SketchUp writes the same block, in the same shape, under
+  `user_data["ph_nav"]` (plus `"source": "ph-navigator-sketchup"`). Every
+  `ph_nav` read — construction, layer material, division cell — takes the
+  top-level key first and `user_data["ph_nav"]` second, so a native file is
+  unaffected.
+- **Division cells.** honeybee-PH writes `{row, column, material}`; the PHN
+  download format writes `column_width`/`row_height`/`ph_nav` on the cell.
+  Widths always come from the grid's `column_widths` (both producers write it),
+  by the cell's `column` or, when it has none, its position. Only `row == 0`
+  cells are read and a multi-row grid is still rejected. Grid-level `steel_stud_spacing_mm` reaches every segment of
+  that layer when no per-cell block carries one, with a
+  `steel_stud_spacing_from_grid` warning: the grid holds one spacing for the
+  whole layer, so per-segment attribution cannot be recovered.
+- **Material dedup.** A material's PH-Navigator id is read from
+  `ph_nav.project_material_id` or, for a file that went through honeybee
+  objects (the Grasshopper export), `properties.ref.external_identifiers.ph_nav`.
+  With neither, it keys on its value identity (normalized display name + conductivity + density +
+  specific heat + emissivity + color) rather than its honeybee identifier,
+  which is per-layer. Thickness is excluded: it belongs to the layer, so one
+  product at two depths stays one project material.
+- **Unsupported constructions.**   a layer material with no `thickness` — `EnergyMaterialNoMass`, the core of
+  honeybee-PH's declared-U sandwich, carries a bare R-value — has no place in a
+  PHN assembly. That
+  construction is reported as its own preview row
+  (`action = "skip"`, `unsupported = <the parse error's own code>`,
+  non-overridable because an `Assembly` requires at least one layer) and the
+  rest of the file imports. `unsupported` carries the rejection code the same
+  parse would have raised as a 422 — `import_unsupported_layer_type`,
+  `import_material_unresolved`, or any other from the list below — so there is
+  one vocabulary, not two. This applies to **foreign files only**: a native
+  library that will not parse is still a 422, because that would be a defect in
+  this app.
 
 Implementation: `backend/features/envelope/hbjson_import.py` (parse → IR),
 `import_planning.py` (`build_import_plan`), `commands/envelope_import.py`
@@ -49,7 +93,8 @@ Implementation: `backend/features/envelope/hbjson_import.py` (parse → IR),
     { "resolution_key": "<file construction identifier>",
       "source_assembly_id": "asm_… | null", "name": "...",
       "action": "add_new | replace | skip",
-      "target_assembly_id": "asm_… | null", "warnings": ["..."] }
+      "target_assembly_id": "asm_… | null", "warnings": ["..."],
+      "unsupported": "<reason code> | null" }
   ],
   "materials": [
     { "source_key": "...", "name": "...",
@@ -131,15 +176,28 @@ the air-barrier designation at whatever layer id the rebuilt assembly minted.
 A malformed or foreign `air_barrier` is dropped rather than raised: import is
 forgiving, and losing an annotation beats failing the construction.
 
+**A PH-Navigator for SketchUp file** carries the block on the construction
+only, so its *materials* have no `ph_nav`. Membrane layers keep their
+`lyr_`/`seg_` ids (they ride inside the construction block), thermal layers get
+freshly minted ones, `is_continuous_insulation` is lost, and an air-barrier
+designation survives only when it points at a membrane layer. Adding a
+per-material `user_data["ph_nav"]` on that side would close all of it with no
+change here — the reads are already in place.
+
 ## Rejections (typed 422 unless noted)
 
 `import_invalid_json` · `import_wrong_file_type` (not native, and not a
 recognizable honeybee construction) · `import_invalid_file` ·
 `import_no_constructions` (a model with no opaque constructions) ·
 `import_schema_too_new` · `import_unsupported_divisions` (multi-row grid) ·
-`import_missing_cell_material` · `import_file_too_large` (413). Import does
+`import_missing_cell_material` · `import_unsupported_layer_type` (a layer
+material with no thickness) · `import_material_unresolved` (an abridged layer
+naming a material the file lacks) · `import_file_too_large` (413). Import does
 **not** block on thermal incompleteness — incomplete assemblies are legal in
-a draft and surface in the preview, not as errors.
+a draft and surface in the preview, not as errors. In a **foreign** file every
+per-construction failure above is reported as one skipped row carrying that
+same code in `unsupported`, instead of a 422, so one unreadable construction
+never rejects the file.
 
 ## Frontend
 
@@ -147,7 +205,8 @@ The "Upload constructions HBJSON" menu item (editor-only) on Envelope →
 Assemblies drives this: `useEnvelopeHbjsonImport` reads the file and calls the
 preview route, `ImportConstructionsDialog` shows the plan and lets the user
 override each construction's action (Add new / Replace / Skip — Replace only
-when the file matched an existing assembly), and confirming fires the
+when the file matched an existing assembly; a row carrying `unsupported` shows
+its reason and no control), and confirming fires the
 `import_envelope_constructions` command (with the chosen `resolutions`) on the
 existing envelope-command rail. See `frontend/src/features/envelope/`
 (`hooks/useEnvelopeHbjsonImport.ts`,
