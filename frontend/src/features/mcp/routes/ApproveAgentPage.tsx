@@ -94,7 +94,7 @@ export function ApproveAgentPage({ session }: { session: AuthSession }) {
                 <p className="agent-approval-note">
                   {hasProjectRead
                     ? "Approval creates a revocable credential valid for one year across every project your account can access."
-                    : "Approval creates a revocable credential valid for one year to read the shared material library."}{" "}
+                    : "Approval creates a revocable credential valid for one year to read the shared material, frame, and glazing libraries."}{" "}
                   The secret is delivered only to the requesting agent.
                 </p>
                 {hasTenantWideReach && hasProjectRead ? (

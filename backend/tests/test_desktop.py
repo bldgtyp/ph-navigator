@@ -12,6 +12,7 @@ from alembic import command
 from config import settings
 from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.catalogs.frame_types.models import CatalogFrameTypeListItem
 from features.mcp.models import ALL_MCP_SCOPES, READ_ONLY_SCOPES
 from features.mcp.rate_limit import reset_device_rate_limiters
 from main import app
@@ -20,7 +21,12 @@ from tests.catalog_helpers import create_catalog_admin
 ORIGIN = "http://localhost:5173"
 EMAIL = "desktop@example.com"
 BASE = "/api/v1/desktop"
-ENDPOINTS = (f"{BASE}/session", f"{BASE}/catalogs/materials")
+SESSION = f"{BASE}/session"
+MATERIALS = f"{BASE}/catalogs/materials"
+FRAMES = f"{BASE}/catalogs/frame-types"
+GLAZINGS = f"{BASE}/catalogs/glazing-types"
+CATALOG_ENDPOINTS = (MATERIALS, FRAMES, GLAZINGS)
+ENDPOINTS = (SESSION, *CATALOG_ENDPOINTS)
 
 
 @pytest.fixture(autouse=True)
@@ -38,6 +44,18 @@ def signed_in_client() -> TestClient:
         "/api/v1/auth/login",
         headers={"Origin": ORIGIN},
         json={"email": EMAIL, "password": "password"},
+    )
+    assert response.status_code == 200, response.text
+    return client
+
+
+def catalog_admin_client() -> TestClient:
+    create_catalog_admin(email="catalog-admin@example.com", display_name="Catalog admin")
+    client = TestClient(app)
+    response = client.post(
+        "/api/v1/auth/login",
+        headers={"Origin": ORIGIN},
+        json={"email": "catalog-admin@example.com", "password": "password"},
     )
     assert response.status_code == 200, response.text
     return client
@@ -67,38 +85,10 @@ def start_device(client: TestClient, scopes: list[str]) -> dict:
     return response.json()
 
 
-def test_session_and_active_material_projection() -> None:
+def test_session_metadata() -> None:
     client = signed_in_client()
     issued = issue_token(client)
-    # Catalog read is available to a normal member; catalog writes use a separate admin.
-    create_catalog_admin(email="catalog-admin@example.com", display_name="Catalog admin")
-    admin = TestClient(app)
-    assert (
-        admin.post(
-            "/api/v1/auth/login",
-            headers={"Origin": ORIGIN},
-            json={"email": "catalog-admin@example.com", "password": "password"},
-        ).status_code
-        == 200
-    )
-    for name in ("Active synthetic material", "Inactive synthetic material"):
-        created = admin.post(
-            "/api/v1/catalogs/materials",
-            headers={"Origin": ORIGIN},
-            json={"name": name, "category": "insulation", "conductivity_w_mk": 0.04},
-        )
-        assert created.status_code == 201, created.text
-        if name.startswith("Inactive"):
-            assert (
-                admin.delete(
-                    f"/api/v1/catalogs/materials/{created.json()['id']}",
-                    headers={"Origin": ORIGIN},
-                ).status_code
-                == 204
-            )
-
-    unsigned = TestClient(app)
-    session = unsigned.get(ENDPOINTS[0], headers=bearer(issued))
+    session = TestClient(app).get(SESSION, headers=bearer(issued))
     assert session.status_code == 200, session.text
     assert session.json() == {
         "token_label": "PH-Navigator for SketchUp",
@@ -106,25 +96,105 @@ def test_session_and_active_material_projection() -> None:
         "expires_at": issued["token_record"]["expires_at"],
         "user_email": EMAIL,
     }
+
+
+@pytest.mark.parametrize(
+    ("desktop_path", "browser_path", "kind", "library_id", "name_field", "create_payload"),
+    [
+        (
+            MATERIALS,
+            "/api/v1/catalogs/materials",
+            "materials",
+            "ph-navigator-web:materials",
+            "name",
+            {"category": "insulation", "conductivity_w_mk": 0.04},
+        ),
+        (
+            FRAMES,
+            "/api/v1/catalogs/frame-types",
+            "frames",
+            "ph-navigator-web:frame-types",
+            "suffix",
+            {"width_mm": 100.0, "u_value_w_m2k": 0.85, "psi_g_w_mk": 0.04},
+        ),
+        (
+            GLAZINGS,
+            "/api/v1/catalogs/glazing-types",
+            "glazings",
+            "ph-navigator-web:glazing-types",
+            "suffix",
+            {"u_value_w_m2k": 0.7, "g_value": 0.5},
+        ),
+    ],
+)
+def test_active_catalog_projection(
+    desktop_path: str,
+    browser_path: str,
+    kind: str,
+    library_id: str,
+    name_field: str,
+    create_payload: dict[str, object],
+) -> None:
+    client = signed_in_client()
+    issued = issue_token(client)
+    # Catalog read is available to a normal member; catalog writes use a separate admin.
+    admin = catalog_admin_client()
+    ids: dict[str, str] = {}
+    for state in ("Active", "Inactive"):
+        created = admin.post(
+            browser_path,
+            headers={"Origin": ORIGIN},
+            json={**create_payload, name_field: f"{state} synthetic {kind}"},
+        )
+        assert created.status_code == 201, created.text
+        ids[state] = created.json()["id"]
+    assert admin.delete(f"{browser_path}/{ids['Inactive']}", headers={"Origin": ORIGIN}).status_code == 204
+
+    unsigned = TestClient(app)
     before = datetime.now(UTC)
-    catalog = unsigned.get(ENDPOINTS[1], headers=bearer(issued))
+    catalog = unsigned.get(desktop_path, headers=bearer(issued))
     assert catalog.status_code == 200, catalog.text
     body = catalog.json()
     assert set(body) == {"kind", "library_id", "server_time", "rows"}
-    assert body["kind"] == "materials"
-    assert body["library_id"] == "ph-navigator-web:materials"
+    assert body["kind"] == kind
+    assert body["library_id"] == library_id
     assert before <= datetime.fromisoformat(body["server_time"]) <= datetime.now(UTC)
-    assert body["rows"] == client.get("/api/v1/catalogs/materials").json()["items"]
-    assert [row["name"] for row in body["rows"]] == ["Active synthetic material"]
+    assert body["rows"] == client.get(browser_path).json()["items"]
+    assert [row["id"] for row in body["rows"]] == [ids["Active"]]
     assert "created_by" not in body["rows"][0]
-    assert unsigned.get(f"{ENDPOINTS[1]}?include_inactive=true", headers=bearer(issued)).json()["rows"] == body["rows"]
+    assert "updated_by" not in body["rows"][0]
+    assert unsigned.get(f"{desktop_path}?include_inactive=true", headers=bearer(issued)).json()["rows"] == body["rows"]
     with connection() as conn:
         row = conn.execute(
             "SELECT last_used_at FROM mcp_tokens WHERE id = %s", (issued["token_record"]["id"],)
         ).fetchone()
     assert row is not None and row["last_used_at"] is not None
     # A desktop credential does not authenticate the existing browser catalog route.
-    assert unsigned.get("/api/v1/catalogs/materials", headers=bearer(issued)).status_code == 401
+    assert unsigned.get(browser_path, headers=bearer(issued)).status_code == 401
+
+
+def test_frame_projection_preserves_stored_values() -> None:
+    admin = catalog_admin_client()
+    created = admin.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={"suffix": "Synthetic frame", "width_mm": 100.0, "u_value_w_m2k": 0.85, "psi_g_w_mk": 0.04},
+    )
+    assert created.status_code == 201, created.text
+    record_id = created.json()["id"]
+    with transaction() as conn:
+        conn.execute("UPDATE catalog_frame_types SET psi_g_w_mk = -0.004 WHERE id = %s", (record_id,))
+
+    client = signed_in_client()
+    issued = issue_token(client)
+    response = TestClient(app).get(FRAMES, headers=bearer(issued))
+    assert response.status_code == 200, response.text
+    row = response.json()["rows"][0]
+    assert row["id"] == record_id
+    assert row["psi_g_w_mk"] == -0.004
+    assert row["width_mm"] == 100.0
+    assert set(row) == set(CatalogFrameTypeListItem.model_fields)
+    assert "product_code" not in row
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
@@ -193,9 +263,10 @@ def test_catalog_only_device_flow_and_single_redemption() -> None:
     assert issued["status"] == "approved"
     assert issued["token_record"]["project_id"] is None
     assert issued["token_record"]["scopes"] == ["catalog:read"]
-    response = unsigned.get(ENDPOINTS[1], headers=bearer(issued))
-    assert response.status_code == 200, response.text
-    assert response.json()["rows"] == []
+    for endpoint in CATALOG_ENDPOINTS:
+        response = unsigned.get(endpoint, headers=bearer(issued))
+        assert response.status_code == 200, response.text
+        assert response.json()["rows"] == []
     assert unsigned.post("/api/v1/agent-tokens/device/poll", json={"device_code": started["device_code"]}).json() == {
         "status": "expired"
     }
@@ -214,8 +285,8 @@ def test_desktop_uses_device_poll_rate_budget(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(settings, "agent_device_rate_limit_enabled", True)
     monkeypatch.setattr(settings, "agent_device_poll_per_ip_per_minute", 1)
     unsigned = TestClient(app)
-    assert unsigned.get(ENDPOINTS[0]).status_code == 401
-    response = unsigned.get(ENDPOINTS[1])
+    assert unsigned.get(SESSION).status_code == 401
+    response = unsigned.get(MATERIALS)
     assert response.status_code == 429
     assert response.json()["error_code"] == "rate_limited"
 

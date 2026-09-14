@@ -6,8 +6,10 @@ from starlette import status
 from database import connection
 from features.auth import repository as auth_repository
 from features.auth.service import now_utc
+from features.catalogs.frame_types.service import list_frame_types
+from features.catalogs.glazing_types.service import list_glazing_types
 from features.catalogs.materials.service import list_materials
-from features.desktop.models import DesktopMaterials, DesktopSession
+from features.desktop.models import DesktopFrameTypes, DesktopGlazingTypes, DesktopMaterials, DesktopSession
 from features.mcp.service import authenticate_plaintext_token, require_token_scope
 from features.shared.errors import api_error
 
@@ -43,3 +45,13 @@ def require_desktop_token(request: Request) -> DesktopSession:
 def get_materials() -> DesktopMaterials:
     """Expose only the existing active-list projection, with stable library identity."""
     return DesktopMaterials(server_time=now_utc(), rows=list_materials(include_inactive=False).items)
+
+
+def get_frame_types() -> DesktopFrameTypes:
+    """Active frame list projection only; stored values pass through unchanged."""
+    return DesktopFrameTypes(server_time=now_utc(), rows=list_frame_types(include_inactive=False).items)
+
+
+def get_glazing_types() -> DesktopGlazingTypes:
+    """Active glazing list projection only; no synthesized product fields."""
+    return DesktopGlazingTypes(server_time=now_utc(), rows=list_glazing_types(include_inactive=False).items)

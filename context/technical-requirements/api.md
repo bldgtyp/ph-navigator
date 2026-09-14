@@ -725,6 +725,8 @@ GET    /api/v1/gh/projects/{bt_number}/tables/{table_name}
 # desktop — backend/features/desktop/routes.py (SketchUp shared library reads)
 GET    /api/v1/desktop/session
 GET    /api/v1/desktop/catalogs/materials
+GET    /api/v1/desktop/catalogs/frame-types
+GET    /api/v1/desktop/catalogs/glazing-types
 ```
 
 The ApertureCommand union includes batched `setElementKind`
@@ -743,7 +745,7 @@ grid signature). The `/gh/.../aperture-types` payload carries a per-side
 
 ### Desktop catalog reads
 
-Both desktop routes require `DesktopToken`: an `Authorization: Bearer` token
+All desktop routes require `DesktopToken`: an `Authorization: Bearer` token
 validated through the existing MCP token service (including `last_used_at`).
 The issuer must be active, `project_id` must be null, and scopes must contain
 `catalog:read`. Browser session cookies do not authenticate these routes.
@@ -770,12 +772,39 @@ token. No secret, hash, or token prefix is returned.
 }
 ```
 
-`rows` uses the existing `CatalogMaterialListItem` projection, SI values and
-stable material ids, via `list_materials(include_inactive=False)`. Only active
-rows are exposed; `include_inactive` is not a supported parameter and cannot
-enable inactive rows. The pilot library is global, matching the existing
-catalog; no catalog writes, organization isolation, frames, or glazing are
-introduced. Existing browser catalog and GH routes keep their auth behavior.
+`GET /api/v1/desktop/catalogs/frame-types` returns:
+
+```json
+{
+  "kind": "frames",
+  "library_id": "ph-navigator-web:frame-types",
+  "server_time": "2026-09-09T12:00:00Z",
+  "rows": []
+}
+```
+
+`GET /api/v1/desktop/catalogs/glazing-types` returns:
+
+```json
+{
+  "kind": "glazings",
+  "library_id": "ph-navigator-web:glazing-types",
+  "server_time": "2026-09-09T12:00:00Z",
+  "rows": []
+}
+```
+
+`rows` uses the existing `CatalogMaterialListItem`,
+`CatalogFrameTypeListItem`, or `CatalogGlazingTypeListItem` projection via
+`list_materials(include_inactive=False)`,
+`list_frame_types(include_inactive=False)`, or
+`list_glazing_types(include_inactive=False)`, respectively. Only active rows
+are exposed; `include_inactive` is not a supported parameter and cannot enable
+inactive rows. Stored frame values, including signed `psi_g_w_mk` and
+`width_mm`, pass through unchanged; no product or product-code field is
+synthesized. The libraries are global, matching the existing catalogs; no
+catalog writes or organization isolation are introduced. Existing browser
+catalog and GH routes keep their auth behavior.
 
 Migration `20260909_0014_catalog_read_scope.py` expands both token/device scope
 CHECK constraints without rewriting rows. Downgrade deletes grants carrying

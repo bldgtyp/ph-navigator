@@ -25,8 +25,10 @@ flow. The page:
   request expiry before a decision;
 - explains that approval creates a one-year credential across every project the
   signed-in account can currently access for project grants; catalog-only grants
-  instead describe read access to the shared material library;
-- labels `catalog:read` as **Read the shared material library**;
+  instead describe read access to the shared material, frame, and glazing
+  libraries;
+- labels `catalog:read` as **Read the shared material, frame, and glazing
+  libraries**;
 - shows a prominent warning when the account has tenant-wide
   `projects.access.all` reach and the grant includes `project:read`;
 - permits exactly one **Approve** or **Deny** decision while the request is

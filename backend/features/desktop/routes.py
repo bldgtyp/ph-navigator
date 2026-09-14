@@ -4,8 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from features.desktop.models import DesktopMaterials, DesktopSession
-from features.desktop.service import get_materials, require_desktop_token
+from features.desktop.models import DesktopFrameTypes, DesktopGlazingTypes, DesktopMaterials, DesktopSession
+from features.desktop.service import get_frame_types, get_glazing_types, get_materials, require_desktop_token
 from features.mcp.rate_limit import enforce_device_poll_budget
 
 router = APIRouter(
@@ -25,3 +25,15 @@ def get_session(auth: DesktopToken) -> DesktopSession:
 def get_catalog_materials(auth: DesktopToken) -> DesktopMaterials:
     del auth
     return get_materials()
+
+
+@router.get("/catalogs/frame-types", response_model=DesktopFrameTypes)
+def get_catalog_frame_types(auth: DesktopToken) -> DesktopFrameTypes:
+    del auth
+    return get_frame_types()
+
+
+@router.get("/catalogs/glazing-types", response_model=DesktopGlazingTypes)
+def get_catalog_glazing_types(auth: DesktopToken) -> DesktopGlazingTypes:
+    del auth
+    return get_glazing_types()

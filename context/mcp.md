@@ -30,8 +30,8 @@ structured `project_not_found` with `recoverability: "refresh"`.
 Delete, restore, and hard-delete are stricter: they re-check the issuer and
 remain owner-only even when the issuer holds all-project reach.
 
-`catalog:read` permits user-scoped tokens to read the shared active material
-library and session metadata through `/api/v1/desktop` (see
+`catalog:read` permits user-scoped tokens to read the shared active material,
+frame, and glazing catalogs and session metadata through `/api/v1/desktop` (see
 [`technical-requirements/api.md`](technical-requirements/api.md#desktop-catalog-reads)).
 A device request may use only `["catalog:read"]`; this grants no project or
 asset access and does not change the project `READ_ONLY_SCOPES` default.
