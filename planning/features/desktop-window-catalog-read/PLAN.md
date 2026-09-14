@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-14
 TIME: 19:13 EDT
-STATUS: Implemented on branch
+STATUS: Merged to main via PR #97 (2026-09-14)
 AUTHOR: Claude (with Ed May)
 SCOPE: One implementation slice: models, service, routes, tests, docs
 RELATED: README.md, STATUS.md, backend/features/desktop/, backend/tests/test_desktop.py

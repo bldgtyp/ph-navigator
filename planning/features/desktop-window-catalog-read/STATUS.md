@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-14
 TIME: 19:13 EDT
-STATUS: Implemented on branch
+STATUS: Merged to main via PR #97 (2026-09-14); deploy pending Ed
 AUTHOR: Claude (with Ed May)
 SCOPE: Current state and next step
 RELATED: README.md, PLAN.md
@@ -10,8 +10,9 @@ ISSUE: https://github.com/bldgtyp/ph-navigator/issues/96
 
 # Status
 
-**Implemented on branch** `feature/desktop-window-catalog-read`, with a PR that
-closes #96. Ed accepted the plan on 2026-09-14: D1 changed the approval copy,
+**Merged to main** through [PR #97](https://github.com/bldgtyp/ph-navigator/pull/97)
+on 2026-09-14 (squash), after GitHub Actions CI passed on the PR. It was built on
+`feature/desktop-window-catalog-read`. Ed accepted the plan on 2026-09-14: D1 changed the approval copy,
 and D2 archived the #90 packet (now `planning/archive/desktop-catalog-read/`).
 gpt-5.6-sol built Steps 1–6. Claude reviewed the diff and applied the simplify
 fixes, which tidied two lines of test parametrization.

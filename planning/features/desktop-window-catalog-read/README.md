@@ -1,7 +1,7 @@
 ---
 DATE: 2026-09-14
 TIME: 19:13 EDT
-STATUS: Implemented on branch
+STATUS: Merged to main via PR #97 (2026-09-14); deploy pending Ed
 AUTHOR: Claude (with Ed May)
 SCOPE: Desktop bearer reads for the active Frame Type and Glazing Type catalogs
 RELATED: planning/archive/desktop-catalog-read/, context/technical-requirements/api.md#desktop-catalog-reads, context/mcp.md
