@@ -8,6 +8,20 @@ New packets (2026-08-26 onward) archive **flat by slug** to
 closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
 the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
+## 2026-09-14
+
+- `desktop-catalog-read` - Added the `catalog:read` token scope (migration
+  `20260909_0014`) and the bearer-only `/api/v1/desktop` reads (`session`,
+  `catalogs/materials`) so **PH-Navigator for SketchUp** browses the shared
+  material library through a browser-approved device grant. Merged via PR #91
+  (2026-09-09). Production closeout was evidenced by the SketchUp
+  `window-types` phase-8f walkthrough: a production device flow issued a
+  `catalog:read` grant and the Materials read returned the live catalog. The
+  packet's own `STATUS.md` predates that deploy and is kept unchanged.
+  Frame/glazing reads followed as `desktop-window-catalog-read` (#96).
+  Contract in `context/technical-requirements/api.md#desktop-catalog-reads`.
+  Issue: [#90](https://github.com/bldgtyp/ph-navigator/issues/90) (closed).
+
 ## 2026-09-10
 
 - `hbjson-import-honeybee-models` - Taught the Envelope HBJSON importer to read

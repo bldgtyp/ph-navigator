@@ -1347,7 +1347,9 @@ describe("App", () => {
       expect(await screen.findByRole("heading", { name: "Approve this agent?" })).toBeVisible();
       expect(await screen.findByText("Ed MacBook")).toBeVisible();
       if (scopes.includes("catalog:read")) {
-        expect(screen.getByText("Read the shared material library")).toBeVisible();
+        expect(
+          screen.getByText("Read the shared material, frame, and glazing libraries"),
+        ).toBeVisible();
         expect(screen.queryByText(/across every project/)).not.toBeInTheDocument();
         expect(screen.queryByText(/tenant-wide project access/)).not.toBeInTheDocument();
       } else {
