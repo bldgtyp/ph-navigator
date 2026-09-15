@@ -10,6 +10,18 @@ the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
 ## 2026-09-14
 
+- `desktop-window-catalog-read` - Added the bearer-only
+  `/api/v1/desktop/catalogs/frame-types` and `/catalogs/glazing-types` reads
+  beside the Materials read, so **PH-Navigator for SketchUp** browses and
+  bookshelves frames and glazings with its existing `catalog:read` grant. No
+  migration, scope or SQL change. Merged via PR #97 and deployed to production
+  the same day. Production closeout was evidenced by the SketchUp
+  `window-types` phase-8f walkthrough: one retained grant read all three
+  catalogs, and one real Frame and one real Glazing were bookshelved and
+  assigned in a fresh process. The packet's own `STATUS.md` predates that
+  deploy and is kept unchanged. Contract in
+  `context/technical-requirements/api.md#desktop-catalog-reads`.
+  Issue: [#96](https://github.com/bldgtyp/ph-navigator/issues/96) (closed).
 - `desktop-catalog-read` - Added the `catalog:read` token scope (migration
   `20260909_0014`) and the bearer-only `/api/v1/desktop` reads (`session`,
   `catalogs/materials`) so **PH-Navigator for SketchUp** browses the shared
