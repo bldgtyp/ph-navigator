@@ -52,7 +52,7 @@ compatibility adapters, truthful production evidence, and durable context docs.
    evidence. Distinguish logical upgrade from physically persisted v8 per
    project.
 8. Run `simplify`, then `docs-pass`; record any resulting decisions.
-9. Run `graphify update .`, format, focused cleanup tests, and full `make ci`.
+9. Run format, focused cleanup tests, and full `make ci`.
 10. Archive under `planning/archive/dated/<date>/spec-status-value-unification/`,
     update `planning/archive/README.md`, and update `planning/STATUS.md`.
 
@@ -62,7 +62,7 @@ compatibility adapters, truthful production evidence, and durable context docs.
 - Every remaining legacy `missing` use is classified and justified.
 - Production evidence and rollback mode are truthful.
 - Durable docs match current code.
-- Simplify/docs-pass/Graphify/format/full CI are green.
+- Simplify/docs-pass/format/full CI are green.
 - Packet is archived and routing index is current.
 
 ## Non-goal reminder
@@ -89,7 +89,7 @@ Done now, because none of it depends on the observation window:
   mechanism" open operator input.
 - Step 5 confirmed: summary translation shims are gone (typed pass-through);
   custom option-id adapters remain.
-- Steps 8–9 (`simplify`, `docs-pass`, Graphify, format, full `make ci`) have
+- Steps 8–9 (`simplify`, `docs-pass`, format, full `make ci`) have
   run at the end of Phases 02, 03, and this closeout.
 
 ### Still open — and why

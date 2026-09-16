@@ -128,6 +128,6 @@ amber consumers now use `--attention-amber`.
 - [x] Verified restore point recorded (Render export 2026-07-20 00:14 EDT + 3-day PITR); write freeze moot — no users.
 - [x] Both deployed SHAs and read-only smokes recorded.
 - [ ] First v8 persisted write boundary recorded — **not yet crossed**.
-- [x] `simplify`, `docs-pass`, Graphify, format, and full CI complete.
+- [x] `simplify`, `docs-pass`, format, and full CI complete.
 - [x] Accepted durable contracts folded into `context/`.
 - [ ] Temporary cached-client adapters retired and packet archived (Phase 07).

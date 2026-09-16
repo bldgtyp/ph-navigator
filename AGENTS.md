@@ -1,52 +1,127 @@
-@import "CLAUDE.md"
+# PH-Navigator agent guidance
 
-## Local browser access
+This is the canonical, tool-neutral repository guidance. Tool-specific files import it and add
+only their own mechanics.
 
-Before any localhost UI/browser check, run `make agent-browser-ready`. It starts
-or reuses the strict `5173`/`8000` services, verifies PH-Navigator-specific
-health markers plus Vite's same-origin `/api` proxy, seeds the `AGENT-BROWSER`
-fixture for the current agent task, and prints its login plus sign-in URL.
-Fixtures are isolated by `CODEX_THREAD_ID`; set `PHN_AGENT_BROWSER_ID` when a
-different agent runtime needs an explicit stable identity. Development client
-requests must remain same-origin through that proxy; do not point browser code
-directly at `:8000`.
-Do not reuse a tab that has shown `ERR_CONNECTION_REFUSED`, another network
-error, or an internal `data:` error URL: discard it and open the printed route
-in a fresh tab. Use `make agent-browser-check` for a non-mutating readiness
-check. Full details and logs are in `context/ENVIRONMENT.md`.
+## Scope and product boundary
 
-## Codex PH-Navigator access
+PH-Navigator is the current canonical web application for viewing and managing Passive House
+project data during design. It uses a JSON-document model with versioned,
+immutable-by-discipline saves and owns its project data rather than treating Airtable as the
+application database. Older documents may call this rewrite generation “V2”; use
+“PH-Navigator” for the current product and “V0” for the legacy application.
 
-The imported `CLAUDE.md` defines the shared `phn-local` versus production
-`phn` boundary and draft-safety rules. Codex-specific production setup is
-global: the `bldgtyp/claude-plugins` installer manages `mcp_servers.phn` in
-`~/.codex/config.toml`, the generated PHN workflow in `~/.codex/AGENTS.md`, and
-the credential-aware `phn-login` command. Do not duplicate that global server
-in this repo or replace the repo's `phn_local` development entry. See
-`docs/MCP_AGENT_SETUP.md` for install, verification, and refresh commands.
+Production is live at `https://www.ph-nav.com`, with the API at
+`https://api.ph-nav.com`. Treat the production database, object storage, accounts, and drafts as
+real infrastructure. Current production facts belong in
+[`context/PRODUCTION_DEPLOYMENT.md`](context/PRODUCTION_DEPLOYMENT.md), not in this file.
 
-## graphify
+## Start with the owning authority
 
-This project has a knowledge graph at `graphify-out/` with god nodes, community
-structure, and cross-file relationships.
+[`context/README.md`](context/README.md) is the full reference router. Load only the documents
+needed for the task.
 
-When the user invokes `$graphify`, `/graphify`, or otherwise asks to use
-Graphify, load the local Graphify skill before doing anything else.
+| Work | Read first |
+| --- | --- |
+| Current work, feature status, or authorization | [`planning/STATUS.md`](planning/STATUS.md), [`planning/.instructions.md`](planning/.instructions.md), then the owning feature or refactor packet |
+| Product, architecture, data model, or persistence | [`context/PRD.md`](context/PRD.md), [`context/TECH_STACK.md`](context/TECH_STACK.md), and the relevant `context/technical-requirements/` document |
+| Backend code | [`backend/.instructions.md`](backend/.instructions.md), then [`context/CODING_STANDARDS.md`](context/CODING_STANDARDS.md) |
+| Frontend code | [`frontend/.instructions.md`](frontend/.instructions.md), then [`context/CODING_STANDARDS.md`](context/CODING_STANDARDS.md) |
+| User-visible UI | [`context/DESIGN_SYSTEM.md`](context/DESIGN_SYSTEM.md), [`context/UI_UX.md`](context/UI_UX.md), and only the matching page file under `context/ui/pages/` |
+| Local environment, database, ports, or login | [`context/ENVIRONMENT.md`](context/ENVIRONMENT.md) |
+| Browser interaction or screenshots | [`context/USING_A_WEB_BROWSER.md`](context/USING_A_WEB_BROWSER.md) |
+| Production, Render, DNS, R2, auth, or deployment | [`context/PRODUCTION_DEPLOYMENT.md`](context/PRODUCTION_DEPLOYMENT.md) and [`context/DEVELOPMENT_WORKFLOW.md`](context/DEVELOPMENT_WORKFLOW.md) |
+| Project data, licensed datasets, or object storage | [`context/DATA_STORAGE.md`](context/DATA_STORAGE.md) and [`context/DATASET_PIPELINE.md`](context/DATASET_PIPELINE.md) |
+| MCP tools or agent setup | [`context/mcp.md`](context/mcp.md) and [`docs/MCP_AGENT_SETUP.md`](docs/MCP_AGENT_SETUP.md) |
+| Logging | [`context/LOGGING.md`](context/LOGGING.md) |
+| Licensing or outside contributions | [`LICENSING.md`](LICENSING.md) and [`CLA.md`](CLA.md) |
 
-Rules:
+`AGENTS.md` is not a delivery ledger. Resolve current work from the branch, `planning/STATUS.md`,
+and the owning packet. Archived plans and `research/` are evidence or precedent, not current
+authorization.
 
-- For codebase questions, first run `graphify query "<question>"` when
-  `graphify-out/graph.json` exists. Use `graphify path "<A>" "<B>"` for
-  relationships and `graphify explain "<concept>"` for focused concepts.
-  These return a scoped subgraph, usually much smaller than
-  `GRAPH_REPORT.md` or raw grep output.
-- Dirty `graphify-out/` files are expected after hooks or incremental updates;
-  dirty graph files are not a reason to skip graphify. Only skip graphify if
-  the task is about stale or incorrect graph output, or the user explicitly
-  says not to use it.
-- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead
-  of raw source browsing.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or
-  when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current
-  (AST-only, no API cost).
+## Repository-specific invariants
+
+- All calculations and data manipulation live in the backend. The frontend displays results and
+  handles interaction; do not create a second calculation authority in browser code.
+- Preserve the versioned JSON-document model, immutable-by-discipline saves, and the documented
+  Postgres/object-store boundary. Route new storage decisions through the current technical
+  requirements rather than inferring them from old plans.
+- This repository is public. Never commit PHI-, Phius-, PHPP-, WUFI-, client-, or other licensed
+  source data. Public fixtures are synthetic; real corpora stay in the documented gitignored
+  private locations. Catalog data remains all rights reserved until its separate license lands.
+- Outside contributions require the repository’s contribution agreement before merge. The CLA is
+  still a draft pending counsel review; do not treat it as approved.
+- Production deploys are explicit and separate from merges. Render auto-deploy is off. Never
+  trigger the “Deploy Production” workflow, push a release tag, apply production datasets, or
+  perform a production operator action unless Ed explicitly requests that exact operation.
+- Do not modify the legacy V0 repository unless the user explicitly asks for V0 work. Nothing
+  under `research/` is importable application code; rewrite useful precedent into the current
+  backend or frontend boundaries.
+- Proposed behavior, implemented behavior, merged code, deployed code, and production-verified
+  behavior are distinct states. Keep planning and context documents synchronized with verified
+  reality without collapsing those distinctions.
+
+## Runtime and dependency rules
+
+- Backend work uses Python 3.11, Pydantic v2, and `uv` from `backend/`. Do not use system Python,
+  `pip`, activation commands, `requirements.txt`, or hand-edit `uv.lock`.
+- Frontend work uses `pnpm` from `frontend/`; never npm or yarn. Preserve the 24-hour minimum
+  release age, strict minimum-age enforcement, and `blockExoticSubdeps`. Run the repository
+  formatting command after frontend edits.
+- Do not introduce `.env` overlays. Configuration enters through the documented Pydantic settings
+  and environment contracts.
+- Backend features use the documented route/model/service/repository layers with raw parameterized
+  SQL through narrow repositories; SQLAlchemy is limited to Alembic migrations. Frontend work
+  follows feature-first ownership, the three-tier CSS token system, and the documented TanStack
+  Query/Table and Zustand boundaries. The area instructions own the detail.
+
+## Local browser and MCP safety
+
+- Before localhost UI work, read `context/USING_A_WEB_BROWSER.md` and run
+  `make agent-browser-ready`. It owns the strict `5173`/`8000` pair, same-origin `/api` proxy,
+  dedicated fixture, login, health checks, and cleanup. Use `make agent-browser-check` for a
+  non-mutating readiness check. Development browser code must remain same-origin through the proxy;
+  do not point it directly at `:8000`.
+- Drive deterministic browser checks with `frontend/scripts/agent-browser.mjs`. Do not reuse a tab
+  that has shown a network or internal-data-URL error, and do not substitute general browser MCP or
+  browser-extension tooling unless the owning browser guide changes. Never sign in as Ed for
+  development tests, take over his running services, or leave processes you started running.
+- Use `phn-local` for development, implementation tests, and local fixtures in this repository.
+  Use installed production `phn` only for real BLDGTYP project work and never as test data for an
+  application change. Do not duplicate either tool’s configured server.
+- Production MCP writes affect the issuing user’s real draft. Read before writing and use current
+  etags. Never call `save_draft` or `save_draft_as` without explicit user intent to persist, and
+  never autonomously hard-delete a project. For verification-only writes, inspect the diff,
+  discard the draft, and confirm removal.
+
+## Working safely in the shared checkout
+
+This checkout may be edited concurrently, and its index and branch are shared. Preserve unrelated
+work, recheck status and branch before committing, and commit only explicit paths:
+
+```bash
+git commit -m "<message>" -- <your paths>
+```
+
+Staging paths alone does not isolate a commit from files another process already staged. Do not
+reset, amend, or perform history surgery to disentangle another actor’s work. UI changes that Ed
+is watching on the `:5173` development server must be made in the primary checkout serving that
+process, not an unseen worktree.
+
+## Verification and closeout
+
+- Use focused tests while editing. Stable entrypoints are `make smoke`, `make frontend-dev-check`,
+  `make format`, `make ci`, and `make help`; area instructions provide narrower commands.
+- After substantive code changes, run the applicable `simplify` review and `docs-pass`, then
+  `make format` and `make ci`. A trivial UI-only change may use the focused frontend gate while
+  iterating, but interaction, state, data, or adapter changes require focused tests as well.
+- If formatting changes files, re-inspect the diff and run `make ci`. Do not report completion,
+  commit, or open a PR while a required gate is red.
+- Render, browser, database, licensed-dataset, backup, and production changes have additional
+  conditional gates in their owning documents. Local CI or a merge does not satisfy those gates.
+
+## Planning
+
+- Tracked feature and refactor work lives under `planning/`; read the applicable `.instructions.md`
+  before creating, resuming, moving, or archiving a packet. Use gitignored `working/` for scratch.

@@ -55,7 +55,6 @@ RELATED: ../decisions.md (D-7, D-9),
 - Route-3 contract doc (wherever phase 02 updated it): confirm the
   `installs` block + uniform `frame_type` policy is written down for the
   GH-side consumer (phase 07 reads this).
-- `graphify update .` after the code lands.
 
 ## 4. Tests & exit gate
 

@@ -132,8 +132,8 @@ Plan: `phases/phase-06-project-verification-cutover.md`.
 After Ed and John have refreshed and the observation window is clean, remove
 temporary PH-Navigator-client compatibility code that no longer protects a
 real client. Retain permanent v7 upgraders, frozen fixtures, raw-download
-behavior, and Honeybee adapters. Run `simplify`, `docs-pass`, Graphify update,
-full CI, context reconciliation, and archive closeout.
+behavior, and Honeybee adapters. Run `simplify`, `docs-pass`, full CI, context
+reconciliation, and archive closeout.
 
 Plan: `phases/phase-07-cleanup-closeout.md`.
 
@@ -148,8 +148,8 @@ Plan: `phases/phase-07-cleanup-closeout.md`.
   evidence, and explicit go/no-go. No writes.
 - Phases 05–06: public + authenticated production evidence under the runbook;
   no CI rerun substitutes for production checks.
-- Phase 07: focused cleanup tests, `simplify`, `docs-pass`, Graphify, format,
-  and full CI.
+- Phase 07: focused cleanup tests, `simplify`, `docs-pass`, format, and full
+  CI.
 
 ## Stop conditions
 

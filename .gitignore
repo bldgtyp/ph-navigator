@@ -90,6 +90,3 @@ planning/refactor/**/assets/precedent/
 backend/seeds/climate/**/*.txt
 backend/seeds/climate/**/*.xlsx
 backend/seeds/climate/**/*.json
-
-# ─── Graphify output ───
-graphify-out/
