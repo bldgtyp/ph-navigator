@@ -135,6 +135,10 @@ services:
         name: Cache-Control
         value: "public, max-age=31536000, immutable"
     envVars:
+      # Build-time Node. Render's creation-date default (24.14.1) predates the
+      # 2026-10 Node security releases; the dashboard value is the operative one.
+      - key: NODE_VERSION
+        value: "24.22.1"
       - key: VITE_API_BASE_URL
         value: https://api.ph-nav.com
       # CARTO Basemaps API key for the climate-area map tiles. Build-time Vite
