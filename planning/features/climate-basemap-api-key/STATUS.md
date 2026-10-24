@@ -2,8 +2,8 @@
 
 DATE: 2026-10-24
 TIME: 16:35 EDT
-STATUS: `In review` — implemented on the working tree (not yet committed); CI
-green; pending Ed's commit/PR decision and the production deploy
+STATUS: `Merged to main` — PR #104 merged 2026-10-24; production deploy +
+www.ph-nav.com verification pending before archive
 AUTHOR: Claude (with Ed May)
 ISSUE: https://github.com/bldgtyp/ph-navigator/issues/103
 
@@ -38,11 +38,14 @@ Implementation complete per PLAN.md Option A:
 
 ## Next step
 
-PR open: https://github.com/bldgtyp/ph-navigator/pull/104 (Closes #103).
+Merged to main via squash PR #104 (issue #103 closes on deploy per the
+issue-close commit reference — confirm when verifying production).
 `VITE_CARTO_BASEMAP_KEY` is already set on `ph-navigator-web` in Render
-(production key). After merge, trigger the "Deploy Production" GitHub
-Actions workflow (the only deploy trigger), then verify the
-www.ph-nav.com Climate page. Then archive per PLAN.md Part 2.
+(production key). Remaining: trigger the "Deploy Production" GitHub
+Actions workflow (the only deploy trigger; never agent-triggered), verify
+the www.ph-nav.com Climate page (hard-refresh first — keyless-era
+placeholder tiles were served with a 30-day cache TTL), then archive
+per PLAN.md Part 2.
 
 ## Blockers
 
