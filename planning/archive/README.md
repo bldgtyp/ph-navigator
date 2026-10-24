@@ -8,6 +8,17 @@ New packets (2026-08-26 onward) archive **flat by slug** to
 closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
 the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
+## 2026-10-24
+
+- `climate-basemap-api-key` - CARTO ended keyless raster basemap access
+  (2026-09-23 policy), so every live climate-area map rendered "API KEY
+  REQUIRED" watermark tiles in production. Added `VITE_CARTO_BASEMAP_KEY`
+  (build-time env, `sync: false` on `ph-navigator-web`, referrer-restricted
+  `*.ph-nav.com`) carried into the CARTO tile URLs by the new Leaflet-free
+  `climateBasemap.ts`, with the app default degrading to keyless OSM Standard
+  when no key is configured. Merged via PR #104, deployed, and production
+  verified 2026-10-24 (closed issue [#103](https://github.com/bldgtyp/ph-navigator/issues/103)).
+
 ## 2026-09-14
 
 - `desktop-window-catalog-read` - Added the bearer-only
