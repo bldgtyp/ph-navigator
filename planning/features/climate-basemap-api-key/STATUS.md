@@ -38,10 +38,11 @@ Implementation complete per PLAN.md Option A:
 
 ## Next step
 
-Ed commits (branch + PR per the usual loop, `Closes #103`), then Part 2 of
-PLAN.md: set `VITE_CARTO_BASEMAP_KEY` in the Render dashboard for
-`ph-navigator-web` (production key, not the localhost dev key), explicit
-production deploy, and verify www.ph-nav.com Climate page. Then archive.
+PR open: https://github.com/bldgtyp/ph-navigator/pull/104 (Closes #103).
+`VITE_CARTO_BASEMAP_KEY` is already set on `ph-navigator-web` in Render
+(production key). After merge, trigger the "Deploy Production" GitHub
+Actions workflow (the only deploy trigger), then verify the
+www.ph-nav.com Climate page. Then archive per PLAN.md Part 2.
 
 ## Blockers
 
