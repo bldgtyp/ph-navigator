@@ -117,6 +117,10 @@ Apple Passwords:
 - `R2_SECRET_ACCESS_KEY`
 - `FERNET_SECRET_KEY`
 - `ACCOUNT_TOKEN_SECRET`
+- `VITE_CARTO_BASEMAP_KEY` (CARTO Basemaps API key for the climate-area map
+  tiles; public, referrer-restricted to `*.ph-nav.com` on the CARTO dashboard.
+  Build-time Vite env on the `ph-navigator-web` static service — changing it
+  requires a frontend rebuild/redeploy. Key request: carto.com/basemaps/apikey)
 
 `DATABASE_URL` is wired from the `ph-navigator-db` database block with
 `fromDatabase`; do not paste database credentials into the Blueprint or local
