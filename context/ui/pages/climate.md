@@ -32,7 +32,9 @@ pages read-only (no attach/upload/set-location affordances).
 Read-first: a large site map (`ClimateMap`, a Leaflet map) plus a facts list
 — coordinates, county · state, elevation (unit-aware via the IP/SI toggle),
 and IECC climate zone. Editors open `SetLocationModal` to set/adjust the
-project location.
+project location. The basemap is CARTO Positron raster tiles carrying the
+Basemaps API key (`VITE_CARTO_BASEMAP_KEY`, build-time env); without a key it
+degrades to keyless OSM Standard — see `climateBasemap.ts`.
 
 ## Climate sources
 

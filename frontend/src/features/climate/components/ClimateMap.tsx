@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClimateProximityVerdict } from "../types";
-import type {
-  ClimateBasemapStyle,
-  ClimateLeafletController,
-  ClimateMapData,
-} from "./climateLeafletMap";
+import type { ClimateLeafletController, ClimateMapData } from "./climateLeafletMap";
+import { defaultBasemapStyle, type ClimateBasemapStyle } from "./climateBasemap";
 import "../climate-map.css";
 
 // A station pin's colour tone. The PH picker passes the proximity verdict
@@ -92,12 +89,13 @@ type ClimateMapProps = {
   // Decorative use (e.g. the sidebar thumbnail): hide from the a11y tree and
   // drop the `group` role so it doesn't pollute an enclosing control's name.
   ariaHidden?: boolean;
-  // Defaults to CARTO Positron; callers can opt into the no-label or OSM style.
+  // Defaults to CARTO Positron when a basemap key is configured, else the
+  // keyless OSM standard style; callers can opt into the no-label or OSM style.
   basemapStyle?: ClimateBasemapStyle;
 };
 
 // The app's one shared map (D-DP-6, P3). In a real browser it mounts a
-// vanilla-Leaflet + keyless-OSM basemap; in tests — or if Leaflet fails to load
+// vanilla-Leaflet raster basemap; in tests — or if Leaflet fails to load
 // — it degrades to the positioned-pin fallback over `.climate-map-surface`. The
 // picker passes stations + selection + a ring; the Location page and sidebar
 // pass a project pin only; the Set-Location modal passes `onPickPoint`. Both
@@ -114,7 +112,7 @@ export function ClimateMap({
   className,
   ariaLabel = "Map",
   ariaHidden = false,
-  basemapStyle = "carto-positron",
+  basemapStyle = defaultBasemapStyle(),
 }: ClimateMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<ClimateLeafletController | null>(null);

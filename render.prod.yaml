@@ -137,3 +137,10 @@ services:
     envVars:
       - key: VITE_API_BASE_URL
         value: https://api.ph-nav.com
+      # CARTO Basemaps API key for the climate-area map tiles. Build-time Vite
+      # env: the value is inlined into the JS bundle, so changing it requires a
+      # rebuild/redeploy. Public, referrer-restricted to *.ph-nav.com on the
+      # CARTO dashboard (https://carto.com/basemaps/apikey/); entered once in
+      # Render, never committed (planning/features/climate-basemap-api-key/).
+      - key: VITE_CARTO_BASEMAP_KEY
+        sync: false
