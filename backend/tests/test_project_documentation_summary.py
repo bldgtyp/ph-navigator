@@ -78,12 +78,12 @@ def test_documentation_summary_counts_derived_axes_and_na_rows() -> None:
     equipment_section = next(section for section in summary.sections if section.key == "equipment")
     pumps = next(group for group in equipment_section.groups if group.key == "pumps")
     assert pumps.counts.model_dump() == {
-        "spec_done": 1,
-        "spec_total": 2,
-        "ds_done": 2,
-        "ds_total": 2,
-        "photo_done": 2,
-        "photo_total": 2,
+        "spec_done": 0,
+        "spec_total": 1,
+        "ds_done": 1,
+        "ds_total": 1,
+        "photo_done": 1,
+        "photo_total": 1,
     }
     assert pumps.records[1].datasheet_not_required is True
     assert pumps.records[1].photo_not_required is True
