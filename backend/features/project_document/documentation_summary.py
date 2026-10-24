@@ -576,18 +576,19 @@ def _asset_ids(row: object, key: str) -> list[str]:
 
 
 def _count_records(records: list[DocumentationRecord]) -> DocumentationAxisCounts:
+    spec_applicable = [r for r in records if r.spec_status != "na"]
     return DocumentationAxisCounts(
-        spec_done=sum(record.spec_status in {"complete", "na"} for record in records),
-        spec_total=len(records),
-        ds_done=sum(_axis_done(record.datasheet_status, record.spec_status) for record in records),
-        ds_total=len(records),
-        photo_done=sum(_axis_done(record.photo_status, record.spec_status) for record in records),
-        photo_total=len(records),
+        spec_done=sum(r.spec_status == "complete" for r in spec_applicable),
+        spec_total=len(spec_applicable),
+        ds_done=sum(_axis_done(r.datasheet_status) for r in spec_applicable),
+        ds_total=len(spec_applicable),
+        photo_done=sum(_axis_done(r.photo_status) for r in spec_applicable),
+        photo_total=len(spec_applicable),
     )
 
 
-def _axis_done(evidence_status: DocumentationEvidenceStatus, spec_status: DocumentationSpecStatus) -> bool:
-    return evidence_status in {"complete", "na"} or spec_status == "na"
+def _axis_done(evidence_status: DocumentationEvidenceStatus) -> bool:
+    return evidence_status in {"complete", "na"}
 
 
 def _sum_counts(counts: Iterable[DocumentationAxisCounts]) -> DocumentationAxisCounts:
