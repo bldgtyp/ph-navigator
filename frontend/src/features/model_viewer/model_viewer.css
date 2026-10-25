@@ -819,16 +819,40 @@
 }
 
 .model-loading-chip.error {
+  z-index: var(--z-dropdown);
+  display: grid;
+  width: calc(100% - var(--space-48));
+  max-width: var(--model-load-error-width);
+  max-height: calc(100% - var(--space-48) - var(--space-48));
+  overflow: auto;
+  padding: var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
   border-color: color-mix(in oklab, var(--phn-danger) 42%, var(--border-card));
   color: var(--phn-danger);
+  overflow-wrap: anywhere;
+}
+
+.model-loading-chip.error strong,
+.model-load-error-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.model-loading-chip.error p {
+  margin: 0;
+  color: var(--text-secondary);
 }
 
 .model-loading-chip-detail {
-  max-width: 260px;
-  overflow: hidden;
-  color: var(--text-muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
 }
 
 .model-loading-chip button,

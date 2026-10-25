@@ -52,6 +52,17 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const renderedModelRef = useRef<RenderedModel | null>(null);
 
   useEffect(() => {
+    if (!query.isError) return;
+    const error = query.error;
+    console.warn("[phn] model_viewer.load_failed", {
+      file_id: activeFile.id,
+      status: error instanceof ApiRequestError ? error.status : null,
+      error_code: error instanceof ApiRequestError ? error.errorCode : null,
+      request_id: error instanceof ApiRequestError ? error.requestId : null,
+    });
+  }, [activeFile.id, query.error, query.isError]);
+
+  useEffect(() => {
     if (query.isFetching && !query.data) {
       setLoadState("downloading");
       replaceRenderedModel(null);
@@ -192,15 +203,21 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
           {isModelViewerDebugHookEnabled() ? <ModelViewerPerfOverlay model={model} /> : null}
           {isModelViewerDebugHookEnabled() ? <ViewerRenderControls /> : null}
         </div>
-      ) : (
+      ) : query.isError ? null : (
         <ModelViewerStagePlaceholder />
       )}
       <LoadingChip
         phase={loadPhase}
         errorKind={storeErrorKind}
         errorMessage={
-          query.isError ? errorMessage(query.error, "Could not load model data.") : null
+          query.isError
+            ? errorMessage(query.error, "Could not load model data.") +
+              (query.error instanceof ApiRequestError
+                ? `\nHTTP ${query.error.status} · ${query.error.errorCode ?? "unknown_error"}`
+                : "")
+            : null
         }
+        fileName={activeFile.display_name}
         loadSummary={loadPhase === "ready" ? (query.data?.load_summary ?? null) : null}
         onRetry={() => void query.refetch()}
       />
