@@ -88,8 +88,10 @@ def parse_hb_model(hbjson: dict[str, Any]) -> Model:
     """
     declared_version = str(hbjson.get("version", "unknown"))
     backend_pin = metadata.version("honeybee-schema")
-    ph_patches = _patch_incomplete_aperture_ph_properties(hbjson)
+    ph_patches: list[tuple[dict[str, Any], object]] = []
     try:
+        ph_patches.extend(_patch_incomplete_aperture_ph_properties(hbjson))
+        ph_patches.extend(_patch_empty_equipment_ph_properties(hbjson))
         model = Model.from_dict(hbjson)
     except Exception as exc:
         raise ModelParseError(
@@ -101,6 +103,34 @@ def parse_hb_model(hbjson: dict[str, Any]) -> Model:
     if model.units != "Meters":
         model.convert_to_units("Meters")
     return model
+
+
+def _patch_empty_equipment_ph_properties(
+    hbjson: dict[str, Any],
+) -> list[tuple[dict[str, Any], object]]:
+    """Treat type-only optional equipment extensions as the library's empty default.
+
+    honeybee-ph requires a legacy equipment_collection even for an empty bag.
+    Omit only type-only bags during parsing; populated bags must still validate.
+    The caller restores the original input on both success and failure.
+    """
+    energy = hbjson.get("properties", {}).get("energy", {})
+    owners = list(energy.get("program_types") or [])
+    owners.extend(room.get("properties", {}).get("energy", {}) for room in hbjson.get("rooms", []))
+    patches: list[tuple[dict[str, Any], object]] = []
+    for owner in owners:
+        equipment = owner.get("electric_equipment") or {}
+        properties = equipment.get("properties") or {}
+        ph = properties.get("ph")
+        if ph in (
+            {"type": "ElectricEquipmentPhProperties"},
+            {"type": "ElectricEquipmentPhPropertiesAbridged"},
+        ):
+            patches.append((properties, ph))
+            del properties["ph"]
+    if patches:
+        log.warning("model_viewer.extraction.empty_equipment_ph_defaulted", count=len(patches))
+    return patches
 
 
 def _patch_incomplete_aperture_ph_properties(

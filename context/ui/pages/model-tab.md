@@ -47,6 +47,20 @@ Building faces retain their neutral shaded colors.
 
 ## Interaction (keyboard, on the canvas)
 
+Model-load failures stay visible in a wrapping, scrollable error panel with the
+active filename, full server diagnostic, HTTP status, error code, and request ID
+when available. **Copy error details** includes the filename and diagnostic;
+clipboard denial leaves the text selectable with a manual-copy notice. Transient
+failures offer Retry. Failed requests do not keep showing “Preparing 3D scene”.
+The browser logs `model_viewer.load_failed` with file/status/code/request ID for
+server correlation, without copying model contents into console logs.
+
+The reader treats type-only `ElectricEquipmentPhProperties` (including the
+abridged variant) as the library's empty optional extension. Populated bags
+still validate normally, and parsing restores the caller's original JSON.
+Existing persisted extraction failures remain failed until explicitly reprocessed;
+a parser deployment alone does not invalidate those stored failures.
+
 `m` toggles measure, `f` fits, `h` homes, digits pick a lens, `⌘/Ctrl-C`
 copies the selected element's identifier. `Esc` cascades: exit measure →
 clear selection → clear legend filter → collapse the sun-study bar. Viewer

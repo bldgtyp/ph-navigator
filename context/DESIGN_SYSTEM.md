@@ -160,6 +160,11 @@ px-named scale (self-documenting: `--space-8` == 8px), 2px base:
 The device-approval page uses `--agent-approval-width` (640px) to keep the
 request details and decision actions in one readable column.
 
+The Model viewer's persistent load-error panel uses `--model-load-error-width`
+(640px maximum) with viewport-relative width/height limits. Diagnostics wrap,
+remain selectable, and scroll within the panel; errors do not use the transient
+loading pill's single-line truncation.
+
 `--radius-2xs 3` · `xs 4` · `sm 5` (= `--phn-radius`) · control `6`
 (`--phn-control-radius`) · `7` · `md 8` · `9` · `lg 10` · `xl 12` ·
 `pill 999` (fully-rounded chips/toggles).
