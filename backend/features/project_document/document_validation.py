@@ -472,11 +472,16 @@ def _custom_option_ref(row: RowWithIdentity, field_key: str) -> str | None:
 
 
 def _validate_finite_number(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
-    """Reject a numeric ``custom_values`` field that is NaN or infinite."""
+    """Reject a numeric ``custom_values`` field that is NaN, infinite, or overflows float."""
     for row in rows:
         value = row.custom_values.get(field_key)
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isfinite(value):
-            raise ValueError(message.format(row_id=row.id))
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            try:
+                is_finite = math.isfinite(value)
+            except OverflowError:
+                is_finite = False
+            if not is_finite:
+                raise ValueError(message.format(row_id=row.id))
 
 
 def _validate_min_zero(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
