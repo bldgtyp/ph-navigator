@@ -312,15 +312,23 @@ _APPLY_RESPONSE_MODES = frozenset({"full", "summary"})
 def _summarize_envelope_response(
     result: EnvelopeReadResponse,
     *,
+    before: EnvelopeReadResponse,
     command_count: int,
 ) -> dict[str, object]:
+    before_by_id = {assembly.id: assembly.model_dump(mode="json") for assembly in before.assemblies}
+    after_ids = {assembly.id for assembly in result.assemblies}
+    changed_assemblies = [
+        assembly
+        for assembly in result.assemblies
+        if assembly.id not in before_by_id or before_by_id[assembly.id] != assembly.model_dump(mode="json")
+    ]
+    deleted_assembly_ids = [assembly.id for assembly in before.assemblies if assembly.id not in after_ids]
     return {
         "project_id": str(result.project_id),
         "version_id": str(result.version_id),
         "source": result.source,
         "version_etag": result.version_etag,
         "draft_etag": result.draft_etag,
-        "saved_assembly_count": result.saved_assembly_count,
         "command_count": command_count,
         "project_material_count": len(result.project_materials),
         "assemblies": [
@@ -346,8 +354,9 @@ def _summarize_envelope_response(
                     for layer in assembly.layers
                 ],
             }
-            for assembly in result.assemblies
+            for assembly in changed_assemblies
         ],
+        "deleted_assembly_ids": deleted_assembly_ids,
     }
 
 
@@ -392,8 +401,11 @@ def tool_apply_envelope_command(
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
     raw_payload: dict[str, object] = {"commands": commands} if commands is not None else {"command": command}
+    before_envelope: EnvelopeReadResponse | None = None
     try:
         payload = EnvelopeCommandRequest.model_validate(raw_payload)
+        if response == "summary":
+            before_envelope = get_envelope_read_model(parsed_version_id, access, source="draft")
         envelope_response = apply_envelope_command(
             parsed_version_id,
             access,
@@ -403,12 +415,19 @@ def tool_apply_envelope_command(
             updated_via="mcp",
         )
     except ValidationError as exc:
+        formatted_errors = []
+        validation_errors = []
+        for error in exc.errors():
+            loc = [str(part) for part in error["loc"]]
+            msg = str(error["msg"])
+            formatted_errors.append(f"{'.'.join(loc)}: {msg}" if loc else msg)
+            validation_errors.append({"loc": loc, "msg": msg})
         raise_mcp_error(
             "validation_error",
             "Envelope command failed validation.",
             "fatal",
             ctx,
-            {"errors": [str(error["msg"]) for error in exc.errors()]},
+            {"errors": formatted_errors, "validation_errors": validation_errors},
         )
     except HTTPException as exc:
         raise_http_exception_as_mcp_error(
@@ -420,7 +439,12 @@ def tool_apply_envelope_command(
             recoverability_by_code=_ENVELOPE_RECOVERABILITY,
         )
     if response == "summary":
-        return _summarize_envelope_response(envelope_response, command_count=len(payload.commands))
+        assert before_envelope is not None
+        return _summarize_envelope_response(
+            envelope_response,
+            before=before_envelope,
+            command_count=len(payload.commands),
+        )
     return envelope_response.model_dump(mode="json")
 
 
