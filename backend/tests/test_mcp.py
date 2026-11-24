@@ -1535,6 +1535,8 @@ async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_sc
     assert "project-scoped (bound to one project)" in server.instructions
     assert "user-scoped (can access every project visible to the issuing user)" in server.instructions
     assert "shared climate reference reads over stdio accept any valid token" in server.instructions
+    assert "project writes require project:write" in server.instructions
+    assert "asset/HBJSON writes require asset:write" in server.instructions
     assert "Tokens are scoped to one project" not in server.instructions
 
     tools = await server.list_tools()
@@ -1543,4 +1545,5 @@ async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_sc
     assert "all accessible projects for a user-scoped token" in by_name["list_projects"]
     for lifecycle_tool in ("delete_project", "restore_project", "hard_delete_project"):
         assert "token-scoped project" not in by_name[lifecycle_tool]
-        assert "own the project" in by_name[lifecycle_tool]
+        assert "owned project within the token's reach" in by_name[lifecycle_tool]
+        assert "project:write" in by_name[lifecycle_tool]
