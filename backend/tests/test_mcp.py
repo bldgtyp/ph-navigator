@@ -1524,3 +1524,20 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
     error_payload = json.loads(rejection_text.removeprefix("Error executing tool replace_table: "))
     assert error_payload["code"] == "mcp_scope_insufficient"
     assert error_payload["recoverability"] == "forbidden"
+
+
+@pytest.mark.anyio
+async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_scopes() -> None:
+    from features.mcp.server import build_mcp_server
+
+    server = build_mcp_server()
+    assert server.instructions is not None
+    assert "project-scoped" in server.instructions
+    assert "user-scoped" in server.instructions
+    assert "Tokens are scoped to one project" not in server.instructions
+
+    tools = await server.list_tools()
+    list_projects_tool = next(tool for tool in tools if tool.name == "list_projects")
+    assert list_projects_tool.description is not None
+    assert "project-scoped" in list_projects_tool.description
+    assert "user-scoped" in list_projects_tool.description

@@ -108,14 +108,16 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     mcp = FastMCP(
         "PH-Navigator",
         instructions=(
-            "Project-scoped PH-Navigator tools. Tokens are scoped to one project; "
-            "read tools require project:read and write tools require project:write. "
-            "Document writes land in the issuing editor's draft, never directly in "
-            "the saved version: read current data first, write with the latest "
-            "version/draft etag, then call save_draft to persist or discard_draft "
-            "to drop unsaved work. Use semantic command tools for envelope and "
-            "aperture structure; use replace_table for whole-table browser-parity "
-            "table replacement. save_draft_as is the locked-version escape hatch."
+            "PH-Navigator MCP tools. Tokens are either project-scoped (bound to one "
+            "project) or user-scoped (can access every project visible to the issuing "
+            "user); read tools require project:read and write tools require "
+            "project:write. Document writes land in the issuing editor's draft, never "
+            "directly in the saved version: read current data first, write with the "
+            "latest version/draft etag, then call save_draft to persist or "
+            "discard_draft to drop unsaved work. Use semantic command tools for "
+            "envelope and aperture structure; use replace_table for whole-table "
+            "browser-parity table replacement. save_draft_as is the locked-version "
+            "escape hatch."
         ),
         json_response=True,
         streamable_http_path="/",
@@ -139,7 +141,11 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
     @mcp.tool()
     def list_projects(ctx: Context) -> McpProjectListEnvelope:
-        """Return the one project visible to the project-scoped token."""
+        """Return the projects visible to the caller's token.
+
+        Returns the one bound project for a project-scoped token, or all
+        accessible projects for a user-scoped token.
+        """
         return tool_list_projects(ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()

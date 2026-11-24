@@ -1,6 +1,6 @@
 """Run the PH-Navigator MCP server over stdio.
 
-Set PHN_MCP_TOKEN to a project-scoped token before starting this script.
+Set PHN_MCP_TOKEN to a project-scoped or user-scoped MCP token before starting this script.
 """
 
 from __future__ import annotations
