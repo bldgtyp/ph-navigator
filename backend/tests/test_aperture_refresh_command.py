@@ -35,6 +35,12 @@ class _Catalog:
     def get_default_glazing(self) -> GlazingRef | None:
         return None
 
+    def frame_exists(self, record_id: str) -> bool:
+        return False
+
+    def glazing_exists(self, record_id: str) -> bool:
+        return False
+
 
 def _catalog() -> DefaultsCatalogReader:
     return _Catalog()

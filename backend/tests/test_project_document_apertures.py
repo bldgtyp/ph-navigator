@@ -69,6 +69,12 @@ class _StubCatalog:
     def get_default_glazing(self) -> GlazingRef | None:
         return self._glazing
 
+    def frame_exists(self, record_id: str) -> bool:
+        return True
+
+    def glazing_exists(self, record_id: str) -> bool:
+        return True
+
 
 def _seeded_catalog() -> DefaultsCatalogReader:
     frame_origin = CatalogOrigin(

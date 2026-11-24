@@ -50,6 +50,12 @@ class _Catalog:
     def get_default_glazing(self) -> GlazingRef:
         return GlazingRef(name=APERTURE_DEFAULT_GLAZING_NAME, u_value_w_m2k=1.0, g_value=0.5)
 
+    def frame_exists(self, record_id: str) -> bool:
+        return True
+
+    def glazing_exists(self, record_id: str) -> bool:
+        return True
+
 
 CATALOG: DefaultsCatalogReader = _Catalog()
 
