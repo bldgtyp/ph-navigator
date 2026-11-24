@@ -422,6 +422,8 @@ function statusBuiltInFieldDef(): TableFieldDef {
   };
 }
 
+export const DEFAULT_ROOM_CEILING_HEIGHT_M = 2.5;
+
 export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Display Name", "formula"),
   builtInFieldDef("number", "Number", "short_text"),
@@ -439,7 +441,12 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   {
-    ...builtInFieldDef("ceiling_height_m", "Ceiling Height", "number"),
+    ...builtInFieldDef(
+      "ceiling_height_m",
+      "Ceiling Height",
+      "number",
+      DEFAULT_ROOM_CEILING_HEIGHT_M,
+    ),
     config: { units: LENGTH_M_UNITS },
   },
   {
@@ -1492,7 +1499,42 @@ export function emptyAppliance(): ApplianceRow {
   };
 }
 
-export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
+export function roomCeilingHeightDefault(
+  fieldDefs: ReadonlyArray<TableFieldDef>,
+): number | undefined {
+  const field = fieldDefs.find((candidate) => candidate.field_key === "ceiling_height_m");
+  if (!field || field.field_type !== "number") {
+    return undefined;
+  }
+  if (typeof field.default === "number") {
+    return field.default;
+  }
+  return DEFAULT_ROOM_CEILING_HEIGHT_M;
+}
+
+export function roomsFieldDefsWithDefaultFallback(fieldDefs: TableFieldDef[]): TableFieldDef[] {
+  return fieldDefs.map((field) =>
+    field.field_key === "ceiling_height_m" && field.field_type === "number" && field.default == null
+      ? { ...field, default: DEFAULT_ROOM_CEILING_HEIGHT_M }
+      : field,
+  );
+}
+
+export function emptyRoom(
+  defaultFloorLevel: string | null = null,
+  options?: { ceilingHeightM?: number | null },
+): RoomRow {
+  const custom_values: Record<string, CustomValue> = {
+    number: "",
+    name: "",
+    num_people: 0,
+    num_bedrooms: 0,
+  };
+  const ceilingHeightM =
+    options === undefined ? DEFAULT_ROOM_CEILING_HEIGHT_M : options.ceilingHeightM;
+  if (ceilingHeightM !== undefined) {
+    custom_values.ceiling_height_m = ceilingHeightM;
+  }
   return {
     id: generatedId(ROOM_ID_PREFIX),
     floor_level: defaultFloorLevel,
@@ -1500,12 +1542,7 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
     icfa_factor: 1,
     catalog_origin: null,
     notes: null,
-    custom_values: {
-      number: "",
-      name: "",
-      num_people: 0,
-      num_bedrooms: 0,
-    },
+    custom_values,
     custom_links: {},
   };
 }

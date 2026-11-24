@@ -1,7 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { tableFieldDefsToFieldDefs, type TableFieldDef } from "../../../shared/ui/data-table";
 import { useSliceTableController } from "../../../shared/ui/data-table/feature";
-import { roomsFieldOverlay, roomsTableColumnsForSanitize, roomsTableFieldDefs } from "../lib";
+import {
+  roomsFieldDefsWithDefaultFallback,
+  roomsFieldOverlay,
+  roomsTableColumnsForSanitize,
+  roomsTableFieldDefs,
+} from "../lib";
 import { makeBuildEmptyRoomRow } from "./buildEmptyRoomRow";
 import { makeDeleteRoom, makeSaveRoom } from "./roomMutationCallbacks";
 import {
@@ -45,11 +50,13 @@ export function useRoomDialogController(args: UseRoomDialogControllerArgs) {
   const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
   const fieldDefs = useMemo<TableFieldDef[]>(
     () =>
-      roomsSlice.field_defs ?? [
-        ...roomsTableFieldDefs(roomsSlice),
-        ...((roomsSlice as RoomsSlice & { custom_fields?: RoomsSlice["field_defs"] })
-          .custom_fields ?? []),
-      ],
+      roomsFieldDefsWithDefaultFallback(
+        roomsSlice.field_defs ?? [
+          ...roomsTableFieldDefs(roomsSlice),
+          ...((roomsSlice as RoomsSlice & { custom_fields?: RoomsSlice["field_defs"] })
+            .custom_fields ?? []),
+        ],
+      ),
     [roomsSlice],
   );
   const previewSchemaFieldDefs = useMemo(

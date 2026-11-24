@@ -31,5 +31,6 @@ in sync when you add a step.
 | 8 | 2026-07-19 | `_upgrade_v7_to_v8`: renames typed specification status `missing` to `needed` in Materials, Glazings, and Frames. |
 | 9 | 2026-08-02 | `_upgrade_v8_to_v9`: makes heat-pump and pump unit-bearing keys truthful, converts legacy 17F Btu/h capacity to canonical kW, and refreshes fixed power/flow FieldDefs. |
 | 10 | 2026-08-03 | `_upgrade_v9_to_v10`: seeds the `aperture_install_types` library table with the program-aware Default row (`apit_default`: 0.052 W/m·K Phius, else 0.04) plus its source/status option lists, and adds explicit all-None per-side `installs` slots to every aperture element. |
+| 11 | 2026-11-23 | `_upgrade_v10_to_v11`: sets the built-in Rooms `ceiling_height_m` FieldDef default to `2.5` m (`8.2` ft) when unset, without altering existing room rows. |
 
 <!-- Backfill the missing dates from the plan/commit that landed each step when convenient; the code is authoritative in the meantime. -->

@@ -244,6 +244,7 @@ def test_empty_project_document_has_room_airflow_field_defs() -> None:
     assert ceiling_height.display_name == "Ceiling Height"
     assert ceiling_height.origin == "built_in"
     assert ceiling_height.field_type is CustomFieldType.number
+    assert ceiling_height.default == 2.5
     assert ceiling_height.config["units"] == {
         "mode": "fixed",
         "unit_type": "length",
@@ -297,6 +298,7 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
         "_upgrade_v7_to_v8",
         "_upgrade_v8_to_v9",
         "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
     )
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
@@ -343,6 +345,7 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
         "_upgrade_v7_to_v8",
         "_upgrade_v8_to_v9",
         "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
     )
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
@@ -389,6 +392,7 @@ def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields()
         "_upgrade_v7_to_v8",
         "_upgrade_v8_to_v9",
         "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
     )
     assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
         pump_keys
@@ -420,6 +424,7 @@ def test_project_document_v3_upgrade_adds_room_ventilator_field() -> None:
         "_upgrade_v7_to_v8",
         "_upgrade_v8_to_v9",
         "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
     )
     assert field_keys[field_keys.index("space_type_id") + 1] == "ventilator_id"
 
@@ -457,6 +462,7 @@ def test_project_document_v4_upgrade_adds_heat_pump_display_name_and_backfills_f
         "_upgrade_v7_to_v8",
         "_upgrade_v8_to_v9",
         "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
     )
     leaves = result.document.tables.equipment.heat_pumps
     for envelope in (leaves.outdoor_equip, leaves.indoor_equip, leaves.outdoor_units, leaves.indoor_units):
@@ -485,7 +491,13 @@ def test_project_document_v6_upgrade_backfills_documentation_evidence_statuses()
 
     rows = result.document.tables.equipment.pumps.rows
     assert result.original_schema_version == 6
-    assert result.applied_steps == ("_upgrade_v6_to_v7", "_upgrade_v7_to_v8", "_upgrade_v8_to_v9", "_upgrade_v9_to_v10")
+    assert result.applied_steps == (
+        "_upgrade_v6_to_v7",
+        "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
+        "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
+    )
     assert rows[0].datasheet_status == "na"
     assert rows[0].photo_status == "complete"
     assert rows[1].datasheet_status == "complete"
@@ -517,10 +529,77 @@ def test_project_document_v7_upgrade_renames_specification_status_missing_to_nee
 
     document_tables = result.document.tables
     assert result.original_schema_version == 7
-    assert result.applied_steps == ("_upgrade_v7_to_v8", "_upgrade_v8_to_v9", "_upgrade_v9_to_v10")
+    assert result.applied_steps == (
+        "_upgrade_v7_to_v8",
+        "_upgrade_v8_to_v9",
+        "_upgrade_v9_to_v10",
+        "_upgrade_v10_to_v11",
+    )
     assert [row.specification_status for row in document_tables.project_materials] == ["needed", "complete"]
     assert [row.specification_status for row in document_tables.project_glazings] == ["needed", "question"]
     assert [row.specification_status for row in document_tables.project_frames] == ["needed", "na"]
+
+
+def test_project_document_v10_upgrade_sets_rooms_ceiling_height_default_without_altering_rows() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 10
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    for field in cast(list[dict[str, Any]], rooms["field_defs"]):
+        if field["field_key"] == "ceiling_height_m":
+            field["default"] = None
+    rooms["rows"] = [
+        {"id": "rm_null", "custom_values": {"number": "101", "name": "Entry", "ceiling_height_m": None}},
+        {"id": "rm_set", "custom_values": {"number": "102", "name": "Living", "ceiling_height_m": 3.0}},
+    ]
+
+    result = upgrade_project_document(raw)
+
+    assert result.original_schema_version == 10
+    assert result.applied_steps == ("_upgrade_v10_to_v11",)
+    ceiling_field = next(f for f in result.document.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert ceiling_field.default == 2.5
+    assert result.document.tables.rooms.rows[0].custom_values["ceiling_height_m"] is None
+    assert result.document.tables.rooms.rows[1].custom_values["ceiling_height_m"] == 3.0
+
+
+def test_project_document_v10_upgrade_skips_formula_ceiling_height_and_preserves_custom_default() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 10
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    for field in cast(list[dict[str, Any]], rooms["field_defs"]):
+        if field["field_key"] == "ceiling_height_m":
+            field["field_type"] = "formula"
+            field["default"] = None
+            field["config"] = {
+                "source": "2.8",
+                "ast": {"kind": "number", "value": 2.8},
+                "deps": [],
+                "result_type": "number",
+            }
+
+    formula_result = upgrade_project_document(raw)
+    formula_field = next(
+        f for f in formula_result.document.tables.rooms.field_defs if f.field_key == "ceiling_height_m"
+    )
+    assert formula_field.field_type is CustomFieldType.formula
+    assert formula_field.default is None
+
+    raw_custom = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw_custom["schema_version"] = 10
+    rooms_custom = cast(dict[str, Any], cast(dict[str, Any], raw_custom["tables"])["rooms"])
+    for field in cast(list[dict[str, Any]], rooms_custom["field_defs"]):
+        if field["field_key"] == "ceiling_height_m":
+            field["default"] = 3.0
+
+    custom_result = upgrade_project_document(raw_custom)
+    custom_field = next(f for f in custom_result.document.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert custom_field.default == 3.0
 
 
 def test_project_document_v7_upgrade_preserves_a_transitional_body_already_carrying_needed() -> None:

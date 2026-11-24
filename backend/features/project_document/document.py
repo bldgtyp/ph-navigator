@@ -241,7 +241,11 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # (`apit_default`: 0.052 W/m·K when "phius" is in cert_programs, else 0.04),
 # and per-side `installs` assignment slots on every aperture element
 # (None inherits the Default).
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 10
+#
+# v11: Rooms built-in `ceiling_height_m` FieldDef gains a 2.5 m default
+# (8.2 ft) so newly added Spaces default to 2.5 m instead of null without
+# altering existing room rows.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 11
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -466,7 +470,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[10] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[11] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

@@ -1,5 +1,7 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 import { describe, expect, test, vi } from "vitest";
+import { planEmptyRows } from "../../shared/ui/data-table/lib/rows/defaults";
+import { makeBuildEmptyRoomRow } from "./lib/buildEmptyRoomRow";
 import {
   appliancesPayloadFromCellWrites,
   appliancesPayloadFromRowDelete,
@@ -32,6 +34,9 @@ import {
   pumpsPayloadFromRowDuplicate,
   pumpsPayloadFromRowInsert,
   remoteSliceChangesActiveRoom,
+  roomCeilingHeightDefault,
+  roomsFieldDefsWithDefaultFallback,
+  roomsFieldOverlay,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowDuplicate,
@@ -179,6 +184,7 @@ describe("equipment room helpers", () => {
     expect(firstRoomFloorOptionId(current)).toBe("opt_ground");
     expect(room.floor_level).toBe("opt_ground");
     expect(room.icfa_factor).toBe(1);
+    expect(room.custom_values.ceiling_height_m).toBe(2.5);
   });
 
   test("deletes rows without changing options", () => {
@@ -453,8 +459,117 @@ describe("equipment room helpers", () => {
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
     expect(inserted?.custom_values.number).toBeNull();
     expect(inserted?.custom_values.name).toBeNull();
+    expect(inserted?.custom_values.ceiling_height_m).toBe(2.5);
     expect(inserted?.floor_level).toBeNull();
     expect(inserted?.icfa_factor).toBe(1);
+  });
+
+  test("makeBuildEmptyRoomRow defaults ceiling_height_m to 2.5 m while honoring explicit overrides", () => {
+    const buildEmpty = makeBuildEmptyRoomRow(baseSlice);
+
+    const defaulted = buildEmpty({ rowId: "rm_def", fieldDefaults: {}, anchorRow: null });
+    expect(defaulted.custom_values.ceiling_height_m).toBe(2.5);
+
+    const explicit = buildEmpty({
+      rowId: "rm_exp",
+      fieldDefaults: { ceiling_height_m: 3.0 },
+      anchorRow: null,
+    });
+    expect(explicit.custom_values.ceiling_height_m).toBe(3.0);
+
+    const cleared = buildEmpty({
+      rowId: "rm_null",
+      fieldDefaults: { ceiling_height_m: null },
+      anchorRow: null,
+    });
+    expect(cleared.custom_values.ceiling_height_m).toBeNull();
+  });
+
+  test("roomCeilingHeightDefault and makeBuildEmptyRoomRow respect project defaults and skip formula fields", () => {
+    const customDefaultSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m" ? { ...field, default: 3.0 } : field,
+      ),
+    };
+    expect(roomCeilingHeightDefault(customDefaultSlice.field_defs)).toBe(3.0);
+    expect(
+      emptyRoom(null, {
+        ceilingHeightM: roomCeilingHeightDefault(customDefaultSlice.field_defs),
+      }).custom_values.ceiling_height_m,
+    ).toBe(3.0);
+    expect(
+      makeBuildEmptyRoomRow(customDefaultSlice)({
+        rowId: "rm_custom_def",
+        fieldDefaults: {},
+        anchorRow: null,
+      }).custom_values.ceiling_height_m,
+    ).toBe(3.0);
+
+    const formulaSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m"
+          ? { ...field, field_type: "formula", default: null }
+          : field,
+      ),
+    };
+    expect(roomCeilingHeightDefault(formulaSlice.field_defs)).toBeUndefined();
+    expect(
+      "ceiling_height_m" in
+        emptyRoom(null, {
+          ceilingHeightM: roomCeilingHeightDefault(formulaSlice.field_defs),
+        }).custom_values,
+    ).toBe(false);
+    expect(
+      "ceiling_height_m" in
+        makeBuildEmptyRoomRow(formulaSlice)({
+          rowId: "rm_formula",
+          fieldDefaults: { ceiling_height_m: 2.5 },
+          anchorRow: null,
+        }).custom_values,
+    ).toBe(false);
+
+    // Missing ceiling_height_m FieldDef omits ceiling_height_m instead of writing an unknown key.
+    const missingFieldSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.filter((field) => field.field_key !== "ceiling_height_m"),
+    };
+    expect(roomCeilingHeightDefault(missingFieldSlice.field_defs)).toBeUndefined();
+    expect(
+      "ceiling_height_m" in
+        emptyRoom(null, {
+          ceilingHeightM: roomCeilingHeightDefault(missingFieldSlice.field_defs),
+        }).custom_values,
+    ).toBe(false);
+    expect(
+      "ceiling_height_m" in
+        makeBuildEmptyRoomRow(missingFieldSlice)({
+          rowId: "rm_missing_def",
+          fieldDefaults: {},
+          anchorRow: null,
+        }).custom_values,
+    ).toBe(false);
+
+    // Numeric FieldDef with default: null still inserts 2.5 m through planEmptyRows.
+    const nullDefaultSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m" ? { ...field, default: null } : field,
+      ),
+    };
+    const effectiveSchemaFieldDefs = tableFieldDefsToFieldDefs({
+      tableKey: "rooms",
+      fieldDefs: roomsFieldDefsWithDefaultFallback(nullDefaultSlice.field_defs),
+      fieldOverlay: roomsFieldOverlay(nullDefaultSlice),
+      singleSelectOptions: nullDefaultSlice.single_select_options,
+    });
+    const planned = planEmptyRows({
+      count: 1,
+      fieldDefs: effectiveSchemaFieldDefs,
+      buildEmptyRow: makeBuildEmptyRoomRow(nullDefaultSlice),
+    });
+    expect(planned.rows[0]?.custom_values.ceiling_height_m).toBe(2.5);
   });
 
   test("roomsPayloadFromRowInsert keeps blank room number null when Number is number-typed", () => {
