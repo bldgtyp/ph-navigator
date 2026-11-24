@@ -535,6 +535,18 @@ class ApertureElement(BaseModel):
     installs: ApertureElementInstalls = Field(default_factory=ApertureElementInstalls)
     glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     operation: ApertureOperation | None = None
+    comfort_exempt: bool = False
+    comfort_exempt_reason: Literal["non_regularly_occupied", "ada_door"] | None = None
+    perimeter_heat_within_3ft: bool = False
+    perimeter_heat_note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("perimeter_heat_note", mode="before")
+    @classmethod
+    def _strip_optional_perimeter_note(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
     @field_validator("name", mode="before")
     @classmethod
@@ -563,8 +575,18 @@ class ApertureElement(BaseModel):
             or any((self.installs.top, self.installs.right, self.installs.bottom, self.installs.left))
             or self.glazing_id is not None
             or self.operation is not None
+            or self.comfort_exempt
+            or self.comfort_exempt_reason is not None
+            or self.perimeter_heat_within_3ft
+            or self.perimeter_heat_note is not None
         ):
-            raise ValueError("ApertureElement(kind=void) must not carry frames/installs/glazing/operation")
+            raise ValueError(
+                "ApertureElement(kind=void) must not carry frames/installs/glazing/operation/comfort flags"
+            )
+        if self.comfort_exempt and self.comfort_exempt_reason is None:
+            raise ValueError("comfort_exempt_reason is required when comfort_exempt is true")
+        if self.perimeter_heat_within_3ft and not self.perimeter_heat_note:
+            raise ValueError("perimeter_heat_note is required when perimeter_heat_within_3ft is true")
         return self
 
 
@@ -585,6 +607,17 @@ class ApertureTypeEntry(BaseModel):
     row_heights_mm: list[float] = Field(min_length=1)
     column_widths_mm: list[float] = Field(min_length=1)
     elements: list[ApertureElement] = Field(min_length=1)
+    sill_height_mm: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
+
+    @field_validator("nfrc_standard_size_note", mode="before")
+    @classmethod
+    def _strip_optional_nfrc_note(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
     @field_validator("name", mode="before")
     @classmethod

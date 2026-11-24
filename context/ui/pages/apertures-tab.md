@@ -85,6 +85,14 @@ to Empty removes its stale paste-undo entry. Paste undo restores the complete
 prior assignment snapshot and remains disabled while another builder command
 is running; failed restores stay retryable and surface the command error.
 
+- The header beside the composite U-value chip shows an interactive Phius
+  window thermal-comfort chip (`ThermalComfortChip`) that opens the four-panel
+  `ThermalComfortModal` (Verdict + editable `sill_height_mm` and optional NFRC
+  standard-size whole-window U, proportional Where grid tinted by per-lite
+  state, Numbers per-lite table with exemption/perimeter-heat flags, and
+  Assumptions with the Phius applet submittal disclaimer). Missing sill height
+  reports as `blocked` (`Comfort: needs sill height`).
+
 ## 2.6.2 Glazings Report
 
 Glazings is the aperture analog of Envelope → Materials/Specifications. It uses

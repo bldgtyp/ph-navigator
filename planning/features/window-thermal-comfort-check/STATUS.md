@@ -12,8 +12,7 @@ RELATED:
 
 **Issue:** [#72](https://github.com/bldgtyp/ph-navigator/issues/72)
 
-**State:** `Deferred` — PRD drafted 2026-08-18, no code written, no phases
-planned.
+**State:** `Implemented` — per-type `sill_height_mm` + blocked-on-missing-sill decisions confirmed by Ed; backend calculation/commands/route and frontend chip/modal implemented and tested.
 
 ## Next step
 

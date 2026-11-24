@@ -22,6 +22,7 @@ import { FramesPanel } from "../components/FramesPanel";
 import { GlazingsPanel } from "../components/GlazingsPanel";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { RefreshDialog } from "../components/RefreshDialog";
+import { ThermalComfortModal } from "../components/ThermalComfortModal";
 import { UValueReportPanel } from "../components/UValueReportPanel";
 import { UValueReportActions } from "../components/UValueReportActions";
 import type { ApertureDriftEntry } from "../drift-types";
@@ -35,6 +36,7 @@ import {
 } from "../hooks";
 import { useApertureCommandJournal } from "../hooks/useApertureCommandJournal";
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
+import { useApertureThermalComfort } from "../hooks/useApertureThermalComfort";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureUValues } from "../hooks/useApertureUValues";
 import { useApertureUValueReport } from "../hooks/useApertureUValueReport";
@@ -92,6 +94,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [installsModalOpen, setInstallsModalOpen] = useState(false);
+  const [comfortModalOpen, setComfortModalOpen] = useState(false);
   const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const openRefreshDialog = (entry: ApertureDriftEntry) => {
@@ -181,6 +184,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const uValueSource: "draft" | "version" = slice?.source === "draft" ? "draft" : "version";
   const builderVersionId = isBuilderRoute ? project.active_version_id : null;
   const uValueQuery = useApertureUValues(project.id, builderVersionId, uValueSource);
+  const comfortQuery = useApertureThermalComfort(
+    project.id,
+    builderVersionId,
+    uValueSource,
+    isBuilderRoute,
+  );
+  const activeComfort =
+    comfortQuery.data?.apertures.find((r) => r.aperture_type_id === activeAperture?.id) ?? null;
   const driftQuery = useApertureDriftReport(
     project.id,
     isBuilderRoute || isProductReportRoute ? project.active_version_id : null,
@@ -497,6 +508,17 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   onClose={() => setInstallsModalOpen(false)}
                 />
               ) : null}
+              {comfortModalOpen && activeAperture ? (
+                <ThermalComfortModal
+                  open={comfortModalOpen}
+                  aperture={activeAperture}
+                  result={activeComfort}
+                  canEdit={canEdit}
+                  busy={mutation.isPending}
+                  onClose={() => setComfortModalOpen(false)}
+                  onCommand={(command) => void dispatch(command)}
+                />
+              ) : null}
               <ManufacturerFiltersModal
                 open={filtersModalOpen}
                 apertures={sorted}
@@ -626,10 +648,14 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                             activeAperture={activeAperture}
                             apertures={sorted}
                             uValue={activeUValue}
+                            comfort={activeComfort}
+                            comfortLoading={comfortQuery.isLoading}
+                            comfortUnavailable={comfortQuery.isError}
                             loading={uValueQuery.isLoading}
                             canEdit={canEdit}
                             busy={mutation.isPending}
                             actions={apertureActions}
+                            onOpenComfort={() => setComfortModalOpen(true)}
                             onRename={(newName) => {
                               void dispatch({
                                 kind: "renameApertureType",
