@@ -46,6 +46,10 @@ class DefaultsCatalogReader(Protocol):
 
     def get_default_glazing(self) -> GlazingRef | None: ...
 
+    def frame_exists(self, record_id: str) -> bool: ...
+
+    def glazing_exists(self, record_id: str) -> bool: ...
+
 
 def build_default_aperture_type(
     catalog: DefaultsCatalogReader,

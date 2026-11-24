@@ -277,6 +277,12 @@ class _SeedDefaultsCatalog:
             ),
         )
 
+    def frame_exists(self, record_id: str) -> bool:
+        return record_id == _APERTURE_DEFAULT_FRAME_ID
+
+    def glazing_exists(self, record_id: str) -> bool:
+        return record_id == _APERTURE_DEFAULT_GLAZING_ID
+
 
 def _reseed_aperture_default_catalog_rows(conn: Any) -> None:
     conn.execute(

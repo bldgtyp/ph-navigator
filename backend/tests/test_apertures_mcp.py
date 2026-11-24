@@ -8,6 +8,7 @@ underlying behavior.
 
 from __future__ import annotations
 
+import json
 from typing import cast
 
 import pytest
@@ -392,3 +393,189 @@ def test_apply_aperture_command_etag_mismatch_returns_refresh_error(
             allow_env_token=True,
             if_match="stale-draft-etag",
         )
+
+
+def test_apply_aperture_command_rejects_missing_catalog_frame_and_glazing_ids(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+    _issue_token(client, project_id, monkeypatch, ["project:read", "project:write"])
+
+    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found") as frame_exc:
+        tool_apply_aperture_command(
+            project_id,
+            version_id,
+            {
+                "kind": "pickFrame",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "side": "top",
+                "frame": {
+                    "name": "Missing Frame",
+                    "width_mm": 60.0,
+                    "u_value_w_m2k": 1.1,
+                    "psi_g_w_mk": 0.035,
+                    "catalog_origin": {
+                        "catalog_table": "frame_types",
+                        "catalog_record_id": "recMissingFrm0001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+            cast(Context, None),
+            allow_env_token=True,
+            if_match_version=saved_etag,
+        )
+    frame_err = json.loads(str(frame_exc.value))
+    assert frame_err["code"] == "aperture_pick_catalog_row_not_found"
+    assert frame_err["recoverability"] == "fatal"
+    assert "recMissingFrm0001" in frame_err["message"]
+
+    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found") as glazing_exc:
+        tool_apply_aperture_command(
+            project_id,
+            version_id,
+            {
+                "kind": "pickGlazing",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "glazing": {
+                    "name": "Missing Glazing",
+                    "u_value_w_m2k": 0.7,
+                    "g_value": 0.45,
+                    "catalog_origin": {
+                        "catalog_table": "glazing_types",
+                        "catalog_record_id": "recMissingGlz0001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+            cast(Context, None),
+            allow_env_token=True,
+            if_match_version=saved_etag,
+        )
+    glazing_err = json.loads(str(glazing_exc.value))
+    assert glazing_err["code"] == "aperture_pick_catalog_row_not_found"
+    assert glazing_err["recoverability"] == "fatal"
+    assert "recMissingGlz0001" in glazing_err["message"]
+
+
+def test_apply_aperture_command_accepts_existing_catalog_frame_and_glazing_ids(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+    _issue_token(client, project_id, monkeypatch, ["project:read", "project:write"])
+
+    with transaction() as conn:
+        conn.execute(
+            """
+            INSERT INTO catalog_frame_types (id, name, width_mm, u_value_w_m2k, psi_g_w_mk)
+            VALUES ('recLiveFrame00001', 'Live Frame', 50.0, 1.5, 0.04)
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO catalog_frame_types (id, name, width_mm, u_value_w_m2k, psi_g_w_mk, deleted_at)
+            VALUES ('recDeadFrame00001', 'Deleted Frame', 50.0, 1.5, 0.04, NOW())
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO catalog_glazing_types (id, name, u_value_w_m2k, g_value)
+            VALUES ('recLiveGlaz000001', 'Live Glazing', 1.0, 0.5)
+            """
+        )
+
+    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found"):
+        tool_apply_aperture_command(
+            project_id,
+            version_id,
+            {
+                "kind": "pickFrame",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "side": "top",
+                "frame": {
+                    "name": "Deleted Frame",
+                    "width_mm": 50.0,
+                    "u_value_w_m2k": 1.5,
+                    "psi_g_w_mk": 0.04,
+                    "catalog_origin": {
+                        "catalog_table": "frame_types",
+                        "catalog_record_id": "recDeadFrame00001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+            cast(Context, None),
+            allow_env_token=True,
+            if_match_version=saved_etag,
+        )
+
+    frame_result = tool_apply_aperture_command(
+        project_id,
+        version_id,
+        {
+            "kind": "pickFrame",
+            "aperture_type_id": "apt_A",
+            "element_id": "aptel_A1",
+            "side": "top",
+            "frame": {
+                "name": "Live Frame",
+                "width_mm": 50.0,
+                "u_value_w_m2k": 1.5,
+                "psi_g_w_mk": 0.04,
+                "catalog_origin": {
+                    "catalog_table": "frame_types",
+                    "catalog_record_id": "recLiveFrame00001",
+                    "catalog_schema_version": 1,
+                    "synced_at": "2026-10-28T00:00:00Z",
+                },
+            },
+        },
+        cast(Context, None),
+        allow_env_token=True,
+        if_match_version=saved_etag,
+    )
+    frame_response = cast(dict[str, object], frame_result["response"])
+    draft_etag = cast(str, frame_response["draft_etag"])
+
+    glazing_result = tool_apply_aperture_command(
+        project_id,
+        version_id,
+        {
+            "kind": "pickGlazing",
+            "aperture_type_id": "apt_A",
+            "element_id": "aptel_A1",
+            "glazing": {
+                "name": "Live Glazing",
+                "u_value_w_m2k": 1.0,
+                "g_value": 0.5,
+                "catalog_origin": {
+                    "catalog_table": "glazing_types",
+                    "catalog_record_id": "recLiveGlaz000001",
+                    "catalog_schema_version": 1,
+                    "synced_at": "2026-10-28T00:00:00Z",
+                },
+            },
+        },
+        cast(Context, None),
+        allow_env_token=True,
+        if_match=draft_etag,
+    )
+    assert cast(dict[str, object], glazing_result["response"])["source"] == "draft"

@@ -95,6 +95,18 @@ class DatabaseDefaultsCatalog:
             }
         )
 
+    def frame_exists(self, record_id: str) -> bool:
+        return self._row_exists("catalog_frame_types", record_id)
+
+    def glazing_exists(self, record_id: str) -> bool:
+        return self._row_exists("catalog_glazing_types", record_id)
+
+    def _row_exists(self, table: str, record_id: str) -> bool:
+        query = pgsql.SQL("SELECT 1 FROM {table} WHERE id = %(id)s AND deleted_at IS NULL LIMIT 1").format(
+            table=pgsql.Identifier(table),
+        )
+        return self._conn.execute(query, {"id": record_id}).fetchone() is not None
+
     def _fetch_by_id(
         self,
         table: str,

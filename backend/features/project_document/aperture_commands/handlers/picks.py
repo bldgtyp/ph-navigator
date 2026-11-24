@@ -33,6 +33,7 @@ from features.project_document.aperture_commands.models import (
 from features.project_document.apertures._ref_helpers import ensure_project_frame, ensure_project_glazing
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
+    CatalogOrigin,
     FrameRef,
     GlazingRef,
     ProjectDocumentV1,
@@ -46,16 +47,14 @@ def apply_pick_frame(
     body: ProjectDocumentV1,
     command: PickFrame,
     actor_user_id: str,
-    _catalog: DefaultsCatalogReader,
+    catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, aperture = find_entry(body, command.aperture_type_id)
     element_idx, element = find_element(aperture, command.element_id)
     require_glazed_element(element, action="pickFrame")
-    _require_catalog_origin(command.frame, "frame")
+    frame_origin = _require_catalog_origin(command.frame, "frame")
+    _require_catalog_row_exists(catalog, "frame", frame_origin.catalog_record_id)
     frame_ref = _stamp_synced_at(command.frame)
-    frame_origin = frame_ref.catalog_origin
-    if frame_origin is None:
-        raise AssertionError("catalog origin is required after stamping a picked frame ref")
     next_tables = body.tables.model_copy(deep=True)
     frame_id = ensure_project_frame(next_tables, frame_ref)
     next_frames = element.frames.model_copy(update={command.side: frame_id})
@@ -79,16 +78,14 @@ def apply_pick_glazing(
     body: ProjectDocumentV1,
     command: PickGlazing,
     actor_user_id: str,
-    _catalog: DefaultsCatalogReader,
+    catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, aperture = find_entry(body, command.aperture_type_id)
     element_idx, element = find_element(aperture, command.element_id)
     require_glazed_element(element, action="pickGlazing")
-    _require_catalog_origin(command.glazing, "glazing")
+    glazing_origin = _require_catalog_origin(command.glazing, "glazing")
+    _require_catalog_row_exists(catalog, "glazing", glazing_origin.catalog_record_id)
     glazing_ref = _stamp_synced_at(command.glazing)
-    glazing_origin = glazing_ref.catalog_origin
-    if glazing_origin is None:
-        raise AssertionError("catalog origin is required after stamping a picked glazing ref")
     next_tables = body.tables.model_copy(deep=True)
     glazing_id = ensure_project_glazing(next_tables, glazing_ref)
     next_element = element.model_copy(update={"glazing_id": glazing_id})
@@ -109,14 +106,26 @@ def apply_pick_glazing(
 # ---- Helpers --------------------------------------------------------------
 
 
-def _require_catalog_origin(ref: FrameRef | GlazingRef, target: str) -> None:
+def _require_catalog_origin(ref: FrameRef | GlazingRef, target: str) -> CatalogOrigin:
     if ref.catalog_origin is not None:
-        return
+        return ref.catalog_origin
     raise api_error(
         status.HTTP_422_UNPROCESSABLE_CONTENT,
         "aperture_pick_catalog_required",
         "Aperture frame and glazing picks must come from the catalog.",
         {"target": target},
+    )
+
+
+def _require_catalog_row_exists(catalog: DefaultsCatalogReader, target: str, record_id: str) -> None:
+    exists = catalog.frame_exists(record_id) if target == "frame" else catalog.glazing_exists(record_id)
+    if exists:
+        return
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "aperture_pick_catalog_row_not_found",
+        f"Referenced {target} catalog row does not exist: {record_id}",
+        {"target": target, "catalog_record_id": record_id},
     )
 
 
