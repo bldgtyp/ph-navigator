@@ -264,7 +264,7 @@ def test_existing_row_without_ceiling_height_is_not_backfilled() -> None:
     assert "ceiling_height_m" not in next_body.tables.rooms.rows[0].custom_values
 
 
-def test_replace_omitting_ceiling_height_field_default_preserves_prior_or_falls_back_to_2_5_m() -> None:
+def test_replace_distinguishes_omitted_vs_explicit_null_ceiling_height_field_default() -> None:
     body = _body_with_default_field()
     # Set a custom project default of 3.0 m on the persisted document.
     updated_defs = [
@@ -279,28 +279,43 @@ def test_replace_omitting_ceiling_height_field_default_preserves_prior_or_falls_
         }
     )
 
-    # Whole-table replace omits `default` (None) on ceiling_height_m FieldDef and omits value on new row.
-    omitted_default_defs = [
-        f.model_copy(update={"default": None}) if f.field_key == "ceiling_height_m" else f
-        for f in body.tables.rooms.field_defs
-    ]
+    # 1. Omitting `default` from the incoming FieldDef JSON preserves the prior 3.0 m default.
+    omitted_raw_defs = []
+    for f in body.tables.rooms.field_defs:
+        dumped = f.model_dump(mode="json")
+        if f.field_key == "ceiling_height_m":
+            dumped.pop("default", None)
+        omitted_raw_defs.append(TableFieldDef.model_validate(dumped))
     new_room = _make_room("rm_new", "101", "opt_L1", custom={})
-    payload = _build_payload(body, [new_room]).model_copy(update={"field_defs": omitted_default_defs})
+    payload = _build_payload(body, [new_room]).model_copy(update={"field_defs": omitted_raw_defs})
     next_body = apply_rooms_replace(body, payload)
 
     ceiling_def = next(f for f in next_body.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
     assert ceiling_def.default == 3.0
     assert next_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 3.0
 
-    # When prior body also has default=None, falls back to 2.5 m.
+    # 2. Explicitly sending `default: null` clears FieldDef.default while still falling back to 2.5 m for new rows.
+    explicit_null_defs = [
+        TableFieldDef.model_validate({**f.model_dump(mode="json"), "default": None})
+        if f.field_key == "ceiling_height_m"
+        else f
+        for f in body.tables.rooms.field_defs
+    ]
+    payload_clear = _build_payload(body, [new_room]).model_copy(update={"field_defs": explicit_null_defs})
+    cleared_body = apply_rooms_replace(body, payload_clear)
+    cleared_def = next(f for f in cleared_body.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert cleared_def.default is None
+    assert cleared_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 2.5
+
+    # 3. When prior body also has default=None and incoming omits `default`, falls back to 2.5 m.
     body_no_default = body.model_copy(
         update={
             "tables": body.tables.model_copy(
-                update={"rooms": body.tables.rooms.model_copy(update={"field_defs": omitted_default_defs})}
+                update={"rooms": body.tables.rooms.model_copy(update={"field_defs": explicit_null_defs})}
             )
         }
     )
-    payload_fallback = _build_payload(body_no_default, [new_room])
+    payload_fallback = _build_payload(body_no_default, [new_room]).model_copy(update={"field_defs": omitted_raw_defs})
     fallback_body = apply_rooms_replace(body_no_default, payload_fallback)
     fallback_def = next(f for f in fallback_body.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
     assert fallback_def.default == 2.5

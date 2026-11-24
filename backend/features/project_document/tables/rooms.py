@@ -327,14 +327,17 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
             if isinstance(field.default, (int, float)) and not isinstance(field.default, bool):
                 defaults_by_field_key[field.field_key] = float(field.default)
             elif field.default is None:
-                resolved_default = (
-                    prior_ceiling_height_default
-                    if prior_ceiling_height_default is not None
-                    else DEFAULT_ROOM_CEILING_HEIGHT_M
-                )
-                next_field = field.model_copy(update={"default": resolved_default})
-                field_defs_changed = True
-                defaults_by_field_key[field.field_key] = resolved_default
+                if "default" not in field.model_fields_set:
+                    resolved_default = (
+                        prior_ceiling_height_default
+                        if prior_ceiling_height_default is not None
+                        else DEFAULT_ROOM_CEILING_HEIGHT_M
+                    )
+                    next_field = field.model_copy(update={"default": resolved_default})
+                    field_defs_changed = True
+                    defaults_by_field_key[field.field_key] = resolved_default
+                else:
+                    defaults_by_field_key[field.field_key] = DEFAULT_ROOM_CEILING_HEIGHT_M
         normalized_field_defs.append(next_field)
 
     if field_defs_changed:

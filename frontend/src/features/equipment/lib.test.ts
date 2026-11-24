@@ -1,5 +1,6 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 import { describe, expect, test, vi } from "vitest";
+import { planEmptyRows } from "../../shared/ui/data-table/lib/rows/defaults";
 import { makeBuildEmptyRoomRow } from "./lib/buildEmptyRoomRow";
 import {
   appliancesPayloadFromCellWrites,
@@ -34,6 +35,8 @@ import {
   pumpsPayloadFromRowInsert,
   remoteSliceChangesActiveRoom,
   roomCeilingHeightDefault,
+  roomsFieldDefsWithDefaultFallback,
+  roomsFieldOverlay,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowDuplicate,
@@ -526,6 +529,47 @@ describe("equipment room helpers", () => {
           anchorRow: null,
         }).custom_values,
     ).toBe(false);
+
+    // Missing ceiling_height_m FieldDef omits ceiling_height_m instead of writing an unknown key.
+    const missingFieldSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.filter((field) => field.field_key !== "ceiling_height_m"),
+    };
+    expect(roomCeilingHeightDefault(missingFieldSlice.field_defs)).toBeUndefined();
+    expect(
+      "ceiling_height_m" in
+        emptyRoom(null, {
+          ceilingHeightM: roomCeilingHeightDefault(missingFieldSlice.field_defs),
+        }).custom_values,
+    ).toBe(false);
+    expect(
+      "ceiling_height_m" in
+        makeBuildEmptyRoomRow(missingFieldSlice)({
+          rowId: "rm_missing_def",
+          fieldDefaults: {},
+          anchorRow: null,
+        }).custom_values,
+    ).toBe(false);
+
+    // Numeric FieldDef with default: null still inserts 2.5 m through planEmptyRows.
+    const nullDefaultSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m" ? { ...field, default: null } : field,
+      ),
+    };
+    const effectiveSchemaFieldDefs = tableFieldDefsToFieldDefs({
+      tableKey: "rooms",
+      fieldDefs: roomsFieldDefsWithDefaultFallback(nullDefaultSlice.field_defs),
+      fieldOverlay: roomsFieldOverlay(nullDefaultSlice),
+      singleSelectOptions: nullDefaultSlice.single_select_options,
+    });
+    const planned = planEmptyRows({
+      count: 1,
+      fieldDefs: effectiveSchemaFieldDefs,
+      buildEmptyRow: makeBuildEmptyRoomRow(nullDefaultSlice),
+    });
+    expect(planned.rows[0]?.custom_values.ceiling_height_m).toBe(2.5);
   });
 
   test("roomsPayloadFromRowInsert keeps blank room number null when Number is number-typed", () => {

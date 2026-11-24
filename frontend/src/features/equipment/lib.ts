@@ -1503,13 +1503,21 @@ export function roomCeilingHeightDefault(
   fieldDefs: ReadonlyArray<TableFieldDef>,
 ): number | undefined {
   const field = fieldDefs.find((candidate) => candidate.field_key === "ceiling_height_m");
-  if (field && field.field_type !== "number") {
+  if (!field || field.field_type !== "number") {
     return undefined;
   }
-  if (field && typeof field.default === "number") {
+  if (typeof field.default === "number") {
     return field.default;
   }
   return DEFAULT_ROOM_CEILING_HEIGHT_M;
+}
+
+export function roomsFieldDefsWithDefaultFallback(fieldDefs: TableFieldDef[]): TableFieldDef[] {
+  return fieldDefs.map((field) =>
+    field.field_key === "ceiling_height_m" && field.field_type === "number" && field.default == null
+      ? { ...field, default: DEFAULT_ROOM_CEILING_HEIGHT_M }
+      : field,
+  );
 }
 
 export function emptyRoom(
