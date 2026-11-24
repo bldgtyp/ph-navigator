@@ -14,9 +14,11 @@ import { ApertureDriftEntriesModal } from "./ApertureCatalogStatus";
 export function BuilderDriftBanner({
   apertureTypeId,
   apertureTypeName = null,
+  canEdit = true,
 }: {
   apertureTypeId: string | null;
   apertureTypeName?: string | null;
+  canEdit?: boolean;
 }) {
   const allEntries = useAllReviewWorthyDriftEntries();
   const activeEntries = useApertureDriftEntries(apertureTypeId);
@@ -25,22 +27,21 @@ export function BuilderDriftBanner({
 
   if (allEntries.length === 0) return null;
 
-  const modalEntries = activeEntries.length > 0 ? activeEntries : allEntries;
-  const modalTitle =
-    activeEntries.length > 0 && apertureTypeName
-      ? `Catalog review — ${apertureTypeName}`
-      : "Catalog review — all apertures";
-  const modalLede =
-    activeEntries.length > 0 && apertureTypeName
-      ? `${activeEntries.length} ${activeEntries.length === 1 ? "entry needs" : "entries need"} catalog review on ${apertureTypeName}.`
-      : `${allEntries.length} ${allEntries.length === 1 ? "entry needs" : "entries need"} catalog review across this project.`;
+  // Always show every entry counted in the banner, with active-aperture entries
+  // prioritized first so the user sees the current aperture at the top.
+  const otherEntries = allEntries.filter((entry) => entry.aperture_type_id !== apertureTypeId);
+  const modalEntries = [...activeEntries, ...otherEntries];
+  const modalTitle = "Catalog review — all apertures";
+  const modalLede = apertureReviewBannerLabel(
+    allEntries.length,
+    activeEntries.length,
+    apertureTypeName,
+  );
 
   return (
     <>
       <div className="aperture-drift-banner" role="status">
-        <span>
-          {apertureReviewBannerLabel(allEntries.length, activeEntries.length, apertureTypeName)}
-        </span>
+        <span>{modalLede}</span>
         <button type="button" className="text-button" onClick={() => setReviewOpen(true)}>
           Review all
         </button>
@@ -50,6 +51,7 @@ export function BuilderDriftBanner({
           title={modalTitle}
           lede={modalLede}
           entries={modalEntries}
+          canEdit={canEdit}
           onClose={() => setReviewOpen(false)}
           onSelectEntry={(entry) => {
             setReviewOpen(false);

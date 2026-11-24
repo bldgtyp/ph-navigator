@@ -52,7 +52,7 @@ describe("apertures drift helpers", () => {
     expect(entriesNeedCatalogReview([customized, drifted])).toBe(true);
   });
 
-  it("aggregates consolidated action labels honestly across elements", () => {
+  it("deduplicates changed field keys per shared product and reports affected elements separately", () => {
     const e1 = makeEntry({ element_id: "el_1" });
     const e2 = makeEntry({
       element_id: "el_2",
@@ -63,14 +63,22 @@ describe("apertures drift helpers", () => {
           yours_value: 0.7,
           in_local_overrides: false,
         },
-        { field_key: "g_value", catalog_value: 0.45, yours_value: 0.5, in_local_overrides: false },
+        {
+          field_key: "g_value",
+          catalog_value: 0.45,
+          yours_value: 0.5,
+          in_local_overrides: false,
+        },
       ],
     });
     expect(apertureCatalogActionLabel([e1])).toBe("Review 1 catalog change");
-    expect(apertureCatalogActionLabel([e1, e2])).toBe("Review 3 catalog changes across 2 elements");
+    expect(apertureCatalogActionLabel([e1, e2])).toBe("Review 2 catalog changes (2 elements)");
     expect(
-      apertureCatalogActionLabel([makeEntry({ kind: "catalog_row_missing", deltas: [] })]),
-    ).toBe("Catalog source missing");
+      apertureCatalogActionLabel([
+        makeEntry({ element_id: "el_1", kind: "catalog_row_missing", deltas: [] }),
+        makeEntry({ element_id: "el_2", kind: "catalog_row_missing", deltas: [] }),
+      ]),
+    ).toBe("Catalog source missing (2 elements)");
   });
 
   it("formats project-wide and active-aperture banner scopes clearly", () => {

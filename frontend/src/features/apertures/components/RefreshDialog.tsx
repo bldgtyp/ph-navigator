@@ -1,7 +1,8 @@
 // Catalog review dialog for an aperture frame or glazing use-site entry.
 // Matches `MaterialDriftDialog` visually: compare cards (Project → Catalog),
 // `.modal-lede`, shared `SegmentedControl`, and a count-bearing submit label.
-// `catalog_row_missing` opens read-only with an explanation and disabled primary.
+// `catalog_row_missing` and read-only (`!canEdit`) open read-only with a
+// disabled primary action.
 
 import { useEffect, useState } from "react";
 import { DialogActions, ModalDialog, SegmentedControl } from "../../../shared/ui";
@@ -13,6 +14,7 @@ export type RefreshChoice = "catalog" | "yours" | "edit";
 export type RefreshDialogProps = {
   open: boolean;
   entry: ApertureDriftEntry | null;
+  canEdit?: boolean;
   busy?: boolean;
   error?: string | null;
   onClose: () => void;
@@ -54,6 +56,7 @@ const FIELD_LABELS: Record<string, string> = {
 export function RefreshDialog({
   open,
   entry,
+  canEdit = true,
   busy = false,
   error = null,
   onClose,
@@ -74,7 +77,10 @@ export function RefreshDialog({
       entry.deltas.map((delta) => ({
         delta,
         choice: delta.in_local_overrides ? "yours" : "catalog",
-        editValue: stringify(delta.yours_value),
+        editValue:
+          delta.yours_value === null || delta.yours_value === undefined
+            ? ""
+            : String(delta.yours_value),
       })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,15 +97,16 @@ export function RefreshDialog({
   const bulk = (choice: RefreshChoice) => setRows((prev) => prev.map((r) => ({ ...r, choice })));
 
   const handleSave = () => {
+    if (!canEdit) return;
     const chosen: Record<string, string | number | null> = {};
     for (const row of rows) {
-      const raw =
-        row.choice === "catalog"
-          ? row.delta.catalog_value
-          : row.choice === "yours"
-            ? row.delta.yours_value
-            : row.editValue;
-      chosen[row.delta.field_key] = coerce(raw);
+      if (row.choice === "catalog") {
+        chosen[row.delta.field_key] = toWireValue(row.delta.catalog_value);
+      } else if (row.choice === "yours") {
+        chosen[row.delta.field_key] = toWireValue(row.delta.yours_value);
+      } else {
+        chosen[row.delta.field_key] = parseEditedValue(row.editValue);
+      }
     }
     onSave(chosen);
   };
@@ -134,9 +141,12 @@ export function RefreshDialog({
         ) : (
           <>
             <p className="modal-lede">
-              {apertureCatalogActionHint([entry])} Choose what to keep for each.
+              {apertureCatalogActionHint([entry])}{" "}
+              {canEdit
+                ? "Choose what to keep for each. Applying updates every element referencing this project product."
+                : "Read-only — unlock this version or sign in as an editor to apply changes."}
             </p>
-            {rows.length > 1 ? (
+            {canEdit && rows.length > 1 ? (
               <div className="refresh-dialog__bulk">
                 <button type="button" className="secondary-button" onClick={() => bulk("catalog")}>
                   Take all from catalog
@@ -178,6 +188,7 @@ export function RefreshDialog({
                       value={row.choice}
                       onChange={(choice) => setChoice(row.delta.field_key, choice)}
                       ariaLabel={`${label} value to keep`}
+                      disabled={!canEdit}
                       options={(["yours", "catalog", "edit"] as const).map((choice) => ({
                         value: choice,
                         label: CHOICE_LABELS[choice],
@@ -189,6 +200,7 @@ export function RefreshDialog({
                         type="text"
                         className="drift-field__input"
                         value={row.editValue}
+                        disabled={!canEdit}
                         onChange={(event) => setEditValue(row.delta.field_key, event.target.value)}
                         aria-label={`Edit ${label}`}
                       />
@@ -203,7 +215,7 @@ export function RefreshDialog({
           busy={busy}
           error={error}
           submitLabel={submitLabel}
-          submitDisabled={blocked || rows.length === 0}
+          submitDisabled={blocked || !canEdit || rows.length === 0}
           onClose={onClose}
           onConfirm={handleSave}
         />
@@ -222,11 +234,15 @@ function stringify(value: unknown): string {
   return String(value);
 }
 
-function coerce(value: unknown): string | number | null {
+function toWireValue(value: string | number | boolean | null): string | number | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number") return value;
-  const text = String(value).trim();
-  if (text === "" || text === "Empty" || text === "—") return null;
+  if (typeof value === "boolean") return String(value);
+  return value;
+}
+
+function parseEditedValue(raw: string): string | number | null {
+  const text = raw.trim();
+  if (text === "") return null;
   const asNum = Number(text);
   if (!Number.isNaN(asNum) && /^-?\d+(\.\d+)?$/.test(text)) return asNum;
   return text;

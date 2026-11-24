@@ -34,11 +34,7 @@ import {
   uValueUnitLabel,
 } from "../../catalogs/components/unit-labels";
 import type { ApertureDriftEntry, DriftTarget } from "../drift-types";
-import {
-  ApertureCatalogAction,
-  ApertureDriftEntriesModal,
-  ApertureDriftFlag,
-} from "./ApertureCatalogStatus";
+import { ApertureCatalogAction, ApertureDriftFlag } from "./ApertureCatalogStatus";
 import type {
   ApertureAttachmentChangeArgs,
   ApertureProductCommand,
@@ -201,7 +197,6 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     return { activeRows: active, backgroundRows: background, unusedRows: unused };
   }, [filteredRows]);
 
-  const [driftReviewProductId, setDriftReviewProductId] = useState<string | null>(null);
   const driftByProductId = useMemo(() => {
     const entriesByUseSite = indexDriftEntries(driftEntries);
     return new Map(
@@ -215,10 +210,6 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   const useSitesRow = useMemo(
     () => visibleRows.find((row) => row.id === useSitesProductId) ?? null,
     [useSitesProductId, visibleRows],
-  );
-  const driftReviewRow = useMemo(
-    () => visibleRows.find((row) => row.id === driftReviewProductId) ?? null,
-    [driftReviewProductId, visibleRows],
   );
   const assetIds = expandedRow
     ? uniqueAttachmentAssetIds(
@@ -315,11 +306,9 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       renderExpansion={(row) => {
         const rowDriftEntries = driftByProductId.get(row.id) ?? [];
         const handleReviewProductDrift = () => {
-          if (rowDriftEntries.length === 1 && rowDriftEntries[0]) {
-            onRefreshEntry(rowDriftEntries[0]);
-          } else if (rowDriftEntries.length > 1) {
-            setDriftReviewProductId(row.id);
-          }
+          // Every use-site entry for a shared project product updates the same
+          // underlying project glazing/frame row, so open RefreshDialog directly.
+          if (rowDriftEntries[0]) onRefreshEntry(rowDriftEntries[0]);
         };
         return (
           <div className="spec-expansion">
@@ -506,18 +495,6 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
           row={useSitesRow}
           kind={kind}
           onClose={() => setUseSitesProductId(null)}
-        />
-      ) : null}
-      {driftReviewRow ? (
-        <ApertureDriftEntriesModal
-          title={`Catalog review — ${driftReviewRow.name}`}
-          lede="Choose a use site to compare against the shared catalog."
-          entries={driftByProductId.get(driftReviewRow.id) ?? []}
-          onClose={() => setDriftReviewProductId(null)}
-          onSelectEntry={(entry) => {
-            setDriftReviewProductId(null);
-            onRefreshEntry(entry);
-          }}
         />
       ) : null}
     </>

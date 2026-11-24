@@ -61,8 +61,14 @@ describe("BuilderDriftBanner", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Review all" }));
-    const dialog = screen.getByRole("dialog", { name: "Catalog review — W-01" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Review" }));
+    const dialog = screen.getByRole("dialog", { name: "Catalog review — all apertures" });
+    // Review all includes EVERY entry counted in the banner (both W-01 and W-02),
+    // with active aperture W-01 prioritized first.
+    const items = within(dialog).getAllByRole("listitem");
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent("W-01");
+    expect(items[1]).toHaveTextContent("W-02");
+    fireEvent.click(within(items[0]!).getByRole("button", { name: "Review" }));
     expect(onOpenRefresh).toHaveBeenCalledWith(DRIFT_ENTRIES[0]);
   });
 

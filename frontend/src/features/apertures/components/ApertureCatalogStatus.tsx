@@ -103,22 +103,32 @@ export function ApertureDriftEntriesModal({
   title,
   lede,
   entries,
+  canEdit = true,
   onClose,
   onSelectEntry,
 }: {
   title: string;
   lede: string;
   entries: readonly ApertureDriftEntry[];
+  canEdit?: boolean;
   onClose: () => void;
   onSelectEntry: (entry: ApertureDriftEntry) => void;
 }) {
   return (
-    <ModalDialog title={title} titleId="aperture-drift-entries-title" onClose={onClose} scrollBody>
+    <ModalDialog
+      title={title}
+      titleId="aperture-drift-entries-title"
+      onClose={onClose}
+      showHeaderClose
+      dismissOnBackdrop
+      scrollBody
+    >
       <div className="modal-form">
         <p className="modal-lede">{lede}</p>
         <ul className="drift-entry-list">
           {entries.map((entry) => {
             const needsReview = entryNeedsCatalogReview(entry);
+            const inspectOnly = !canEdit || entry.kind === "catalog_row_missing";
             return (
               <li
                 key={`${entry.aperture_type_id}:${entry.element_id}:${entry.target}`}
@@ -134,20 +144,15 @@ export function ApertureDriftEntriesModal({
                 </div>
                 <button
                   type="button"
-                  className={needsReview ? "primary-button" : "secondary-button"}
+                  className={needsReview && !inspectOnly ? "primary-button" : "secondary-button"}
                   onClick={() => onSelectEntry(entry)}
                 >
-                  {entry.kind === "catalog_row_missing" ? "Inspect" : "Review"}
+                  {inspectOnly ? "Inspect" : "Review"}
                 </button>
               </li>
             );
           })}
         </ul>
-      </div>
-      <div className="modal-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>
-          Close
-        </button>
       </div>
     </ModalDialog>
   );

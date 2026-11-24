@@ -53,7 +53,9 @@ export function apertureDriftEntrySummary(entry: ApertureDriftEntry): string {
 
 /**
  * Label for the single consolidated action at the top of an expanded product
- * row. Aggregates honestly across drifted use-site entries.
+ * row. Counts changed field keys once per shared project product and reports
+ * affected elements separately so one shared product never inflates its field
+ * count by use-site multiplicity.
  */
 export function apertureCatalogActionLabel(entries: readonly ApertureDriftEntry[]): string {
   if (entries.length === 0) return "";
@@ -61,27 +63,22 @@ export function apertureCatalogActionLabel(entries: readonly ApertureDriftEntry[
   if (reviewEntries.length === 0) {
     return "Customized — compare to catalog";
   }
+  const distinctElements = new Set(reviewEntries.map((entry) => entry.element_id)).size;
+  const elementSuffix = distinctElements > 1 ? ` (${distinctElements} elements)` : "";
   const missingEntries = reviewEntries.filter((entry) => entry.kind === "catalog_row_missing");
   if (missingEntries.length === reviewEntries.length) {
-    return missingEntries.length === 1
-      ? "Catalog source missing"
-      : `${missingEntries.length} catalog sources missing`;
+    return `Catalog source missing${elementSuffix}`;
   }
-  const totalChanges = reviewEntries.reduce(
-    (sum, entry) =>
-      sum +
-      (entry.kind === "catalog_row_missing"
-        ? 1
-        : entry.deltas.filter((delta) => !delta.in_local_overrides).length),
-    0,
-  );
-  const distinctElements = new Set(reviewEntries.map((entry) => entry.element_id)).size;
+  const distinctChangedKeys = new Set<string>();
+  for (const entry of reviewEntries) {
+    for (const delta of entry.deltas) {
+      if (!delta.in_local_overrides) distinctChangedKeys.add(delta.field_key);
+    }
+  }
+  const changedCount = Math.max(1, distinctChangedKeys.size);
   const changePhrase =
-    totalChanges === 1 ? "Review 1 catalog change" : `Review ${totalChanges} catalog changes`;
-  if (distinctElements > 1) {
-    return `${changePhrase} across ${distinctElements} elements`;
-  }
-  return changePhrase;
+    changedCount === 1 ? "Review 1 catalog change" : `Review ${changedCount} catalog changes`;
+  return `${changePhrase}${elementSuffix}`;
 }
 
 /** Tooltip for the collapsed-row indicator and the consolidated row action. */
@@ -93,26 +90,29 @@ export function apertureCatalogActionHint(entries: readonly ApertureDriftEntry[]
   }
   const reviewEntries = entries.filter(entryNeedsCatalogReview);
   if (reviewEntries.length === 0) {
-    const overrides = entries.reduce((sum, entry) => sum + entry.deltas.length, 0);
+    const distinctOverrides = new Set<string>();
+    for (const entry of entries) {
+      for (const delta of entry.deltas) distinctOverrides.add(delta.field_key);
+    }
+    const overrides = distinctOverrides.size;
     return overrides === 1
       ? "1 field is a local override of the catalog value."
       : `${overrides} fields are local overrides of the catalog values.`;
   }
-  const totalChanges = reviewEntries.reduce(
-    (sum, entry) =>
-      sum +
-      (entry.kind === "catalog_row_missing"
-        ? 1
-        : entry.deltas.filter((delta) => !delta.in_local_overrides).length),
-    0,
-  );
+  const distinctChangedKeys = new Set<string>();
+  for (const entry of reviewEntries) {
+    for (const delta of entry.deltas) {
+      if (!delta.in_local_overrides) distinctChangedKeys.add(delta.field_key);
+    }
+  }
+  const changedCount = Math.max(1, distinctChangedKeys.size);
   const distinctElements = new Set(reviewEntries.map((entry) => entry.element_id)).size;
   const base =
-    totalChanges === 1
+    changedCount === 1
       ? "The shared catalog changed 1 value"
-      : `The shared catalog changed ${totalChanges} values`;
+      : `The shared catalog changed ${changedCount} values`;
   if (distinctElements > 1) {
-    return `${base} across ${distinctElements} elements.`;
+    return `${base} affecting ${distinctElements} elements.`;
   }
   return `${base} since this copy was made.`;
 }

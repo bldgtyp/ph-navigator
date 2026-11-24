@@ -71,4 +71,37 @@ describe("RefreshDialog", () => {
     const submit = screen.getByRole("button", { name: "Apply refresh" });
     expect(submit).toBeDisabled();
   });
+
+  it("preserves literal 'Empty' text when keeping or taking catalog values", () => {
+    const onSave = vi.fn();
+    const literalEmptyEntry: ApertureDriftEntry = {
+      ...entry(),
+      deltas: [
+        {
+          field_key: "comments",
+          catalog_value: "Empty",
+          yours_value: "Empty",
+          in_local_overrides: true,
+        },
+        {
+          field_key: "suffix",
+          catalog_value: "Empty",
+          yours_value: "Old",
+          in_local_overrides: false,
+        },
+      ],
+    };
+    render(<RefreshDialog open entry={literalEmptyEntry} onClose={() => {}} onSave={onSave} />);
+    fireEvent.click(screen.getByRole("button", { name: "Apply 1 change" }));
+    expect(onSave).toHaveBeenCalledWith({ comments: "Empty", suffix: "Empty" });
+  });
+
+  it("renders read-only with disabled primary action when canEdit is false", () => {
+    const onSave = vi.fn();
+    render(
+      <RefreshDialog open entry={entry()} canEdit={false} onClose={() => {}} onSave={onSave} />,
+    );
+    expect(screen.getByRole("button", { name: "Apply 1 change" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Take all from catalog/ })).toBeNull();
+  });
 });

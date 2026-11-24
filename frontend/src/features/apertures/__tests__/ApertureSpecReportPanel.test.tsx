@@ -127,7 +127,7 @@ function renderGlazings(
     onRefreshEntry?: ReturnType<typeof vi.fn>;
   } = {},
 ) {
-  render(
+  return render(
     <UnitStub>
       <ApertureSpecReportPanel
         rows={rows}
@@ -157,7 +157,7 @@ function renderFrames(
     onCommand?: ReturnType<typeof vi.fn>;
   } = {},
 ) {
-  render(
+  return render(
     <UnitStub>
       <ApertureSpecReportPanel
         rows={rows}
@@ -328,6 +328,19 @@ describe("ApertureSpecReportPanel", () => {
 
   it("opens RefreshDialog from the consolidated header action for both field_delta and catalog_row_missing", () => {
     const onRefreshEntry = vi.fn();
+    const { unmount } = renderGlazings([glazing()], {
+      canEdit: true,
+      driftEntries: DRIFT_ENTRIES,
+      onRefreshEntry,
+    });
+    const deltaRow = screen.getByRole("row", { name: /Triple Pane A/ });
+    expect(within(deltaRow).getByRole("img", { name: /Catalog drift/i })).toBeInTheDocument();
+    fireEvent.click(deltaRow);
+    fireEvent.click(screen.getByRole("button", { name: "Review 1 catalog change" }));
+    expect(onRefreshEntry).toHaveBeenCalledWith(DRIFT_ENTRIES[0]);
+    unmount();
+
+    const onRefreshMissing = vi.fn();
     const missingEntry: ApertureDriftEntry = {
       aperture_type_id: "apt_1",
       aperture_type_name: "Window Type A",
@@ -341,14 +354,14 @@ describe("ApertureSpecReportPanel", () => {
     renderGlazings([glazing()], {
       canEdit: true,
       driftEntries: [missingEntry],
-      onRefreshEntry,
+      onRefreshEntry: onRefreshMissing,
     });
 
     const row = screen.getByRole("row", { name: /Triple Pane A/ });
     expect(within(row).getByRole("img", { name: /Catalog source missing/i })).toBeInTheDocument();
     fireEvent.click(row);
     fireEvent.click(screen.getByRole("button", { name: "Catalog source missing" }));
-    expect(onRefreshEntry).toHaveBeenCalledWith(missingEntry);
+    expect(onRefreshMissing).toHaveBeenCalledWith(missingEntry);
   });
 
   it("emits photo attachment changes from expanded frame rows", async () => {

@@ -22,16 +22,15 @@ RELATED:
 - Updated `BuilderDriftBanner.tsx` to report project-wide + active-aperture counts honestly and use `ModalDialog` (`ApertureDriftEntriesModal`).
 - Updated `RefreshDialog.tsx` to compare cards, `.modal-lede`, shared `SegmentedControl`, count-bearing submit label, and read-only disabled-primary handling for `catalog_row_missing`.
 
-## Next step
+## Resolved decisions
 
-Answer PRD Q1 (is there a `customized` analogue for aperture entries?) and Q3
-(sequence against the shared segmented control). Both are decisions, not
-investigations — an hour of reading `features/aperture_drift/` and the
-`in_local_overrides` semantics settles them.
+- **Q1 (customized analogue)**: Entries whose every differing field is in `in_local_overrides` are treated as deliberate local overrides (excluded from alarm flags and banner counts, offered a secondary compare action).
+- **Q2 (row-level granularity)**: Product report rows deduplicate changed field keys across use sites and report affected element counts separately; clicking the consolidated action opens `RefreshDialog` directly because refreshing updates the shared project product.
+- **Q3 (shared segmented control)**: Consumed `SegmentedControl` from `shared/ui`.
 
 ## Blockers
 
-None. This is deferred by choice, not blocked.
+None.
 
 ## Verification recipe
 
