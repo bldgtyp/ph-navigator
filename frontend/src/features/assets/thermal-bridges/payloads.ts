@@ -201,8 +201,6 @@ export function validateThermalBridgesPayload(
     if (row.thermal_bridge_type && !typeIds.has(row.thermal_bridge_type)) {
       return "Thermal bridge type option is missing.";
     }
-    const psi = customNumberValue(row, "psi_value_w_mk");
-    if (psi !== null && psi < 0) return "Psi-Value must be zero or greater.";
     const frsi = customNumberValue(row, "frsi_value");
     if (frsi !== null && (frsi < 0 || frsi > 1)) {
       return "fRSI Value must be between 0 and 1.";

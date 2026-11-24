@@ -332,9 +332,6 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         valid_option_ids=thermal_bridge_type_ids,
         missing_message="Missing thermal bridge type option for thermal bridge {row_id}: {value}",
     )
-    _validate_min_zero(
-        thermal_bridges, "psi_value_w_mk", "Thermal bridge psi_value_w_mk must be zero or greater: {row_id}"
-    )
     _validate_unit_fraction(
         thermal_bridges, "frsi_value", "Thermal bridge frsi_value must be between 0 and 1: {row_id}"
     )

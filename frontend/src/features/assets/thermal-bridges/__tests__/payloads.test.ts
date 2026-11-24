@@ -10,6 +10,7 @@ import {
 import {
   thermalBridgesPayloadFromCellWrites,
   thermalBridgesPayloadFromRowDuplicate,
+  validateThermalBridgesPayload,
 } from "../payloads";
 
 describe("thermal bridge payloads", () => {
@@ -40,6 +41,21 @@ describe("thermal bridge payloads", () => {
 
     expect(payload.thermal_bridges[1]?.pdf_report_asset_ids).toEqual([]);
     expect(payload.thermal_bridges[1]?.photo_asset_ids).toEqual([]);
+  });
+
+  test("accepts negative psi_value_w_mk values", () => {
+    const payload = thermalBridgesPayloadFromCellWrites(
+      thermalBridgesSlice({
+        thermal_bridges: [
+          thermalBridgeRow({ custom_values: { record_id: "TB-1", psi_value_w_mk: -0.025 } }),
+        ],
+      }),
+      [],
+      {},
+      {},
+    );
+
+    expect(validateThermalBridgesPayload(payload)).toBeNull();
   });
 });
 
