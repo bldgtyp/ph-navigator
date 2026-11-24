@@ -110,11 +110,12 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         instructions=(
             "PH-Navigator MCP tools. Tokens are either project-scoped (bound to one "
             "project) or user-scoped (can access every project visible to the issuing "
-            "user); read tools require project:read and write tools require "
-            "project:write. Document writes land in the issuing editor's draft, never "
-            "directly in the saved version: read current data first, write with the "
-            "latest version/draft etag, then call save_draft to persist or "
-            "discard_draft to drop unsaved work. Use semantic command tools for "
+            "user); project reads and the HTTP transport require project:read (shared "
+            "climate reference reads over stdio accept any valid token), and write "
+            "tools require project:write. Document writes land in the issuing editor's "
+            "draft, never directly in the saved version: read current data first, "
+            "write with the latest version/draft etag, then call save_draft to persist "
+            "or discard_draft to drop unsaved work. Use semantic command tools for "
             "envelope and aperture structure; use replace_table for whole-table "
             "browser-parity table replacement. save_draft_as is the locked-version "
             "escape hatch."
@@ -205,12 +206,12 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
     @mcp.tool()
     def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
-        """Soft-delete the token-scoped project after explicit project:write authorization."""
+        """Soft-delete the supplied project_id (token issuer must own the project and hold project:write)."""
         return tool_delete_project(project_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def restore_project(project_id: str, ctx: Context) -> dict[str, object]:
-        """Restore the token-scoped project during its soft-delete recovery window."""
+        """Restore the supplied project_id during its soft-delete recovery window (issuer must own the project)."""
         return tool_restore_project(project_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
@@ -220,7 +221,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         confirm_bt_number: str,
         ctx: Context,
     ) -> dict[str, object]:
-        """Permanently delete the token-scoped project after exact name and BT number confirmation."""
+        """Permanently delete the supplied project_id after exact name/BT confirmation (issuer must own the project)."""
         return tool_hard_delete_project(
             project_id,
             confirm_project_name,
