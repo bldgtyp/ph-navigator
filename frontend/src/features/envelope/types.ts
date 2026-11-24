@@ -1,9 +1,6 @@
 import type { BaseTableSlice } from "../project_document/table-slice";
 import type { CatalogOrigin } from "../project_document/catalog-origin";
-import type {
-  SpecificationStatus,
-  WireSpecificationStatusRecord,
-} from "../project_document/specification-status";
+import type { SpecificationStatus } from "../project_document/specification-status";
 import type { CondensationSettings } from "./condensation-types";
 
 export type { SpecificationStatus } from "../project_document/specification-status";
@@ -134,12 +131,6 @@ export type EnvelopeReadResponse = BaseTableSlice & {
   saved_assembly_count: number | null;
   assemblies: Assembly[];
   project_materials: ProjectMaterial[];
-};
-
-export type WireProjectMaterial = WireSpecificationStatusRecord<ProjectMaterial>;
-
-export type WireEnvelopeReadResponse = Omit<EnvelopeReadResponse, "project_materials"> & {
-  project_materials: WireProjectMaterial[];
 };
 
 export type AssemblyThermalResponse = {

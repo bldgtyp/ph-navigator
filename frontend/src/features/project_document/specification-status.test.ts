@@ -5,13 +5,11 @@ import {
   STATUS_AXIS_TOOLTIPS,
   evidenceAttentionLabel,
   needAttentionLabel,
-  normalizeSpecificationStatus,
-  normalizeSpecificationStatusRecord,
   resolvedLabel,
   serializeSpecificationStatus,
 } from "./specification-status";
 
-describe("specification-status response compatibility", () => {
+describe("specification-status vocabulary", () => {
   it("owns the three-axis labels, tooltips, and rollup phrases", () => {
     expect(STATUS_AXIS_LABELS).toEqual({
       spec: { column: "Spec. Status", meter: "Spec. Status", filter: "Needs spec" },
@@ -44,42 +42,6 @@ describe("specification-status response compatibility", () => {
       }),
     ).toBeNull();
     expect(resolvedLabel(2, 3)).toBe("2 of 3 resolved");
-  });
-
-  it.each([
-    ["needed", "needed"],
-    ["missing", "needed"],
-    ["question", "question"],
-    ["complete", "complete"],
-    ["na", "na"],
-  ] as const)("normalizes %s to the canonical value %s", (wire, expected) => {
-    expect(normalizeSpecificationStatus(wire)).toBe(expected);
-  });
-
-  it("normalizes only the named field and preserves the rest of a response row", () => {
-    expect(
-      normalizeSpecificationStatusRecord({
-        id: "pglz_1",
-        specification_status: "missing",
-        missing_catalog_reference: true,
-      }),
-    ).toEqual({
-      id: "pglz_1",
-      specification_status: "needed",
-      missing_catalog_reference: true,
-    });
-  });
-
-  it("preserves row identity when the wire status is already canonical", () => {
-    const row = { id: "pglz_1", specification_status: "needed" as const };
-
-    expect(normalizeSpecificationStatusRecord(row)).toBe(row);
-  });
-
-  it("rejects unrelated wire values", () => {
-    expect(() => normalizeSpecificationStatus("unknown")).toThrow(
-      "Unsupported specification status: unknown",
-    );
   });
 
   it("serializes the response-only unknown sentinel as canonical needed", () => {

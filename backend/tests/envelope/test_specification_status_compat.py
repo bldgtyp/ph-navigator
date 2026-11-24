@@ -1,4 +1,4 @@
-"""Cached-client compatibility contract for built-in specification statuses."""
+"""Strict canonical specification-status contract after Phase 07 adapter retirement."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from pydantic import ValidationError
 
 from features.envelope.models import EnvelopeCommandRequest
 from features.envelope.table_contracts import (
-    ProjectMaterialMutation,
     ProjectMaterialsReplaceRequest,
     apply_project_materials_replace,
 )
@@ -35,11 +34,7 @@ from tests.envelope.test_envelope_document_contracts import envelope_body, proje
         },
     ],
 )
-@pytest.mark.parametrize("input_status", ["missing", "needed"])
-def test_public_commands_normalize_cached_client_inputs_to_canonical_needed(
-    command: dict[str, object], input_status: str
-) -> None:
-    command["specification_status"] = input_status
+def test_public_commands_accept_canonical_needed(command: dict[str, object]) -> None:
     parsed = EnvelopeCommandRequest.model_validate({"command": command})
 
     assert parsed.commands[0].model_dump(mode="json")["specification_status"] == "needed"
@@ -53,17 +48,21 @@ def test_public_commands_normalize_cached_client_inputs_to_canonical_needed(
         ("update_project_frame", "project_frame_id"),
     ],
 )
-def test_public_commands_still_reject_unrelated_statuses(kind: str, id_key: str) -> None:
+@pytest.mark.parametrize("invalid_status", ["missing", "unknown"])
+def test_public_commands_reject_legacy_missing_and_unrelated_statuses(
+    kind: str, id_key: str, invalid_status: str
+) -> None:
     with pytest.raises(ValidationError):
         EnvelopeCommandRequest.model_validate(
-            {"command": {"kind": kind, id_key: "row_1", "specification_status": "unknown"}}
+            {"command": {"kind": kind, id_key: "row_1", "specification_status": invalid_status}}
         )
 
 
-def test_table_mutation_normalizes_legacy_missing_without_loosening_persisted_model() -> None:
+def test_table_mutation_rejects_legacy_missing() -> None:
     raw = project_material(specification_status="missing")
 
-    assert ProjectMaterialMutation.model_validate(raw).specification_status == "needed"
+    with pytest.raises(ValidationError):
+        ProjectMaterialsReplaceRequest.model_validate({"rows": [raw]})
     with pytest.raises(ValidationError):
         ProjectMaterial.model_validate(raw)
 
