@@ -1524,3 +1524,26 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
     error_payload = json.loads(rejection_text.removeprefix("Error executing tool replace_table: "))
     assert error_payload["code"] == "mcp_scope_insufficient"
     assert error_payload["recoverability"] == "forbidden"
+
+
+@pytest.mark.anyio
+async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_scopes() -> None:
+    from features.mcp.server import build_mcp_server
+
+    server = build_mcp_server()
+    assert server.instructions is not None
+    assert "project-scoped (bound to one project)" in server.instructions
+    assert "user-scoped (can access every project visible to the issuing user)" in server.instructions
+    assert "shared climate reference reads over stdio accept any valid token" in server.instructions
+    assert "project writes require project:write" in server.instructions
+    assert "asset/HBJSON writes require asset:write" in server.instructions
+    assert "Tokens are scoped to one project" not in server.instructions
+
+    tools = await server.list_tools()
+    by_name = {tool.name: " ".join((tool.description or "").split()) for tool in tools}
+    assert "one bound project for a project-scoped token" in by_name["list_projects"]
+    assert "all accessible projects for a user-scoped token" in by_name["list_projects"]
+    for lifecycle_tool in ("delete_project", "restore_project", "hard_delete_project"):
+        assert "token-scoped project" not in by_name[lifecycle_tool]
+        assert "owned project within the token's reach" in by_name[lifecycle_tool]
+        assert "project:write" in by_name[lifecycle_tool]

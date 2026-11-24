@@ -108,14 +108,18 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     mcp = FastMCP(
         "PH-Navigator",
         instructions=(
-            "Project-scoped PH-Navigator tools. Tokens are scoped to one project; "
-            "read tools require project:read and write tools require project:write. "
-            "Document writes land in the issuing editor's draft, never directly in "
-            "the saved version: read current data first, write with the latest "
-            "version/draft etag, then call save_draft to persist or discard_draft "
-            "to drop unsaved work. Use semantic command tools for envelope and "
-            "aperture structure; use replace_table for whole-table browser-parity "
-            "table replacement. save_draft_as is the locked-version escape hatch."
+            "PH-Navigator MCP tools. Tokens are either project-scoped (bound to one "
+            "project) or user-scoped (can access every project visible to the issuing "
+            "user); project reads and the HTTP transport require project:read (shared "
+            "climate reference reads over stdio accept any valid token), project "
+            "writes require project:write, and asset/HBJSON writes require "
+            "asset:write. Document writes land in the issuing editor's draft, never "
+            "directly in the saved version: read current data first, write with the "
+            "latest version/draft etag, then call save_draft to persist or "
+            "discard_draft to drop unsaved work. Use semantic command tools for "
+            "envelope and aperture structure; use replace_table for whole-table "
+            "browser-parity table replacement. save_draft_as is the locked-version "
+            "escape hatch."
         ),
         json_response=True,
         streamable_http_path="/",
@@ -139,7 +143,11 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
     @mcp.tool()
     def list_projects(ctx: Context) -> McpProjectListEnvelope:
-        """Return the one project visible to the project-scoped token."""
+        """Return the projects visible to the caller's token.
+
+        Returns the one bound project for a project-scoped token, or all
+        accessible projects for a user-scoped token.
+        """
         return tool_list_projects(ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
@@ -199,12 +207,12 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
 
     @mcp.tool()
     def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
-        """Soft-delete the token-scoped project after explicit project:write authorization."""
+        """Soft-delete an owned project within the token's reach (requires project:write)."""
         return tool_delete_project(project_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def restore_project(project_id: str, ctx: Context) -> dict[str, object]:
-        """Restore the token-scoped project during its soft-delete recovery window."""
+        """Restore an owned project within the token's reach during soft-delete recovery (requires project:write)."""
         return tool_restore_project(project_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
@@ -214,7 +222,10 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         confirm_bt_number: str,
         ctx: Context,
     ) -> dict[str, object]:
-        """Permanently delete the token-scoped project after exact name and BT number confirmation."""
+        """Permanently delete an owned project within the token's reach.
+
+        Requires exact name/BT confirmation and project:write.
+        """
         return tool_hard_delete_project(
             project_id,
             confirm_project_name,
