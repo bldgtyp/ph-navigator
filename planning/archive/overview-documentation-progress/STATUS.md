@@ -1,9 +1,10 @@
 ---
-DATE: 2026-08-16
-TIME: 09:40
-STATUS: Implemented on branch
+DATE: 2026-11-23
+TIME: 20:53 EST
+STATUS: Complete
 AUTHOR: Claude (with Ed May)
 SCOPE: UI/UX refactor of the Overview tab's Documentation-progress pane
+ISSUE: https://github.com/bldgtyp/ph-navigator/issues/75
 RELATED:
   - context/ui/pages/overview-tab.md
   - context/DESIGN_SYSTEM.md
@@ -15,7 +16,7 @@ RELATED:
 
 **Issue:** [#75](https://github.com/bldgtyp/ph-navigator/issues/75)
 
-Branch: `feature/overview-documentation-progress-refactor`
+**Merged:** `a3f8bade1` (PR #63, 2026-08-16). Archived 2026-11-23.
 
 ## Why
 
@@ -48,7 +49,7 @@ they use the same component.
 | 10 | Group rows get one destination, not four: title becomes a label, meters render unlinked, and the hover-revealed icon is the single way out. All three axis links resolved to the same group anchor (Ed, 2026-08-16) | Done |
 | 11 | Status legend removed from the pane — it defines a Needed/Question/Complete/N-A vocabulary this pane never renders (Ed, 2026-08-16) | Done |
 
-All eleven items are implemented on the branch. Merge is Ed's call.
+All eleven items landed in PR #63 (`a3f8bade1`, 2026-08-16).
 
 ## Decisions worth keeping
 

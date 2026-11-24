@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-08-27
-TIME: 08:55 EDT
+DATE: 2026-11-23
+TIME: 20:53 EST
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Claude (with Ed May)
 SCOPE: Active-only index after the migration to GitHub Issues. Completed and
@@ -13,7 +13,6 @@ GitHub issue (`bldgtyp/ph-navigator`).
 | Item | Kind | State | Issue | Pointer |
 | --- | --- | --- | --- | --- |
 | Aperture Psi-Install | Feature (cross-repo) | **Implemented on branch** `feature/aperture-psi-install` — phases 01–06 done, phase-05 UI review closed 2026-08-15; phase 07 (GH client) shipped from `honeybee_grasshopper_ph_plus`. Remaining: merge/production deploy (Ed's call) + end-to-end closeout, then archive | [#73](https://github.com/bldgtyp/ph-navigator/issues/73) | [`features_v1.1/aperture-psi-install/`](features_v1.1/aperture-psi-install/STATUS.md) |
-| Overview Documentation-Progress refactor | Refactor | **Implemented on branch** `feature/overview-documentation-progress-refactor`; closes with its PR | [#75](https://github.com/bldgtyp/ph-navigator/issues/75) | [`refactor/overview-documentation-progress/`](refactor/overview-documentation-progress/STATUS.md) |
 | Spec-Status Value Unification | Refactor | **Deployed and verified in production** — only Phase 07 adapter retirement remains | [#76](https://github.com/bldgtyp/ph-navigator/issues/76) | [`refactor/spec-status-value-unification/`](refactor/spec-status-value-unification/STATUS.md) |
 | Window Thermal Comfort Check | Feature | **Scoped** — PRD drafted 2026-08-18, no code; blocked on the per-type vs per-instance design question | [#72](https://github.com/bldgtyp/ph-navigator/issues/72) | [`features/window-thermal-comfort-check/`](features/window-thermal-comfort-check/STATUS.md) |
 | Apertures Catalog-Drift UX Parity | Refactor | **Scoped** — deferred, not started | [#74](https://github.com/bldgtyp/ph-navigator/issues/74) | [`refactor/aperture-catalog-drift-ux-parity/`](refactor/aperture-catalog-drift-ux-parity/STATUS.md) |
