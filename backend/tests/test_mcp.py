@@ -1694,3 +1694,331 @@ async def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
                 "version_id": version_id,
             },
         )
+
+
+@pytest.mark.anyio
+async def test_mcp_apply_envelope_command_batch_client_ids_and_summary_response(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from features.mcp.server import build_mcp_server
+
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    token = issue_mcp_token(client, project_id, scopes=["project:read", "project:write"])
+    monkeypatch.setenv("PHN_MCP_TOKEN", token)
+
+    server = build_mcp_server(allow_env_token=True)
+    _, initial_env = await server.call_tool(
+        "list_envelope_assemblies",
+        {"project_id": project_id, "version_id": version_id},
+    )
+    version_etag = cast(str, cast(dict[str, object], initial_env)["version_etag"])
+
+    # Single batch builds a 2-layer, 3-segment assembly using client-supplied IDs and returns compact summary.
+    _, summary_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match_version": version_etag,
+            "response": "summary",
+            "commands": [
+                {
+                    "kind": "create_assembly",
+                    "name": "WALL-BATCH-1",
+                    "type": "wall",
+                    "thickness_mm": 13.0,
+                    "width_mm": 406.0,
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_ext_sheathing",
+                    "segment_id": "seg_ext_sheathing",
+                },
+                {
+                    "kind": "hand_enter_material",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_ext_sheathing",
+                    "segment_id": "seg_ext_sheathing",
+                    "name": "Exterior Plywood",
+                    "category": "woods",
+                    "conductivity_w_mk": 0.13,
+                },
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_wall",
+                    "thickness_mm": 140.0,
+                    "layer_id": "lyr_insul",
+                    "segment_id": "seg_insul",
+                },
+                {
+                    "kind": "hand_enter_material",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_insul",
+                    "segment_id": "seg_insul",
+                    "name": "Dense Pack Cellulose",
+                    "category": "insulation",
+                    "conductivity_w_mk": 0.04,
+                },
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_insul",
+                    "width_mm": 38.0,
+                    "segment_id": "seg_stud",
+                },
+                {
+                    "kind": "hand_enter_material",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_insul",
+                    "segment_id": "seg_stud",
+                    "name": "SPF 2x6 Stud",
+                    "category": "woods",
+                    "conductivity_w_mk": 0.12,
+                },
+            ],
+        },
+    )
+    summary = cast(dict[str, object], summary_res)
+    assert summary["source"] == "draft"
+    assert isinstance(summary["draft_etag"], str)
+    assert summary["command_count"] == 6
+    assert summary["project_material_count"] == 3
+    assert "project_materials" not in summary
+    assert "saved_assembly_count" not in summary
+    assert summary["deleted_assembly_ids"] == []
+
+    assemblies = cast(list[dict[str, object]], summary["assemblies"])
+    assert len(assemblies) == 1
+    asm = assemblies[0]
+    assert asm["id"] == "asm_batch_wall"
+    assert asm["name"] == "WALL-BATCH-1"
+    assert asm["status"] == {"is_complete": True, "flags": []}
+    layers = cast(list[dict[str, object]], asm["layers"])
+    assert [layer["id"] for layer in layers] == ["lyr_ext_sheathing", "lyr_insul"]
+    assert [seg["id"] for seg in cast(list[dict[str, object]], layers[0]["segments"])] == ["seg_ext_sheathing"]
+    assert [seg["id"] for seg in cast(list[dict[str, object]], layers[1]["segments"])] == ["seg_insul", "seg_stud"]
+    assert all(
+        seg["project_material_id"] is not None
+        for layer in layers
+        for seg in cast(list[dict[str, object]], layer["segments"])
+    )
+
+    # Create a second assembly and verify summary mode returns ONLY the changed assembly on a targeted edit.
+    _, second_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match": summary["draft_etag"],
+            "response": "summary",
+            "command": {
+                "kind": "create_assembly",
+                "name": "ROOF-BATCH-2",
+                "type": "roof",
+                "assembly_id": "asm_batch_roof",
+                "layer_id": "lyr_roof_1",
+                "segment_id": "seg_roof_1",
+            },
+        },
+    )
+    second_summary = cast(dict[str, object], second_res)
+    assert [a["id"] for a in cast(list[dict[str, object]], second_summary["assemblies"])] == ["asm_batch_roof"]
+
+    _, rename_summary_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match": second_summary["draft_etag"],
+            "response": "summary",
+            "command": {
+                "kind": "rename_assembly",
+                "assembly_id": "asm_batch_roof",
+                "name": "ROOF-BATCH-2-RENAMED",
+            },
+        },
+    )
+    rename_summary = cast(dict[str, object], rename_summary_res)
+    assert [a["id"] for a in cast(list[dict[str, object]], rename_summary["assemblies"])] == ["asm_batch_roof"]
+    assert cast(list[dict[str, object]], rename_summary["assemblies"])[0]["name"] == "ROOF-BATCH-2-RENAMED"
+
+    # Default response="full" preserves full project_materials payload for backward compatibility.
+    _, full_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match": rename_summary["draft_etag"],
+            "command": {
+                "kind": "rename_assembly",
+                "assembly_id": "asm_batch_wall",
+                "name": "WALL-BATCH-1-RENAMED",
+            },
+        },
+    )
+    full = cast(dict[str, object], full_res)
+    assert len(cast(list[object], full["project_materials"])) == 3
+    pre_conflict_etag = full["draft_etag"]
+
+    # Document-wide duplicate ID checks across assemblies inside a multi-command batch roll back atomically.
+    duplicate_batches: list[tuple[list[dict[str, object]], str]] = [
+        (
+            [
+                {"kind": "create_assembly", "name": "WALL-DUP-ASM", "assembly_id": "asm_batch_wall"},
+            ],
+            "duplicate_assembly_id",
+        ),
+        (
+            [
+                {
+                    "kind": "create_assembly",
+                    "name": "WALL-ROLLBACK-1",
+                    "assembly_id": "asm_should_rollback_1",
+                },
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_insul",
+                },
+            ],
+            "duplicate_layer_id",
+        ),
+        (
+            [
+                {
+                    "kind": "create_assembly",
+                    "name": "WALL-ROLLBACK-2",
+                    "assembly_id": "asm_should_rollback_2",
+                },
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_roof_1",
+                    "segment_id": "seg_stud",
+                },
+            ],
+            "duplicate_segment_id",
+        ),
+        # Same-batch collision: fresh layer_id created by command 0 reused on another assembly in command 1.
+        (
+            [
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_fresh_in_batch",
+                },
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_fresh_in_batch",
+                },
+            ],
+            "duplicate_layer_id",
+        ),
+        # Same-batch collision: fresh segment_id created by command 0 reused on another assembly in command 1.
+        (
+            [
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_insul",
+                    "segment_id": "seg_fresh_in_batch",
+                },
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_roof_1",
+                    "segment_id": "seg_fresh_in_batch",
+                },
+            ],
+            "duplicate_segment_id",
+        ),
+    ]
+    for dup_batch, expected_code in duplicate_batches:
+        with pytest.raises(ToolError) as dup_exc:
+            await server.call_tool(
+                "apply_envelope_command",
+                {
+                    "project_id": project_id,
+                    "version_id": version_id,
+                    "if_match": pre_conflict_etag,
+                    "commands": dup_batch,
+                },
+            )
+        dup_err = json.loads(str(dup_exc.value).removeprefix("Error executing tool apply_envelope_command: "))
+        assert dup_err["code"] == expected_code
+        assert dup_err["recoverability"] == "fatal"
+
+    # Confirm failed conflict batches did not mutate the draft or advance draft_etag.
+    _, after_conflict = await server.call_tool(
+        "list_envelope_assemblies",
+        {"project_id": project_id, "version_id": version_id},
+    )
+    after_conflict_payload = cast(dict[str, object], after_conflict)
+    assert after_conflict_payload["draft_etag"] == pre_conflict_etag
+    assert {a["id"] for a in cast(list[dict[str, object]], after_conflict_payload["assemblies"])} == {
+        "asm_batch_wall",
+        "asm_batch_roof",
+    }
+
+    # Deleting an assembly in summary mode populates deleted_assembly_ids and leaves assemblies empty.
+    _, delete_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match": pre_conflict_etag,
+            "response": "summary",
+            "command": {"kind": "delete_assembly", "assembly_id": "asm_batch_roof"},
+        },
+    )
+    delete_summary = cast(dict[str, object], delete_res)
+    assert delete_summary["assemblies"] == []
+    assert delete_summary["deleted_assembly_ids"] == ["asm_batch_roof"]
+    pre_conflict_etag = delete_summary["draft_etag"]
+
+    # Batch validation errors include the command index and field location.
+    with pytest.raises(ToolError) as bad_id_exc:
+        await server.call_tool(
+            "apply_envelope_command",
+            {
+                "project_id": project_id,
+                "version_id": version_id,
+                "if_match": pre_conflict_etag,
+                "commands": [
+                    {"kind": "rename_assembly", "assembly_id": "asm_batch_wall", "name": "OK"},
+                    {"kind": "add_layer", "assembly_id": "asm_batch_wall", "layer_id": "bad_prefix"},
+                ],
+            },
+        )
+    bad_id_err = json.loads(str(bad_id_exc.value).removeprefix("Error executing tool apply_envelope_command: "))
+    assert bad_id_err["code"] == "validation_error"
+    assert bad_id_err["recoverability"] == "fatal"
+    val_locs = [item["loc"] for item in bad_id_err["details"]["validation_errors"]]
+    assert any("1" in loc and "layer_id" in loc for loc in val_locs)
+
+    # Input validation: mutually exclusive command/commands, empty commands, and invalid response mode.
+    invalid_inputs: list[dict[str, object]] = [
+        {"project_id": project_id, "version_id": version_id},
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "command": {"kind": "rename_assembly", "assembly_id": "asm_batch_wall", "name": "X"},
+            "commands": [{"kind": "rename_assembly", "assembly_id": "asm_batch_wall", "name": "Y"}],
+        },
+        {"project_id": project_id, "version_id": version_id, "commands": []},
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "command": {"kind": "rename_assembly", "assembly_id": "asm_batch_wall", "name": "X"},
+            "response": "compact",
+        },
+    ]
+    for bad_args in invalid_inputs:
+        with pytest.raises(ToolError) as val_exc:
+            await server.call_tool("apply_envelope_command", bad_args)
+        val_err = json.loads(str(val_exc.value).removeprefix("Error executing tool apply_envelope_command: "))
+        assert val_err["code"] == "validation_error"
+        assert val_err["recoverability"] == "fatal"

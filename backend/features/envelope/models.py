@@ -282,6 +282,9 @@ class CreateAssemblyCommand(BaseModel):
     exterior_condition: ExteriorCondition = "outdoor_air"
     thickness_mm: float = Field(default=100.0, gt=0, allow_inf_nan=False)
     width_mm: float = Field(default=1000.0, gt=0, allow_inf_nan=False)
+    assembly_id: str | None = Field(default=None, pattern=r"^asm_[A-Za-z0-9_-]+$", max_length=80)
+    layer_id: str | None = Field(default=None, pattern=r"^lyr_[A-Za-z0-9_-]+$", max_length=80)
+    segment_id: str | None = Field(default=None, pattern=r"^seg_[A-Za-z0-9_-]+$", max_length=80)
 
 
 class RenameAssemblyCommand(BaseModel):
@@ -359,6 +362,8 @@ class AddLayerCommand(BaseModel):
     target_layer_id: str | None = None
     position: Literal["above", "below"] = "below"
     thickness_mm: float = Field(default=100.0, gt=0, allow_inf_nan=False)
+    layer_id: str | None = Field(default=None, pattern=r"^lyr_[A-Za-z0-9_-]+$", max_length=80)
+    segment_id: str | None = Field(default=None, pattern=r"^seg_[A-Za-z0-9_-]+$", max_length=80)
 
 
 class UpdateLayerThicknessCommand(BaseModel):
@@ -401,6 +406,7 @@ class AddSegmentCommand(BaseModel):
     target_segment_id: str | None = None
     position: Literal["left", "right"] = "right"
     width_mm: float = Field(default=1000.0, gt=0, allow_inf_nan=False)
+    segment_id: str | None = Field(default=None, pattern=r"^seg_[A-Za-z0-9_-]+$", max_length=80)
 
 
 class UpdateSegmentCommand(BaseModel):

@@ -20,20 +20,26 @@ from features.project_document.document import Assembly, AssemblyLayer, Assembly
 
 def create_assembly(body: ProjectDocumentV1, command: CreateAssemblyCommand) -> ProjectDocumentV1:
     ops.ensure_unique_assembly_name(body.tables.assemblies, command.name)
+    assembly_id = command.assembly_id or new_id(ID_PREFIX_ASSEMBLY)
+    layer_id = command.layer_id or new_id(ID_PREFIX_LAYER)
+    segment_id = command.segment_id or new_id(ID_PREFIX_SEGMENT)
+    ops.ensure_unique_assembly_id(body.tables.assemblies, assembly_id)
+    ops.ensure_unique_layer_id(body.tables.assemblies, layer_id)
+    ops.ensure_unique_segment_id(body.tables.assemblies, segment_id)
     assembly = Assembly(
-        id=new_id(ID_PREFIX_ASSEMBLY),
+        id=assembly_id,
         name=command.name,
         type=command.type,
         orientation=command.orientation,
         exterior_condition=command.exterior_condition,
         layers=[
             AssemblyLayer(
-                id=new_id(ID_PREFIX_LAYER),
+                id=layer_id,
                 order=0,
                 thickness_mm=command.thickness_mm,
                 segments=[
                     AssemblySegment(
-                        id=new_id(ID_PREFIX_SEGMENT),
+                        id=segment_id,
                         order=0,
                         width_mm=command.width_mm,
                     )

@@ -249,9 +249,26 @@ including semantic-command tables, but it is the lower-level primitive.
 
 ### Semantic Project-Document Writes
 
-- `apply_envelope_command(project_id, version_id, command, if_match?,
-  if_match_version?)` applies Assembly Builder commands through the same service
-  boundary as the browser.
+- `apply_envelope_command(project_id, version_id, command?, commands?, if_match?,
+  if_match_version?, response="full")` applies one Assembly Builder command or an
+  ordered batch of up to 200 commands in a single draft write through the same
+  service boundary as the browser. `create_assembly`, `add_layer`, and
+  `add_segment` accept optional client-supplied `assembly_id` (`asm_...`),
+  `layer_id` (`lyr_...`), and `segment_id` (`seg_...`) values so subsequent
+  commands in the same batch (such as `pick_catalog_material`) can target newly
+  created rows. Set `response="summary"` to return only changed assemblies,
+  `deleted_assembly_ids`, counts, and ETags without the full `project_materials`
+  and `use_sites` payload. Example batch:
+
+  ```json
+  {
+    "commands": [
+      {"kind": "add_layer", "assembly_id": "asm_wall1", "thickness_mm": 140, "layer_id": "lyr_ins", "segment_id": "seg_ins"},
+      {"kind": "pick_catalog_material", "assembly_id": "asm_wall1", "layer_id": "lyr_ins", "segment_id": "seg_ins", "catalog_material_id": "rec..."}
+    ],
+    "response": "summary"
+  }
+  ```
 - `apply_aperture_command(project_id, version_id, command, if_match?,
   if_match_version?)` applies aperture commands.
 - Custom-field mutation tools add, rename, duplicate, delete, type-convert,
