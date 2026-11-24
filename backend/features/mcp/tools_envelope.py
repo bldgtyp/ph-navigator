@@ -9,9 +9,10 @@ from fastapi import HTTPException
 from mcp.server.fastmcp import Context
 from pydantic import ValidationError
 
-from features.envelope.models import EnvelopeCommandRequest, EnvelopeReadResponse
+from features.envelope.models import AssemblyRead, EnvelopeCommandRequest, EnvelopeReadResponse
 from features.envelope.service import (
     apply_envelope_command,
+    apply_envelope_command_with_before,
     get_assembly_thermal_model,
     get_envelope_read_model,
     get_project_material_drift_report,
@@ -312,17 +313,17 @@ _APPLY_RESPONSE_MODES = frozenset({"full", "summary"})
 def _summarize_envelope_response(
     result: EnvelopeReadResponse,
     *,
-    before: EnvelopeReadResponse,
+    before_assemblies: list[AssemblyRead],
     command_count: int,
 ) -> dict[str, object]:
-    before_by_id = {assembly.id: assembly.model_dump(mode="json") for assembly in before.assemblies}
+    before_by_id = {assembly.id: assembly.model_dump(mode="json") for assembly in before_assemblies}
     after_ids = {assembly.id for assembly in result.assemblies}
     changed_assemblies = [
         assembly
         for assembly in result.assemblies
         if assembly.id not in before_by_id or before_by_id[assembly.id] != assembly.model_dump(mode="json")
     ]
-    deleted_assembly_ids = [assembly.id for assembly in before.assemblies if assembly.id not in after_ids]
+    deleted_assembly_ids = [assembly.id for assembly in before_assemblies if assembly.id not in after_ids]
     return {
         "project_id": str(result.project_id),
         "version_id": str(result.version_id),
@@ -401,19 +402,27 @@ def tool_apply_envelope_command(
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
     raw_payload: dict[str, object] = {"commands": commands} if commands is not None else {"command": command}
-    before_envelope: EnvelopeReadResponse | None = None
+    before_assemblies: list[AssemblyRead] | None = None
     try:
         payload = EnvelopeCommandRequest.model_validate(raw_payload)
         if response == "summary":
-            before_envelope = get_envelope_read_model(parsed_version_id, access, source="draft")
-        envelope_response = apply_envelope_command(
-            parsed_version_id,
-            access,
-            payload.commands,
-            if_match=if_match,
-            if_match_version=if_match_version,
-            updated_via="mcp",
-        )
+            before_assemblies, envelope_response = apply_envelope_command_with_before(
+                parsed_version_id,
+                access,
+                payload.commands,
+                if_match=if_match,
+                if_match_version=if_match_version,
+                updated_via="mcp",
+            )
+        else:
+            envelope_response = apply_envelope_command(
+                parsed_version_id,
+                access,
+                payload.commands,
+                if_match=if_match,
+                if_match_version=if_match_version,
+                updated_via="mcp",
+            )
     except ValidationError as exc:
         formatted_errors = []
         validation_errors = []
@@ -439,10 +448,10 @@ def tool_apply_envelope_command(
             recoverability_by_code=_ENVELOPE_RECOVERABILITY,
         )
     if response == "summary":
-        assert before_envelope is not None
+        assert before_assemblies is not None
         return _summarize_envelope_response(
             envelope_response,
-            before=before_envelope,
+            before_assemblies=before_assemblies,
             command_count=len(payload.commands),
         )
     return envelope_response.model_dump(mode="json")

@@ -36,6 +36,7 @@ from features.envelope.hbjson_import import parse_or_422
 from features.envelope.import_models import ImportConstructionsPreviewResponse
 from features.envelope.import_planning import build_import_plan
 from features.envelope.models import (
+    AssemblyRead,
     AssemblyThermalResponse,
     EnvelopeCommand,
     EnvelopeReadResponse,
@@ -307,6 +308,61 @@ def get_phpp_export_preflight(version_id: UUID, access: ProjectAccess) -> PhppPr
     )
 
 
+def apply_envelope_command_with_before(
+    version_id: UUID,
+    access: ProjectAccess,
+    commands: Sequence[EnvelopeCommand],
+    if_match: str | None,
+    if_match_version: str | None,
+    updated_via: Literal["browser", "mcp"] = "browser",
+) -> tuple[list[AssemblyRead], EnvelopeReadResponse]:
+    """Apply an ordered batch of envelope commands and return ``(before_assemblies, response)``.
+
+    ``before_assemblies`` is built from the exact locked, ETag-checked ``base_body``
+    inside the write transaction so callers summarizing the delta never drift from
+    the write basis.
+    """
+    user = require_editor_user(access)
+    captured_before: list[ProjectDocumentV1] = []
+
+    def mutate(conn: Connection[Any], base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, dict[str, object]]:
+        captured_before.clear()
+        captured_before.append(base_body)
+        body = base_body
+        for command in commands:
+            body = dispatch_envelope_command(conn, body, command)
+        return body, _envelope_command_audit_details(commands)
+
+    def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
+        log_document_action(conn, "envelope_command", access, version_id, user.id, None, extra_details=details)
+
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=mutate,
+        draft_etag_mismatch_message="The draft changed before this envelope command was applied.",
+        updated_via=updated_via,
+        on_persisted=on_persisted,
+    )
+    before_assemblies, _ = build_envelope_read_parts(captured_before[0])
+    assemblies, project_materials = build_envelope_read_parts(result.body)
+    return (
+        before_assemblies,
+        EnvelopeReadResponse(
+            project_id=access.project_id,
+            version_id=version_id,
+            source=result.source,
+            version_etag=result.version_etag,
+            draft_etag=result.draft_etag,
+            assemblies=assemblies,
+            project_materials=project_materials,
+        ),
+    )
+
+
 def apply_envelope_command(
     version_id: UUID,
     access: ProjectAccess,
@@ -331,38 +387,15 @@ def apply_envelope_command(
     row, and successful writes tag their audit path with `updated_via` so
     browser and MCP edits remain distinguishable.
     """
-    user = require_editor_user(access)
-
-    def mutate(conn: Connection[Any], base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, dict[str, object]]:
-        body = base_body
-        for command in commands:
-            body = dispatch_envelope_command(conn, body, command)
-        return body, _envelope_command_audit_details(commands)
-
-    def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
-        log_document_action(conn, "envelope_command", access, version_id, user.id, None, extra_details=details)
-
-    result = apply_document_write(
-        access,
+    _, response = apply_envelope_command_with_before(
         version_id,
-        user.id,
+        access,
+        commands,
         if_match=if_match,
         if_match_version=if_match_version,
-        mutate=mutate,
-        draft_etag_mismatch_message="The draft changed before this envelope command was applied.",
         updated_via=updated_via,
-        on_persisted=on_persisted,
     )
-    assemblies, project_materials = build_envelope_read_parts(result.body)
-    return EnvelopeReadResponse(
-        project_id=access.project_id,
-        version_id=version_id,
-        source=result.source,
-        version_etag=result.version_etag,
-        draft_etag=result.draft_etag,
-        assemblies=assemblies,
-        project_materials=project_materials,
-    )
+    return response
 
 
 def _envelope_command_audit_details(commands: Sequence[EnvelopeCommand]) -> dict[str, object]:

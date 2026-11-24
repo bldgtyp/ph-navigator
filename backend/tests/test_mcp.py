@@ -1901,6 +1901,40 @@ async def test_mcp_apply_envelope_command_batch_client_ids_and_summary_response(
             ],
             "duplicate_segment_id",
         ),
+        # Same-batch collision: fresh layer_id created by command 0 reused on another assembly in command 1.
+        (
+            [
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_fresh_in_batch",
+                },
+                {
+                    "kind": "add_layer",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_fresh_in_batch",
+                },
+            ],
+            "duplicate_layer_id",
+        ),
+        # Same-batch collision: fresh segment_id created by command 0 reused on another assembly in command 1.
+        (
+            [
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_wall",
+                    "layer_id": "lyr_insul",
+                    "segment_id": "seg_fresh_in_batch",
+                },
+                {
+                    "kind": "add_segment",
+                    "assembly_id": "asm_batch_roof",
+                    "layer_id": "lyr_roof_1",
+                    "segment_id": "seg_fresh_in_batch",
+                },
+            ],
+            "duplicate_segment_id",
+        ),
     ]
     for dup_batch, expected_code in duplicate_batches:
         with pytest.raises(ToolError) as dup_exc:
@@ -1928,6 +1962,22 @@ async def test_mcp_apply_envelope_command_batch_client_ids_and_summary_response(
         "asm_batch_wall",
         "asm_batch_roof",
     }
+
+    # Deleting an assembly in summary mode populates deleted_assembly_ids and leaves assemblies empty.
+    _, delete_res = await server.call_tool(
+        "apply_envelope_command",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "if_match": pre_conflict_etag,
+            "response": "summary",
+            "command": {"kind": "delete_assembly", "assembly_id": "asm_batch_roof"},
+        },
+    )
+    delete_summary = cast(dict[str, object], delete_res)
+    assert delete_summary["assemblies"] == []
+    assert delete_summary["deleted_assembly_ids"] == ["asm_batch_roof"]
+    pre_conflict_etag = delete_summary["draft_etag"]
 
     # Batch validation errors include the command index and field location.
     with pytest.raises(ToolError) as bad_id_exc:

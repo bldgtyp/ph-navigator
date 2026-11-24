@@ -11,6 +11,8 @@ tools); each stub is one line of forwarding.
 
 from __future__ import annotations
 
+import asyncio
+
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.streamable_http import TransportSecuritySettings
@@ -659,7 +661,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         return tool_bulk_detach(project_id, version_id, asset_refs, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
-    def apply_envelope_command(
+    async def apply_envelope_command(
         project_id: str,
         version_id: str,
         ctx: Context,
@@ -678,7 +680,8 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         Set ``response="summary"`` to return only changed assemblies (plus ``deleted_assembly_ids``
         and ETags) instead of the full envelope with ``project_materials`` and ``use_sites``.
         """
-        return tool_apply_envelope_command(
+        return await asyncio.to_thread(
+            tool_apply_envelope_command,
             project_id,
             version_id,
             command,
