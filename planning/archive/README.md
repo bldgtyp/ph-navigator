@@ -16,10 +16,10 @@ the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
   single-line group rows, and two-gesture navigation (section header opens the
   owning tab; axis meters open Documentation filtered by `?needs=`). Durable
   contracts folded into `context/ui/pages/overview-tab.md` and
-  `context/DESIGN_SYSTEM.md`. Merged 2026-08-16 via
-  [PR #63](https://github.com/bldgtyp/ph-navigator/pull/63) (`a3f8bade1`),
-  closing [#75](https://github.com/bldgtyp/ph-navigator/issues/75) (archived
-  2026-11-23).
+  `context/DESIGN_SYSTEM.md`. Implementation merged 2026-08-16 via
+  [PR #63](https://github.com/bldgtyp/ph-navigator/pull/63) (`a3f8bade1`);
+  archived and closed [#75](https://github.com/bldgtyp/ph-navigator/issues/75)
+  via [PR #115](https://github.com/bldgtyp/ph-navigator/pull/115) (2026-11-23).
 
 ## 2026-10-24
 
