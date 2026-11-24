@@ -145,6 +145,7 @@ def get_assembly_thermal_model(
         rse_m2k_w=result.rse_m2k_w,
         heat_flow_direction=result.heat_flow_direction,
         thermal_standard=result.thermal_standard,
+        layers=result.layers,
         warnings=result.warnings,
     )
 

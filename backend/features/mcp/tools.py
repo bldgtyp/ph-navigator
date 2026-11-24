@@ -40,6 +40,7 @@ from features.mcp.tools_documents import (
 )
 from features.mcp.tools_envelope import (
     tool_apply_envelope_command,
+    tool_get_envelope_assembly_thermal,
     tool_list_envelope_assemblies,
     tool_list_project_materials,
     tool_query_unfinished_envelope_work,
@@ -89,6 +90,7 @@ __all__ = [
     "tool_get_asset_url",
     "tool_get_climate_location",
     "tool_get_document",
+    "tool_get_envelope_assembly_thermal",
     "tool_get_hbjson_file_download_url",
     "tool_get_hbjson_model_data",
     "tool_get_job",

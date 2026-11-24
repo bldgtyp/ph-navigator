@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import cast
 
 from fastapi import HTTPException
@@ -11,6 +12,7 @@ from pydantic import ValidationError
 from features.envelope.models import EnvelopeCommandRequest
 from features.envelope.service import (
     apply_envelope_command,
+    get_assembly_thermal_model,
     get_envelope_read_model,
     get_project_material_drift_report,
 )
@@ -26,6 +28,7 @@ from features.project_document.models import ProjectDocumentSource
 
 __all__ = [
     "tool_apply_envelope_command",
+    "tool_get_envelope_assembly_thermal",
     "tool_list_envelope_assemblies",
     "tool_list_project_materials",
     "tool_query_unfinished_envelope_work",
@@ -65,6 +68,55 @@ def tool_list_envelope_assemblies(
         "draft_etag": response.draft_etag,
         "assemblies": [assembly.model_dump(mode="json") for assembly in response.assemblies],
     }
+
+
+async def tool_get_envelope_assembly_thermal(
+    project_id: str,
+    version_id: str,
+    assembly_id: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+    source: str = "draft",
+) -> dict[str, object]:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    normalized_assembly_id = assembly_id.strip()
+    if not normalized_assembly_id:
+        raise_mcp_error(
+            "validation_error",
+            "assembly_id must not be empty.",
+            "fatal",
+            ctx,
+            {"field": "assembly_id"},
+        )
+    if source not in ("draft", "version"):
+        raise_mcp_error(
+            "validation_error",
+            "source must be 'draft' or 'version'.",
+            "fatal",
+            ctx,
+            {"field": "source", "value": source},
+        )
+    parsed_source: ProjectDocumentSource = "version" if source == "version" else "draft"
+
+    def _run_thermal() -> dict[str, object]:
+        token = current_token(ctx, allow_env_token)
+        access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
+        try:
+            response = get_assembly_thermal_model(parsed_version_id, access, normalized_assembly_id, parsed_source)
+        except HTTPException as exc:
+            raise_http_exception_as_mcp_error(
+                exc,
+                ctx,
+                default_code="envelope_thermal_failed",
+                default_message="Assembly thermal results could not be calculated.",
+                default_recoverability="refresh",
+                recoverability_by_code=_ENVELOPE_RECOVERABILITY,
+            )
+        return response.model_dump(mode="json")
+
+    return await asyncio.to_thread(_run_thermal)
 
 
 def tool_list_project_materials(
@@ -315,6 +367,8 @@ _ENVELOPE_RECOVERABILITY: dict[str, McpRecoverability] = {
     "project_material_has_no_catalog_origin": "refresh",
     "catalog_material_source_missing": "refresh",
     "catalog_material_source_deactivated": "refresh",
+    "invalid_project_document": "fatal",
+    "surface_film_table_unavailable": "fatal",
 }
 
 

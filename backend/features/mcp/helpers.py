@@ -357,7 +357,10 @@ def raise_mcp_error(
     ctx: Context,
     details: dict[str, object] | None = None,
 ) -> NoReturn:
-    request_id = getattr(ctx, "request_id", "")
+    try:
+        request_id = getattr(ctx, "request_id", "")
+    except ValueError:
+        request_id = ""
     envelope = McpStructuredError(
         code=code,
         message=message,
