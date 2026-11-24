@@ -1499,7 +1499,34 @@ export function emptyAppliance(): ApplianceRow {
   };
 }
 
-export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
+export function roomCeilingHeightDefault(
+  fieldDefs: ReadonlyArray<TableFieldDef>,
+): number | undefined {
+  const field = fieldDefs.find((candidate) => candidate.field_key === "ceiling_height_m");
+  if (field && field.field_type !== "number") {
+    return undefined;
+  }
+  if (field && typeof field.default === "number") {
+    return field.default;
+  }
+  return DEFAULT_ROOM_CEILING_HEIGHT_M;
+}
+
+export function emptyRoom(
+  defaultFloorLevel: string | null = null,
+  options?: { ceilingHeightM?: number | null },
+): RoomRow {
+  const custom_values: Record<string, CustomValue> = {
+    number: "",
+    name: "",
+    num_people: 0,
+    num_bedrooms: 0,
+  };
+  const ceilingHeightM =
+    options === undefined ? DEFAULT_ROOM_CEILING_HEIGHT_M : options.ceilingHeightM;
+  if (ceilingHeightM !== undefined) {
+    custom_values.ceiling_height_m = ceilingHeightM;
+  }
   return {
     id: generatedId(ROOM_ID_PREFIX),
     floor_level: defaultFloorLevel,
@@ -1507,13 +1534,7 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
     icfa_factor: 1,
     catalog_origin: null,
     notes: null,
-    custom_values: {
-      number: "",
-      name: "",
-      num_people: 0,
-      num_bedrooms: 0,
-      ceiling_height_m: DEFAULT_ROOM_CEILING_HEIGHT_M,
-    },
+    custom_values,
     custom_links: {},
   };
 }

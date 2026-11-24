@@ -33,6 +33,7 @@ import {
   pumpsPayloadFromRowDuplicate,
   pumpsPayloadFromRowInsert,
   remoteSliceChangesActiveRoom,
+  roomCeilingHeightDefault,
   roomsPayloadFromCellWrites,
   roomsPayloadFromRowDelete,
   roomsPayloadFromRowDuplicate,
@@ -479,6 +480,52 @@ describe("equipment room helpers", () => {
       anchorRow: null,
     });
     expect(cleared.custom_values.ceiling_height_m).toBeNull();
+  });
+
+  test("roomCeilingHeightDefault and makeBuildEmptyRoomRow respect project defaults and skip formula fields", () => {
+    const customDefaultSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m" ? { ...field, default: 3.0 } : field,
+      ),
+    };
+    expect(roomCeilingHeightDefault(customDefaultSlice.field_defs)).toBe(3.0);
+    expect(
+      emptyRoom(null, {
+        ceilingHeightM: roomCeilingHeightDefault(customDefaultSlice.field_defs),
+      }).custom_values.ceiling_height_m,
+    ).toBe(3.0);
+    expect(
+      makeBuildEmptyRoomRow(customDefaultSlice)({
+        rowId: "rm_custom_def",
+        fieldDefaults: {},
+        anchorRow: null,
+      }).custom_values.ceiling_height_m,
+    ).toBe(3.0);
+
+    const formulaSlice: RoomsSlice = {
+      ...baseSlice,
+      field_defs: baseSlice.field_defs.map((field) =>
+        field.field_key === "ceiling_height_m"
+          ? { ...field, field_type: "formula", default: null }
+          : field,
+      ),
+    };
+    expect(roomCeilingHeightDefault(formulaSlice.field_defs)).toBeUndefined();
+    expect(
+      "ceiling_height_m" in
+        emptyRoom(null, {
+          ceilingHeightM: roomCeilingHeightDefault(formulaSlice.field_defs),
+        }).custom_values,
+    ).toBe(false);
+    expect(
+      "ceiling_height_m" in
+        makeBuildEmptyRoomRow(formulaSlice)({
+          rowId: "rm_formula",
+          fieldDefaults: { ceiling_height_m: 2.5 },
+          anchorRow: null,
+        }).custom_values,
+    ).toBe(false);
   });
 
   test("roomsPayloadFromRowInsert keeps blank room number null when Number is number-typed", () => {

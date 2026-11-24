@@ -262,3 +262,78 @@ def test_existing_row_without_ceiling_height_is_not_backfilled() -> None:
     payload = _build_payload(body, [pre_existing])
     next_body = apply_rooms_replace(body, payload)
     assert "ceiling_height_m" not in next_body.tables.rooms.rows[0].custom_values
+
+
+def test_replace_omitting_ceiling_height_field_default_preserves_prior_or_falls_back_to_2_5_m() -> None:
+    body = _body_with_default_field()
+    # Set a custom project default of 3.0 m on the persisted document.
+    updated_defs = [
+        f.model_copy(update={"default": 3.0}) if f.field_key == "ceiling_height_m" else f
+        for f in body.tables.rooms.field_defs
+    ]
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={"rooms": body.tables.rooms.model_copy(update={"field_defs": updated_defs})}
+            )
+        }
+    )
+
+    # Whole-table replace omits `default` (None) on ceiling_height_m FieldDef and omits value on new row.
+    omitted_default_defs = [
+        f.model_copy(update={"default": None}) if f.field_key == "ceiling_height_m" else f
+        for f in body.tables.rooms.field_defs
+    ]
+    new_room = _make_room("rm_new", "101", "opt_L1", custom={})
+    payload = _build_payload(body, [new_room]).model_copy(update={"field_defs": omitted_default_defs})
+    next_body = apply_rooms_replace(body, payload)
+
+    ceiling_def = next(f for f in next_body.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert ceiling_def.default == 3.0
+    assert next_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 3.0
+
+    # When prior body also has default=None, falls back to 2.5 m.
+    body_no_default = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={"rooms": body.tables.rooms.model_copy(update={"field_defs": omitted_default_defs})}
+            )
+        }
+    )
+    payload_fallback = _build_payload(body_no_default, [new_room])
+    fallback_body = apply_rooms_replace(body_no_default, payload_fallback)
+    fallback_def = next(f for f in fallback_body.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert fallback_def.default == 2.5
+    assert fallback_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 2.5
+
+
+def test_new_row_does_not_fill_ceiling_height_when_converted_to_formula() -> None:
+    body = _body_with_default_field()
+    formula_defs = [
+        f.model_copy(
+            update={
+                "field_type": CustomFieldType.formula,
+                "default": None,
+                "config": {
+                    "source": "2.8",
+                    "ast": {"kind": "number", "value": 2.8},
+                    "deps": [],
+                    "result_type": "number",
+                },
+            }
+        )
+        if f.field_key == "ceiling_height_m"
+        else f
+        for f in body.tables.rooms.field_defs
+    ]
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={"rooms": body.tables.rooms.model_copy(update={"field_defs": formula_defs})}
+            )
+        }
+    )
+    new_room = _make_room("rm_formula", "101", "opt_L1", custom={})
+    payload = _build_payload(body, [new_room])
+    next_body = apply_rooms_replace(body, payload)
+    assert "ceiling_height_m" not in next_body.tables.rooms.rows[0].custom_values

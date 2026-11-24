@@ -4,7 +4,12 @@
 
 import { ConfirmDeleteRoomDialog } from "./ConfirmDeleteRoomDialog";
 import { RoomModal } from "./RoomModal";
-import { emptyRoom, firstRoomFloorOptionId } from "../lib";
+import {
+  emptyRoom,
+  firstRoomFloorOptionId,
+  roomCeilingHeightDefault,
+  roomsTableFieldDefs,
+} from "../lib";
 import { roomDialogTitleLabel } from "../lib/roomLabels";
 import type { RoomRow, RoomsSlice } from "../types";
 
@@ -55,7 +60,9 @@ export function RoomDialogStack(props: RoomDialogStackProps) {
           }
           room={
             roomModal.mode === "add"
-              ? emptyRoom(firstRoomFloorOptionId(roomsSlice))
+              ? emptyRoom(firstRoomFloorOptionId(roomsSlice), {
+                  ceilingHeightM: roomCeilingHeightDefault(roomsTableFieldDefs(roomsSlice)),
+                })
               : roomModal.room
           }
           roomsSlice={roomsSlice}

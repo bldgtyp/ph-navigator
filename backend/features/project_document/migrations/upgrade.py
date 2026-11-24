@@ -591,6 +591,7 @@ def _upgrade_v10_to_v11(raw: dict[str, object]) -> dict[str, object]:
         if (
             field_mapping.get("field_key") == "ceiling_height_m"
             and field_mapping.get("origin") == "built_in"
+            and field_mapping.get("field_type") == "number"
             and field_mapping.get("default") is None
         ):
             field_mapping["default"] = DEFAULT_ROOM_CEILING_HEIGHT_M

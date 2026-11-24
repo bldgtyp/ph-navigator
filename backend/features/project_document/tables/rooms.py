@@ -292,24 +292,53 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     # pre-fill `custom_values[field_key]` when the key is absent from
     # that row's bag for:
     # - any single_select field carrying `config.default_option_id`
-    # - the built-in `ceiling_height_m` field when it carries a numeric
-    #   default (2.5 m standard default so API/MCP callers match the UI)
+    # - the built-in numeric `ceiling_height_m` field (preserving any
+    #   configured prior numeric default when the incoming FieldDef omits
+    #   `default`, otherwise falling back to 2.5 m)
     # Explicit `None` is preserved. Pre-existing rows are never
     # backfilled (forward-only).
     prior_row_ids = {room.id for room in body.tables.rooms.rows}
+    prior_ceiling_height_default: float | None = None
+    for prior_field in body.tables.rooms.field_defs:
+        if (
+            prior_field.field_key == "ceiling_height_m"
+            and prior_field.origin == "built_in"
+            and prior_field.field_type is CustomFieldType.number
+            and isinstance(prior_field.default, (int, float))
+            and not isinstance(prior_field.default, bool)
+        ):
+            prior_ceiling_height_default = float(prior_field.default)
+            break
+
     defaults_by_field_key: dict[str, CustomValue] = {}
+    normalized_field_defs: list[TableFieldDef] = []
+    field_defs_changed = False
     for field in rooms_payload.field_defs:
+        next_field = field
         if field.field_type.value == "single_select":
             default_raw = field.config.get("default_option_id")
             if isinstance(default_raw, str) and default_raw:
                 defaults_by_field_key[field.field_key] = default_raw
         elif (
             field.field_key == "ceiling_height_m"
+            and field.origin == "built_in"
             and field.field_type is CustomFieldType.number
-            and isinstance(field.default, (int, float))
-            and not isinstance(field.default, bool)
         ):
-            defaults_by_field_key[field.field_key] = float(field.default)
+            if isinstance(field.default, (int, float)) and not isinstance(field.default, bool):
+                defaults_by_field_key[field.field_key] = float(field.default)
+            elif field.default is None:
+                resolved_default = (
+                    prior_ceiling_height_default
+                    if prior_ceiling_height_default is not None
+                    else DEFAULT_ROOM_CEILING_HEIGHT_M
+                )
+                next_field = field.model_copy(update={"default": resolved_default})
+                field_defs_changed = True
+                defaults_by_field_key[field.field_key] = resolved_default
+        normalized_field_defs.append(next_field)
+
+    if field_defs_changed:
+        rooms_payload = rooms_payload.model_copy(update={"field_defs": normalized_field_defs})
 
     if defaults_by_field_key:
         filled_rooms: list[RoomRow] = []

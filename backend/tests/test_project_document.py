@@ -564,6 +564,44 @@ def test_project_document_v10_upgrade_sets_rooms_ceiling_height_default_without_
     assert result.document.tables.rooms.rows[1].custom_values["ceiling_height_m"] == 3.0
 
 
+def test_project_document_v10_upgrade_skips_formula_ceiling_height_and_preserves_custom_default() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 10
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    for field in cast(list[dict[str, Any]], rooms["field_defs"]):
+        if field["field_key"] == "ceiling_height_m":
+            field["field_type"] = "formula"
+            field["default"] = None
+            field["config"] = {
+                "source": "2.8",
+                "ast": {"kind": "number", "value": 2.8},
+                "deps": [],
+                "result_type": "number",
+            }
+
+    formula_result = upgrade_project_document(raw)
+    formula_field = next(
+        f for f in formula_result.document.tables.rooms.field_defs if f.field_key == "ceiling_height_m"
+    )
+    assert formula_field.field_type is CustomFieldType.formula
+    assert formula_field.default is None
+
+    raw_custom = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw_custom["schema_version"] = 10
+    rooms_custom = cast(dict[str, Any], cast(dict[str, Any], raw_custom["tables"])["rooms"])
+    for field in cast(list[dict[str, Any]], rooms_custom["field_defs"]):
+        if field["field_key"] == "ceiling_height_m":
+            field["default"] = 3.0
+
+    custom_result = upgrade_project_document(raw_custom)
+    custom_field = next(f for f in custom_result.document.tables.rooms.field_defs if f.field_key == "ceiling_height_m")
+    assert custom_field.default == 3.0
+
+
 def test_project_document_v7_upgrade_preserves_a_transitional_body_already_carrying_needed() -> None:
     """A body written mid-rollout may already hold ``needed``; upgrading is a no-op.
 
