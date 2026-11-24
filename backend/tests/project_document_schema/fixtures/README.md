@@ -22,3 +22,9 @@ units-field contract. It retains the legacy indoor-capacity and pump-flow keys,
 includes representative outdoor/indoor heat-pump and pump rows, and proves the
 17F Btu/h-to-kW conversion alongside key-only passthrough renames and built-in
 FieldDef metadata refresh.
+
+`v10/inputs/rooms_ceiling_height_default.json` is the frozen baseline for the
+v10 → v11 Rooms `ceiling_height_m` default upgrade. It carries the legacy v10
+`ceiling_height_m` built-in FieldDef with `default: null` alongside two existing
+room rows (one with `ceiling_height_m: null` and one with `3.1`), proving the
+FieldDef default upgrades to `2.5` without modifying existing room rows.

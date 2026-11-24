@@ -63,6 +63,7 @@ if TYPE_CHECKING:
 
 ROOMS_TABLE_NAME = "rooms"
 _ROOMS_TABLE_PATH: tuple[str, ...] = (ROOMS_TABLE_NAME,)
+DEFAULT_ROOM_CEILING_HEIGHT_M: float = 2.5
 
 
 # Seed formula source for the Rooms `record_id` field. Resolved against
@@ -98,6 +99,7 @@ _ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_key="ceiling_height_m",
         display_name="Ceiling Height",
         field_type=CustomFieldType.number,
+        default=DEFAULT_ROOM_CEILING_HEIGHT_M,
         config={
             "units": {
                 "mode": "fixed",
@@ -285,20 +287,29 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     room_options = rooms_payload.single_select_options.by_option_key()
     custom_option_lists = rooms_payload.single_select_options.custom_option_lists()
 
-    # default_option_id forward fill. For any room in the incoming
-    # payload whose `id` did not exist in the previous body, pre-fill
-    # `custom_values[field_key]` for every single_select field that
-    # carries a `config.default_option_id` AND whose key is absent
-    # from that row's bag. Explicit `None` is preserved.
-    # Pre-existing rows are never backfilled (forward-only).
+    # Forward-fill defaults for newly added rows. For any room in the
+    # incoming payload whose `id` did not exist in the previous body,
+    # pre-fill `custom_values[field_key]` when the key is absent from
+    # that row's bag for:
+    # - any single_select field carrying `config.default_option_id`
+    # - the built-in `ceiling_height_m` field when it carries a numeric
+    #   default (2.5 m standard default so API/MCP callers match the UI)
+    # Explicit `None` is preserved. Pre-existing rows are never
+    # backfilled (forward-only).
     prior_row_ids = {room.id for room in body.tables.rooms.rows}
-    defaults_by_field_key: dict[str, str] = {}
+    defaults_by_field_key: dict[str, CustomValue] = {}
     for field in rooms_payload.field_defs:
-        if field.field_type.value != "single_select":
-            continue
-        default_raw = field.config.get("default_option_id")
-        if isinstance(default_raw, str) and default_raw:
-            defaults_by_field_key[field.field_key] = default_raw
+        if field.field_type.value == "single_select":
+            default_raw = field.config.get("default_option_id")
+            if isinstance(default_raw, str) and default_raw:
+                defaults_by_field_key[field.field_key] = default_raw
+        elif (
+            field.field_key == "ceiling_height_m"
+            and field.field_type is CustomFieldType.number
+            and isinstance(field.default, (int, float))
+            and not isinstance(field.default, bool)
+        ):
+            defaults_by_field_key[field.field_key] = float(field.default)
 
     if defaults_by_field_key:
         filled_rooms: list[RoomRow] = []

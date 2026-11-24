@@ -228,3 +228,37 @@ def test_default_fill_skipped_when_no_default_configured() -> None:
     payload = _build_payload(body, [new_room])
     next_body = apply_rooms_replace(body, payload)
     assert "cf_ss" not in next_body.tables.rooms.rows[0].custom_values
+
+
+def test_new_row_omitting_ceiling_height_gets_default_2_5_m() -> None:
+    body = _body_with_default_field()
+    new_room = _make_room("rm_new", "101", "opt_L1", custom={})
+    payload = _build_payload(body, [new_room])
+    next_body = apply_rooms_replace(body, payload)
+    assert next_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 2.5
+
+
+def test_new_row_explicit_null_ceiling_height_is_preserved() -> None:
+    body = _body_with_default_field()
+    new_room = _make_room("rm_new", "101", "opt_L1", custom={"ceiling_height_m": None})
+    payload = _build_payload(body, [new_room])
+    next_body = apply_rooms_replace(body, payload)
+    assert next_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] is None
+
+
+def test_new_row_explicit_ceiling_height_is_preserved() -> None:
+    body = _body_with_default_field()
+    new_room = _make_room("rm_new", "101", "opt_L1", custom={"ceiling_height_m": 3.0})
+    payload = _build_payload(body, [new_room])
+    next_body = apply_rooms_replace(body, payload)
+    assert next_body.tables.rooms.rows[0].custom_values["ceiling_height_m"] == 3.0
+
+
+def test_existing_row_without_ceiling_height_is_not_backfilled() -> None:
+    body = _body_with_default_field()
+    pre_existing = _make_room("rm_existing", "101", "opt_L1", custom={})
+    envelope = body.tables.rooms.model_copy(update={"rows": [pre_existing]})
+    body = body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": envelope})})
+    payload = _build_payload(body, [pre_existing])
+    next_body = apply_rooms_replace(body, payload)
+    assert "ceiling_height_m" not in next_body.tables.rooms.rows[0].custom_values

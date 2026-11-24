@@ -568,6 +568,41 @@ def _upgrade_v9_to_v10(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v10_to_v11(raw: dict[str, object]) -> dict[str, object]:
+    """Set the built-in Rooms `ceiling_height_m` FieldDef default to 2.5 m.
+
+    Forward-only for newly created Spaces: existing room rows keep their
+    persisted `custom_values.ceiling_height_m` unchanged.
+    """
+
+    from features.project_document.tables.rooms import DEFAULT_ROOM_CEILING_HEIGHT_M
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    rooms = dict(_mapping(tables.get("rooms"), "tables.rooms"))
+    field_defs = _list(rooms.get("field_defs"), "tables.rooms.field_defs")
+
+    next_field_defs: list[object] = []
+    for field in field_defs:
+        if not isinstance(field, Mapping):
+            next_field_defs.append(field)
+            continue
+        field_mapping = dict(cast(Mapping[str, object], field))
+        if (
+            field_mapping.get("field_key") == "ceiling_height_m"
+            and field_mapping.get("origin") == "built_in"
+            and field_mapping.get("default") is None
+        ):
+            field_mapping["default"] = DEFAULT_ROOM_CEILING_HEIGHT_M
+        next_field_defs.append(field_mapping)
+
+    rooms["field_defs"] = next_field_defs
+    tables["rooms"] = rooms
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 11
+    return upgraded
+
+
 def _rename_field_def_keys(value: object, renames: Mapping[str, str], *, path: str) -> list[object]:
     renamed: list[object] = []
     for field in _list(value, path):
@@ -623,6 +658,7 @@ UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     7: _upgrade_v7_to_v8,
     8: _upgrade_v8_to_v9,
     9: _upgrade_v9_to_v10,
+    10: _upgrade_v10_to_v11,
 }
 
 

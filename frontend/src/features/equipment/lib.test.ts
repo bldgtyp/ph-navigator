@@ -1,5 +1,6 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
 import { describe, expect, test, vi } from "vitest";
+import { makeBuildEmptyRoomRow } from "./lib/buildEmptyRoomRow";
 import {
   appliancesPayloadFromCellWrites,
   appliancesPayloadFromRowDelete,
@@ -179,6 +180,7 @@ describe("equipment room helpers", () => {
     expect(firstRoomFloorOptionId(current)).toBe("opt_ground");
     expect(room.floor_level).toBe("opt_ground");
     expect(room.icfa_factor).toBe(1);
+    expect(room.custom_values.ceiling_height_m).toBe(2.5);
   });
 
   test("deletes rows without changing options", () => {
@@ -453,8 +455,30 @@ describe("equipment room helpers", () => {
     const inserted = payload.rooms.find((room) => room.id === "tmp_row_1");
     expect(inserted?.custom_values.number).toBeNull();
     expect(inserted?.custom_values.name).toBeNull();
+    expect(inserted?.custom_values.ceiling_height_m).toBe(2.5);
     expect(inserted?.floor_level).toBeNull();
     expect(inserted?.icfa_factor).toBe(1);
+  });
+
+  test("makeBuildEmptyRoomRow defaults ceiling_height_m to 2.5 m while honoring explicit overrides", () => {
+    const buildEmpty = makeBuildEmptyRoomRow(baseSlice);
+
+    const defaulted = buildEmpty({ rowId: "rm_def", fieldDefaults: {}, anchorRow: null });
+    expect(defaulted.custom_values.ceiling_height_m).toBe(2.5);
+
+    const explicit = buildEmpty({
+      rowId: "rm_exp",
+      fieldDefaults: { ceiling_height_m: 3.0 },
+      anchorRow: null,
+    });
+    expect(explicit.custom_values.ceiling_height_m).toBe(3.0);
+
+    const cleared = buildEmpty({
+      rowId: "rm_null",
+      fieldDefaults: { ceiling_height_m: null },
+      anchorRow: null,
+    });
+    expect(cleared.custom_values.ceiling_height_m).toBeNull();
   });
 
   test("roomsPayloadFromRowInsert keeps blank room number null when Number is number-typed", () => {

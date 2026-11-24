@@ -422,6 +422,8 @@ function statusBuiltInFieldDef(): TableFieldDef {
   };
 }
 
+export const DEFAULT_ROOM_CEILING_HEIGHT_M = 2.5;
+
 export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Display Name", "formula"),
   builtInFieldDef("number", "Number", "short_text"),
@@ -439,7 +441,12 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   {
-    ...builtInFieldDef("ceiling_height_m", "Ceiling Height", "number"),
+    ...builtInFieldDef(
+      "ceiling_height_m",
+      "Ceiling Height",
+      "number",
+      DEFAULT_ROOM_CEILING_HEIGHT_M,
+    ),
     config: { units: LENGTH_M_UNITS },
   },
   {
@@ -1505,6 +1512,7 @@ export function emptyRoom(defaultFloorLevel: string | null = null): RoomRow {
       name: "",
       num_people: 0,
       num_bedrooms: 0,
+      ceiling_height_m: DEFAULT_ROOM_CEILING_HEIGHT_M,
     },
     custom_links: {},
   };
