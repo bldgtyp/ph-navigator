@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from features.catalogs.mcp import (
+    tool_list_catalog_frame_types,
+    tool_list_catalog_glazing_types,
+    tool_search_catalog_materials,
+)
 from features.climate.mcp import (
     tool_get_climate_location,
     tool_list_climate_datasets,
@@ -100,6 +105,8 @@ __all__ = [
     "tool_get_table",
     "tool_hard_delete_project",
     "tool_list_assets",
+    "tool_list_catalog_frame_types",
+    "tool_list_catalog_glazing_types",
     "tool_list_climate_datasets",
     "tool_list_envelope_assemblies",
     "tool_list_hbjson_faces",
@@ -124,6 +131,7 @@ __all__ = [
     "tool_restore_project",
     "tool_save_draft_as",
     "tool_save_draft",
+    "tool_search_catalog_materials",
     "tool_search_climate_locations",
     "tool_set_custom_field_description",
     "tool_set_custom_field_formula",

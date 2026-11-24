@@ -87,7 +87,7 @@ project id exists.
 | `list_envelope_assemblies`, `get_envelope_assembly_thermal`, `list_project_materials`, `query_unfinished_envelope_work`, `report_material_catalog_drift`, `report_missing_envelope_evidence` | `project:read` |
 | `list_aperture_types`, `get_aperture_type`, `calculate_aperture_u_values`, `get_aperture_u_value_report`, `get_aperture_window_constructions`, `report_aperture_catalog_drift` | `project:read` |
 | `list_project_climate_sources`, `get_project_location`, `get_project_sun_path` | `project:read` |
-| `list_climate_datasets`, `search_climate_locations`, `get_climate_location` | valid MCP token |
+| `list_climate_datasets`, `search_climate_locations`, `get_climate_location`, `search_catalog_materials`, `list_catalog_frame_types`, `list_catalog_glazing_types` | valid MCP token |
 | `list_assets`, `resolve_asset_urls`, `get_asset_url`, `start_bulk_download`, `get_job` | `asset:read` plus project access |
 | `bulk_attach`, `bulk_detach` | `project:write` and `asset:write` |
 | `apply_envelope_command`, `apply_aperture_command`, custom-field mutation tools | `project:write` |
@@ -133,6 +133,8 @@ once, and every name here must be registered by `build_mcp_server`.
 - `hard_delete_project`
 - `list_aperture_types`
 - `list_assets`
+- `list_catalog_frame_types`
+- `list_catalog_glazing_types`
 - `list_climate_datasets`
 - `list_envelope_assemblies`
 - `list_hbjson_faces`
@@ -158,6 +160,7 @@ once, and every name here must be registered by `build_mcp_server`.
 - `restore_project`
 - `save_draft`
 - `save_draft_as`
+- `search_catalog_materials`
 - `search_climate_locations`
 - `set_custom_field_description`
 - `set_custom_field_formula`

@@ -62,6 +62,8 @@ from features.mcp.tools import (
     tool_get_table,
     tool_hard_delete_project,
     tool_list_assets,
+    tool_list_catalog_frame_types,
+    tool_list_catalog_glazing_types,
     tool_list_climate_datasets,
     tool_list_envelope_assemblies,
     tool_list_hbjson_faces,
@@ -86,6 +88,7 @@ from features.mcp.tools import (
     tool_restore_project,
     tool_save_draft,
     tool_save_draft_as,
+    tool_search_catalog_materials,
     tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
@@ -205,6 +208,72 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_climate_location(location_id: str, ctx: Context) -> dict[str, object] | None:
         """Return one climate-dataset location's standardized record, or null if unknown."""
         return tool_get_climate_location(location_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    async def search_catalog_materials(
+        ctx: Context,
+        query: str | None = None,
+        category: str | None = None,
+        limit: int = 50,
+    ) -> dict[str, object]:
+        """Search active Materials catalog rows to obtain catalog_material_id values for pick_catalog_material.
+
+        Matches ``query`` case-insensitively against material name and source, optionally filtered by
+        ``category`` (e.g. ``insulation``, ``woods``, ``membrane``). ``limit`` defaults to 50 (max 500).
+        """
+        return await tool_search_catalog_materials(
+            ctx,
+            allow_env_token=allow_env_token,
+            query=query,
+            category=category,
+            limit=limit,
+        )
+
+    @mcp.tool()
+    async def list_catalog_frame_types(
+        ctx: Context,
+        manufacturers: list[str] | None = None,
+        location: str | None = None,
+        operation: str | None = None,
+        use: str | None = None,
+        query: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, object]:
+        """List active Window-Frame catalog rows to obtain valid catalog_record_ids for pickFrame.
+
+        Optionally filter by ``manufacturers``, ``location``, ``operation``, ``use``, and case-insensitive
+        ``query`` against name/manufacturer/brand/source. ``limit`` defaults to 100 (max 500).
+        """
+        return await tool_list_catalog_frame_types(
+            ctx,
+            allow_env_token=allow_env_token,
+            manufacturers=manufacturers,
+            location=location,
+            operation=operation,
+            use=use,
+            query=query,
+            limit=limit,
+        )
+
+    @mcp.tool()
+    async def list_catalog_glazing_types(
+        ctx: Context,
+        manufacturers: list[str] | None = None,
+        query: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, object]:
+        """List active Window-Glazing catalog rows to obtain valid catalog_record_ids for pickGlazing.
+
+        Optionally filter by ``manufacturers`` and case-insensitive ``query`` against
+        name/manufacturer/brand/source. ``limit`` defaults to 100 (max 500).
+        """
+        return await tool_list_catalog_glazing_types(
+            ctx,
+            allow_env_token=allow_env_token,
+            manufacturers=manufacturers,
+            query=query,
+            limit=limit,
+        )
 
     @mcp.tool()
     def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
