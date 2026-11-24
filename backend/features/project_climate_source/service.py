@@ -169,11 +169,25 @@ def resolve_heating_design_temp(
                 if isinstance(raw_td, bool) or not isinstance(raw_td, int | float):
                     continue
                 basis = dc.get("basis")
+                basis_str = str(basis) if isinstance(basis, str) else None
+                dc_source = dc.get("source")
+                dc_source_meta = data.get("design_conditions_source")
+                if dc_source == "ashrae-meteo":
+                    station_id = (
+                        str(dc_source_meta.get("station_id"))
+                        if isinstance(dc_source_meta, dict) and dc_source_meta.get("station_id")
+                        else None
+                    )
+                    resolved_label: str | None = (
+                        f"ASHRAE station {station_id}" if station_id else "ASHRAE design station"
+                    )
+                else:
+                    resolved_label = cast(str | None, source.get("label"))
                 return ResolvedHeatingDesignTemp(
                     source_id=UUID(str(source["id"])),
                     kind=str(kind),
-                    label=cast(str | None, source.get("label")),
-                    basis=str(basis) if isinstance(basis, str) else None,
+                    label=resolved_label,
+                    basis=basis_str,
                     heating_990_db_c=float(raw_td),
                 )
     return None

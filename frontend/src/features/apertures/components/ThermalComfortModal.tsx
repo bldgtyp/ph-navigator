@@ -1,3 +1,4 @@
+// @size-exception: planning/features/window-thermal-comfort-check/PRD.md
 // Four-panel Phius window thermal-comfort modal mirroring `CondensationRiskModal`:
 // 1. Verdict (+ editable aperture-level sill height)
 // 2. Where (proportional aperture grid tinted by per-lite comfort state)
@@ -50,8 +51,10 @@ export function ThermalComfortModal({
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [exemptChecked, setExemptChecked] = useState(false);
   const [exemptReason, setExemptReason] = useState<ComfortExemptReason>("non_regularly_occupied");
+  const [exemptDirty, setExemptDirty] = useState(false);
   const [perimChecked, setPerimChecked] = useState(false);
   const [perimNote, setPerimNote] = useState("");
+  const [perimDirty, setPerimDirty] = useState(false);
   const [nfrcUInput, setNfrcUInput] = useState("");
   const [nfrcUDirty, setNfrcUDirty] = useState(false);
   const [nfrcNoteInput, setNfrcNoteInput] = useState("");
@@ -104,39 +107,66 @@ export function ThermalComfortModal({
   };
 
   const openFlagEditor = (el: ApertureElementComfortResult) => {
+    const liveEl = aperture.elements.find((candidate) => candidate.id === el.element_id);
+    const initialExempt = liveEl?.comfort_exempt ?? el.comfort_exempt;
+    const initialExemptReason = liveEl?.comfort_exempt_reason ?? el.comfort_exempt_reason;
+    const initialPerim = liveEl?.perimeter_heat_within_3ft ?? el.perimeter_heat_within_3ft;
+    const initialPerimNote = liveEl?.perimeter_heat_note ?? el.perimeter_heat_note;
+    const initialNfrcU =
+      liveEl?.nfrc_whole_window_u_w_m2k !== undefined
+        ? liveEl.nfrc_whole_window_u_w_m2k
+        : el.u_nfrc_standard_w_m2k;
+    const initialNfrcNote =
+      liveEl?.nfrc_standard_size_note !== undefined
+        ? liveEl.nfrc_standard_size_note
+        : el.u_nfrc_standard_note;
+
     setEditingElementId(el.element_id);
-    setExemptChecked(el.comfort_exempt);
-    setExemptReason(el.comfort_exempt_reason ?? "non_regularly_occupied");
-    setPerimChecked(el.perimeter_heat_within_3ft);
-    setPerimNote(el.perimeter_heat_note ?? "");
+    setExemptChecked(initialExempt);
+    setExemptReason(initialExemptReason ?? "non_regularly_occupied");
+    setExemptDirty(false);
+    setPerimChecked(initialPerim);
+    setPerimNote(initialPerimNote ?? "");
+    setPerimDirty(false);
     setNfrcUInput(
-      el.u_nfrc_standard_w_m2k !== null
-        ? formatUValueFromWm2K(el.u_nfrc_standard_w_m2k, { unitSystem, showUnit: false })
+      initialNfrcU !== null
+        ? formatUValueFromWm2K(initialNfrcU, { unitSystem, showUnit: false })
         : "",
     );
     setNfrcUDirty(false);
-    setNfrcNoteInput(el.u_nfrc_standard_note ?? "");
+    setNfrcNoteInput(initialNfrcNote ?? "");
     setNfrcNoteDirty(false);
     setFlagError(null);
   };
 
   const handleSaveFlags = async () => {
     if (!editingElementId) return;
-    if (perimChecked && perimNote.trim() === "") {
+    if (perimDirty && perimChecked && perimNote.trim() === "") {
       setFlagError("Enter a note describing the perimeter heating source within 3 ft.");
       return;
     }
     setFlagError(null);
 
+    if (!exemptDirty && !perimDirty && !nfrcUDirty && !nfrcNoteDirty) {
+      setEditingElementId(null);
+      return;
+    }
+
     const payload: Extract<ApertureCommand, { kind: "setElementComfortFlags" }> = {
       kind: "setElementComfortFlags",
       aperture_type_id: aperture.id,
       element_id: editingElementId,
-      comfort_exempt: exemptChecked,
-      comfort_exempt_reason: exemptChecked ? exemptReason : null,
-      perimeter_heat_within_3ft: perimChecked,
-      perimeter_heat_note: perimChecked ? perimNote.trim() : null,
     };
+
+    if (exemptDirty) {
+      payload.comfort_exempt = exemptChecked;
+      payload.comfort_exempt_reason = exemptChecked ? exemptReason : null;
+    }
+
+    if (perimDirty) {
+      payload.perimeter_heat_within_3ft = perimChecked;
+      payload.perimeter_heat_note = perimChecked ? perimNote.trim() : null;
+    }
 
     if (nfrcUDirty) {
       const trimmedU = nfrcUInput.trim();
@@ -192,7 +222,7 @@ export function ThermalComfortModal({
       titleId="thermal-comfort-modal-title"
       onClose={onClose}
       showHeaderClose
-      dismissOnBackdrop
+      dismissOnBackdrop={!canEdit}
       resizable
       scrollBody
     >
@@ -398,7 +428,10 @@ export function ThermalComfortModal({
                 <input
                   type="checkbox"
                   checked={exemptChecked}
-                  onChange={(event) => setExemptChecked(event.target.checked)}
+                  onChange={(event) => {
+                    setExemptChecked(event.target.checked);
+                    setExemptDirty(true);
+                  }}
                 />{" "}
                 Comfort-exempt lite
               </label>
@@ -406,7 +439,10 @@ export function ThermalComfortModal({
                 <select
                   aria-label="Exemption reason"
                   value={exemptReason}
-                  onChange={(event) => setExemptReason(event.target.value as ComfortExemptReason)}
+                  onChange={(event) => {
+                    setExemptReason(event.target.value as ComfortExemptReason);
+                    setExemptDirty(true);
+                  }}
                 >
                   <option value="non_regularly_occupied">Non-regularly occupied (transient)</option>
                   <option value="ada_door">ADA door</option>
@@ -416,7 +452,10 @@ export function ThermalComfortModal({
                 <input
                   type="checkbox"
                   checked={perimChecked}
-                  onChange={(event) => setPerimChecked(event.target.checked)}
+                  onChange={(event) => {
+                    setPerimChecked(event.target.checked);
+                    setPerimDirty(true);
+                  }}
                 />{" "}
                 Active perimeter heating within 3 ft (satisfies comfort only — never condensation)
               </label>
@@ -438,7 +477,10 @@ export function ThermalComfortModal({
                   aria-label="Perimeter heat evidence note"
                   placeholder="Describe active heating source within 3 ft"
                   value={perimNote}
-                  onChange={(event) => setPerimNote(event.target.value)}
+                  onChange={(event) => {
+                    setPerimNote(event.target.value);
+                    setPerimDirty(true);
+                  }}
                 />
               ) : null}
               {flagError ? (

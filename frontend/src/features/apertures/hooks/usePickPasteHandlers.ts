@@ -24,6 +24,8 @@ export type PasteTargetSnapshot = {
   glazing: GlazingRef | null;
   frames: ApertureElementFrames;
   installs: ApertureElementInstalls;
+  nfrc_whole_window_u_w_m2k?: number | null;
+  nfrc_standard_size_note?: string | null;
 };
 
 const PASTE_PULSE_MS = 600;
@@ -144,6 +146,8 @@ function assignmentSnapshot(target: PasteTargetSnapshot): ApertureAssignmentSnap
       left: projectRefId(target.frames.left),
     },
     installs: { ...target.installs },
+    nfrc_whole_window_u_w_m2k: target.nfrc_whole_window_u_w_m2k ?? null,
+    nfrc_standard_size_note: target.nfrc_standard_size_note ?? null,
   };
 }
 

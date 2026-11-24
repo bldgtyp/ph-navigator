@@ -143,6 +143,8 @@ export type ApertureAssignmentSnapshot = {
   glazing_id: string | null;
   frames: WireApertureElementFrames;
   installs: ApertureElementInstalls;
+  nfrc_whole_window_u_w_m2k?: number | null;
+  nfrc_standard_size_note?: string | null;
 };
 
 export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {

@@ -196,15 +196,13 @@ def evaluate_aperture_thermal_comfort(
             governing_route: ComfortGoverningRoute | None = None
             margin: float | None = None
             nfrc_caveat = False
-        elif element.perimeter_heat_within_3ft and perimeter_heat_eligible:
-            state = "alternative"
-            governing_route, margin = _pick_best_route(u_proj, u_nfrc, u_max_w_m2k)
-            nfrc_caveat = False
+            perimeter_heat_ineligible = False
         elif entry.sill_height_mm is None or heating_990_db_c is None:
             state = "blocked"
             governing_route = None
             margin = None
             nfrc_caveat = False
+            perimeter_heat_ineligible = False
         elif u_max_w_m2k is None:
             # Mild design climate (Td >= 68 °F): no heating comfort restriction.
             state = "pass"
@@ -213,12 +211,14 @@ def evaluate_aperture_thermal_comfort(
             )
             margin = 0.0
             nfrc_caveat = u_nfrc is None and u_proj is not None
+            perimeter_heat_ineligible = False
         elif u_proj is None and u_nfrc is None:
             state = "blocked"
             any_missing_u = True
             governing_route = None
             margin = None
             nfrc_caveat = False
+            perimeter_heat_ineligible = False
         else:
             proj_pass = u_proj is not None and u_proj <= u_max_w_m2k
             nfrc_pass = u_nfrc is not None and u_nfrc <= u_max_w_m2k
@@ -241,6 +241,12 @@ def evaluate_aperture_thermal_comfort(
                     governing_route = "nfrc_standard"
                     margin = u_nfrc / u_max_w_m2k
                 nfrc_caveat = u_nfrc is None
+                perimeter_heat_ineligible = False
+            elif element.perimeter_heat_within_3ft and perimeter_heat_eligible:
+                state = "alternative"
+                governing_route, margin = _pick_best_route(u_proj, u_nfrc, u_max_w_m2k)
+                nfrc_caveat = False
+                perimeter_heat_ineligible = False
             else:
                 state = "fail"
                 governing_route, margin = _pick_best_route(u_proj, u_nfrc, u_max_w_m2k)

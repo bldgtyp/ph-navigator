@@ -128,6 +128,12 @@ function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
         installs: element.installs,
         glazing: element.glazing_id ? (glazingsById.get(element.glazing_id) ?? null) : null,
         operation: element.operation,
+        comfort_exempt: element.comfort_exempt,
+        comfort_exempt_reason: element.comfort_exempt_reason,
+        perimeter_heat_within_3ft: element.perimeter_heat_within_3ft,
+        perimeter_heat_note: element.perimeter_heat_note,
+        nfrc_whole_window_u_w_m2k: element.nfrc_whole_window_u_w_m2k,
+        nfrc_standard_size_note: element.nfrc_standard_size_note,
       })),
     })),
   };

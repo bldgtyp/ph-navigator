@@ -171,13 +171,56 @@ describe("ThermalComfortModal", () => {
       kind: "setElementComfortFlags",
       aperture_type_id: "apt_sf",
       element_id: "aptel_transom",
-      comfort_exempt: false,
-      comfort_exempt_reason: null,
-      perimeter_heat_within_3ft: false,
-      perimeter_heat_note: null,
       nfrc_standard_size_note: "2.00 m x 2.00 m",
     });
     expect("nfrc_whole_window_u_w_m2k" in dispatched).toBe(false);
+    expect("comfort_exempt" in dispatched).toBe(false);
+    expect("perimeter_heat_within_3ft" in dispatched).toBe(false);
+  });
+
+  it("initializes editor from latest aperture slice so a note edit never reverts freshly saved flags", async () => {
+    const onCommand = vi.fn().mockResolvedValue(null);
+    const updatedAperture: ApertureTypeEntry = {
+      ...APERTURE,
+      elements: APERTURE.elements.map((el) =>
+        el.id === "aptel_transom"
+          ? {
+              ...el,
+              comfort_exempt: true,
+              comfort_exempt_reason: "ada_door",
+            }
+          : el,
+      ),
+    };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UnitPreferenceProvider>
+          <ThermalComfortModal
+            open
+            aperture={updatedAperture}
+            result={RESULT}
+            canEdit
+            onClose={vi.fn()}
+            onCommand={onCommand}
+          />
+        </UnitPreferenceProvider>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]!);
+    expect(screen.getByLabelText(/Comfort-exempt lite/i)).toBeChecked();
+    fireEvent.change(screen.getByLabelText(/NFRC standard size note/i), {
+      target: { value: "Updated note" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save flags" }));
+    await waitFor(() => {
+      expect(onCommand).toHaveBeenCalledWith({
+        kind: "setElementComfortFlags",
+        aperture_type_id: "apt_sf",
+        element_id: "aptel_transom",
+        nfrc_standard_size_note: "Updated note",
+      });
+    });
   });
 
   it("keeps the flag editor open and shows an inline error when save fails", async () => {

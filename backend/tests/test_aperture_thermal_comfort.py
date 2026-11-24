@@ -22,10 +22,13 @@ from features.aperture_u_value.service import calculate_aperture_u_values
 from features.project_climate_source import repository as climate_source_repo
 from features.project_document.aperture_commands.dispatcher import apply_aperture_command
 from features.project_document.aperture_commands.models import (
+    ApertureAssignmentSnapshot,
     DuplicateApertureType,
     MergeElements,
+    PasteAssignment,
     PickFrame,
     PickGlazing,
+    RefreshRefFromCatalog,
     SetApertureComfortParams,
     SetElementComfortFlags,
     SetElementKind,
@@ -244,11 +247,22 @@ def test_perimeter_heating_6ft_height_eligibility_boundary() -> None:
     assert res_at_6ft.state == "fail"
     assert res_at_6ft.elements[0].perimeter_heat_ineligible is True
 
-    # 1829.0 mm (> 6 ft) IS eligible -> reports `alternative`.
+    # 1829.0 mm (> 6 ft) IS eligible -> reports `alternative` when failing U check.
     over_6ft = at_6ft.model_copy(update={"row_heights_mm": [1829.0]})
     res_over_6ft = evaluate_aperture_thermal_comfort(over_6ft, tables, heating_990_db_c=-10.0)
     assert res_over_6ft.state == "alternative"
     assert res_over_6ft.elements[0].perimeter_heat_ineligible is False
+
+    # Direct pass is preserved even when perimeter_heat_within_3ft is set on a >6 ft lite!
+    good_tables = _synthetic_tables(frame_u=0.75, frame_width_mm=60.0, psi_g=0.03, glazing_u=0.50)
+    res_direct_pass = evaluate_aperture_thermal_comfort(over_6ft, good_tables, heating_990_db_c=-10.0)
+    assert res_direct_pass.state == "pass"
+
+    # Missing U data stays blocked even when perimeter_heat_within_3ft is set on a >6 ft lite!
+    empty_tables = ProjectDocumentTables()
+    res_missing_u = evaluate_aperture_thermal_comfort(over_6ft, empty_tables, heating_990_db_c=-10.0)
+    assert res_missing_u.state == "blocked"
+    assert "missing_element_u_value" in res_missing_u.blocked_reasons
 
 
 def test_unrounded_project_u_compared_against_u_max() -> None:
@@ -478,6 +492,142 @@ def test_comfort_commands_void_duplicate_merge_split_and_substitution() -> None:
             catalog=catalog,
         )
     assert exc.value.status_code == 422
+
+    # Comfort flags on an already-void lite are rejected.
+    with pytest.raises(HTTPException) as exc_void:
+        apply_aperture_command(
+            void_body,
+            SetElementComfortFlags(
+                aperture_type_id="apt_1",
+                element_id="aptel_1",
+                comfort_exempt=True,
+                comfort_exempt_reason="ada_door",
+            ),
+            actor_user_id="usr_1",
+            catalog=catalog,
+        )
+    assert exc_void.value.status_code == 422
+
+    # Perimeter heat with blank note is rejected.
+    with pytest.raises(HTTPException) as exc_perim:
+        apply_aperture_command(
+            body,
+            SetElementComfortFlags(
+                aperture_type_id="apt_1",
+                element_id="aptel_2",
+                perimeter_heat_within_3ft=True,
+                perimeter_heat_note="   ",
+            ),
+            actor_user_id="usr_1",
+            catalog=catalog,
+        )
+    assert exc_perim.value.status_code == 422
+
+    # Out-of-range sill height and NFRC U are rejected by Pydantic validation.
+    with pytest.raises(ValueError):
+        SetApertureComfortParams(aperture_type_id="apt_1", sill_height_mm=-1.0)
+    with pytest.raises(ValueError):
+        SetElementComfortFlags(aperture_type_id="apt_1", element_id="aptel_1", nfrc_whole_window_u_w_m2k=0.0)
+    with pytest.raises(ValueError):
+        SetElementComfortFlags(aperture_type_id="apt_1", element_id="aptel_1", nfrc_whole_window_u_w_m2k=-0.5)
+
+    # Reselecting the SAME glazing preserves NFRC; replacing clears it.
+    same_glazing_origin = CatalogOrigin(
+        catalog_table="glazing_types",
+        catalog_record_id="recGlz00000000001",
+        catalog_schema_version=1,
+        synced_at=datetime.now(tz=UTC),
+    )
+    body_with_cat_glz = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "project_glazings": [
+                        body.tables.project_glazings[0].model_copy(update={"catalog_origin": same_glazing_origin})
+                    ]
+                }
+            )
+        }
+    )
+    reselected_body, _ = apply_aperture_command(
+        body_with_cat_glz,
+        PickGlazing(
+            aperture_type_id="apt_1",
+            element_id="aptel_1",
+            glazing=GlazingRef(
+                name="Synthetic Triple",
+                u_value_w_m2k=0.65,
+                g_value=0.45,
+                catalog_origin=same_glazing_origin,
+            ),
+        ),
+        actor_user_id="usr_1",
+        catalog=catalog,
+    )
+    assert reselected_body.tables.apertures[0].elements[0].nfrc_whole_window_u_w_m2k == pytest.approx(0.78)
+
+    # Refreshing a shared glazing's documentation-only field preserves NFRC;
+    # refreshing a thermal field clears NFRC on every lite referencing that glazing.
+    doc_refresh_body, _ = apply_aperture_command(
+        body_with_cat_glz,
+        RefreshRefFromCatalog(
+            aperture_type_id="apt_1",
+            element_id="aptel_1",
+            target="glazing",
+            chosen_values={"comments": "Updated datasheet note"},
+        ),
+        actor_user_id="usr_1",
+        catalog=catalog,
+    )
+    assert doc_refresh_body.tables.apertures[0].elements[0].nfrc_whole_window_u_w_m2k == pytest.approx(0.78)
+
+    thermal_refresh_body, _ = apply_aperture_command(
+        body_with_cat_glz,
+        RefreshRefFromCatalog(
+            aperture_type_id="apt_1",
+            element_id="aptel_2",
+            target="glazing",
+            chosen_values={"u_value_w_m2k": 0.92},
+        ),
+        actor_user_id="usr_1",
+        catalog=catalog,
+    )
+    assert thermal_refresh_body.tables.apertures[0].elements[0].nfrc_whole_window_u_w_m2k is None
+
+    # Paste clears target's NFRC; paste-undo restores target's original NFRC rating and note.
+    orig_el = body.tables.apertures[0].elements[0]
+    pasted_body, _ = apply_aperture_command(
+        body,
+        PasteAssignment(
+            aperture_type_id="apt_1",
+            source_element_id="aptel_2",
+            target_element_ids=["aptel_1"],
+        ),
+        actor_user_id="usr_1",
+        catalog=catalog,
+    )
+    assert pasted_body.tables.apertures[0].elements[0].nfrc_whole_window_u_w_m2k is None
+
+    restored_body, _ = apply_aperture_command(
+        pasted_body,
+        PasteAssignment(
+            aperture_type_id="apt_1",
+            source_element_id="aptel_1",
+            target_element_ids=["aptel_1"],
+            restore_assignment=ApertureAssignmentSnapshot(
+                operation=orig_el.operation,
+                glazing_id=orig_el.glazing_id,
+                frames=orig_el.frames,
+                installs=orig_el.installs,
+                nfrc_whole_window_u_w_m2k=orig_el.nfrc_whole_window_u_w_m2k,
+                nfrc_standard_size_note=orig_el.nfrc_standard_size_note,
+            ),
+        ),
+        actor_user_id="usr_1",
+        catalog=catalog,
+    )
+    assert restored_body.tables.apertures[0].elements[0].nfrc_whole_window_u_w_m2k == pytest.approx(0.78)
+    assert restored_body.tables.apertures[0].elements[0].nfrc_standard_size_note == "1.20 m x 1.50 m"
 
 
 def test_thermal_comfort_route_populated_draft_version_and_climate(clean_document_tables: None) -> None:

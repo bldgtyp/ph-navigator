@@ -241,6 +241,8 @@ class ApertureAssignmentSnapshot(BaseModel):
     glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
     installs: ApertureElementInstalls = Field(default_factory=ApertureElementInstalls)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
 
 
 class PasteAssignment(BaseModel):
