@@ -1,9 +1,10 @@
 ---
-DATE: 2026-08-16
-TIME: 09:40
-STATUS: Implemented on branch
+DATE: 2026-11-23
+TIME: 20:53 EST
+STATUS: Complete
 AUTHOR: Claude (with Ed May)
 SCOPE: UI/UX refactor of the Overview tab's Documentation-progress pane
+ISSUE: https://github.com/bldgtyp/ph-navigator/issues/75
 RELATED:
   - context/ui/pages/overview-tab.md
   - context/DESIGN_SYSTEM.md
@@ -15,7 +16,7 @@ RELATED:
 
 **Issue:** [#75](https://github.com/bldgtyp/ph-navigator/issues/75)
 
-Branch: `feature/overview-documentation-progress-refactor`
+**Merged:** `a3f8bade1` (PR #63, 2026-08-16). Archived 2026-11-23.
 
 ## Why
 

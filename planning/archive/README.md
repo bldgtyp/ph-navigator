@@ -8,6 +8,19 @@ New packets (2026-08-26 onward) archive **flat by slug** to
 closed GitHub issue link. Entries below dated 2026-08-20 and earlier live in
 the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
+## 2026-11-23
+
+- `overview-documentation-progress` - Rebuilt the Overview tab's
+  Documentation-progress pane on the shared `StatusAxisRollup` component owned
+  by `features/project_document/`, unifying heading parity, font tokens,
+  single-line group rows, and two-gesture navigation (section header opens the
+  owning tab; axis meters open Documentation filtered by `?needs=`). Durable
+  contracts folded into `context/ui/pages/overview-tab.md` and
+  `context/DESIGN_SYSTEM.md`. Merged 2026-08-16 via
+  [PR #63](https://github.com/bldgtyp/ph-navigator/pull/63) (`a3f8bade1`),
+  closing [#75](https://github.com/bldgtyp/ph-navigator/issues/75) (archived
+  2026-11-23).
+
 ## 2026-10-24
 
 - `climate-basemap-api-key` - CARTO ended keyless raster basemap access
