@@ -7,6 +7,7 @@ formula refs, and semantic envelope/aperture entities.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, cast
 
@@ -332,8 +333,8 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         valid_option_ids=thermal_bridge_type_ids,
         missing_message="Missing thermal bridge type option for thermal bridge {row_id}: {value}",
     )
-    _validate_min_zero(
-        thermal_bridges, "psi_value_w_mk", "Thermal bridge psi_value_w_mk must be zero or greater: {row_id}"
+    _validate_finite_number(
+        thermal_bridges, "psi_value_w_mk", "Thermal bridge psi_value_w_mk must be a finite number: {row_id}"
     )
     _validate_unit_fraction(
         thermal_bridges, "frsi_value", "Thermal bridge frsi_value must be between 0 and 1: {row_id}"
@@ -468,6 +469,19 @@ def _custom_option_ref(row: RowWithIdentity, field_key: str) -> str | None:
     if value is None or isinstance(value, str):
         return value
     raise ValueError(f"Expected option id text for {field_key} on row {row.id}: {value!r}")
+
+
+def _validate_finite_number(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
+    """Reject a numeric ``custom_values`` field that is NaN, infinite, or overflows float."""
+    for row in rows:
+        value = row.custom_values.get(field_key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            try:
+                is_finite = math.isfinite(value)
+            except OverflowError:
+                is_finite = False
+            if not is_finite:
+                raise ValueError(message.format(row_id=row.id))
 
 
 def _validate_min_zero(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
