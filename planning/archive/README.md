@@ -10,6 +10,16 @@ the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
 ## 2026-11-23
 
+- `spec-status-value-unification` - Unified PH-Navigator built-in
+  specification status on canonical `needed` (schema v8, deployed 2026-07-19
+  via `ef97b483`) while retaining permanent v7→v8 upgraders, DataTable
+  `opt_status_needed` option ids, and Honeybee `needed ↔ MISSING` adapters.
+  Phase 07 retired the temporary cached-client adapters (`specification_status_compat.py`,
+  `ProjectMaterialMutation`, `WireSpecificationStatus*`, `normalizeSpecificationStatus*`,
+  `normalizeEnvelopeReadResponse`, `normalizeApertureSpecReport`) so public
+  commands and table mutations enforce strict canonical `SpecificationStatus`.
+  Archived and closed [#76](https://github.com/bldgtyp/ph-navigator/issues/76)
+  (2026-11-23).
 - `aperture-psi-install` - Added aperture-level Ψ-install (install types):
   schema v10 `aperture_install_types` library table, per-edge resolution
   (`mull → assigned → default`) + commands + route-3 `installs` block, the

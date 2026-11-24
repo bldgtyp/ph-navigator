@@ -1,8 +1,8 @@
 ---
-DATE: 2026-07-19
-TIME: 14:35 EDT
-STATUS: Open — doc/context half done 2026-07-20; adapter retirement blocked on the observation window
-AUTHOR: Codex with Ed May
+DATE: 2026-11-23
+TIME: 21:08 EST
+STATUS: Complete — temporary cached-client adapters retired and packet archived 2026-11-23
+AUTHOR: Codex with Ed May (closeout 2026-11-23)
 SCOPE: Remove temporary compatibility, reconcile durable docs, and archive the
   completed refactor.
 RELATED:

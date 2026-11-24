@@ -1,10 +1,11 @@
 ---
-DATE: 2026-07-20
-TIME: 00:30 EDT
-STATUS: Deployed and verified in production — only Phase 07 adapter retirement remains
-AUTHOR: Codex with Ed May
+DATE: 2026-11-23
+TIME: 21:08 EST
+STATUS: Complete
+AUTHOR: Codex with Ed May (Phase 07 closeout 2026-11-23)
 SCOPE: Current state and implementation gates for specification-status value
   unification.
+ISSUE: https://github.com/bldgtyp/ph-navigator/issues/76
 RELATED:
   - ./README.md
   - ./PRD.md
@@ -20,25 +21,28 @@ RELATED:
 
 ## Current state
 
-**Shipped.** Commit `ef97b483` was deployed to production on 2026-07-19 (manual
-dispatch), carrying Compatibility Release A and Canonical Release B together.
-Both API and web report the deployed SHA; the public surface, CORS, and auth
-boundary are green; the deployed OpenAPI schema advertises the canonical
-`complete | needed | question | na` and no longer offers `missing` at any of its
-53 status enum sites.
+**Complete and archived (2026-11-23).** Commit `ef97b483` was deployed to
+production on 2026-07-19 (manual dispatch), carrying Compatibility Release A
+and Canonical Release B together. Both API and web reported the deployed SHA;
+the public surface, CORS, and auth boundary were green; the deployed OpenAPI
+schema advertised canonical `complete | needed | question | na` and no longer
+offered `missing` at any of its 53 status enum sites.
 
-Both production projects were verified read-only and **pass**: Ayers Home
-(bt 2613) and Linde Home (bt 2524) each store `schema_version=4` rows that read
-back as `8` through the forward-upgrade chain, with zero legacy `missing`
-remaining across 61 material/glazing/frame rows. The DataTable option-id family
-(`opt_status_needed`) is intact and untouched, as D-2 required.
+Two production projects were verified read-only and **passed**: each stored
+`schema_version=4` rows that read back as `8` through the forward-upgrade
+chain, with zero legacy `missing` remaining across 61 material/glazing/frame
+rows. The DataTable option-id family (`opt_status_needed`) remained intact and
+untouched, as D-2 required.
 
-**Nothing has been rewritten.** Stored rows are still v4; the upgrade happens in
-memory on read. The v8 write boundary has not been crossed, so app-only rollback
-remains available until the first ordinary draft/Save.
-
-Remaining: retire the temporary cached-client adapters (Phase 07 steps 2–3),
-which is blocked on the observation window and needs a second deploy.
+**Phase 07 adapter retirement completed 2026-11-23:** removed the temporary
+cached-client backend adapter (`backend/features/envelope/specification_status_compat.py`
+and `ProjectMaterialMutation`) and frontend read-path wire normalizers
+(`WireSpecificationStatus`, `WireSpecificationStatusRecord`,
+`normalizeSpecificationStatus`, `normalizeSpecificationStatusRecord`,
+`normalizeEnvelopeReadResponse`, `normalizeApertureSpecReport`). Public
+commands and table replacements now enforce strict canonical
+`SpecificationStatus`. Permanent v7 → v8 upgraders and Honeybee
+`needed ↔ MISSING` adapters remain intact.
 
 ## Accepted planning conclusions
 
@@ -110,7 +114,7 @@ amber consumers now use `--attention-amber`.
 | 04 Production preflight | Complete (reduced form) | full corpus + restore point + go/no-go |
 | 05 Deploy/no-write smoke | Complete | both SHAs + both-project reads green |
 | 06 Project cutover | Verified; v8 write pending | both projects verified; v8 boundary logged |
-| 07 Cleanup/closeout | Open — adapters retained | adapters retired as approved; docs/CI/archive |
+| 07 Cleanup/closeout | Complete (2026-11-23) | adapters retired; docs/CI/archive complete |
 
 ## Completion checklist
 
@@ -130,4 +134,4 @@ amber consumers now use `--attention-amber`.
 - [ ] First v8 persisted write boundary recorded — **not yet crossed**.
 - [x] `simplify`, `docs-pass`, format, and full CI complete.
 - [x] Accepted durable contracts folded into `context/`.
-- [ ] Temporary cached-client adapters retired and packet archived (Phase 07).
+- [x] Temporary cached-client adapters retired and packet archived (Phase 07, 2026-11-23).
