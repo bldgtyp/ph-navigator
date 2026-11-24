@@ -322,4 +322,5 @@ export type ApertureCommand =
       element_id: string;
       target: "frame.top" | "frame.right" | "frame.bottom" | "frame.left" | "glazing";
       chosen_values: Record<string, string | number | null>;
+      override_keys?: string[];
     };

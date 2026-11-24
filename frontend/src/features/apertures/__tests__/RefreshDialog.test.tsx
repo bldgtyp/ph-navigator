@@ -72,14 +72,14 @@ describe("RefreshDialog", () => {
     expect(submit).toBeDisabled();
   });
 
-  it("preserves literal 'Empty' text when keeping or taking catalog values", () => {
+  it("preserves literal 'Empty' text and renders null distinctly as an em-dash", () => {
     const onSave = vi.fn();
     const literalEmptyEntry: ApertureDriftEntry = {
       ...entry(),
       deltas: [
         {
           field_key: "comments",
-          catalog_value: "Empty",
+          catalog_value: null,
           yours_value: "Empty",
           in_local_overrides: true,
         },
@@ -92,8 +92,27 @@ describe("RefreshDialog", () => {
       ],
     };
     render(<RefreshDialog open entry={literalEmptyEntry} onClose={() => {}} onSave={onSave} />);
+    expect(screen.getByText("—")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Apply 1 change" }));
-    expect(onSave).toHaveBeenCalledWith({ comments: "Empty", suffix: "Empty" });
+    expect(onSave).toHaveBeenCalledWith({ comments: "Empty", suffix: "Empty" }, ["comments"]);
+  });
+
+  it("does not count selecting Edit without changing the prefilled value as a change", () => {
+    const singleDelta: ApertureDriftEntry = {
+      ...entry(),
+      deltas: [
+        {
+          field_key: "color",
+          catalog_value: "#aabbcc",
+          yours_value: "#000000",
+          in_local_overrides: true,
+        },
+      ],
+    };
+    render(<RefreshDialog open entry={singleDelta} onClose={() => {}} onSave={() => {}} />);
+    expect(screen.getByRole("button", { name: "Apply refresh" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Edit…" }));
+    expect(screen.getByRole("button", { name: "Apply refresh" })).toBeTruthy();
   });
 
   it("renders read-only with disabled primary action when canEdit is false", () => {

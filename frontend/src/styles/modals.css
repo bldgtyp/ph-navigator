@@ -144,6 +144,24 @@
   gap: var(--space-8);
 }
 
+.material-drift-badge {
+  background: color-mix(in oklab, var(--attention-amber) 16%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 50%, var(--border-subtle));
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+}
+
+.material-drift-badge.source_deactivated,
+.material-drift-badge.source_missing {
+  background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--phn-danger) 45%, var(--border-subtle));
+}
+
+.material-drift-badge.customized {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
+}
+
 .drift-fields,
 .material-drift-fields {
   display: grid;

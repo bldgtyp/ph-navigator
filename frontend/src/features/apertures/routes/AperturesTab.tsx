@@ -301,7 +301,10 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     await reportAttachmentMutation.mutateAsync({ current, change });
   };
 
-  const handleRefreshSave = async (chosen: Record<string, string | number | null>) => {
+  const handleRefreshSave = async (
+    chosen: Record<string, string | number | null>,
+    overrideKeys: string[],
+  ) => {
     if (!canEdit || !refreshEntry) return;
     setRefreshError(null);
     const command: Extract<ApertureCommand, { kind: "refreshRefFromCatalog" }> = {
@@ -310,6 +313,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
       element_id: refreshEntry.element_id,
       target: refreshEntry.target,
       chosen_values: chosen,
+      override_keys: overrideKeys,
     };
     if (isBuilderRoute) {
       if (!slice) return;
@@ -481,7 +485,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 error={refreshError}
                 onClose={closeRefreshDialog}
                 busy={mutation.isPending || reportRefreshMutation.isPending}
-                onSave={(chosen) => void handleRefreshSave(chosen)}
+                onSave={(chosen, overrideKeys) => void handleRefreshSave(chosen, overrideKeys)}
               />
               {installsModalOpen && activeAperture ? (
                 <InstallsModal

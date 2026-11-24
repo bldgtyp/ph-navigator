@@ -61,7 +61,7 @@ def apply_refresh_ref_from_catalog(
         current = glazing_by_id(body.tables, element.glazing_id)
         if current is None:
             raise _target_unset_error(element.id, target)
-        next_ref = _apply_chosen(current, command.chosen_values)
+        next_ref = _apply_chosen(current, command.chosen_values, command.override_keys)
         next_tables = _replace_project_glazing(body.tables, next_ref)
     else:
         side = target.split(".", 1)[1]
@@ -75,7 +75,7 @@ def apply_refresh_ref_from_catalog(
         current_frame = frame_by_id(body.tables, getattr(element.frames, side))
         if current_frame is None:
             raise _target_unset_error(element.id, target)
-        next_ref = _apply_chosen(current_frame, command.chosen_values)
+        next_ref = _apply_chosen(current_frame, command.chosen_values, command.override_keys)
         next_tables = _replace_project_frame(body.tables, next_ref)
 
     next_body = body.model_copy(update={"tables": next_tables})
@@ -90,7 +90,11 @@ def apply_refresh_ref_from_catalog(
     )
 
 
-def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
+def _apply_chosen(
+    ref: _RefT,
+    chosen_values: Mapping[str, object],
+    override_keys: list[str] | None = None,
+) -> _RefT:
     if ref.catalog_origin is None:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -127,7 +131,17 @@ def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
 
     refreshed_origin = next_ref.catalog_origin
     assert refreshed_origin is not None
-    refreshed_origin = refreshed_origin.model_copy(update={"synced_at": datetime.now(tz=UTC)})
+    origin_update: dict[str, object] = {"synced_at": datetime.now(tz=UTC)}
+    if override_keys is not None:
+        next_overrides = set(refreshed_origin.local_overrides)
+        explicit_overrides = set(override_keys)
+        for field_key in chosen_values:
+            if field_key in explicit_overrides:
+                next_overrides.add(field_key)
+            else:
+                next_overrides.discard(field_key)
+        origin_update["local_overrides"] = sorted(next_overrides)
+    refreshed_origin = refreshed_origin.model_copy(update=origin_update)
     return next_ref.model_copy(update={"catalog_origin": refreshed_origin})
 
 

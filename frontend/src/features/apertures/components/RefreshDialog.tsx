@@ -18,7 +18,7 @@ export type RefreshDialogProps = {
   busy?: boolean;
   error?: string | null;
   onClose: () => void;
-  onSave: (chosenValues: Record<string, string | number | null>) => void;
+  onSave: (chosenValues: Record<string, string | number | null>, overrideKeys: string[]) => void;
 };
 
 type RowState = {
@@ -96,24 +96,35 @@ export function RefreshDialog({
 
   const bulk = (choice: RefreshChoice) => setRows((prev) => prev.map((r) => ({ ...r, choice })));
 
+  const resolveRowValue = (row: RowState): string | number | null => {
+    if (row.choice === "catalog") return toWireValue(row.delta.catalog_value);
+    if (row.choice === "yours") return toWireValue(row.delta.yours_value);
+    return parseEditedValue(row.editValue);
+  };
+
   const handleSave = () => {
     if (!canEdit) return;
     const chosen: Record<string, string | number | null> = {};
+    const overrideKeys: string[] = [];
     for (const row of rows) {
-      if (row.choice === "catalog") {
-        chosen[row.delta.field_key] = toWireValue(row.delta.catalog_value);
-      } else if (row.choice === "yours") {
-        chosen[row.delta.field_key] = toWireValue(row.delta.yours_value);
-      } else {
-        chosen[row.delta.field_key] = parseEditedValue(row.editValue);
+      const resolved = resolveRowValue(row);
+      chosen[row.delta.field_key] = resolved;
+      // Record deliberate user intent when keeping project value or entering an
+      // edited value that differs from the catalog so the next drift report
+      // classifies it as customized rather than re-flagging it for review.
+      if (
+        row.choice === "yours" ||
+        (row.choice === "edit" && resolved !== toWireValue(row.delta.catalog_value))
+      ) {
+        overrideKeys.push(row.delta.field_key);
       }
     }
-    onSave(chosen);
+    onSave(chosen, overrideKeys);
   };
 
   const blocked = entry.kind === "catalog_row_missing";
   const changeCount = rows.filter(
-    (row) => row.choice === "catalog" || row.choice === "edit",
+    (row) => resolveRowValue(row) !== toWireValue(row.delta.yours_value),
   ).length;
   const submitLabel =
     changeCount === 0
@@ -229,7 +240,7 @@ function fieldLabel(key: string): string {
 }
 
 function stringify(value: unknown): string {
-  if (value === null || value === undefined) return "Empty";
+  if (value === null || value === undefined) return "—";
   if (typeof value === "number") return String(value);
   return String(value);
 }

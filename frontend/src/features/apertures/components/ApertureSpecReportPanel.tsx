@@ -863,7 +863,7 @@ function driftEntriesForProduct(
 function indexDriftEntries(driftEntries: ApertureDriftEntry[]): Map<string, ApertureDriftEntry[]> {
   const entriesByUseSite = new Map<string, ApertureDriftEntry[]>();
   for (const entry of driftEntries) {
-    const key = `${entry.element_id}:${entry.target}`;
+    const key = `${entry.aperture_type_id}:${entry.element_id}:${entry.target}`;
     const existing = entriesByUseSite.get(key);
     if (existing) existing.push(entry);
     else entriesByUseSite.set(key, [entry]);
@@ -874,7 +874,7 @@ function indexDriftEntries(driftEntries: ApertureDriftEntry[]): Map<string, Aper
 function driftUseSiteKey(kind: ProductKind, site: ApertureUseSite): string {
   const target: DriftTarget =
     kind === "glazing" ? "glazing" : (`frame.${(site as ProjectFrameUseSite).side}` as DriftTarget);
-  return `${site.element_id}:${target}`;
+  return `${site.aperture_type_id}:${site.element_id}:${target}`;
 }
 
 function formatUseSiteKey(site: ApertureUseSite): string {

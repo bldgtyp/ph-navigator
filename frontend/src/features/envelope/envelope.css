@@ -1188,24 +1188,6 @@
 /* Composes `.chip .chip--sm`; coloured material-drift indicator. Amber is the
    app's "needs attention" tone (same token the report tables use), not the
    magenta highlight — drift is a work item, not a brand accent. */
-.material-drift-badge {
-  background: color-mix(in oklab, var(--attention-amber) 16%, var(--bg-card));
-  border: 1px solid color-mix(in oklab, var(--attention-amber) 50%, var(--border-subtle));
-  color: var(--text-primary);
-  font-weight: var(--fw-semibold);
-}
-
-.material-drift-badge.source_deactivated,
-.material-drift-badge.source_missing {
-  background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));
-  border-color: color-mix(in oklab, var(--phn-danger) 45%, var(--border-subtle));
-}
-
-.material-drift-badge.customized {
-  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
-  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
-}
-
 .spec-notes {
   margin: 0;
 }
