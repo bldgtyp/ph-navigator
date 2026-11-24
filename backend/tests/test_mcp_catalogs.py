@@ -10,7 +10,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from database import transaction
 from features.mcp.server import build_mcp_server
-from tests.test_mcp import clean_mcp_tables, issue_mcp_token
+from tests.test_mcp import ORIGIN, clean_mcp_tables, issue_mcp_token
 from tests.test_project_document import create_project, signed_in_client
 
 __all__ = ["clean_mcp_tables"]
@@ -83,23 +83,29 @@ async def test_mcp_search_catalog_materials_filters_active_rows_and_validates_ar
         source_items = cast(list[dict[str, object]], cast(dict[str, object], by_source)["items"])
         assert [row["id"] for row in source_items] == ["recMcpMatMem00001"]
 
-        # Invalid category returns fatal validation_error.
-        with pytest.raises(ToolError) as bad_cat_exc:
-            await server.call_tool("search_catalog_materials", {"category": "not_a_category"})
-        bad_cat_err = json.loads(str(bad_cat_exc.value).removeprefix("Error executing tool search_catalog_materials: "))
-        assert bad_cat_err["code"] == "validation_error"
-        assert bad_cat_err["recoverability"] == "fatal"
-        assert bad_cat_err["details"]["field"] == "category"
+        # Invalid or blank category returns fatal validation_error.
+        for bad_category in ("not_a_category", "", "   "):
+            with pytest.raises(ToolError) as bad_cat_exc:
+                await server.call_tool("search_catalog_materials", {"category": bad_category})
+            bad_cat_err = json.loads(
+                str(bad_cat_exc.value).removeprefix("Error executing tool search_catalog_materials: ")
+            )
+            assert bad_cat_err["code"] == "validation_error"
+            assert bad_cat_err["recoverability"] == "fatal"
+            assert bad_cat_err["details"]["field"] == "category"
 
-        # Out-of-range limit returns structured fatal validation_error.
-        with pytest.raises(ToolError) as bad_limit_exc:
-            await server.call_tool("search_catalog_materials", {"limit": 0})
-        bad_limit_err = json.loads(
-            str(bad_limit_exc.value).removeprefix("Error executing tool search_catalog_materials: ")
-        )
-        assert bad_limit_err["code"] == "validation_error"
-        assert bad_limit_err["recoverability"] == "fatal"
-        assert bad_limit_err["details"]["field"] == "limit"
+        # Out-of-range limits return structured fatal validation_error; 500 is accepted.
+        _, max_limit_res = await server.call_tool("search_catalog_materials", {"query": "zip-r", "limit": 500})
+        assert cast(dict[str, object], max_limit_res)["total_matched"] == 1
+        for bad_int_limit in (0, 501):
+            with pytest.raises(ToolError) as bad_limit_exc:
+                await server.call_tool("search_catalog_materials", {"limit": bad_int_limit})
+            bad_limit_err = json.loads(
+                str(bad_limit_exc.value).removeprefix("Error executing tool search_catalog_materials: ")
+            )
+            assert bad_limit_err["code"] == "validation_error"
+            assert bad_limit_err["recoverability"] == "fatal"
+            assert bad_limit_err["details"]["field"] == "limit"
 
         # Malformed non-int limits (bool / numeric string) are rejected at the tool boundary.
         for bad_limit in (True, "5"):
@@ -266,10 +272,78 @@ async def test_mcp_list_catalog_frame_and_glazing_types_filter_active_rows(
         }
         assert glazing_unfiltered_ids == {"recMcpGlzLive0001", "recMcpGlzLive0002"}
 
-        # Malformed limits are rejected at the registered tool boundaries.
+        # Truncation on two-match fixtures with limit=1, plus 0/500/501 bounds and malformed limits.
+        _, frame_trunc = await server.call_tool(
+            "list_catalog_frame_types",
+            {"location": "Head", "operation": "Fixed", "use": "Window", "query": "mcpseries1", "limit": 1},
+        )
+        frame_trunc_payload = cast(dict[str, object], frame_trunc)
+        assert len(cast(list[object], frame_trunc_payload["items"])) == 1
+        assert frame_trunc_payload["total_matched"] == 2
+        assert frame_trunc_payload["truncated"] is True
+
+        _, glazing_trunc = await server.call_tool(
+            "list_catalog_glazing_types",
+            {"query": "McpGlzTok Triple", "limit": 1},
+        )
+        glazing_trunc_payload = cast(dict[str, object], glazing_trunc)
+        assert len(cast(list[object], glazing_trunc_payload["items"])) == 1
+        assert glazing_trunc_payload["total_matched"] == 2
+        assert glazing_trunc_payload["truncated"] is True
+
         for tool_name in ("list_catalog_frame_types", "list_catalog_glazing_types"):
+            _, max_res = await server.call_tool(tool_name, {"limit": 500})
+            assert isinstance(cast(dict[str, object], max_res)["items"], list)
+            for bad_int_limit in (0, 501):
+                with pytest.raises(ToolError) as bad_limit_exc:
+                    await server.call_tool(tool_name, {"limit": bad_int_limit})
+                bad_limit_err = json.loads(str(bad_limit_exc.value).removeprefix(f"Error executing tool {tool_name}: "))
+                assert bad_limit_err["code"] == "validation_error"
+                assert bad_limit_err["recoverability"] == "fatal"
+                assert bad_limit_err["details"]["field"] == "limit"
             for bad_limit in (True, "5"):
                 with pytest.raises(ToolError):
                     await server.call_tool(tool_name, {"limit": bad_limit})
     finally:
         _cleanup()
+
+
+@pytest.mark.anyio
+async def test_mcp_catalog_tools_reject_missing_and_revoked_tokens(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Catalog Auth Test", "scopes": ["project:read"]},
+    )
+    assert issued.status_code == 201
+    token_id = cast(str, issued.json()["token_record"]["id"])
+    token = cast(str, issued.json()["token"])
+
+    server = build_mcp_server(allow_env_token=True)
+
+    # Missing token is rejected on all three catalog tools.
+    monkeypatch.delenv("PHN_MCP_TOKEN", raising=False)
+    for tool_name in ("search_catalog_materials", "list_catalog_frame_types", "list_catalog_glazing_types"):
+        with pytest.raises(ToolError) as missing_exc:
+            await server.call_tool(tool_name, {})
+        missing_err = json.loads(str(missing_exc.value).removeprefix(f"Error executing tool {tool_name}: "))
+        assert missing_err["code"] == "not_authenticated"
+
+    # Revoked token is rejected on all three catalog tools.
+    revoked = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens/{token_id}/revoke",
+        headers={"Origin": ORIGIN},
+    )
+    assert revoked.status_code == 200
+    monkeypatch.setenv("PHN_MCP_TOKEN", token)
+    for tool_name in ("search_catalog_materials", "list_catalog_frame_types", "list_catalog_glazing_types"):
+        with pytest.raises(ToolError) as revoked_exc:
+            await server.call_tool(tool_name, {})
+        revoked_err = json.loads(str(revoked_exc.value).removeprefix(f"Error executing tool {tool_name}: "))
+        assert revoked_err["code"] == "not_authenticated"

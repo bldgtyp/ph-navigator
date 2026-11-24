@@ -69,15 +69,17 @@ async def tool_search_catalog_materials(
 ) -> dict[str, object]:
     """Search active Materials catalog rows by optional query and category."""
     validated_limit = _validate_limit(limit, ctx)
-    normalized_category = _normalize_optional_text(category)
-    if normalized_category is not None and normalized_category not in MATERIAL_CATEGORY_IDS:
-        raise_mcp_error(
-            "validation_error",
-            f"Unknown material category: {normalized_category}",
-            "fatal",
-            ctx,
-            {"field": "category", "allowed": list(MATERIAL_CATEGORY_IDS)},
-        )
+    normalized_category: str | None = None
+    if category is not None:
+        normalized_category = category.strip()
+        if normalized_category not in MATERIAL_CATEGORY_IDS:
+            raise_mcp_error(
+                "validation_error",
+                f"Unknown material category: {normalized_category}",
+                "fatal",
+                ctx,
+                {"field": "category", "allowed": list(MATERIAL_CATEGORY_IDS)},
+            )
     normalized_query = _normalize_optional_text(query)
 
     def _run() -> dict[str, object]:
