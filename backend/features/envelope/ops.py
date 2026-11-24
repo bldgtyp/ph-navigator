@@ -201,6 +201,38 @@ def ensure_project_material_exists(body: ProjectDocumentV1, project_material_id:
         )
 
 
+def ensure_unique_assembly_id(assemblies: list[Assembly], assembly_id: str) -> None:
+    if any(assembly.id == assembly_id for assembly in assemblies):
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "duplicate_assembly_id",
+            f"Assembly id '{assembly_id}' already exists.",
+            {"assembly_id": assembly_id},
+        )
+
+
+def ensure_unique_layer_id(assemblies: list[Assembly], layer_id: str) -> None:
+    if any(layer.id == layer_id for assembly in assemblies for layer in assembly.layers):
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "duplicate_layer_id",
+            f"Layer id '{layer_id}' already exists.",
+            {"layer_id": layer_id},
+        )
+
+
+def ensure_unique_segment_id(assemblies: list[Assembly], segment_id: str) -> None:
+    if any(
+        segment.id == segment_id for assembly in assemblies for layer in assembly.layers for segment in layer.segments
+    ):
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "duplicate_segment_id",
+            f"Segment id '{segment_id}' already exists.",
+            {"segment_id": segment_id},
+        )
+
+
 def ensure_unique_assembly_name(
     assemblies: list[Assembly],
     name: str,

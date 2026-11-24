@@ -22,14 +22,19 @@ from features.shared.errors import api_error
 
 
 def add_layer(body: ProjectDocumentV1, command: AddLayerCommand) -> ProjectDocumentV1:
+    layer_id = command.layer_id or new_id(ID_PREFIX_LAYER)
+    segment_id = command.segment_id or new_id(ID_PREFIX_SEGMENT)
+    ops.ensure_unique_layer_id(body.tables.assemblies, layer_id)
+    ops.ensure_unique_segment_id(body.tables.assemblies, segment_id)
+
     def updater(assembly: Assembly) -> Assembly:
         target_index = ops.target_layer_index(assembly.layers, command.target_layer_id, command.position)
         width_mm = ops.layer_width(assembly.layers[max(0, min(target_index - 1, len(assembly.layers) - 1))])
         layer = AssemblyLayer(
-            id=new_id(ID_PREFIX_LAYER),
+            id=layer_id,
             order=target_index,
             thickness_mm=command.thickness_mm,
-            segments=[AssemblySegment(id=new_id(ID_PREFIX_SEGMENT), order=0, width_mm=width_mm)],
+            segments=[AssemblySegment(id=segment_id, order=0, width_mm=width_mm)],
         )
         layers = [*assembly.layers[:target_index], layer, *assembly.layers[target_index:]]
         return assembly.model_copy(update={"layers": ops.renumber_layers(layers)})
@@ -84,6 +89,8 @@ def set_assembly_air_barrier(
 
 
 def add_segment(body: ProjectDocumentV1, command: AddSegmentCommand) -> ProjectDocumentV1:
+    segment_id = command.segment_id or new_id(ID_PREFIX_SEGMENT)
+    ops.ensure_unique_segment_id(body.tables.assemblies, segment_id)
     materials_by_id = {material.id: material for material in body.tables.project_materials}
 
     def layer_updater(layer: AssemblyLayer) -> AssemblyLayer:
@@ -99,7 +106,7 @@ def add_segment(body: ProjectDocumentV1, command: AddSegmentCommand) -> ProjectD
                 {"layer_id": layer.id},
             )
         target_index = ops.target_segment_index(layer.segments, command.target_segment_id, command.position)
-        segment = AssemblySegment(id=new_id(ID_PREFIX_SEGMENT), order=target_index, width_mm=command.width_mm)
+        segment = AssemblySegment(id=segment_id, order=target_index, width_mm=command.width_mm)
         segments = [*layer.segments[:target_index], segment, *layer.segments[target_index:]]
         return layer.model_copy(update={"segments": ops.renumber_segments(segments)})
 

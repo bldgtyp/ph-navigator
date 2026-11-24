@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from mcp.server.fastmcp import Context
 from pydantic import ValidationError
 
-from features.envelope.models import EnvelopeCommandRequest
+from features.envelope.models import EnvelopeCommandRequest, EnvelopeReadResponse
 from features.envelope.service import (
     apply_envelope_command,
     get_assembly_thermal_model,
@@ -306,23 +306,95 @@ def tool_query_unfinished_envelope_work(
     }
 
 
+_APPLY_RESPONSE_MODES = frozenset({"full", "summary"})
+
+
+def _summarize_envelope_response(
+    result: EnvelopeReadResponse,
+    *,
+    command_count: int,
+) -> dict[str, object]:
+    return {
+        "project_id": str(result.project_id),
+        "version_id": str(result.version_id),
+        "source": result.source,
+        "version_etag": result.version_etag,
+        "draft_etag": result.draft_etag,
+        "saved_assembly_count": result.saved_assembly_count,
+        "command_count": command_count,
+        "project_material_count": len(result.project_materials),
+        "assemblies": [
+            {
+                "id": assembly.id,
+                "name": assembly.name,
+                "type": assembly.type,
+                "status": assembly.status.model_dump(mode="json"),
+                "layers": [
+                    {
+                        "id": layer.id,
+                        "order": layer.order,
+                        "thickness_mm": layer.thickness_mm,
+                        "segments": [
+                            {
+                                "id": segment.id,
+                                "order": segment.order,
+                                "project_material_id": segment.project_material_id,
+                            }
+                            for segment in layer.segments
+                        ],
+                    }
+                    for layer in assembly.layers
+                ],
+            }
+            for assembly in result.assemblies
+        ],
+    }
+
+
 def tool_apply_envelope_command(
     project_id: str,
     version_id: str,
-    command: dict[str, object],
+    command: dict[str, object] | None,
     ctx: Context,
     *,
     allow_env_token: bool,
+    commands: list[dict[str, object]] | None = None,
     if_match: str | None = None,
     if_match_version: str | None = None,
+    response: str = "full",
 ) -> dict[str, object]:
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    if response not in _APPLY_RESPONSE_MODES:
+        raise_mcp_error(
+            "validation_error",
+            f"Invalid response mode: {response!r}. Expected 'full' or 'summary'.",
+            "fatal",
+            ctx,
+            {"field": "response", "allowed": ["full", "summary"]},
+        )
+    if command is not None and commands is not None:
+        raise_mcp_error(
+            "validation_error",
+            "Send either 'command' or 'commands', not both.",
+            "fatal",
+            ctx,
+            {"fields": ["command", "commands"]},
+        )
+    if command is None and commands is None:
+        raise_mcp_error(
+            "validation_error",
+            "Provide either 'command' or 'commands'.",
+            "fatal",
+            ctx,
+            {"fields": ["command", "commands"]},
+        )
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
+    raw_payload: dict[str, object] = {"commands": commands} if commands is not None else {"command": command}
     try:
-        payload = EnvelopeCommandRequest.model_validate({"command": command})
-        response = apply_envelope_command(
+        payload = EnvelopeCommandRequest.model_validate(raw_payload)
+        envelope_response = apply_envelope_command(
             parsed_version_id,
             access,
             payload.commands,
@@ -347,7 +419,9 @@ def tool_apply_envelope_command(
             default_recoverability="fatal",
             recoverability_by_code=_ENVELOPE_RECOVERABILITY,
         )
-    return response.model_dump(mode="json")
+    if response == "summary":
+        return _summarize_envelope_response(envelope_response, command_count=len(payload.commands))
+    return envelope_response.model_dump(mode="json")
 
 
 _ENVELOPE_RECOVERABILITY: dict[str, McpRecoverability] = {
@@ -356,6 +430,9 @@ _ENVELOPE_RECOVERABILITY: dict[str, McpRecoverability] = {
     "draft_etag_mismatch": "refresh",
     "version_etag_mismatch": "refresh",
     "duplicate_assembly_name": "fatal",
+    "duplicate_assembly_id": "fatal",
+    "duplicate_layer_id": "fatal",
+    "duplicate_segment_id": "fatal",
     "last_layer": "fatal",
     "last_segment": "fatal",
     "assembly_not_found": "refresh",
