@@ -1662,7 +1662,7 @@ async def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
     assert invalid_source_err["recoverability"] == "fatal"
     assert invalid_source_err["details"]["field"] == "source"
 
-    with pytest.raises(ToolError, match="assembly_not_found"):
+    with pytest.raises(ToolError, match="assembly_not_found") as missing_exc:
         await server.call_tool(
             "get_envelope_assembly_thermal",
             {
@@ -1671,6 +1671,10 @@ async def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
                 "assembly_id": "asm_does_not_exist",
             },
         )
+    missing_err = json.loads(
+        str(missing_exc.value).removeprefix("Error executing tool get_envelope_assembly_thermal: ")
+    )
+    assert missing_err["recoverability"] == "refresh"
 
     with pytest.raises(ToolError, match="validation_error"):
         await server.call_tool(
@@ -1679,5 +1683,14 @@ async def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
                 "project_id": project_id,
                 "version_id": version_id,
                 "assembly_id": "   ",
+            },
+        )
+
+    with pytest.raises(ToolError, match="assembly_id"):
+        await server.call_tool(
+            "get_envelope_assembly_thermal",
+            {
+                "project_id": project_id,
+                "version_id": version_id,
             },
         )

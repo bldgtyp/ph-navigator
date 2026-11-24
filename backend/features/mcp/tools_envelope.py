@@ -99,26 +99,24 @@ async def tool_get_envelope_assembly_thermal(
             {"field": "source", "value": source},
         )
     parsed_source: ProjectDocumentSource = "version" if source == "version" else "draft"
-    token = current_token(ctx, allow_env_token)
-    access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
-    try:
-        response = await asyncio.to_thread(
-            get_assembly_thermal_model,
-            parsed_version_id,
-            access,
-            normalized_assembly_id,
-            parsed_source,
-        )
-    except HTTPException as exc:
-        raise_http_exception_as_mcp_error(
-            exc,
-            ctx,
-            default_code="envelope_thermal_failed",
-            default_message="Assembly thermal results could not be calculated.",
-            default_recoverability="refresh",
-            recoverability_by_code=_ENVELOPE_RECOVERABILITY,
-        )
-    return response.model_dump(mode="json")
+
+    def _run_thermal() -> dict[str, object]:
+        token = current_token(ctx, allow_env_token)
+        access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
+        try:
+            response = get_assembly_thermal_model(parsed_version_id, access, normalized_assembly_id, parsed_source)
+        except HTTPException as exc:
+            raise_http_exception_as_mcp_error(
+                exc,
+                ctx,
+                default_code="envelope_thermal_failed",
+                default_message="Assembly thermal results could not be calculated.",
+                default_recoverability="refresh",
+                recoverability_by_code=_ENVELOPE_RECOVERABILITY,
+            )
+        return response.model_dump(mode="json")
+
+    return await asyncio.to_thread(_run_thermal)
 
 
 def tool_list_project_materials(
@@ -369,6 +367,7 @@ _ENVELOPE_RECOVERABILITY: dict[str, McpRecoverability] = {
     "project_material_has_no_catalog_origin": "refresh",
     "catalog_material_source_missing": "refresh",
     "catalog_material_source_deactivated": "refresh",
+    "invalid_project_document": "fatal",
     "surface_film_table_unavailable": "fatal",
 }
 

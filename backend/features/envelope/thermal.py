@@ -188,7 +188,15 @@ def _calculate_layer_thermals(
     for layer in assembly.layers:
         is_membrane = is_membrane_layer(layer, materials_by_id)
         r_value: float | None = None
-        if not is_membrane and layer.thickness_mm > 0 and layer.segments:
+        has_valid_geometry = (
+            layer.thickness_mm > 0
+            and bool(layer.segments)
+            and all(
+                segment.width_mm > 0 and (segment.steel_stud_spacing_mm is None or segment.steel_stud_spacing_mm > 0)
+                for segment in layer.segments
+            )
+        )
+        if not is_membrane and has_valid_geometry:
             path_segments = _layer_path_segments(layer, materials_by_id)
             if len(path_segments) == len(layer.segments):
                 u_layer = sum(seg.area_fraction / seg.r_value for seg in path_segments if seg.r_value > 0)
