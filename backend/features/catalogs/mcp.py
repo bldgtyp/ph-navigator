@@ -11,6 +11,7 @@ import asyncio
 
 from mcp.server.fastmcp import Context
 
+from features.catalogs._shared import CATALOG_SCHEMA_VERSION
 from features.catalogs.frame_types.service import list_frame_types
 from features.catalogs.glazing_types.service import list_glazing_types
 from features.catalogs.materials.models import MATERIAL_CATEGORY_IDS
@@ -24,7 +25,6 @@ __all__ = [
 ]
 
 _MAX_CATALOG_LIMIT = 500
-_CATALOG_SCHEMA_VERSION = 1
 
 
 def _validate_limit(limit: int, ctx: Context) -> int:
@@ -47,10 +47,9 @@ def _normalize_optional_text(value: str | None) -> str | None:
 
 
 def _normalize_manufacturers(manufacturers: list[str] | None) -> list[str] | None:
-    if not manufacturers:
+    if manufacturers is None:
         return None
-    cleaned = [item.strip() for item in manufacturers if isinstance(item, str) and item.strip()]
-    return cleaned or None
+    return [item.strip() for item in manufacturers if isinstance(item, str) and item.strip()]
 
 
 def _matches_query(query: str | None, *fields: str | None) -> bool:
@@ -133,7 +132,7 @@ async def tool_list_catalog_frame_types(
             if _matches_query(normalized_query, item.name, item.manufacturer, item.brand, item.source)
         ]
         return {
-            "catalog_schema_version": _CATALOG_SCHEMA_VERSION,
+            "catalog_schema_version": CATALOG_SCHEMA_VERSION,
             "items": [item.model_dump(mode="json") for item in matched[:validated_limit]],
             "total_matched": len(matched),
             "truncated": len(matched) > validated_limit,
@@ -167,7 +166,7 @@ async def tool_list_catalog_glazing_types(
             if _matches_query(normalized_query, item.name, item.manufacturer, item.brand, item.source)
         ]
         return {
-            "catalog_schema_version": _CATALOG_SCHEMA_VERSION,
+            "catalog_schema_version": CATALOG_SCHEMA_VERSION,
             "items": [item.model_dump(mode="json") for item in matched[:validated_limit]],
             "total_matched": len(matched),
             "truncated": len(matched) > validated_limit,

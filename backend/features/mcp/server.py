@@ -14,7 +14,7 @@ from __future__ import annotations
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.streamable_http import TransportSecuritySettings
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, StrictInt
 
 from config import settings
 from features.aperture_hbjson_export.mcp import tool_get_aperture_window_constructions
@@ -214,7 +214,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         ctx: Context,
         query: str | None = None,
         category: str | None = None,
-        limit: int = 50,
+        limit: StrictInt = 50,
     ) -> dict[str, object]:
         """Search active Materials catalog rows to obtain catalog_material_id values for pick_catalog_material.
 
@@ -237,7 +237,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         operation: str | None = None,
         use: str | None = None,
         query: str | None = None,
-        limit: int = 100,
+        limit: StrictInt = 100,
     ) -> dict[str, object]:
         """List active Window-Frame catalog rows to obtain valid catalog_record_ids for pickFrame.
 
@@ -260,7 +260,7 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         ctx: Context,
         manufacturers: list[str] | None = None,
         query: str | None = None,
-        limit: int = 100,
+        limit: StrictInt = 100,
     ) -> dict[str, object]:
         """List active Window-Glazing catalog rows to obtain valid catalog_record_ids for pickGlazing.
 
