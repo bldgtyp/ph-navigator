@@ -1,8 +1,8 @@
 # Feature: Aperture Psi-Install (`psi_install_w_mk`)
 
 ```
-STATUS:  Active — PHN phases 01–06 complete 2026-08-04 (05 ⏸ Ed UI review; 07 gated on deploy)
-         2026-08-03/04, phases 05–07 pending.
+STATUS:  Complete — PHN phases 01–06 merged in PR #62 (`8a583a60f`), phase 07 shipped
+         downstream; archived 2026-11-23 (see STATUS.md). Historical planning gates below.
 ORIGIN:  honeybee_grasshopper_ph_plus (GH plugin, PH-Nav V1 client — Get Apertures)
 DATE:    2026-07-05 (need filed) / 2026-08-03 (research + PRD draft)
 AUTHOR:  Ed + Claude
