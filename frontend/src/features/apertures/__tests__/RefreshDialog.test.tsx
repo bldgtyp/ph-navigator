@@ -30,21 +30,23 @@ function entry(): ApertureDriftEntry {
 }
 
 describe("RefreshDialog", () => {
-  it("renders one row per delta", () => {
+  it("renders one compare card per delta with human-readable labels", () => {
     render(<RefreshDialog open entry={entry()} onClose={() => {}} onSave={() => {}} />);
-    expect(screen.getByText(/u_value_w_m2k/)).toBeTruthy();
-    expect(screen.getByText(/color/)).toBeTruthy();
+    expect(screen.getByText(/U-value/i)).toBeTruthy();
+    expect(screen.getByText(/Color/i)).toBeTruthy();
   });
 
-  it("locally-overridden fields default to Keep mine and carry the tag", () => {
+  it("locally-overridden fields default to Keep mine and carry the Local override tag", () => {
     render(<RefreshDialog open entry={entry()} onClose={() => {}} onSave={() => {}} />);
-    expect(screen.getByText("You edited this")).toBeTruthy();
+    expect(screen.getByText("Local override")).toBeTruthy();
+    // 1 of 2 fields defaults to Take catalog (the non-overridden one).
+    expect(screen.getByRole("button", { name: "Apply 1 change" })).toBeTruthy();
   });
 
-  it("Save dispatches a chosen_values map keyed by field_key", () => {
+  it("Apply dispatches a chosen_values map keyed by field_key", () => {
     const onSave = vi.fn();
     render(<RefreshDialog open entry={entry()} onClose={() => {}} onSave={onSave} />);
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply 1 change" }));
     expect(onSave).toHaveBeenCalledTimes(1);
     const chosen = onSave.mock.calls[0]?.[0] as Record<string, unknown>;
     // The non-overridden delta defaults to take-catalog.
@@ -53,19 +55,20 @@ describe("RefreshDialog", () => {
     expect(chosen.color).toBe("#000000");
   });
 
-  it("Take all from catalog bulk action overwrites the choice", () => {
+  it("Take all from catalog bulk action updates the submit count and overwrites the choice", () => {
     const onSave = vi.fn();
     render(<RefreshDialog open entry={entry()} onClose={() => {}} onSave={onSave} />);
     fireEvent.click(screen.getByRole("button", { name: /Take all from catalog/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply 2 changes" }));
     const chosen = onSave.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(chosen.color).toBe("#aabbcc");
   });
 
-  it("catalog_row_missing entry hides Save and shows a repick message", () => {
+  it("catalog_row_missing entry shows explanation and disables the primary action", () => {
     const e = { ...entry(), kind: "catalog_row_missing" as const, deltas: [] };
     render(<RefreshDialog open entry={e} onClose={() => {}} onSave={() => {}} />);
     expect(screen.getByRole("alert").textContent).toMatch(/Repick/i);
-    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    const submit = screen.getByRole("button", { name: "Apply refresh" });
+    expect(submit).toBeDisabled();
   });
 });

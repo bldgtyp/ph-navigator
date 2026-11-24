@@ -618,7 +618,10 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                               });
                             }}
                           />
-                          <BuilderDriftBanner apertureTypeId={activeAperture.id} />
+                          <BuilderDriftBanner
+                            apertureTypeId={activeAperture.id}
+                            apertureTypeName={activeAperture.name}
+                          />
                           <ApertureCanvasContainer
                             aperture={activeAperture}
                             canEdit={canEdit}

@@ -3,6 +3,7 @@
 // in ``AperturesTab`` (it owns the drift query + the dialog state).
 
 import { createContext, useContext, useMemo } from "react";
+import { entryNeedsCatalogReview } from "../drift";
 import type { ApertureDriftEntry, DriftTarget } from "../drift-types";
 
 export type DriftContextValue = {
@@ -26,13 +27,22 @@ export function useOpenRefreshDialog(): ((entry: ApertureDriftEntry) => void) | 
   return useContext(DriftContext)?.onOpenRefresh;
 }
 
-// Convenience: how many entries are drifted on the active aperture
-// (used by the BuilderDriftBanner).
+// All review-worthy drift entries across the project (excludes customized-only entries).
+export function useAllReviewWorthyDriftEntries(): ApertureDriftEntry[] {
+  const ctx = useContext(DriftContext);
+  return useMemo(() => (ctx ? ctx.entries.filter(entryNeedsCatalogReview) : []), [ctx]);
+}
+
+// Review-worthy drift entries on the active aperture (used by BuilderDriftBanner).
 export function useApertureDriftEntries(apertureTypeId: string | null): ApertureDriftEntry[] {
   const ctx = useContext(DriftContext);
   return useMemo(
     () =>
-      ctx && apertureTypeId ? ctx.entries.filter((e) => e.aperture_type_id === apertureTypeId) : [],
+      ctx && apertureTypeId
+        ? ctx.entries.filter(
+            (e) => e.aperture_type_id === apertureTypeId && entryNeedsCatalogReview(e),
+          )
+        : [],
     [ctx, apertureTypeId],
   );
 }

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: Deferred
+STATUS: Implemented
 AUTHOR: Claude with Ed May
 SCOPE: State ledger for aperture catalog-drift UX parity.
 RELATED:
@@ -15,12 +15,12 @@ RELATED:
 
 ## Current state
 
-`Deferred`. Scoped and audited on 2026-08-03 while shipping the equivalent
-work for Envelope materials; no aperture code has been touched.
-
-The audit in `PRD.md` was read off the current implementation
-(`ApertureSpecReportPanel.tsx`, `BuilderDriftBanner.tsx`, `RefreshDialog.tsx`)
-and is accurate as of commit `32a96839` plus the materials drift rework.
+`Implemented`. Aligned Apertures catalog-drift UX with Envelope materials:
+- Added `frontend/src/features/apertures/drift.ts` separating review-worthy drift from customized-only (`in_local_overrides`) entries.
+- Promoted shared drift flag, action, compare-card, and entry-list CSS to `frontend/src/styles/modals.css` and removed hand-rolled `.aperture-drift-modal__*` rules.
+- Added collapsed-row `ApertureDriftFlag` and single consolidated `ApertureCatalogAction` in `ApertureSpecReportPanel.tsx`, removing the split header badge and bottom list.
+- Updated `BuilderDriftBanner.tsx` to report project-wide + active-aperture counts honestly and use `ModalDialog` (`ApertureDriftEntriesModal`).
+- Updated `RefreshDialog.tsx` to compare cards, `.modal-lede`, shared `SegmentedControl`, count-bearing submit label, and read-only disabled-primary handling for `catalog_row_missing`.
 
 ## Next step
 

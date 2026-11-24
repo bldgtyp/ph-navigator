@@ -34,6 +34,11 @@ import {
   uValueUnitLabel,
 } from "../../catalogs/components/unit-labels";
 import type { ApertureDriftEntry, DriftTarget } from "../drift-types";
+import {
+  ApertureCatalogAction,
+  ApertureDriftEntriesModal,
+  ApertureDriftFlag,
+} from "./ApertureCatalogStatus";
 import type {
   ApertureAttachmentChangeArgs,
   ApertureProductCommand,
@@ -196,6 +201,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     return { activeRows: active, backgroundRows: background, unusedRows: unused };
   }, [filteredRows]);
 
+  const [driftReviewProductId, setDriftReviewProductId] = useState<string | null>(null);
   const driftByProductId = useMemo(() => {
     const entriesByUseSite = indexDriftEntries(driftEntries);
     return new Map(
@@ -209,6 +215,10 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   const useSitesRow = useMemo(
     () => visibleRows.find((row) => row.id === useSitesProductId) ?? null,
     [useSitesProductId, visibleRows],
+  );
+  const driftReviewRow = useMemo(
+    () => visibleRows.find((row) => row.id === driftReviewProductId) ?? null,
+    [driftReviewProductId, visibleRows],
   );
   const assetIds = expandedRow
     ? uniqueAttachmentAssetIds(
@@ -259,6 +269,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     unitSystem,
     canEdit,
     busy,
+    driftByProductId,
     onCommand,
   });
 
@@ -303,13 +314,25 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       renderRowAction={canEdit && options.unused ? (row) => renderRowAction(row, true) : undefined}
       renderExpansion={(row) => {
         const rowDriftEntries = driftByProductId.get(row.id) ?? [];
+        const handleReviewProductDrift = () => {
+          if (rowDriftEntries.length === 1 && rowDriftEntries[0]) {
+            onRefreshEntry(rowDriftEntries[0]);
+          } else if (rowDriftEntries.length > 1) {
+            setDriftReviewProductId(row.id);
+          }
+        };
         return (
           <div className="spec-expansion">
-            <header className="spec-expansion__header">
-              <div>
-                <ApertureDriftBadge entries={rowDriftEntries} />
-              </div>
-            </header>
+            {rowDriftEntries.length > 0 ? (
+              <header className="spec-expansion__header">
+                <ApertureCatalogAction
+                  entries={rowDriftEntries}
+                  canEdit={canEdit}
+                  busy={busy}
+                  onReview={handleReviewProductDrift}
+                />
+              </header>
+            ) : null}
             <div className="spec-expansion__columns">
               <div className="spec-expansion__left">
                 <section className="spec-evidence" aria-label={`${row.name} datasheets`}>
@@ -379,29 +402,6 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                     </div>
                   )}
                 </section>
-                {rowDriftEntries.length > 0 ? (
-                  <section className="spec-evidence" aria-label={`${row.name} catalog drift`}>
-                    <h3>Catalog review</h3>
-                    <ul className="spec-expansion__use-sites">
-                      {rowDriftEntries.map((entry) => (
-                        <li key={`${entry.element_id}:${entry.target}`}>
-                          <strong>{entry.element_name}</strong>
-                          <span>{formatDriftEntry(entry)}</span>
-                          {canEdit && entry.kind === "field_delta" ? (
-                            <button
-                              type="button"
-                              className="text-button"
-                              disabled={busy}
-                              onClick={() => onRefreshEntry(entry)}
-                            >
-                              Refresh from catalog
-                            </button>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
               </div>
             </div>
           </div>
@@ -506,6 +506,18 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
           row={useSitesRow}
           kind={kind}
           onClose={() => setUseSitesProductId(null)}
+        />
+      ) : null}
+      {driftReviewRow ? (
+        <ApertureDriftEntriesModal
+          title={`Catalog review — ${driftReviewRow.name}`}
+          lede="Choose a use site to compare against the shared catalog."
+          entries={driftByProductId.get(driftReviewRow.id) ?? []}
+          onClose={() => setDriftReviewProductId(null)}
+          onSelectEntry={(entry) => {
+            setDriftReviewProductId(null);
+            onRefreshEntry(entry);
+          }}
         />
       ) : null}
     </>
@@ -656,6 +668,7 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
   unitSystem,
   canEdit,
   busy,
+  driftByProductId,
   onCommand,
 }: {
   kind: ProductKind;
@@ -663,6 +676,7 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
   unitSystem: ReturnType<typeof useUnitPreference>["unitSystem"];
   canEdit: boolean;
   busy: boolean;
+  driftByProductId: Map<string, ApertureDriftEntry[]>;
   onCommand: (command: ApertureProductCommand) => void;
 }): ReportTableColumn<TProduct>[] {
   const common: ReportTableColumn<TProduct>[] = [
@@ -671,7 +685,12 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
       header: productColumnLabel,
       primary: true,
       width: "minmax(180px, 2fr)",
-      render: (row) => <span title={row.name}>{row.name}</span>,
+      render: (row) => (
+        <span className="drift-row-name">
+          <span title={row.name}>{row.name}</span>
+          <ApertureDriftFlag entries={driftByProductId.get(row.id) ?? []} />
+        </span>
+      ),
     },
     {
       key: "manufacturer",
@@ -952,24 +971,6 @@ function groupUseSites(sites: ApertureUseSite[]): UseSiteTypeGroup[] {
     apertures: Array.from(group.apertures.values()),
     siteCount: group.siteCount,
   }));
-}
-
-function formatDriftEntry(entry: ApertureDriftEntry): string {
-  const target = entry.target.startsWith("frame.")
-    ? `Frame ${SIDE_LABEL[entry.target.replace("frame.", "") as ApertureSide]}`
-    : "Glazing";
-  if (entry.kind === "catalog_row_missing") return `${target} catalog row removed`;
-  const count = entry.deltas.length;
-  return `${target} · ${count} field${count === 1 ? "" : "s"} differ${count === 1 ? "s" : ""}`;
-}
-
-function ApertureDriftBadge({ entries }: { entries: ApertureDriftEntry[] }) {
-  if (entries.length === 0) return null;
-  return (
-    <span className="chip chip--sm material-drift-badge drifted">
-      {entries.length} catalog drift{entries.length === 1 ? "" : "s"}
-    </span>
-  );
 }
 
 function formatDecimal(value: number | null | undefined, digits: number): string {
