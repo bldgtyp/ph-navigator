@@ -69,8 +69,8 @@ for side in ["left", "right", "top", "bottom"]:
   assigned/default/mull → per-edge `psi_install` values land, shared
   elements only where no install entry.
 - Live check against the PHN dev server AGENT-BROWSER fixture (route 3),
-  then against project 2524 once its document carries real assignments:
-  the original 196-null regression case must show real numbers end-to-end
+  then against a production project model once its document carries real assignments:
+  the original null-install regression case must show real numbers end-to-end
   (GH → HBJSON `psi_install` per edge).
 - Confirm a WUFI-XML export from PHX carries distinct `Frame_Psi_*` values
   for a mulled fixture (0 on the shared edge).

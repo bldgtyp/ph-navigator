@@ -3,8 +3,8 @@
 ```
 DATE:    2026-08-03
 TIME:    11:55
-STATUS:  Accepted — PHN phases 01–06 complete 2026-08-03/04 (05 ⏸ Ed UI review; 07 gated on deploy)
-         (feature/aperture-psi-install); 05–07 not started
+STATUS:  Complete — PHN phases 01–06 merged in PR #62 (`8a583a60f`), phase 07 shipped
+         downstream; archived 2026-11-23 (see STATUS.md). Historical sequence below.
 AUTHOR:  Ed + Claude
 SCOPE:   Phase map, ordering constraints, and cross-packet coordination.
 RELATED: decisions.md, phases/,

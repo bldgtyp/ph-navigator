@@ -193,7 +193,7 @@ No component sets per-edge install *flags* — none exist in the model.
 
 - `FrameType.psi_install_w_mk` parsed null-safe with **0.04 fallback**
   (`:167`, helper `_as_float` `:24-29`). This fallback is exactly the gap this
-  feature closes (project 2524: 196 nulls across 27 types).
+  feature closes (observed on a production project model with null install values across its aperture types).
 - Build pipeline (`v0/window_types_get.py`):
   - Each PH-Nav grid element becomes its own `PhWindowFrame` +
     `WindowConstruction` named `"{type}_C{col}_R{row}"` (`:112-133`), with four
