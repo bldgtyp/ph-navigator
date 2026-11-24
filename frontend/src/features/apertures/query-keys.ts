@@ -16,4 +16,8 @@ export const apertureQueryKeys = {
     [...apertureQueryKeys.all(projectId), "u-values", versionId, source] as const,
   uValueReport: (projectId: string, versionId: string, source: ApertureReadSource) =>
     [...apertureQueryKeys.all(projectId), "u-value-report", versionId, source] as const,
+  thermalComfortPrefix: (projectId: string) =>
+    [...apertureQueryKeys.all(projectId), "thermal-comfort"] as const,
+  thermalComfort: (projectId: string, versionId: string, source: ApertureReadSource) =>
+    [...apertureQueryKeys.all(projectId), "thermal-comfort", versionId, source] as const,
 };

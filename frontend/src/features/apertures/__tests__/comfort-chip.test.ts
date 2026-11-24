@@ -9,8 +9,6 @@ function makeResult(
     aperture_type_id: "apt_1",
     aperture_type_name: "W-01",
     sill_height_mm: 900,
-    nfrc_whole_window_u_w_m2k: null,
-    nfrc_standard_size_note: null,
     state: "pass",
     blocked_reasons: [],
     failing_count: 0,

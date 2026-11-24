@@ -516,7 +516,16 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   canEdit={canEdit}
                   busy={mutation.isPending}
                   onClose={() => setComfortModalOpen(false)}
-                  onCommand={(command) => void dispatch(command)}
+                  onCommand={async (command) => {
+                    if (!slice) return "Document not loaded.";
+                    setActionError(null);
+                    try {
+                      await mutation.mutateAsync({ current: slice, command });
+                      return null;
+                    } catch (error) {
+                      return errorMessage(error, "Could not save thermal-comfort changes.");
+                    }
+                  }}
                 />
               ) : null}
               <ManufacturerFiltersModal

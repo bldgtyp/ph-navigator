@@ -19,8 +19,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from features.aperture_u_value.models import ApertureUValueResult
-from features.aperture_u_value.service import calculate_aperture_u_values
+from features.aperture_u_value.models import ApertureElementDetail, ApertureUValueResult
+from features.aperture_u_value.service import calculate_aperture_u_value_terms
 from features.project_document.document import (
     ApertureElement,
     ApertureTypeEntry,
@@ -33,6 +33,9 @@ PHIUS_INTERIOR_DESIGN_TEMP_F = 68.0
 PHIUS_INTERIOR_FILM_R_IP = 0.74
 U_IP_TO_SI = 5.6782633411
 MM_PER_FOOT = 304.8
+# Phius 2024 Guidebook Appendix N-3 (p. 209): active perimeter heating within
+# 3 ft is only an eligible comfort alternative for lites taller than 6 ft.
+PHIUS_PERIMETER_HEAT_MIN_HEIGHT_MM = 6.0 * MM_PER_FOOT
 
 ComfortState = Literal["pass", "fail", "exempt", "alternative", "blocked"]
 ComfortGoverningRoute = Literal["project_specific", "nfrc_standard"]
@@ -53,11 +56,13 @@ class ApertureElementComfortResult(BaseModel):
     element_name: str
     row_span: tuple[int, int]
     column_span: tuple[int, int]
+    lite_height_mm: float
     head_height_mm: float | None = None
     delta_t_max_f: float | None = None
     u_max_w_m2k: float | None = None
     u_project_specific_w_m2k: float | None = None
     u_nfrc_standard_w_m2k: float | None = None
+    u_nfrc_standard_note: str | None = None
     governing_route: ComfortGoverningRoute | None = None
     margin: float | None = None
     state: ComfortState
@@ -65,6 +70,7 @@ class ApertureElementComfortResult(BaseModel):
     comfort_exempt_reason: Literal["non_regularly_occupied", "ada_door"] | None = None
     perimeter_heat_within_3ft: bool = False
     perimeter_heat_note: str | None = None
+    perimeter_heat_ineligible: bool = False
     nfrc_route_missing_caveat: bool = False
 
 
@@ -76,8 +82,6 @@ class ApertureThermalComfortResult(BaseModel):
     aperture_type_id: str
     aperture_type_name: str
     sill_height_mm: float | None = None
-    nfrc_whole_window_u_w_m2k: float | None = None
-    nfrc_standard_size_note: str | None = None
     state: ComfortState
     blocked_reasons: list[ComfortBlockedReason] = Field(default_factory=list)
     failing_count: int = 0
@@ -97,6 +101,11 @@ class AperturesThermalComfortListResponse(BaseModel):
     version_id: UUID
     source: ProjectDocumentSource
     apertures: list[ApertureThermalComfortResult]
+
+
+def derive_element_height_mm(entry: ApertureTypeEntry, element: ApertureElement) -> float:
+    """Return a lite's spanned height in millimeters."""
+    return float(sum(entry.row_heights_mm[element.row_span[0] : element.row_span[1] + 1]))
 
 
 def derive_element_head_height_mm(entry: ApertureTypeEntry, element: ApertureElement) -> float:
@@ -126,6 +135,18 @@ def compute_phius_u_max(head_height_mm: float, td_c: float) -> tuple[float, floa
     return delta_t_max_f, u_max_ip, u_max_w_m2k
 
 
+def _unrounded_element_u_value(detail: ApertureElementDetail) -> float | None:
+    if detail.warnings:
+        return None
+    if detail.q_glazing_w_k is None or detail.q_frame_total_w_k is None or detail.q_spacer_total_w_k is None:
+        return None
+    total_area = detail.width_m * detail.height_m
+    if total_area <= 0:
+        return None
+    value = (detail.q_glazing_w_k + detail.q_frame_total_w_k + detail.q_spacer_total_w_k) / total_area
+    return value if value > 0 else None
+
+
 def evaluate_aperture_thermal_comfort(
     entry: ApertureTypeEntry,
     tables: ProjectDocumentTables,
@@ -136,8 +157,14 @@ def evaluate_aperture_thermal_comfort(
     climate_source_basis: str | None = None,
 ) -> ApertureThermalComfortResult:
     """Evaluate every glazed element in ``entry`` against the Phius U_max limit."""
-    computed_u = u_result if u_result is not None else calculate_aperture_u_values(entry, tables)
-    u_by_element_id = {el.element_id: el for el in computed_u.elements}
+    if u_result is not None:
+        u_proj_by_element_id: dict[str, float | None] = {
+            el.element_id: (el.u_value_w_m2k if not el.warnings and el.u_value_w_m2k > 0 else None)
+            for el in u_result.elements
+        }
+    else:
+        detailed_u = calculate_aperture_u_value_terms(entry, tables)
+        u_proj_by_element_id = {el.element_id: _unrounded_element_u_value(el) for el in detailed_u.elements}
     glazed_elements = [el for el in entry.elements if el.kind != "void"]
 
     blocked_reasons: list[ComfortBlockedReason] = []
@@ -152,10 +179,12 @@ def evaluate_aperture_thermal_comfort(
     any_missing_u = False
 
     for element in glazed_elements:
+        lite_height_mm = derive_element_height_mm(entry, element)
         head_height_mm = derive_element_head_height_mm(entry, element) if entry.sill_height_mm is not None else None
-        u_el = u_by_element_id.get(element.id)
-        u_proj = u_el.u_value_w_m2k if u_el is not None and not u_el.warnings and u_el.u_value_w_m2k > 0 else None
-        u_nfrc = entry.nfrc_whole_window_u_w_m2k
+        u_proj = u_proj_by_element_id.get(element.id)
+        u_nfrc = element.nfrc_whole_window_u_w_m2k
+        perimeter_heat_eligible = lite_height_mm > PHIUS_PERIMETER_HEAT_MIN_HEIGHT_MM
+        perimeter_heat_ineligible = element.perimeter_heat_within_3ft and not perimeter_heat_eligible
 
         delta_t_max_f: float | None = None
         u_max_w_m2k: float | None = None
@@ -167,7 +196,7 @@ def evaluate_aperture_thermal_comfort(
             governing_route: ComfortGoverningRoute | None = None
             margin: float | None = None
             nfrc_caveat = False
-        elif element.perimeter_heat_within_3ft:
+        elif element.perimeter_heat_within_3ft and perimeter_heat_eligible:
             state = "alternative"
             governing_route, margin = _pick_best_route(u_proj, u_nfrc, u_max_w_m2k)
             nfrc_caveat = False
@@ -183,7 +212,7 @@ def evaluate_aperture_thermal_comfort(
                 "project_specific" if u_proj is not None else ("nfrc_standard" if u_nfrc is not None else None)
             )
             margin = 0.0
-            nfrc_caveat = False
+            nfrc_caveat = u_nfrc is None and u_proj is not None
         elif u_proj is None and u_nfrc is None:
             state = "blocked"
             any_missing_u = True
@@ -211,7 +240,7 @@ def evaluate_aperture_thermal_comfort(
                     assert u_nfrc is not None
                     governing_route = "nfrc_standard"
                     margin = u_nfrc / u_max_w_m2k
-                nfrc_caveat = False
+                nfrc_caveat = u_nfrc is None
             else:
                 state = "fail"
                 governing_route, margin = _pick_best_route(u_proj, u_nfrc, u_max_w_m2k)
@@ -223,11 +252,13 @@ def evaluate_aperture_thermal_comfort(
                 element_name=element.name,
                 row_span=element.row_span,
                 column_span=element.column_span,
+                lite_height_mm=lite_height_mm,
                 head_height_mm=head_height_mm,
                 delta_t_max_f=delta_t_max_f,
                 u_max_w_m2k=u_max_w_m2k,
                 u_project_specific_w_m2k=u_proj,
                 u_nfrc_standard_w_m2k=u_nfrc,
+                u_nfrc_standard_note=element.nfrc_standard_size_note,
                 governing_route=governing_route,
                 margin=margin,
                 state=state,
@@ -235,6 +266,7 @@ def evaluate_aperture_thermal_comfort(
                 comfort_exempt_reason=element.comfort_exempt_reason,
                 perimeter_heat_within_3ft=element.perimeter_heat_within_3ft,
                 perimeter_heat_note=element.perimeter_heat_note,
+                perimeter_heat_ineligible=perimeter_heat_ineligible,
                 nfrc_route_missing_caveat=nfrc_caveat,
             )
         )
@@ -250,8 +282,6 @@ def evaluate_aperture_thermal_comfort(
         aperture_type_id=entry.id,
         aperture_type_name=entry.name,
         sill_height_mm=entry.sill_height_mm,
-        nfrc_whole_window_u_w_m2k=entry.nfrc_whole_window_u_w_m2k,
-        nfrc_standard_size_note=entry.nfrc_standard_size_note,
         state=overall_state,
         blocked_reasons=blocked_reasons,
         failing_count=failing_count,

@@ -29,11 +29,6 @@ def apply_set_aperture_comfort_params(
     updates: dict[str, object] = {}
     if "sill_height_mm" in command.model_fields_set:
         updates["sill_height_mm"] = command.sill_height_mm
-    if "nfrc_whole_window_u_w_m2k" in command.model_fields_set:
-        updates["nfrc_whole_window_u_w_m2k"] = command.nfrc_whole_window_u_w_m2k
-    if "nfrc_standard_size_note" in command.model_fields_set:
-        note = command.nfrc_standard_size_note.strip() if command.nfrc_standard_size_note else None
-        updates["nfrc_standard_size_note"] = note or None
 
     next_entry = entry.model_copy(update=updates) if updates else entry
     next_body = replace_aperture(body, idx, next_entry)
@@ -100,12 +95,27 @@ def apply_set_element_comfort_flags(
             {"element_id": element.id},
         )
 
+    nfrc_u = (
+        command.nfrc_whole_window_u_w_m2k
+        if "nfrc_whole_window_u_w_m2k" in command.model_fields_set
+        else element.nfrc_whole_window_u_w_m2k
+    )
+    raw_nfrc_note = (
+        command.nfrc_standard_size_note
+        if "nfrc_standard_size_note" in command.model_fields_set
+        else element.nfrc_standard_size_note
+    )
+    nfrc_note = raw_nfrc_note.strip() if isinstance(raw_nfrc_note, str) else None
+    nfrc_note = nfrc_note or None
+
     next_element = element.model_copy(
         update={
             "comfort_exempt": comfort_exempt,
             "comfort_exempt_reason": comfort_exempt_reason,
             "perimeter_heat_within_3ft": perimeter_heat,
             "perimeter_heat_note": perimeter_note,
+            "nfrc_whole_window_u_w_m2k": nfrc_u,
+            "nfrc_standard_size_note": nfrc_note,
         }
     )
     next_body = replace_element(body, entry_idx, entry, el_idx, next_element)

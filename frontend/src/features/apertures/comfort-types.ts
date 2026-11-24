@@ -15,11 +15,13 @@ export type ApertureElementComfortResult = {
   element_name: string;
   row_span: [number, number];
   column_span: [number, number];
+  lite_height_mm: number;
   head_height_mm: number | null;
   delta_t_max_f: number | null;
   u_max_w_m2k: number | null;
   u_project_specific_w_m2k: number | null;
   u_nfrc_standard_w_m2k: number | null;
+  u_nfrc_standard_note: string | null;
   governing_route: ComfortGoverningRoute | null;
   margin: number | null;
   state: ComfortState;
@@ -27,6 +29,7 @@ export type ApertureElementComfortResult = {
   comfort_exempt_reason: ComfortExemptReason | null;
   perimeter_heat_within_3ft: boolean;
   perimeter_heat_note: string | null;
+  perimeter_heat_ineligible: boolean;
   nfrc_route_missing_caveat: boolean;
 };
 
@@ -34,8 +37,6 @@ export type ApertureThermalComfortResult = {
   aperture_type_id: string;
   aperture_type_name: string;
   sill_height_mm: number | null;
-  nfrc_whole_window_u_w_m2k: number | null;
-  nfrc_standard_size_note: string | null;
   state: ComfortState;
   blocked_reasons: ComfortBlockedReason[];
   failing_count: number;

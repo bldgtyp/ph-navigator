@@ -297,18 +297,16 @@ class SetManufacturerFilters(BaseModel):
 
 
 class SetApertureComfortParams(BaseModel):
-    """Set aperture-level Phius thermal-comfort parameters (sill height + optional NFRC U)."""
+    """Set aperture-level Phius thermal-comfort parameters (sill height)."""
 
     model_config = ConfigDict(extra="forbid")
     kind: Literal["setApertureComfortParams"] = "setApertureComfortParams"
     aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
     sill_height_mm: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
 
 
 class SetElementComfortFlags(BaseModel):
-    """Set per-lite exemption or perimeter-heating flags with required justification."""
+    """Set per-lite exemption, perimeter-heating, or NFRC rating fields."""
 
     model_config = ConfigDict(extra="forbid")
     kind: Literal["setElementComfortFlags"] = "setElementComfortFlags"
@@ -318,6 +316,8 @@ class SetElementComfortFlags(BaseModel):
     comfort_exempt_reason: Literal["non_regularly_occupied", "ada_door"] | None = None
     perimeter_heat_within_3ft: bool = False
     perimeter_heat_note: str | None = Field(default=None, max_length=500)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
 
 
 ApertureCommand = Annotated[

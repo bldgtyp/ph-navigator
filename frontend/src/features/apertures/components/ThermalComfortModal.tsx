@@ -1,7 +1,7 @@
 // Four-panel Phius window thermal-comfort modal mirroring `CondensationRiskModal`:
-// 1. Verdict (+ editable aperture-level sill height & NFRC standard-size U)
+// 1. Verdict (+ editable aperture-level sill height)
 // 2. Where (proportional aperture grid tinted by per-lite comfort state)
-// 3. Numbers (per-lite table + inline exemption / perimeter-heat flags)
+// 3. Numbers (per-lite table + inline NFRC U / exemption / perimeter-heat editor)
 // 4. Assumptions (Td, 0.74 / 68 °F constants, ruleset, applet submittal disclaimer)
 
 import { useEffect, useState } from "react";
@@ -22,6 +22,8 @@ import type {
 } from "../comfort-types";
 import type { ApertureCommand, ApertureTypeEntry } from "../types";
 
+const PHIUS_PERIMETER_HEAT_MIN_HEIGHT_MM = 6 * 304.8;
+
 export function ThermalComfortModal({
   open,
   aperture,
@@ -37,18 +39,23 @@ export function ThermalComfortModal({
   canEdit: boolean;
   busy?: boolean;
   onClose: () => void;
-  onCommand: (command: ApertureCommand) => void;
+  /** Returns `null` on success or an error message string on failure. */
+  onCommand: (command: ApertureCommand) => Promise<string | null>;
 }) {
   const { unitSystem } = useUnitPreference();
   const [sillInput, setSillInput] = useState("");
-  const [nfrcUInput, setNfrcUInput] = useState("");
-  const [nfrcNoteInput, setNfrcNoteInput] = useState("");
+  const [sillDirty, setSillDirty] = useState(false);
   const [paramsError, setParamsError] = useState<string | null>(null);
+
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [exemptChecked, setExemptChecked] = useState(false);
   const [exemptReason, setExemptReason] = useState<ComfortExemptReason>("non_regularly_occupied");
   const [perimChecked, setPerimChecked] = useState(false);
   const [perimNote, setPerimNote] = useState("");
+  const [nfrcUInput, setNfrcUInput] = useState("");
+  const [nfrcUDirty, setNfrcUDirty] = useState(false);
+  const [nfrcNoteInput, setNfrcNoteInput] = useState("");
+  const [nfrcNoteDirty, setNfrcNoteDirty] = useState(false);
   const [flagError, setFlagError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,32 +65,21 @@ export function ThermalComfortModal({
         ? formatLengthFromMm(aperture.sill_height_mm, { unitSystem, showUnit: false })
         : "",
     );
-    setNfrcUInput(
-      aperture.nfrc_whole_window_u_w_m2k !== null &&
-        aperture.nfrc_whole_window_u_w_m2k !== undefined
-        ? formatUValueFromWm2K(aperture.nfrc_whole_window_u_w_m2k, { unitSystem, showUnit: false })
-        : "",
-    );
-    setNfrcNoteInput(aperture.nfrc_standard_size_note ?? "");
+    setSillDirty(false);
     setParamsError(null);
     setEditingElementId(null);
     setFlagError(null);
-  }, [
-    open,
-    aperture.id,
-    aperture.sill_height_mm,
-    aperture.nfrc_whole_window_u_w_m2k,
-    aperture.nfrc_standard_size_note,
-    unitSystem,
-  ]);
+  }, [open, aperture.id, aperture.sill_height_mm, unitSystem]);
 
   if (!open) return null;
 
   const chip = thermalComfortChipPresentation(result, false, result === null);
   const elementById = new Map((result?.elements ?? []).map((el) => [el.element_id, el]));
+  const editingElement = editingElementId ? (elementById.get(editingElementId) ?? null) : null;
 
-  const handleSaveParams = () => {
+  const handleSaveParams = async () => {
     setParamsError(null);
+    if (!sillDirty) return;
     const trimmedSill = sillInput.trim();
     let sillMm: number | null = null;
     if (trimmedSill !== "") {
@@ -95,24 +91,16 @@ export function ThermalComfortModal({
       sillMm = parsed.valueSi;
     }
 
-    const trimmedU = nfrcUInput.trim();
-    let nfrcU: number | null = null;
-    if (trimmedU !== "") {
-      const parsedU = parseUValueToWm2K(trimmedU, { unitSystem });
-      if (!parsedU.ok || Number.isNaN(parsedU.valueSi) || parsedU.valueSi <= 0) {
-        setParamsError("Enter a positive NFRC standard-size U-value.");
-        return;
-      }
-      nfrcU = parsedU.valueSi;
-    }
-
-    onCommand({
+    const err = await onCommand({
       kind: "setApertureComfortParams",
       aperture_type_id: aperture.id,
       sill_height_mm: sillMm,
-      nfrc_whole_window_u_w_m2k: nfrcU,
-      nfrc_standard_size_note: nfrcNoteInput.trim() || null,
     });
+    if (err) {
+      setParamsError(err);
+      return;
+    }
+    setSillDirty(false);
   };
 
   const openFlagEditor = (el: ApertureElementComfortResult) => {
@@ -121,17 +109,26 @@ export function ThermalComfortModal({
     setExemptReason(el.comfort_exempt_reason ?? "non_regularly_occupied");
     setPerimChecked(el.perimeter_heat_within_3ft);
     setPerimNote(el.perimeter_heat_note ?? "");
+    setNfrcUInput(
+      el.u_nfrc_standard_w_m2k !== null
+        ? formatUValueFromWm2K(el.u_nfrc_standard_w_m2k, { unitSystem, showUnit: false })
+        : "",
+    );
+    setNfrcUDirty(false);
+    setNfrcNoteInput(el.u_nfrc_standard_note ?? "");
+    setNfrcNoteDirty(false);
     setFlagError(null);
   };
 
-  const handleSaveFlags = () => {
+  const handleSaveFlags = async () => {
     if (!editingElementId) return;
     if (perimChecked && perimNote.trim() === "") {
       setFlagError("Enter a note describing the perimeter heating source within 3 ft.");
       return;
     }
     setFlagError(null);
-    onCommand({
+
+    const payload: Extract<ApertureCommand, { kind: "setElementComfortFlags" }> = {
       kind: "setElementComfortFlags",
       aperture_type_id: aperture.id,
       element_id: editingElementId,
@@ -139,7 +136,31 @@ export function ThermalComfortModal({
       comfort_exempt_reason: exemptChecked ? exemptReason : null,
       perimeter_heat_within_3ft: perimChecked,
       perimeter_heat_note: perimChecked ? perimNote.trim() : null,
-    });
+    };
+
+    if (nfrcUDirty) {
+      const trimmedU = nfrcUInput.trim();
+      if (trimmedU === "") {
+        payload.nfrc_whole_window_u_w_m2k = null;
+      } else {
+        const parsedU = parseUValueToWm2K(trimmedU, { unitSystem });
+        if (!parsedU.ok || Number.isNaN(parsedU.valueSi) || parsedU.valueSi <= 0) {
+          setFlagError("Enter a positive NFRC standard-size U-value.");
+          return;
+        }
+        payload.nfrc_whole_window_u_w_m2k = parsedU.valueSi;
+      }
+    }
+
+    if (nfrcNoteDirty) {
+      payload.nfrc_standard_size_note = nfrcNoteInput.trim() || null;
+    }
+
+    const err = await onCommand(payload);
+    if (err) {
+      setFlagError(err);
+      return;
+    }
     setEditingElementId(null);
   };
 
@@ -150,6 +171,20 @@ export function ThermalComfortModal({
       : unitSystem === "IP"
         ? `${((tdC * 9) / 5 + 32).toFixed(1)} °F (${tdC.toFixed(1)} °C)`
         : `${tdC.toFixed(1)} °C (${((tdC * 9) / 5 + 32).toFixed(1)} °F)`;
+
+  const blockedMessage = (() => {
+    if (result?.state !== "blocked") return null;
+    if (result.blocked_reasons.includes("no_glazed_elements")) {
+      return "This aperture type has no glazed lites. Convert at least one Empty panel to a glazed lite in the aperture grid to run thermal-comfort screening.";
+    }
+    if (result.blocked_reasons.includes("missing_sill_height")) {
+      return "Enter the sill height above finished floor below to derive each lite's head height and evaluate Phius U_max.";
+    }
+    if (result.blocked_reasons.includes("missing_climate_source")) {
+      return "Attach a project climate source with an ASHRAE 99% heating design temperature on the Climate tab.";
+    }
+    return "Complete frame and glazing assignments (or enter a per-lite NFRC standard-size whole-window U) to evaluate every lite.";
+  })();
 
   return (
     <ModalDialog
@@ -162,7 +197,7 @@ export function ThermalComfortModal({
       scrollBody
     >
       <div className="modal-form thermal-comfort-modal">
-        {/* 1. Verdict + aperture-level inputs */}
+        {/* 1. Verdict + aperture-level sill height */}
         <section className="thermal-comfort-section" aria-label="Verdict">
           <div className="thermal-comfort-verdict">
             <span className={`chip chip--md chip--${chip.tone}`}>{chip.label}</span>
@@ -172,15 +207,7 @@ export function ThermalComfortModal({
               </span>
             ) : null}
           </div>
-          {result?.state === "blocked" ? (
-            <p className="modal-lede">
-              {result.blocked_reasons.includes("missing_sill_height")
-                ? "Enter the sill height above finished floor below to derive each lite's head height and evaluate Phius U_max."
-                : result.blocked_reasons.includes("missing_climate_source")
-                  ? "Attach a project climate source with an ASHRAE 99% heating design temperature on the Climate tab."
-                  : "Complete frame and glazing assignments (or enter an NFRC standard-size whole-window U) to evaluate every lite."}
-            </p>
-          ) : null}
+          {blockedMessage ? <p className="modal-lede">{blockedMessage}</p> : null}
 
           <div className="thermal-comfort-params">
             <label className="thermal-comfort-field">
@@ -191,38 +218,20 @@ export function ThermalComfortModal({
                 value={sillInput}
                 disabled={!canEdit || busy}
                 placeholder="e.g. 900"
-                onChange={(event) => setSillInput(event.target.value)}
-              />
-            </label>
-            <label className="thermal-comfort-field">
-              <span>NFRC standard-size whole-window U ({uValueUnitLabel(unitSystem)})</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={nfrcUInput}
-                disabled={!canEdit || busy}
-                placeholder="Optional"
-                onChange={(event) => setNfrcUInput(event.target.value)}
-              />
-            </label>
-            <label className="thermal-comfort-field">
-              <span>NFRC standard size note</span>
-              <input
-                type="text"
-                value={nfrcNoteInput}
-                disabled={!canEdit || busy}
-                placeholder="e.g. 2.00 m x 2.00 m"
-                onChange={(event) => setNfrcNoteInput(event.target.value)}
+                onChange={(event) => {
+                  setSillInput(event.target.value);
+                  setSillDirty(true);
+                }}
               />
             </label>
             {canEdit ? (
               <button
                 type="button"
                 className="primary-button"
-                disabled={busy}
-                onClick={handleSaveParams}
+                disabled={busy || !sillDirty}
+                onClick={() => void handleSaveParams()}
               >
-                Save parameters
+                Save sill height
               </button>
             ) : null}
           </div>
@@ -295,7 +304,14 @@ export function ThermalComfortModal({
                     {el.nfrc_route_missing_caveat ? (
                       <div className="thermal-comfort-note">NFRC standard-size U not supplied</div>
                     ) : null}
-                    {el.perimeter_heat_within_3ft && el.perimeter_heat_note ? (
+                    {el.u_nfrc_standard_note ? (
+                      <div className="thermal-comfort-note">NFRC: {el.u_nfrc_standard_note}</div>
+                    ) : null}
+                    {el.perimeter_heat_ineligible ? (
+                      <div className="thermal-comfort-note">
+                        Perimeter heat ineligible — Phius requires lites taller than 6 ft
+                      </div>
+                    ) : el.perimeter_heat_within_3ft && el.perimeter_heat_note ? (
                       <div className="thermal-comfort-note">
                         Perimeter heat (comfort only, never condensation): {el.perimeter_heat_note}
                       </div>
@@ -349,6 +365,35 @@ export function ThermalComfortModal({
 
           {editingElementId ? (
             <div className="thermal-comfort-flag-editor">
+              <div className="thermal-comfort-params">
+                <label className="thermal-comfort-field">
+                  <span>NFRC standard-size whole-window U ({uValueUnitLabel(unitSystem)})</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={nfrcUInput}
+                    disabled={busy}
+                    placeholder="Optional"
+                    onChange={(event) => {
+                      setNfrcUInput(event.target.value);
+                      setNfrcUDirty(true);
+                    }}
+                  />
+                </label>
+                <label className="thermal-comfort-field">
+                  <span>NFRC standard size note</span>
+                  <input
+                    type="text"
+                    value={nfrcNoteInput}
+                    disabled={busy}
+                    placeholder="e.g. 2.00 m x 2.00 m"
+                    onChange={(event) => {
+                      setNfrcNoteInput(event.target.value);
+                      setNfrcNoteDirty(true);
+                    }}
+                  />
+                </label>
+              </div>
               <label>
                 <input
                   type="checkbox"
@@ -375,6 +420,18 @@ export function ThermalComfortModal({
                 />{" "}
                 Active perimeter heating within 3 ft (satisfies comfort only — never condensation)
               </label>
+              {editingElement &&
+              editingElement.lite_height_mm <= PHIUS_PERIMETER_HEAT_MIN_HEIGHT_MM ? (
+                <p className="thermal-comfort-note">
+                  Note: Phius limits the perimeter-heating alternative to lites taller than 6 ft
+                  (this lite is{" "}
+                  {formatLengthFromMm(editingElement.lite_height_mm, {
+                    unitSystem,
+                    showUnit: true,
+                  })}
+                  ).
+                </p>
+              ) : null}
               {perimChecked ? (
                 <input
                   type="text"
@@ -401,7 +458,7 @@ export function ThermalComfortModal({
                   type="button"
                   className="primary-button"
                   disabled={busy}
-                  onClick={handleSaveFlags}
+                  onClick={() => void handleSaveFlags()}
                 >
                   Save flags
                 </button>

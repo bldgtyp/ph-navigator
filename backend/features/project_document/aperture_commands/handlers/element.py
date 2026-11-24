@@ -116,6 +116,12 @@ def apply_set_element_kind(
                         "installs": ApertureElementInstalls(),
                         "glazing_id": None,
                         "operation": None,
+                        "comfort_exempt": False,
+                        "comfort_exempt_reason": None,
+                        "perimeter_heat_within_3ft": False,
+                        "perimeter_heat_note": None,
+                        "nfrc_whole_window_u_w_m2k": None,
+                        "nfrc_standard_size_note": None,
                     }
                 )
             next_elements.append(element.model_copy(update=updates))

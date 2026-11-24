@@ -43,6 +43,8 @@ def _assignment_updates(
         "glazing_id": source.glazing_id,
         "frames": source.frames.model_copy(deep=True),
         "installs": source.installs.model_copy(deep=True),
+        "nfrc_whole_window_u_w_m2k": None,
+        "nfrc_standard_size_note": None,
     }
 
 

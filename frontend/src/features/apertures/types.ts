@@ -127,6 +127,8 @@ export type ApertureElement = {
   comfort_exempt_reason?: "non_regularly_occupied" | "ada_door" | null;
   perimeter_heat_within_3ft?: boolean;
   perimeter_heat_note?: string | null;
+  nfrc_whole_window_u_w_m2k?: number | null;
+  nfrc_standard_size_note?: string | null;
 };
 
 export type WireApertureElementFrames = {
@@ -159,8 +161,6 @@ export type ApertureTypeEntry = {
   column_widths_mm: number[];
   elements: ApertureElement[];
   sill_height_mm?: number | null;
-  nfrc_whole_window_u_w_m2k?: number | null;
-  nfrc_standard_size_note?: string | null;
 };
 
 export type ManufacturerFilters = {
@@ -335,8 +335,6 @@ export type ApertureCommand =
       kind: "setApertureComfortParams";
       aperture_type_id: string;
       sill_height_mm?: number | null;
-      nfrc_whole_window_u_w_m2k?: number | null;
-      nfrc_standard_size_note?: string | null;
     }
   | {
       kind: "setElementComfortFlags";
@@ -346,4 +344,6 @@ export type ApertureCommand =
       comfort_exempt_reason?: "non_regularly_occupied" | "ada_door" | null;
       perimeter_heat_within_3ft?: boolean;
       perimeter_heat_note?: string | null;
+      nfrc_whole_window_u_w_m2k?: number | null;
+      nfrc_standard_size_note?: string | null;
     };

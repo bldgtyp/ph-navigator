@@ -249,7 +249,9 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       if (
         U_VALUE_AFFECTING_KINDS.has(variables.command.kind) ||
         variables.command.kind === "setApertureComfortParams" ||
-        variables.command.kind === "setElementComfortFlags"
+        variables.command.kind === "setElementComfortFlags" ||
+        variables.command.kind === "setElementName" ||
+        variables.command.kind === "renameApertureType"
       ) {
         queryClient.invalidateQueries({
           queryKey: apertureThermalComfortQueryKey(projectId, slice.version_id, slice.source),

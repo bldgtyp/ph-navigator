@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchJson } from "../../../shared/api/client";
 import type { AperturesThermalComfortListResponse } from "../comfort-types";
+import { apertureQueryKeys } from "../query-keys";
 
 export function apertureThermalComfortQueryKey(
   projectId: string,
   versionId: string | null,
   source: "draft" | "version",
 ) {
-  return ["aperture-thermal-comfort", projectId, versionId, source] as const;
+  return apertureQueryKeys.thermalComfort(projectId, versionId ?? "", source);
 }
 
 export function useApertureThermalComfort(

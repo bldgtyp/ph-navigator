@@ -539,10 +539,12 @@ class ApertureElement(BaseModel):
     comfort_exempt_reason: Literal["non_regularly_occupied", "ada_door"] | None = None
     perimeter_heat_within_3ft: bool = False
     perimeter_heat_note: str | None = Field(default=None, max_length=500)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
 
-    @field_validator("perimeter_heat_note", mode="before")
+    @field_validator("perimeter_heat_note", "nfrc_standard_size_note", mode="before")
     @classmethod
-    def _strip_optional_perimeter_note(cls, value: object) -> object:
+    def _strip_optional_comfort_text(cls, value: object) -> object:
         if isinstance(value, str):
             stripped = value.strip()
             return stripped or None
@@ -579,6 +581,8 @@ class ApertureElement(BaseModel):
             or self.comfort_exempt_reason is not None
             or self.perimeter_heat_within_3ft
             or self.perimeter_heat_note is not None
+            or self.nfrc_whole_window_u_w_m2k is not None
+            or self.nfrc_standard_size_note is not None
         ):
             raise ValueError(
                 "ApertureElement(kind=void) must not carry frames/installs/glazing/operation/comfort flags"
@@ -608,16 +612,6 @@ class ApertureTypeEntry(BaseModel):
     column_widths_mm: list[float] = Field(min_length=1)
     elements: list[ApertureElement] = Field(min_length=1)
     sill_height_mm: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
-
-    @field_validator("nfrc_standard_size_note", mode="before")
-    @classmethod
-    def _strip_optional_nfrc_note(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
 
     @field_validator("name", mode="before")
     @classmethod
