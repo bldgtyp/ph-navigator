@@ -1547,3 +1547,68 @@ async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_sc
         assert "token-scoped project" not in by_name[lifecycle_tool]
         assert "owned project within the token's reach" in by_name[lifecycle_tool]
         assert "project:write" in by_name[lifecycle_tool]
+
+
+def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from features.mcp.tools import tool_get_envelope_assembly_thermal
+
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    saved_body = envelope_body()
+    assembly = saved_body.tables.assemblies[0]
+    # Make the assembly complete so effective R and U values compute cleanly.
+    material_id = saved_body.tables.project_materials[0].id
+    saved_body.tables.project_materials[0].conductivity_w_mk = 0.04
+    for layer in assembly.layers:
+        for segment in layer.segments:
+            segment.project_material_id = material_id
+    write_saved_body(version_id, saved_body)
+
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Thermal QA MCP", "scopes": ["project:read"]},
+    )
+    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+
+    result = tool_get_envelope_assembly_thermal(
+        project_id,
+        version_id,
+        assembly.id,
+        cast(Context, None),
+        allow_env_token=True,
+        source="version",
+    )
+    assert result["assembly_id"] == assembly.id
+    assert result["source"] == "version"
+    assert cast(dict[str, object], result["status"])["is_complete"] is True
+    assert isinstance(result["r_effective_m2k_w"], float)
+    assert isinstance(result["u_effective_w_m2k"], float)
+    assert isinstance(result["r_construction_m2k_w"], float)
+    assert isinstance(result["u_construction_w_m2k"], float)
+    assert isinstance(result["rsi_m2k_w"], float)
+    assert isinstance(result["rse_m2k_w"], float)
+    assert result["r_effective_m2k_w"] > result["r_construction_m2k_w"]
+
+    with pytest.raises(ToolError, match="assembly_not_found"):
+        tool_get_envelope_assembly_thermal(
+            project_id,
+            version_id,
+            "asm_does_not_exist",
+            cast(Context, None),
+            allow_env_token=True,
+        )
+
+    with pytest.raises(ToolError, match="validation_error"):
+        tool_get_envelope_assembly_thermal(
+            project_id,
+            version_id,
+            "   ",
+            cast(Context, None),
+            allow_env_token=True,
+        )

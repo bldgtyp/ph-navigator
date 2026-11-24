@@ -84,7 +84,7 @@ project id exists.
 |---|---|
 | `list_projects`, `get_project`, `list_versions`, `list_status_items`, `diff_versions` | `project:read` |
 | `get_document`, `get_table` | `project:read` |
-| `list_envelope_assemblies`, `list_project_materials`, `query_unfinished_envelope_work`, `report_material_catalog_drift`, `report_missing_envelope_evidence` | `project:read` |
+| `list_envelope_assemblies`, `get_envelope_assembly_thermal`, `list_project_materials`, `query_unfinished_envelope_work`, `report_material_catalog_drift`, `report_missing_envelope_evidence` | `project:read` |
 | `list_aperture_types`, `get_aperture_type`, `calculate_aperture_u_values`, `get_aperture_u_value_report`, `get_aperture_window_constructions`, `report_aperture_catalog_drift` | `project:read` |
 | `list_project_climate_sources`, `get_project_location`, `get_project_sun_path` | `project:read` |
 | `list_climate_datasets`, `search_climate_locations`, `get_climate_location` | valid MCP token |
@@ -122,6 +122,7 @@ once, and every name here must be registered by `build_mcp_server`.
 - `get_asset_url`
 - `get_climate_location`
 - `get_document`
+- `get_envelope_assembly_thermal`
 - `get_hbjson_file_download_url`
 - `get_hbjson_model_data`
 - `get_job`
