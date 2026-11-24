@@ -10,6 +10,18 @@ the frozen legacy `archive/dated/<YYYY-MM-DD>/` tree.
 
 ## 2026-11-23
 
+- `aperture-psi-install` - Added aperture-level Ψ-install (install types):
+  schema v10 `aperture_install_types` library table, per-edge resolution
+  (`mull → assigned → default`) + commands + route-3 `installs` block, the
+  Installs sub-tab, effective-value display on element cards and U-Values, the
+  staged-edit `InstallsModal`, and Documentation integration. Context docs
+  synced (`context/ui/pages/apertures-tab.md`, `context/technical-requirements/data-model.md`,
+  `context/technical-requirements/api.md`). PHN phases 01–06 merged 2026-08-15
+  via [PR #62](https://github.com/bldgtyp/ph-navigator/pull/62) (`8a583a60f`);
+  downstream GH client (phase 07) shipped from `honeybee_grasshopper_ph_plus`
+  and upstream data-model refactor released in `honeybee_ph` v1.33.33 / `PHX`
+  v1.56.73 / `honeybee_grasshopper_ph` v1.33.0. Archived and closed
+  [#73](https://github.com/bldgtyp/ph-navigator/issues/73) (2026-11-23).
 - `overview-documentation-progress` - Rebuilt the Overview tab's
   Documentation-progress pane on the shared `StatusAxisRollup` component owned
   by `features/project_document/`, unifying heading parity, font tokens,
