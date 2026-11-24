@@ -1,7 +1,7 @@
 ---
 DATE: 2026-08-03
 TIME: 09:16 EDT
-STATUS: Deferred
+STATUS: Implemented
 AUTHOR: Claude with Ed May
 SCOPE: State ledger for aperture catalog-drift UX parity.
 RELATED:
@@ -15,23 +15,22 @@ RELATED:
 
 ## Current state
 
-`Deferred`. Scoped and audited on 2026-08-03 while shipping the equivalent
-work for Envelope materials; no aperture code has been touched.
+`Implemented`. Aligned Apertures catalog-drift UX with Envelope materials:
+- Added `frontend/src/features/apertures/drift.ts` separating review-worthy drift from customized-only (`in_local_overrides`) entries.
+- Promoted shared drift flag, action, compare-card, and entry-list CSS to `frontend/src/styles/modals.css` and removed hand-rolled `.aperture-drift-modal__*` rules.
+- Added collapsed-row `ApertureDriftFlag` and single consolidated `ApertureCatalogAction` in `ApertureSpecReportPanel.tsx`, removing the split header badge and bottom list.
+- Updated `BuilderDriftBanner.tsx` to report project-wide + active-aperture counts honestly and use `ModalDialog` (`ApertureDriftEntriesModal`).
+- Updated `RefreshDialog.tsx` to compare cards, `.modal-lede`, shared `SegmentedControl`, count-bearing submit label, and read-only disabled-primary handling for `catalog_row_missing`.
 
-The audit in `PRD.md` was read off the current implementation
-(`ApertureSpecReportPanel.tsx`, `BuilderDriftBanner.tsx`, `RefreshDialog.tsx`)
-and is accurate as of commit `32a96839` plus the materials drift rework.
+## Resolved decisions
 
-## Next step
-
-Answer PRD Q1 (is there a `customized` analogue for aperture entries?) and Q3
-(sequence against the shared segmented control). Both are decisions, not
-investigations — an hour of reading `features/aperture_drift/` and the
-`in_local_overrides` semantics settles them.
+- **Q1 (customized analogue)**: Entries whose every differing field is in `in_local_overrides` are treated as deliberate local overrides (excluded from alarm flags and banner counts, offered a secondary compare action).
+- **Q2 (row-level granularity)**: Product report rows deduplicate changed field keys across use sites and report affected element counts separately; clicking the consolidated action opens `RefreshDialog` directly because refreshing updates the shared project product.
+- **Q3 (shared segmented control)**: Consumed `SegmentedControl` from `shared/ui`.
 
 ## Blockers
 
-None. This is deferred by choice, not blocked.
+None.
 
 ## Verification recipe
 

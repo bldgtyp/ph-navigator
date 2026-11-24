@@ -34,6 +34,7 @@ import {
   uValueUnitLabel,
 } from "../../catalogs/components/unit-labels";
 import type { ApertureDriftEntry, DriftTarget } from "../drift-types";
+import { ApertureCatalogAction, ApertureDriftFlag } from "./ApertureCatalogStatus";
 import type {
   ApertureAttachmentChangeArgs,
   ApertureProductCommand,
@@ -259,6 +260,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     unitSystem,
     canEdit,
     busy,
+    driftByProductId,
     onCommand,
   });
 
@@ -303,13 +305,23 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       renderRowAction={canEdit && options.unused ? (row) => renderRowAction(row, true) : undefined}
       renderExpansion={(row) => {
         const rowDriftEntries = driftByProductId.get(row.id) ?? [];
+        const handleReviewProductDrift = () => {
+          // Every use-site entry for a shared project product updates the same
+          // underlying project glazing/frame row, so open RefreshDialog directly.
+          if (rowDriftEntries[0]) onRefreshEntry(rowDriftEntries[0]);
+        };
         return (
           <div className="spec-expansion">
-            <header className="spec-expansion__header">
-              <div>
-                <ApertureDriftBadge entries={rowDriftEntries} />
-              </div>
-            </header>
+            {rowDriftEntries.length > 0 ? (
+              <header className="spec-expansion__header">
+                <ApertureCatalogAction
+                  entries={rowDriftEntries}
+                  canEdit={canEdit}
+                  busy={busy}
+                  onReview={handleReviewProductDrift}
+                />
+              </header>
+            ) : null}
             <div className="spec-expansion__columns">
               <div className="spec-expansion__left">
                 <section className="spec-evidence" aria-label={`${row.name} datasheets`}>
@@ -379,29 +391,6 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                     </div>
                   )}
                 </section>
-                {rowDriftEntries.length > 0 ? (
-                  <section className="spec-evidence" aria-label={`${row.name} catalog drift`}>
-                    <h3>Catalog review</h3>
-                    <ul className="spec-expansion__use-sites">
-                      {rowDriftEntries.map((entry) => (
-                        <li key={`${entry.element_id}:${entry.target}`}>
-                          <strong>{entry.element_name}</strong>
-                          <span>{formatDriftEntry(entry)}</span>
-                          {canEdit && entry.kind === "field_delta" ? (
-                            <button
-                              type="button"
-                              className="text-button"
-                              disabled={busy}
-                              onClick={() => onRefreshEntry(entry)}
-                            >
-                              Refresh from catalog
-                            </button>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
               </div>
             </div>
           </div>
@@ -656,6 +645,7 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
   unitSystem,
   canEdit,
   busy,
+  driftByProductId,
   onCommand,
 }: {
   kind: ProductKind;
@@ -663,6 +653,7 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
   unitSystem: ReturnType<typeof useUnitPreference>["unitSystem"];
   canEdit: boolean;
   busy: boolean;
+  driftByProductId: Map<string, ApertureDriftEntry[]>;
   onCommand: (command: ApertureProductCommand) => void;
 }): ReportTableColumn<TProduct>[] {
   const common: ReportTableColumn<TProduct>[] = [
@@ -671,7 +662,12 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
       header: productColumnLabel,
       primary: true,
       width: "minmax(180px, 2fr)",
-      render: (row) => <span title={row.name}>{row.name}</span>,
+      render: (row) => (
+        <span className="drift-row-name">
+          <span title={row.name}>{row.name}</span>
+          <ApertureDriftFlag entries={driftByProductId.get(row.id) ?? []} />
+        </span>
+      ),
     },
     {
       key: "manufacturer",
@@ -867,7 +863,7 @@ function driftEntriesForProduct(
 function indexDriftEntries(driftEntries: ApertureDriftEntry[]): Map<string, ApertureDriftEntry[]> {
   const entriesByUseSite = new Map<string, ApertureDriftEntry[]>();
   for (const entry of driftEntries) {
-    const key = `${entry.element_id}:${entry.target}`;
+    const key = `${entry.aperture_type_id}:${entry.element_id}:${entry.target}`;
     const existing = entriesByUseSite.get(key);
     if (existing) existing.push(entry);
     else entriesByUseSite.set(key, [entry]);
@@ -878,7 +874,7 @@ function indexDriftEntries(driftEntries: ApertureDriftEntry[]): Map<string, Aper
 function driftUseSiteKey(kind: ProductKind, site: ApertureUseSite): string {
   const target: DriftTarget =
     kind === "glazing" ? "glazing" : (`frame.${(site as ProjectFrameUseSite).side}` as DriftTarget);
-  return `${site.element_id}:${target}`;
+  return `${site.aperture_type_id}:${site.element_id}:${target}`;
 }
 
 function formatUseSiteKey(site: ApertureUseSite): string {
@@ -952,24 +948,6 @@ function groupUseSites(sites: ApertureUseSite[]): UseSiteTypeGroup[] {
     apertures: Array.from(group.apertures.values()),
     siteCount: group.siteCount,
   }));
-}
-
-function formatDriftEntry(entry: ApertureDriftEntry): string {
-  const target = entry.target.startsWith("frame.")
-    ? `Frame ${SIDE_LABEL[entry.target.replace("frame.", "") as ApertureSide]}`
-    : "Glazing";
-  if (entry.kind === "catalog_row_missing") return `${target} catalog row removed`;
-  const count = entry.deltas.length;
-  return `${target} · ${count} field${count === 1 ? "" : "s"} differ${count === 1 ? "s" : ""}`;
-}
-
-function ApertureDriftBadge({ entries }: { entries: ApertureDriftEntry[] }) {
-  if (entries.length === 0) return null;
-  return (
-    <span className="chip chip--sm material-drift-badge drifted">
-      {entries.length} catalog drift{entries.length === 1 ? "" : "s"}
-    </span>
-  );
 }
 
 function formatDecimal(value: number | null | undefined, digits: number): string {

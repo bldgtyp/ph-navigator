@@ -276,6 +276,7 @@ class RefreshRefFromCatalog(BaseModel):
     element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
     target: OverrideTarget
     chosen_values: dict[str, str | float | int | None] = Field(default_factory=dict)
+    override_keys: list[str] | None = None
 
 
 class SetManufacturerFilters(BaseModel):

@@ -93,6 +93,15 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [installsModalOpen, setInstallsModalOpen] = useState(false);
   const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const openRefreshDialog = (entry: ApertureDriftEntry) => {
+    setRefreshError(null);
+    setRefreshEntry(entry);
+  };
+  const closeRefreshDialog = () => {
+    setRefreshError(null);
+    setRefreshEntry(null);
+  };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const dimFormat = useApertureDimFormat();
   const framePickerFilterPreferences = useFramePickerFilterPreferences(project.id);
@@ -292,28 +301,37 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     await reportAttachmentMutation.mutateAsync({ current, change });
   };
 
-  const handleRefreshSave = async (chosen: Record<string, string | number | null>) => {
-    if (!refreshEntry) return;
+  const handleRefreshSave = async (
+    chosen: Record<string, string | number | null>,
+    overrideKeys: string[],
+  ) => {
+    if (!canEdit || !refreshEntry) return;
+    setRefreshError(null);
     const command: Extract<ApertureCommand, { kind: "refreshRefFromCatalog" }> = {
       kind: "refreshRefFromCatalog",
       aperture_type_id: refreshEntry.aperture_type_id,
       element_id: refreshEntry.element_id,
       target: refreshEntry.target,
       chosen_values: chosen,
+      override_keys: overrideKeys,
     };
     if (isBuilderRoute) {
-      const result = await dispatch(command);
-      if (result) setRefreshEntry(null);
+      if (!slice) return;
+      try {
+        await mutation.mutateAsync({ current: slice, command });
+        closeRefreshDialog();
+      } catch (error) {
+        setRefreshError(errorMessage(error, "Could not refresh aperture specification."));
+      }
       return;
     }
     const current = specReportQuery.data;
     if (!current) return;
-    setActionError(null);
     try {
       await reportRefreshMutation.mutateAsync({ current, command });
-      setRefreshEntry(null);
+      closeRefreshDialog();
     } catch (error) {
-      setActionError(errorMessage(error, "Could not refresh aperture specification."));
+      setRefreshError(errorMessage(error, "Could not refresh aperture specification."));
     }
   };
 
@@ -427,7 +445,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     >
       <InstallTypesProvider value={slice?.aperture_install_types ?? []}>
         <FramePickerFilterProvider value={framePickerFilterContext}>
-          <DriftProvider value={{ entries: driftEntries, onOpenRefresh: setRefreshEntry }}>
+          <DriftProvider value={{ entries: driftEntries, onOpenRefresh: openRefreshDialog }}>
             <section className="tab-panel apertures-page" aria-label="Apertures">
               <AppSubTabs
                 id="aperture-subtabs"
@@ -463,9 +481,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
               <RefreshDialog
                 open={refreshEntry !== null}
                 entry={refreshEntry}
-                onClose={() => setRefreshEntry(null)}
+                canEdit={canEdit}
+                error={refreshError}
+                onClose={closeRefreshDialog}
                 busy={mutation.isPending || reportRefreshMutation.isPending}
-                onSave={(chosen) => void handleRefreshSave(chosen)}
+                onSave={(chosen, overrideKeys) => void handleRefreshSave(chosen, overrideKeys)}
               />
               {installsModalOpen && activeAperture ? (
                 <InstallsModal
@@ -553,7 +573,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         onCommand={(command) => void applyProductCommand(command)}
                         onCommandBatch={applyProductCommandBatch}
                         onAttachmentChange={(change) => applyReportAttachmentChange(change)}
-                        onRefreshEntry={setRefreshEntry}
+                        onRefreshEntry={openRefreshDialog}
                       />
                     ) : (
                       <FramesPanel
@@ -566,7 +586,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         onCommand={(command) => void applyProductCommand(command)}
                         onCommandBatch={applyProductCommandBatch}
                         onAttachmentChange={(change) => applyReportAttachmentChange(change)}
-                        onRefreshEntry={setRefreshEntry}
+                        onRefreshEntry={openRefreshDialog}
                       />
                     )}
                   </section>
@@ -618,7 +638,11 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                               });
                             }}
                           />
-                          <BuilderDriftBanner apertureTypeId={activeAperture.id} />
+                          <BuilderDriftBanner
+                            apertureTypeId={activeAperture.id}
+                            apertureTypeName={activeAperture.name}
+                            canEdit={canEdit}
+                          />
                           <ApertureCanvasContainer
                             aperture={activeAperture}
                             canEdit={canEdit}

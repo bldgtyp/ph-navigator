@@ -1124,27 +1124,25 @@
 /* ---- Phase 12: drift banner + refresh dialog + project refs view --------- */
 
 .aperture-drift-banner {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--radius-xs);
-  background: color-mix(in oklab, var(--phn-warning) 14%, var(--bg-card));
-  color: var(--phn-warning);
+  background: color-mix(in oklab, var(--attention-amber) 14%, var(--bg-card));
+  border: 1px solid color-mix(in oklab, var(--attention-amber) 45%, var(--border-subtle));
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  display: flex;
   font-size: var(--fs-sm);
-}
-.aperture-drift-banner button {
-  background: none;
-  border: 1px solid currentColor;
-  color: inherit;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-xs);
-  cursor: pointer;
+  gap: var(--space-10);
+  justify-content: space-between;
+  margin: var(--space-8) 0;
+  padding: var(--space-8) var(--space-12);
 }
 
-.aperture-drift-modal__backdrop,
+.refresh-dialog__bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
 .project-refs__backdrop {
   position: fixed;
   inset: 0;
@@ -1154,7 +1152,6 @@
   justify-content: center;
   z-index: var(--z-modal, 1000);
 }
-.aperture-drift-modal,
 .project-refs {
   background: var(--bg-card);
   border-radius: var(--radius-md);
@@ -1165,72 +1162,15 @@
   overflow: auto;
   box-shadow: var(--shadow-dialog-strong);
 }
-.aperture-drift-modal__header h2,
 .project-refs__header h2 {
   margin: 0 0 0.5rem;
   font-size: var(--fs-lg);
 }
-.refresh-dialog__missing {
-  padding: 0.5rem;
-  border-radius: var(--radius-xs);
-  background: color-mix(in oklab, var(--phn-warning) 14%, var(--bg-card));
-  color: var(--phn-warning);
-}
-.refresh-dialog__bulk {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.refresh-dialog__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--fs-sm);
-}
-.refresh-dialog__table th,
-.refresh-dialog__table td {
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 0.3rem 0.4rem;
-  text-align: left;
-  vertical-align: top;
-}
-.refresh-dialog__field-key {
-  font-weight: var(--fw-semibold);
-}
-.refresh-dialog__edited-tag {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0 0.4rem;
-  font-size: var(--fs-xs);
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
-  color: var(--accent);
-}
-.refresh-dialog__edit-input {
-  display: block;
-  margin-top: 0.25rem;
-  width: 100%;
-}
-.aperture-drift-modal__footer,
 .project-refs__footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.75rem;
-}
-
-.aperture-drift-modal__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.aperture-drift-modal__list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: var(--fs-md);
 }
 
 .project-refs__body section + section {

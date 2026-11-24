@@ -1,19 +1,12 @@
-// Phase 12 — three-column refresh dialog.
-//
-// Shows ``Field | Catalog | Yours`` with one radio per row to choose
-// take-catalog / keep-mine / edit-a-third-value. Bulk actions stamp
-// take-catalog or keep-mine across every row. Diverged user-edited
-// fields (those listed in ``catalog_origin.local_overrides``, reported
-// by the backend as ``in_local_overrides``) default to **Keep mine**
-// and carry a ``You edited this`` tag.
-//
-// Save resolves to a flat ``chosen_values`` map keyed by ``field_key``
-// and dispatches the ``refreshRefFromCatalog`` command. The dialog
-// keeps no document state — it only emits the command payload.
+// Catalog review dialog for an aperture frame or glazing use-site entry.
+// Matches `MaterialDriftDialog` visually: compare cards (Project → Catalog),
+// `.modal-lede`, shared `SegmentedControl`, and a count-bearing submit label.
+// `catalog_row_missing` and read-only (`!canEdit`) open read-only with a
+// disabled primary action.
 
 import { useEffect, useState } from "react";
-import { DialogActions } from "../../../shared/ui/DialogActions";
-import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { DialogActions, ModalDialog, SegmentedControl } from "../../../shared/ui";
+import { apertureCatalogActionHint, formatDriftTarget } from "../drift";
 import type { ApertureDriftEntry, RefFieldDelta } from "../drift-types";
 
 export type RefreshChoice = "catalog" | "yours" | "edit";
@@ -21,9 +14,11 @@ export type RefreshChoice = "catalog" | "yours" | "edit";
 export type RefreshDialogProps = {
   open: boolean;
   entry: ApertureDriftEntry | null;
+  canEdit?: boolean;
   busy?: boolean;
+  error?: string | null;
   onClose: () => void;
-  onSave: (chosenValues: Record<string, string | number | null>) => void;
+  onSave: (chosenValues: Record<string, string | number | null>, overrideKeys: string[]) => void;
 };
 
 type RowState = {
@@ -32,29 +27,60 @@ type RowState = {
   editValue: string;
 };
 
-export function RefreshDialog({ open, entry, busy = false, onClose, onSave }: RefreshDialogProps) {
+const CHOICE_LABELS: Record<RefreshChoice, string> = {
+  yours: "Keep mine",
+  catalog: "Take catalog",
+  edit: "Edit…",
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  manufacturer: "Manufacturer",
+  brand: "Brand",
+  use: "Use",
+  operation: "Operation",
+  location: "Location",
+  mull_type: "Mull type",
+  prefix: "Prefix",
+  suffix: "Suffix",
+  material: "Material",
+  width_mm: "Width (mm)",
+  u_value_w_m2k: "U-value (W/m²K)",
+  g_value: "SHGC / g-value",
+  psi_g_w_mk: "Psi-g (W/mK)",
+  psi_install_w_mk: "Psi-install (W/mK)",
+  color: "Color",
+  source: "Source",
+  comments: "Comments",
+};
+
+export function RefreshDialog({
+  open,
+  entry,
+  canEdit = true,
+  busy = false,
+  error = null,
+  onClose,
+  onSave,
+}: RefreshDialogProps) {
   const [rows, setRows] = useState<RowState[]>([]);
-  // Re-seed when the (element, target) changes OR when the underlying
-  // delta set itself changes — a drift-query refetch while the dialog
-  // is open updates `entry.deltas` and the dialog needs to refresh.
-  // Hashing the field keys + catalog values into the seed key avoids
-  // reading `entry` outside the deps without re-seeding on every
-  // wrapping-object identity change.
   const seedKey = entry
     ? `${entry.element_id}:${entry.target}:${entry.deltas
         .map((d) => `${d.field_key}=${stringify(d.catalog_value)}`)
         .join("|")}`
     : "";
 
-  // Seed row state whenever a new entry is shown. Diverged user-edited
-  // fields default to "yours" per PRD §15.
+  // Seed row state whenever a new entry is shown. Diverged user-edited fields
+  // default to "yours" (Keep mine).
   useEffect(() => {
     if (!entry) return;
     setRows(
       entry.deltas.map((delta) => ({
         delta,
         choice: delta.in_local_overrides ? "yours" : "catalog",
-        editValue: stringify(delta.catalog_value),
+        editValue:
+          delta.yours_value === null || delta.yours_value === undefined
+            ? ""
+            : String(delta.yours_value),
       })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,146 +96,147 @@ export function RefreshDialog({ open, entry, busy = false, onClose, onSave }: Re
 
   const bulk = (choice: RefreshChoice) => setRows((prev) => prev.map((r) => ({ ...r, choice })));
 
-  const handleSave = () => {
-    const chosen: Record<string, string | number | null> = {};
-    for (const row of rows) {
-      const raw =
-        row.choice === "catalog"
-          ? row.delta.catalog_value
-          : row.choice === "yours"
-            ? row.delta.yours_value
-            : row.editValue;
-      chosen[row.delta.field_key] = coerce(raw);
-    }
-    onSave(chosen);
+  const resolveRowValue = (row: RowState): string | number | null => {
+    if (row.choice === "catalog") return toWireValue(row.delta.catalog_value);
+    if (row.choice === "yours") return toWireValue(row.delta.yours_value);
+    return parseEditedValue(row.editValue);
   };
+
+  const handleSave = () => {
+    if (!canEdit) return;
+    const chosen: Record<string, string | number | null> = {};
+    const overrideKeys: string[] = [];
+    for (const row of rows) {
+      const resolved = resolveRowValue(row);
+      chosen[row.delta.field_key] = resolved;
+      // Record deliberate user intent when keeping project value or entering an
+      // edited value that differs from the catalog so the next drift report
+      // classifies it as customized rather than re-flagging it for review.
+      if (
+        row.choice === "yours" ||
+        (row.choice === "edit" && resolved !== toWireValue(row.delta.catalog_value))
+      ) {
+        overrideKeys.push(row.delta.field_key);
+      }
+    }
+    onSave(chosen, overrideKeys);
+  };
+
+  const blocked = entry.kind === "catalog_row_missing";
+  const changeCount = rows.filter(
+    (row) => resolveRowValue(row) !== toWireValue(row.delta.yours_value),
+  ).length;
+  const submitLabel =
+    changeCount === 0
+      ? "Apply refresh"
+      : `Apply ${changeCount} ${changeCount === 1 ? "change" : "changes"}`;
 
   return (
     <ModalDialog
-      title={`Refresh ‘${entry.element_name}’ from catalog?`}
+      title={`Catalog review — ${entry.element_name}`}
       titleId="refresh-dialog-title"
       onClose={onClose}
       resizable
     >
-      <p className="modal-subtitle">
-        {entry.aperture_type_name} · {entry.target}
-      </p>
-      {entry.kind === "catalog_row_missing" ? (
-        <p className="refresh-dialog__missing" role="alert">
-          The catalog row for this ref has been removed. Repick from the catalog instead.
+      <div className="modal-form">
+        <p className="modal-subtitle">
+          {entry.aperture_type_name} · {formatDriftTarget(entry.target)}
         </p>
-      ) : (
-        <>
-          <div className="refresh-dialog__bulk">
-            <button type="button" onClick={() => bulk("catalog")}>
-              Take all from catalog
-            </button>
-            <button type="button" onClick={() => bulk("yours")}>
-              Keep all mine
-            </button>
-          </div>
-          <table className="refresh-dialog__table">
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th>Catalog</th>
-                <th>Yours</th>
-                <th>Choice</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <RefreshRow
-                  key={row.delta.field_key}
-                  row={row}
-                  onChoose={(c) => setChoice(row.delta.field_key, c)}
-                  onEdit={(v) => setEditValue(row.delta.field_key, v)}
-                />
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-      {entry.kind === "field_delta" ? (
+        {blocked ? (
+          <p className="form-error" role="alert">
+            The catalog row for this ref has been removed or deactivated. Repick a new catalog
+            record for this slot, or keep it as a project-only copy.
+          </p>
+        ) : rows.length === 0 ? (
+          <p className="modal-lede">This slot already matches the catalog.</p>
+        ) : (
+          <>
+            <p className="modal-lede">
+              {apertureCatalogActionHint([entry])}{" "}
+              {canEdit
+                ? "Choose what to keep for each. Applying updates every element referencing this project product."
+                : "Read-only — unlock this version or sign in as an editor to apply changes."}
+            </p>
+            {canEdit && rows.length > 1 ? (
+              <div className="refresh-dialog__bulk">
+                <button type="button" className="secondary-button" onClick={() => bulk("catalog")}>
+                  Take all from catalog
+                </button>
+                <button type="button" className="secondary-button" onClick={() => bulk("yours")}>
+                  Keep all mine
+                </button>
+              </div>
+            ) : null}
+            <div className="drift-fields">
+              {rows.map((row) => {
+                const label = fieldLabel(row.delta.field_key);
+                return (
+                  <section key={row.delta.field_key} className="drift-field">
+                    <h3 className="drift-field__label">
+                      {label}
+                      {row.delta.in_local_overrides ? (
+                        <span className="drift-field__override">Local override</span>
+                      ) : null}
+                    </h3>
+                    <div className="drift-field__compare">
+                      <span className="drift-value">
+                        <span className="drift-value__caption">Project</span>
+                        <span className="drift-value__value">
+                          {stringify(row.delta.yours_value)}
+                        </span>
+                      </span>
+                      <span className="drift-field__arrow" aria-hidden="true">
+                        →
+                      </span>
+                      <span className="drift-value drift-value--incoming">
+                        <span className="drift-value__caption">Catalog</span>
+                        <span className="drift-value__value">
+                          {stringify(row.delta.catalog_value)}
+                        </span>
+                      </span>
+                    </div>
+                    <SegmentedControl
+                      value={row.choice}
+                      onChange={(choice) => setChoice(row.delta.field_key, choice)}
+                      ariaLabel={`${label} value to keep`}
+                      disabled={!canEdit}
+                      options={(["yours", "catalog", "edit"] as const).map((choice) => ({
+                        value: choice,
+                        label: CHOICE_LABELS[choice],
+                      }))}
+                      size="xs"
+                    />
+                    {row.choice === "edit" ? (
+                      <input
+                        type="text"
+                        className="drift-field__input"
+                        value={row.editValue}
+                        disabled={!canEdit}
+                        onChange={(event) => setEditValue(row.delta.field_key, event.target.value)}
+                        aria-label={`Edit ${label}`}
+                      />
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
+          </>
+        )}
         <DialogActions
           busy={busy}
-          error={null}
-          submitLabel="Save"
+          error={error}
+          submitLabel={submitLabel}
+          submitDisabled={blocked || !canEdit || rows.length === 0}
           onClose={onClose}
           onConfirm={handleSave}
-          submitDisabled={rows.length === 0}
         />
-      ) : (
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            Close
-          </button>
-        </div>
-      )}
+      </div>
     </ModalDialog>
   );
 }
 
-function RefreshRow({
-  row,
-  onChoose,
-  onEdit,
-}: {
-  row: RowState;
-  onChoose: (c: RefreshChoice) => void;
-  onEdit: (v: string) => void;
-}) {
-  const { delta, choice, editValue } = row;
-  return (
-    <tr>
-      <td className="refresh-dialog__field-key">
-        {delta.field_key}
-        {delta.in_local_overrides ? (
-          <span className="refresh-dialog__edited-tag">You edited this</span>
-        ) : null}
-      </td>
-      <td>{stringify(delta.catalog_value)}</td>
-      <td>{stringify(delta.yours_value)}</td>
-      <td>
-        <label>
-          <input
-            type="radio"
-            name={`choice-${delta.field_key}`}
-            checked={choice === "catalog"}
-            onChange={() => onChoose("catalog")}
-          />{" "}
-          Take catalog
-        </label>
-        <label>
-          <input
-            type="radio"
-            name={`choice-${delta.field_key}`}
-            checked={choice === "yours"}
-            onChange={() => onChoose("yours")}
-          />{" "}
-          Keep mine
-        </label>
-        <label>
-          <input
-            type="radio"
-            name={`choice-${delta.field_key}`}
-            checked={choice === "edit"}
-            onChange={() => onChoose("edit")}
-          />{" "}
-          Edit
-        </label>
-        {choice === "edit" ? (
-          <input
-            type="text"
-            className="refresh-dialog__edit-input"
-            value={editValue}
-            onChange={(event) => onEdit(event.target.value)}
-            aria-label={`Edit ${delta.field_key}`}
-          />
-        ) : null}
-      </td>
-    </tr>
-  );
+function fieldLabel(key: string): string {
+  return FIELD_LABELS[key] ?? key;
 }
 
 function stringify(value: unknown): string {
@@ -218,14 +245,15 @@ function stringify(value: unknown): string {
   return String(value);
 }
 
-// Coerce a value back to its wire shape. The server re-validates through
-// Pydantic, so heuristic number coercion here is safe — a stray string
-// in a numeric field will return a 422 the user can see and correct.
-function coerce(value: unknown): string | number | null {
+function toWireValue(value: string | number | boolean | null): string | number | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number") return value;
-  const text = String(value).trim();
-  if (text === "" || text === "—") return null;
+  if (typeof value === "boolean") return String(value);
+  return value;
+}
+
+function parseEditedValue(raw: string): string | number | null {
+  const text = raw.trim();
+  if (text === "") return null;
   const asNum = Number(text);
   if (!Number.isNaN(asNum) && /^-?\d+(\.\d+)?$/.test(text)) return asNum;
   return text;

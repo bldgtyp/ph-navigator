@@ -100,8 +100,16 @@ The expanded row shows:
 - Datasheets via the shared `AttachmentCell` and datasheet attachment config.
 - "Used in N elements" as a compact summary, with a View action that opens a
   right-side use-sites sheet grouped by aperture type, then aperture element.
-- Catalog drift evidence, including refresh actions where the catalog row still
-  exists and fields differ.
+- Catalog drift parity with Envelope → Materials: review-worthy rows show a
+  collapsed-row flag (amber ↻ for catalog changes, red ⚠ for removed catalog
+  rows) beside the product name; customized-only rows (all deltas in
+  `in_local_overrides`) stay quiet. Expanding a row shows a single consolidated
+  count-bearing action at the top of the expansion (primary button for editors,
+  read-only chip for viewers) that opens the compare-card `RefreshDialog`
+  (or a `ModalDialog`-backed use-site picker when multiple entries differ),
+  including read-only inspection for `catalog_row_missing`. Above the canvas,
+  `BuilderDriftBanner` reports project-wide review-worthy counts with an
+  explicit active-aperture clause and opens the same `ModalDialog` list.
 
 Editors can update the specification status, add/remove datasheets, refresh from
 catalog, and remove unused project glazings. Locked versions and viewer mode are

@@ -118,8 +118,16 @@ function frame(overrides: Partial<ProjectFrameRead> = {}): ProjectFrameRead {
   };
 }
 
-function renderGlazings(rows: ProjectGlazingRead[], options: { isViewer?: boolean } = {}) {
-  render(
+function renderGlazings(
+  rows: ProjectGlazingRead[],
+  options: {
+    isViewer?: boolean;
+    canEdit?: boolean;
+    driftEntries?: ApertureDriftEntry[];
+    onRefreshEntry?: ReturnType<typeof vi.fn>;
+  } = {},
+) {
+  return render(
     <UnitStub>
       <ApertureSpecReportPanel
         rows={rows}
@@ -129,13 +137,13 @@ function renderGlazings(rows: ProjectGlazingRead[], options: { isViewer?: boolea
         emptyMessage="Project glazing specifications will appear here after apertures reference them."
         projectId="project_1"
         isViewer={options.isViewer ?? false}
-        canEdit={false}
+        canEdit={options.canEdit ?? false}
         busy={false}
-        driftEntries={DRIFT_ENTRIES}
+        driftEntries={options.driftEntries ?? DRIFT_ENTRIES}
         onCommand={vi.fn()}
         onCommandBatch={vi.fn()}
         onAttachmentChange={vi.fn()}
-        onRefreshEntry={vi.fn()}
+        onRefreshEntry={options.onRefreshEntry ?? vi.fn()}
       />
     </UnitStub>,
   );
@@ -149,7 +157,7 @@ function renderFrames(
     onCommand?: ReturnType<typeof vi.fn>;
   } = {},
 ) {
-  render(
+  return render(
     <UnitStub>
       <ApertureSpecReportPanel
         rows={rows}
@@ -234,6 +242,8 @@ describe("ApertureSpecReportPanel", () => {
 
     const activeRow = screen.getByRole("row", { name: /Triple Pane A/ });
     expect(within(activeRow).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();
+    // Collapsed-row drift flag is visible before expanding the row.
+    expect(within(activeRow).getByRole("img", { name: /Catalog drift/i })).toBeInTheDocument();
     expect(
       within(screen.getByRole("row", { name: /Unused Glazing/ })).getByLabelText("No datasheets"),
     ).toBeInTheDocument();
@@ -248,8 +258,9 @@ describe("ApertureSpecReportPanel", () => {
     const drawer = screen.getByRole("dialog", { name: "Triple Pane A" });
     expect(within(drawer).getByText("Window Type A")).toBeInTheDocument();
     expect(within(drawer).getByText("Center lite")).toBeInTheDocument();
-    expect(screen.getByText("1 catalog drift")).toBeInTheDocument();
-    expect(screen.getByText("Glazing · 1 field differs")).toBeInTheDocument();
+    // Single consolidated count-bearing action (read-only chip when canEdit=false).
+    expect(screen.getByText("Review 1 catalog change")).toBeInTheDocument();
+    expect(screen.queryByText("1 catalog drift")).not.toBeInTheDocument();
 
     fireEvent.click(within(drawer).getByRole("button", { name: "Close use sites" }));
     fireEvent.click(screen.getByRole("button", { name: /Needed\s+1/ }));
@@ -312,7 +323,45 @@ describe("ApertureSpecReportPanel", () => {
     expect(within(drawer).getByText("Left")).toBeInTheDocument();
     expect(within(drawer).getByText("Right")).toBeInTheDocument();
     expect(within(drawer).getByText("Top")).toBeInTheDocument();
-    expect(screen.getByText("Frame Left · 1 field differs")).toBeInTheDocument();
+    expect(screen.getByText("Review 1 catalog change")).toBeInTheDocument();
+  });
+
+  it("opens RefreshDialog from the consolidated header action for both field_delta and catalog_row_missing", () => {
+    const onRefreshEntry = vi.fn();
+    const { unmount } = renderGlazings([glazing()], {
+      canEdit: true,
+      driftEntries: DRIFT_ENTRIES,
+      onRefreshEntry,
+    });
+    const deltaRow = screen.getByRole("row", { name: /Triple Pane A/ });
+    expect(within(deltaRow).getByRole("img", { name: /Catalog drift/i })).toBeInTheDocument();
+    fireEvent.click(deltaRow);
+    fireEvent.click(screen.getByRole("button", { name: "Review 1 catalog change" }));
+    expect(onRefreshEntry).toHaveBeenCalledWith(DRIFT_ENTRIES[0]);
+    unmount();
+
+    const onRefreshMissing = vi.fn();
+    const missingEntry: ApertureDriftEntry = {
+      aperture_type_id: "apt_1",
+      aperture_type_name: "Window Type A",
+      element_id: "el_1",
+      element_name: "Center lite",
+      target: "glazing",
+      kind: "catalog_row_missing",
+      catalog_record_id: "rec_glz_missing",
+      deltas: [],
+    };
+    renderGlazings([glazing()], {
+      canEdit: true,
+      driftEntries: [missingEntry],
+      onRefreshEntry: onRefreshMissing,
+    });
+
+    const row = screen.getByRole("row", { name: /Triple Pane A/ });
+    expect(within(row).getByRole("img", { name: /Catalog source missing/i })).toBeInTheDocument();
+    fireEvent.click(row);
+    fireEvent.click(screen.getByRole("button", { name: "Catalog source missing" }));
+    expect(onRefreshMissing).toHaveBeenCalledWith(missingEntry);
   });
 
   it("emits photo attachment changes from expanded frame rows", async () => {
