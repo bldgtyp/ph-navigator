@@ -37,13 +37,22 @@ from features.shared.errors import api_error
 
 def _assignment_updates(
     source: ApertureElement | ApertureAssignmentSnapshot,
+    *,
+    restore_nfrc: bool = False,
 ) -> dict[str, object]:
-    return {
+    updates: dict[str, object] = {
         "operation": source.operation.model_copy(deep=True) if source.operation else None,
         "glazing_id": source.glazing_id,
         "frames": source.frames.model_copy(deep=True),
         "installs": source.installs.model_copy(deep=True),
     }
+    if restore_nfrc:
+        updates["nfrc_whole_window_u_w_m2k"] = source.nfrc_whole_window_u_w_m2k
+        updates["nfrc_standard_size_note"] = source.nfrc_standard_size_note
+    else:
+        updates["nfrc_whole_window_u_w_m2k"] = None
+        updates["nfrc_standard_size_note"] = None
+    return updates
 
 
 def apply_paste_assignment(
@@ -74,7 +83,7 @@ def apply_paste_assignment(
         ((target_idx, target),) = find_elements(entry, command.target_element_ids)
         require_glazed_element(target, action="pasteAssignmentRestore")
         snapshot = command.restore_assignment
-        restored = target.model_copy(update=_assignment_updates(snapshot))
+        restored = target.model_copy(update=_assignment_updates(snapshot, restore_nfrc=True))
         next_elements = list(entry.elements)
         next_elements[target_idx] = restored
         next_entry = entry.model_copy(update={"elements": next_elements})

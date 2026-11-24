@@ -688,6 +688,7 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
         "missing_site_photos": 1,
         "unused_materials": 0,
         "catalog_drift": 0,
+        "missing_sill_heights": 0,
     }
 
     updated = tool_apply_envelope_command(

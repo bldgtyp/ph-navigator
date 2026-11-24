@@ -106,6 +106,7 @@ def apply_duplicate_aperture_type(
         row_heights_mm=list(source.row_heights_mm),
         column_widths_mm=list(source.column_widths_mm),
         elements=cloned_elements,
+        sill_height_mm=source.sill_height_mm,
     )
     next_apertures = [*body.tables.apertures, duplicate]
     next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})

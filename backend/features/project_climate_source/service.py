@@ -127,6 +127,72 @@ def resolve_condensation_climate_record(
     return None
 
 
+@dataclass(frozen=True)
+class ResolvedHeatingDesignTemp:
+    """Resolved ASHRAE 99% heating design dry-bulb temperature for comfort screening."""
+
+    source_id: UUID
+    kind: str
+    label: str | None
+    basis: str | None
+    heating_990_db_c: float
+
+
+def resolve_heating_design_temp(
+    project_id: UUID,
+    certification_programs: Sequence[Literal["phi", "phius"]],
+) -> ResolvedHeatingDesignTemp | None:
+    """Resolve the project's ASHRAE 99% heating dry-bulb (``heating_990_db_c``).
+
+    Checks attached climate sources in priority order (custom, ordered
+    certification programs, weather, remaining PH sources) and returns the
+    first source carrying a numeric ``design_conditions.heating_990_db_c``.
+    """
+    priority: list[str] = ["custom"]
+    for kind in (*certification_programs, "weather", "phius", "phi"):
+        if kind not in priority:
+            priority.append(kind)
+
+    with connection() as conn:
+        sources = repository.list_sources(conn, project_id)
+        for kind in priority:
+            for source in sources:
+                if source["kind"] != kind:
+                    continue
+                data = source.get("data")
+                if not isinstance(data, dict):
+                    continue
+                dc = data.get("design_conditions")
+                if not isinstance(dc, dict):
+                    continue
+                raw_td = dc.get("heating_990_db_c")
+                if isinstance(raw_td, bool) or not isinstance(raw_td, int | float):
+                    continue
+                basis = dc.get("basis")
+                basis_str = str(basis) if isinstance(basis, str) else None
+                dc_source = dc.get("source")
+                dc_source_meta = data.get("design_conditions_source")
+                if dc_source == "ashrae-meteo":
+                    station_id = (
+                        str(dc_source_meta.get("station_id"))
+                        if isinstance(dc_source_meta, dict) and dc_source_meta.get("station_id")
+                        else None
+                    )
+                    resolved_label: str | None = (
+                        f"ASHRAE station {station_id}" if station_id else "ASHRAE design station"
+                    )
+                else:
+                    resolved_label = cast(str | None, source.get("label"))
+                return ResolvedHeatingDesignTemp(
+                    source_id=UUID(str(source["id"])),
+                    kind=str(kind),
+                    label=resolved_label,
+                    basis=basis_str,
+                    heating_990_db_c=float(raw_td),
+                )
+    return None
+
+
 def _condensation_source_priority(
     certification_programs: Sequence[Literal["phi", "phius"]],
 ) -> tuple[Literal["custom", "phi", "phius"], ...]:

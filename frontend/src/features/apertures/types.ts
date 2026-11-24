@@ -123,6 +123,12 @@ export type ApertureElement = {
   installs: ApertureElementInstalls;
   glazing: GlazingRef | null;
   operation: ApertureOperation | null;
+  comfort_exempt?: boolean;
+  comfort_exempt_reason?: "non_regularly_occupied" | "ada_door" | null;
+  perimeter_heat_within_3ft?: boolean;
+  perimeter_heat_note?: string | null;
+  nfrc_whole_window_u_w_m2k?: number | null;
+  nfrc_standard_size_note?: string | null;
 };
 
 export type WireApertureElementFrames = {
@@ -137,6 +143,8 @@ export type ApertureAssignmentSnapshot = {
   glazing_id: string | null;
   frames: WireApertureElementFrames;
   installs: ApertureElementInstalls;
+  nfrc_whole_window_u_w_m2k?: number | null;
+  nfrc_standard_size_note?: string | null;
 };
 
 export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {
@@ -154,6 +162,7 @@ export type ApertureTypeEntry = {
   row_heights_mm: number[];
   column_widths_mm: number[];
   elements: ApertureElement[];
+  sill_height_mm?: number | null;
 };
 
 export type ManufacturerFilters = {
@@ -323,4 +332,20 @@ export type ApertureCommand =
       target: "frame.top" | "frame.right" | "frame.bottom" | "frame.left" | "glazing";
       chosen_values: Record<string, string | number | null>;
       override_keys?: string[];
+    }
+  | {
+      kind: "setApertureComfortParams";
+      aperture_type_id: string;
+      sill_height_mm?: number | null;
+    }
+  | {
+      kind: "setElementComfortFlags";
+      aperture_type_id: string;
+      element_id: string;
+      comfort_exempt?: boolean;
+      comfort_exempt_reason?: "non_regularly_occupied" | "ada_door" | null;
+      perimeter_heat_within_3ft?: boolean;
+      perimeter_heat_note?: string | null;
+      nfrc_whole_window_u_w_m2k?: number | null;
+      nfrc_standard_size_note?: string | null;
     };

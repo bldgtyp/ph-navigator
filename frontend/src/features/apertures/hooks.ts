@@ -12,6 +12,7 @@ import {
   fetchApertureSpecReport,
 } from "./api";
 import { apertureDriftReportQueryKey } from "./hooks/useApertureDriftReport";
+import { apertureThermalComfortQueryKey } from "./hooks/useApertureThermalComfort";
 import { apertureQueryKeys } from "./query-keys";
 import type {
   ApertureAttachmentChangeArgs,
@@ -245,6 +246,17 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
         excludeTableName: APERTURES_TABLE_NAME,
         refetchActiveSlices: false,
       });
+      if (
+        U_VALUE_AFFECTING_KINDS.has(variables.command.kind) ||
+        variables.command.kind === "setApertureComfortParams" ||
+        variables.command.kind === "setElementComfortFlags" ||
+        variables.command.kind === "setElementName" ||
+        variables.command.kind === "renameApertureType"
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: apertureThermalComfortQueryKey(projectId, slice.version_id, slice.source),
+        });
+      }
       if (U_VALUE_AFFECTING_KINDS.has(variables.command.kind)) {
         queryClient.invalidateQueries({
           queryKey: apertureQueryKeys.uValues(projectId, slice.version_id, slice.source),
@@ -282,6 +294,9 @@ async function invalidateApertureReportQueries(
     }),
     queryClient.invalidateQueries({
       queryKey: apertureQueryKeys.uValues(projectId, versionId, "draft"),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: apertureThermalComfortQueryKey(projectId, versionId, "draft"),
     }),
   ]);
 }

@@ -26,6 +26,7 @@ from features.mcp.helpers import (
 )
 from features.mcp.models import McpRecoverability
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.store import load_document_body
 
 __all__ = [
     "tool_apply_envelope_command",
@@ -284,6 +285,16 @@ def tool_query_unfinished_envelope_work(
     drifted = [
         item for item in _dict_items(drift.get("materials")) if item.get("state") not in {"in_sync", "customized"}
     ]
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
+    document = load_document_body(parsed_version_id, access, source)
+    missing_sill_heights = [
+        {"aperture_type_id": entry.id, "aperture_type_name": entry.name}
+        for entry in document.tables.apertures
+        if entry.sill_height_mm is None and any(el.kind != "void" for el in entry.elements)
+    ]
     return {
         "project_id": assemblies["project_id"],
         "version_id": assemblies["version_id"],
@@ -297,6 +308,7 @@ def tool_query_unfinished_envelope_work(
             "missing_site_photos": evidence["missing_site_photo_count"],
             "unused_materials": len(unused_materials),
             "catalog_drift": len(drifted),
+            "missing_sill_heights": len(missing_sill_heights),
         },
         "missing_materials": missing_materials,
         "missing_conductivity": missing_conductivity,
@@ -304,6 +316,7 @@ def tool_query_unfinished_envelope_work(
         "missing_site_photos": evidence["missing_site_photos"],
         "unused_materials": unused_materials,
         "catalog_drift": drifted,
+        "missing_sill_heights": missing_sill_heights,
     }
 
 

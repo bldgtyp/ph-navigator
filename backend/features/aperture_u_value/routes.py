@@ -18,6 +18,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response
 
 from features.access.capabilities import APERTURE_EXPORT_U_VALUE_REPORT
+from features.aperture_u_value.comfort import (
+    AperturesThermalComfortListResponse,
+    evaluate_aperture_thermal_comfort,
+)
 from features.aperture_u_value.models import (
     AperturesUValueListResponse,
     ApertureUValueReport,
@@ -27,6 +31,7 @@ from features.aperture_u_value.report_csv import render_aperture_u_value_csv
 from features.aperture_u_value.report_xlsx import render_aperture_u_value_xlsx
 from features.aperture_u_value.service import calculate_aperture_u_values
 from features.aperture_u_value.units import ExportUnitSystem
+from features.project_climate_source.service import resolve_heating_design_temp
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.store import load_document_body
 from features.projects.access import (
@@ -59,6 +64,35 @@ def get_aperture_u_values(
     body = load_document_body(version_id, access, source)
     results = [calculate_aperture_u_values(entry, body.tables) for entry in body.tables.apertures]
     return AperturesUValueListResponse(
+        project_id=access.project_id,
+        version_id=version_id,
+        source=source,
+        apertures=results,
+    )
+
+
+@router.get("/apertures/thermal-comfort", response_model=AperturesThermalComfortListResponse)
+def get_aperture_thermal_comfort(
+    project_id: UUID,
+    version_id: UUID,
+    access: ProjectViewAccess,
+    source: Annotated[ProjectDocumentSource, Query(pattern=r"^(draft|version)$")] = "draft",
+) -> AperturesThermalComfortListResponse:
+    """Return Phius per-lite window thermal-comfort screening for every aperture type."""
+    del project_id
+    body = load_document_body(version_id, access, source)
+    resolved_temp = resolve_heating_design_temp(access.project_id, access.project.cert_programs)
+    results = [
+        evaluate_aperture_thermal_comfort(
+            entry,
+            body.tables,
+            heating_990_db_c=resolved_temp.heating_990_db_c if resolved_temp else None,
+            climate_source_label=resolved_temp.label if resolved_temp else None,
+            climate_source_basis=resolved_temp.basis if resolved_temp else None,
+        )
+        for entry in body.tables.apertures
+    ]
+    return AperturesThermalComfortListResponse(
         project_id=access.project_id,
         version_id=version_id,
         source=source,

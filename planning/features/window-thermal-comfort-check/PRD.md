@@ -291,16 +291,11 @@ Comfort: not screened              neutral, muted
 
 ## 10. Open questions
 
-1. Blocked vs not-screened for a missing sill height (§4). Recommendation:
-   blocked.
-2. Does the sill height belong on the aperture *type*, or does the same type
-   get reused at different floor heights on one project? If reuse across
-   heights is real, the datum has to move to the aperture *instance*, and this
-   design changes materially. **This is the one question that could reshape
-   the feature — worth answering before any code.**
+1. **Resolved (2026-11-24):** Blocked vs not-screened for a missing sill height (§4) — confirmed **`blocked`** (`"Comfort: needs sill height"`).
+2. **Resolved (2026-11-24):** Sill height scope — confirmed **per aperture type** (`ApertureTypeEntry.sill_height_mm`). Per-lite NFRC standard-size whole-window U (`nfrc_whole_window_u_w_m2k`) lives on `ApertureElement` and clears on frame/glazing substitution.
 3. Should PHN implement the 2021 criterion too, or assume 2024 for all
    projects? The formula is identical in both rulesets, so this is only about
-   which citation is displayed.
+   which citation is displayed (`phius-2024-r1`).
 4. Ed's original note trails off mid-sentence ("This will be a required
    parameter so we can do this check properly. We…"). Whatever followed is not
    captured here.

@@ -241,6 +241,8 @@ class ApertureAssignmentSnapshot(BaseModel):
     glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
     installs: ApertureElementInstalls = Field(default_factory=ApertureElementInstalls)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
 
 
 class PasteAssignment(BaseModel):
@@ -296,6 +298,30 @@ class SetManufacturerFilters(BaseModel):
     glazing_manufacturers_enabled: list[str] | None = None
 
 
+class SetApertureComfortParams(BaseModel):
+    """Set aperture-level Phius thermal-comfort parameters (sill height)."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["setApertureComfortParams"] = "setApertureComfortParams"
+    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    sill_height_mm: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+
+
+class SetElementComfortFlags(BaseModel):
+    """Set per-lite exemption, perimeter-heating, or NFRC rating fields."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["setElementComfortFlags"] = "setElementComfortFlags"
+    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
+    element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
+    comfort_exempt: bool = False
+    comfort_exempt_reason: Literal["non_regularly_occupied", "ada_door"] | None = None
+    perimeter_heat_within_3ft: bool = False
+    perimeter_heat_note: str | None = Field(default=None, max_length=500)
+    nfrc_whole_window_u_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    nfrc_standard_size_note: str | None = Field(default=None, max_length=200)
+
+
 ApertureCommand = Annotated[
     (
         CreateApertureType
@@ -321,6 +347,8 @@ ApertureCommand = Annotated[
         | SetElementInstall
         | ApplyInstallToApertures
         | CopyElementInstalls
+        | SetApertureComfortParams
+        | SetElementComfortFlags
     ),
     Field(discriminator="kind"),
 ]
@@ -350,4 +378,6 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "setElementInstall": "project_version_aperture_element_set_install",
     "applyInstallToApertures": "project_version_aperture_install_bulk_apply",
     "copyElementInstalls": "project_version_aperture_installs_copy",
+    "setApertureComfortParams": "project_version_aperture_comfort_params_set",
+    "setElementComfortFlags": "project_version_aperture_element_comfort_flags_set",
 }

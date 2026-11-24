@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
+import { apertureQueryKeys } from "../apertures/query-keys";
 import { envelopeQueryKeys } from "../envelope/query-keys";
 import {
   attachWeatherFromCatalog,
@@ -109,6 +110,9 @@ function invalidateClimateSourceQueries(queryClient: QueryClient, projectId: str
     queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) }),
     queryClient.invalidateQueries({
       queryKey: [...envelopeQueryKeys.all(projectId), "condensation"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: apertureQueryKeys.thermalComfortPrefix(projectId),
     }),
   ]);
 }

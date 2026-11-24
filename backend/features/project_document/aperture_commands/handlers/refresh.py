@@ -63,6 +63,8 @@ def apply_refresh_ref_from_catalog(
             raise _target_unset_error(element.id, target)
         next_ref = _apply_chosen(current, command.chosen_values, command.override_keys)
         next_tables = _replace_project_glazing(body.tables, next_ref)
+        if _thermal_changed(current, next_ref):
+            next_tables = _clear_nfrc_for_glazing(next_tables, current.id)
     else:
         side = target.split(".", 1)[1]
         if side not in _FRAME_SIDES:
@@ -77,6 +79,8 @@ def apply_refresh_ref_from_catalog(
             raise _target_unset_error(element.id, target)
         next_ref = _apply_chosen(current_frame, command.chosen_values, command.override_keys)
         next_tables = _replace_project_frame(body.tables, next_ref)
+        if _thermal_changed(current_frame, next_ref):
+            next_tables = _clear_nfrc_for_frame(next_tables, current_frame.id)
 
     next_body = body.model_copy(update={"tables": next_tables})
     return next_body, build_audit(
@@ -143,6 +147,55 @@ def _apply_chosen(
         origin_update["local_overrides"] = sorted(next_overrides)
     refreshed_origin = refreshed_origin.model_copy(update=origin_update)
     return next_ref.model_copy(update={"catalog_origin": refreshed_origin})
+
+
+def _thermal_changed(before: ProjectFrame | ProjectGlazing, after: ProjectFrame | ProjectGlazing) -> bool:
+    return any(
+        getattr(before, field, None) != getattr(after, field, None)
+        for field in _THERMAL_FIELDS
+        if field in type(before).model_fields
+    )
+
+
+def _clear_nfrc_for_glazing(tables: ProjectDocumentTables, glazing_id: str) -> ProjectDocumentTables:
+    changed = False
+    next_apertures = []
+    for entry in tables.apertures:
+        next_elements = []
+        entry_changed = False
+        for el in entry.elements:
+            if el.glazing_id == glazing_id and (
+                el.nfrc_whole_window_u_w_m2k is not None or el.nfrc_standard_size_note is not None
+            ):
+                next_elements.append(
+                    el.model_copy(update={"nfrc_whole_window_u_w_m2k": None, "nfrc_standard_size_note": None})
+                )
+                entry_changed = True
+                changed = True
+            else:
+                next_elements.append(el)
+        next_apertures.append(entry.model_copy(update={"elements": next_elements}) if entry_changed else entry)
+    return tables.model_copy(update={"apertures": next_apertures}) if changed else tables
+
+
+def _clear_nfrc_for_frame(tables: ProjectDocumentTables, frame_id: str) -> ProjectDocumentTables:
+    changed = False
+    next_apertures = []
+    for entry in tables.apertures:
+        next_elements = []
+        entry_changed = False
+        for el in entry.elements:
+            uses_frame = frame_id in (el.frames.top, el.frames.right, el.frames.bottom, el.frames.left)
+            if uses_frame and (el.nfrc_whole_window_u_w_m2k is not None or el.nfrc_standard_size_note is not None):
+                next_elements.append(
+                    el.model_copy(update={"nfrc_whole_window_u_w_m2k": None, "nfrc_standard_size_note": None})
+                )
+                entry_changed = True
+                changed = True
+            else:
+                next_elements.append(el)
+        next_apertures.append(entry.model_copy(update={"elements": next_elements}) if entry_changed else entry)
+    return tables.model_copy(update={"apertures": next_apertures}) if changed else tables
 
 
 def _replace_project_glazing(tables: ProjectDocumentTables, glazing: ProjectGlazing) -> ProjectDocumentTables:

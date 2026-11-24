@@ -65,6 +65,22 @@ def apply_merge_elements(
     union = _validate_rectangle(sources, command.element_ids)
     top_left = _top_left(sources)
 
+    same_comfort_flags = (
+        len(
+            {
+                (
+                    el.comfort_exempt,
+                    el.comfort_exempt_reason,
+                    el.perimeter_heat_within_3ft,
+                    el.perimeter_heat_note,
+                )
+                for el in sources
+            }
+        )
+        == 1
+    )
+    same_nfrc = len({(el.nfrc_whole_window_u_w_m2k, el.nfrc_standard_size_note) for el in sources}) == 1
+
     merged = ApertureElement(
         id=f"aptel_{uuid.uuid4().hex[:12]}",
         name=top_left.name,
@@ -74,6 +90,12 @@ def apply_merge_elements(
         frames=top_left.frames.model_copy(deep=True),
         glazing_id=top_left.glazing_id,
         operation=top_left.operation.model_copy(deep=True) if top_left.operation else None,
+        comfort_exempt=top_left.comfort_exempt if same_comfort_flags else False,
+        comfort_exempt_reason=top_left.comfort_exempt_reason if same_comfort_flags else None,
+        perimeter_heat_within_3ft=top_left.perimeter_heat_within_3ft if same_comfort_flags else False,
+        perimeter_heat_note=top_left.perimeter_heat_note if same_comfort_flags else None,
+        nfrc_whole_window_u_w_m2k=top_left.nfrc_whole_window_u_w_m2k if same_nfrc else None,
+        nfrc_standard_size_note=top_left.nfrc_standard_size_note if same_nfrc else None,
     )
 
     source_ids = {el.id for el in sources}
@@ -125,6 +147,12 @@ def apply_split_element(
                     frames=source.frames.model_copy(deep=True),
                     glazing_id=source.glazing_id,
                     operation=source.operation.model_copy(deep=True) if source.operation else None,
+                    comfort_exempt=source.comfort_exempt,
+                    comfort_exempt_reason=source.comfort_exempt_reason,
+                    perimeter_heat_within_3ft=source.perimeter_heat_within_3ft,
+                    perimeter_heat_note=source.perimeter_heat_note,
+                    nfrc_whole_window_u_w_m2k=source.nfrc_whole_window_u_w_m2k,
+                    nfrc_standard_size_note=source.nfrc_standard_size_note,
                 )
             )
 

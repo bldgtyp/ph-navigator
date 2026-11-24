@@ -58,7 +58,12 @@ def apply_pick_frame(
     next_tables = body.tables.model_copy(deep=True)
     frame_id = ensure_project_frame(next_tables, frame_ref)
     next_frames = element.frames.model_copy(update={command.side: frame_id})
-    next_element = element.model_copy(update={"frames": next_frames})
+    frame_changed = getattr(element.frames, command.side) != frame_id
+    frame_updates: dict[str, object] = {"frames": next_frames}
+    if frame_changed:
+        frame_updates["nfrc_whole_window_u_w_m2k"] = None
+        frame_updates["nfrc_standard_size_note"] = None
+    next_element = element.model_copy(update=frame_updates)
     next_body = replace_element(
         body.model_copy(update={"tables": next_tables}), aperture_idx, aperture, element_idx, next_element
     )
@@ -88,7 +93,12 @@ def apply_pick_glazing(
     glazing_ref = _stamp_synced_at(command.glazing)
     next_tables = body.tables.model_copy(deep=True)
     glazing_id = ensure_project_glazing(next_tables, glazing_ref)
-    next_element = element.model_copy(update={"glazing_id": glazing_id})
+    glazing_changed = element.glazing_id != glazing_id
+    glazing_updates: dict[str, object] = {"glazing_id": glazing_id}
+    if glazing_changed:
+        glazing_updates["nfrc_whole_window_u_w_m2k"] = None
+        glazing_updates["nfrc_standard_size_note"] = None
+    next_element = element.model_copy(update=glazing_updates)
     next_body = replace_element(
         body.model_copy(update={"tables": next_tables}), aperture_idx, aperture, element_idx, next_element
     )

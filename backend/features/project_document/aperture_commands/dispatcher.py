@@ -12,6 +12,10 @@ from typing import cast
 
 from starlette import status
 
+from features.project_document.aperture_commands.handlers.comfort import (
+    apply_set_aperture_comfort_params,
+    apply_set_element_comfort_flags,
+)
 from features.project_document.aperture_commands.handlers.dimensions import (
     apply_add_column,
     apply_add_row,
@@ -90,6 +94,8 @@ _HANDLERS: dict[str, _Handler] = {
     "setElementInstall": cast(_Handler, apply_set_element_install),
     "applyInstallToApertures": cast(_Handler, apply_install_to_apertures),
     "copyElementInstalls": cast(_Handler, apply_copy_element_installs),
+    "setApertureComfortParams": cast(_Handler, apply_set_aperture_comfort_params),
+    "setElementComfortFlags": cast(_Handler, apply_set_element_comfort_flags),
 }
 
 # Commands declared in the union but intentionally not wired up.

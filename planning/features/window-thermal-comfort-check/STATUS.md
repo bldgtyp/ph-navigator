@@ -1,7 +1,7 @@
 ---
-DATE: 2026-08-18
-TIME: 10:52 EDT
-STATUS: Draft — not started
+DATE: 2026-11-24
+TIME: 17:30 EDT
+STATUS: Implemented — under PR review
 AUTHOR: Ed May / Claude
 SCOPE: Current state and next step for the window thermal-comfort check
 RELATED:
@@ -12,22 +12,16 @@ RELATED:
 
 **Issue:** [#72](https://github.com/bldgtyp/ph-navigator/issues/72)
 
-**State:** `Deferred` — PRD drafted 2026-08-18, no code written, no phases
-planned.
+**State:** `Implemented` — per-type `sill_height_mm` + blocked-on-missing-sill decisions confirmed by Ed; backend calculation/commands/route, per-lite NFRC rating route, 6 ft perimeter-heating height gate, and frontend chip/modal implemented on PR #126.
 
 ## Next step
 
-Answer PRD §10.2 before anything else:
+Finish PR #126 review and CI verification, then squash-merge to `main`.
 
-> Does the sill height belong on the aperture **type**, or can one type be
-> reused at different floor heights within a project?
+### Resolved design decisions
 
-The PRD assumes per-type. If reuse across heights is real, the datum has to
-move to the aperture *instance* and the derivation, the document schema, and
-the roll-up all change. Everything else in the PRD is stable regardless.
-
-Then decide PRD §10.1 (blocked vs not-screened for a missing sill height;
-recommendation is blocked) and write `phases/`.
+- **PRD §10.1 (missing sill height):** Confirmed **`blocked`** (`"Comfort: needs sill height"`), mirroring `missing_climate_source` on Condensation so unscreened apertures never appear green.
+- **PRD §10.2 (sill height scope):** Confirmed **per aperture type** (`ApertureTypeEntry.sill_height_mm`), while NFRC standard-size whole-window U (`nfrc_whole_window_u_w_m2k` / `nfrc_standard_size_note`) is stored **per element** so mixed storefronts do not share one rating across unrelated lites and product substitutions clear stale ratings.
 
 ## Blockers
 
