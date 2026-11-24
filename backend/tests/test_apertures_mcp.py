@@ -499,8 +499,14 @@ def test_apply_aperture_command_accepts_existing_catalog_frame_and_glazing_ids(
             VALUES ('recLiveGlaz000001', 'Live Glazing', 1.0, 0.5)
             """
         )
+        conn.execute(
+            """
+            INSERT INTO catalog_glazing_types (id, name, u_value_w_m2k, g_value, deleted_at)
+            VALUES ('recDeadGlaz000001', 'Deleted Glazing', 1.0, 0.5, NOW())
+            """
+        )
 
-    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found"):
+    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found") as dead_frame_exc:
         tool_apply_aperture_command(
             project_id,
             version_id,
@@ -526,6 +532,39 @@ def test_apply_aperture_command_accepts_existing_catalog_frame_and_glazing_ids(
             allow_env_token=True,
             if_match_version=saved_etag,
         )
+    dead_frame_err = json.loads(str(dead_frame_exc.value))
+    assert dead_frame_err["code"] == "aperture_pick_catalog_row_not_found"
+    assert dead_frame_err["recoverability"] == "fatal"
+    assert "recDeadFrame00001" in dead_frame_err["message"]
+
+    with pytest.raises(ToolError, match="aperture_pick_catalog_row_not_found") as dead_glazing_exc:
+        tool_apply_aperture_command(
+            project_id,
+            version_id,
+            {
+                "kind": "pickGlazing",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "glazing": {
+                    "name": "Deleted Glazing",
+                    "u_value_w_m2k": 1.0,
+                    "g_value": 0.5,
+                    "catalog_origin": {
+                        "catalog_table": "glazing_types",
+                        "catalog_record_id": "recDeadGlaz000001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+            cast(Context, None),
+            allow_env_token=True,
+            if_match_version=saved_etag,
+        )
+    dead_glazing_err = json.loads(str(dead_glazing_exc.value))
+    assert dead_glazing_err["code"] == "aperture_pick_catalog_row_not_found"
+    assert dead_glazing_err["recoverability"] == "fatal"
+    assert "recDeadGlaz000001" in dead_glazing_err["message"]
 
     frame_result = tool_apply_aperture_command(
         project_id,
@@ -578,4 +617,85 @@ def test_apply_aperture_command_accepts_existing_catalog_frame_and_glazing_ids(
         allow_env_token=True,
         if_match=draft_etag,
     )
-    assert cast(dict[str, object], glazing_result["response"])["source"] == "draft"
+    glazing_response = cast(dict[str, object], glazing_result["response"])
+    assert glazing_response["source"] == "draft"
+    assert glazing_response["draft_etag"] != draft_etag
+    apertures = cast(list[dict[str, object]], glazing_response["apertures"])
+    elements = cast(list[dict[str, object]], apertures[0]["elements"])
+    assigned_glazing_id = cast(str, elements[0]["glazing_id"])
+    project_glazings = cast(list[dict[str, object]], glazing_response["project_glazings"])
+    assigned_glazing = next(row for row in project_glazings if row["id"] == assigned_glazing_id)
+    assert cast(dict[str, object], assigned_glazing["catalog_origin"])["catalog_record_id"] == "recLiveGlaz000001"
+
+
+@pytest.mark.parametrize(
+    ("target", "record_id", "command"),
+    [
+        (
+            "frame",
+            "recRestMissFrm001",
+            {
+                "kind": "pickFrame",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "side": "top",
+                "frame": {
+                    "name": "Missing Frame",
+                    "width_mm": 60.0,
+                    "u_value_w_m2k": 1.1,
+                    "psi_g_w_mk": 0.035,
+                    "catalog_origin": {
+                        "catalog_table": "frame_types",
+                        "catalog_record_id": "recRestMissFrm001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+        ),
+        (
+            "glazing",
+            "recRestMissGlz001",
+            {
+                "kind": "pickGlazing",
+                "aperture_type_id": "apt_A",
+                "element_id": "aptel_A1",
+                "glazing": {
+                    "name": "Missing Glazing",
+                    "u_value_w_m2k": 0.7,
+                    "g_value": 0.45,
+                    "catalog_origin": {
+                        "catalog_table": "glazing_types",
+                        "catalog_record_id": "recRestMissGlz001",
+                        "catalog_schema_version": 1,
+                        "synced_at": "2026-10-28T00:00:00Z",
+                    },
+                },
+            },
+        ),
+    ],
+)
+def test_rest_aperture_command_returns_422_for_missing_catalog_pick(
+    clean_mcp_tables: None,
+    target: str,
+    record_id: str,
+    command: dict[str, object],
+) -> None:
+    from tests.test_project_document import ORIGIN
+
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/apertures/command",
+        headers={"Origin": ORIGIN, "If-Match-Version": saved_etag},
+        json=command,
+    )
+    assert response.status_code == 422, response.text
+    payload = response.json()
+    assert payload["error_code"] == "aperture_pick_catalog_row_not_found"
+    assert payload["details"] == {"target": target, "catalog_record_id": record_id}
