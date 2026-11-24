@@ -214,3 +214,27 @@ def test_thermal_bridges_replace_accepts_negative_psi_value(clean_document_table
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["thermal_bridges"][0]["custom_values"]["psi_value_w_mk"] == pytest.approx(-0.025)
+
+
+def test_thermal_bridges_replace_rejects_non_finite_psi_value(clean_document_tables: None) -> None:
+    import json
+
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_thermal_bridges_url(project_id, version_id))
+    payload = thermal_bridge_payload()
+    raw_body = json.dumps(payload).replace("0.094", "-1e309")
+
+    response = client.put(
+        draft_thermal_bridges_url(project_id, version_id),
+        headers={
+            "Origin": ORIGIN,
+            "If-Match-Version": initial.json()["version_etag"],
+            "Content-Type": "application/json",
+        },
+        content=raw_body,
+    )
+    assert response.status_code == 422, response.text

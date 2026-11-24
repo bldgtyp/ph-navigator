@@ -43,18 +43,19 @@ describe("thermal bridge payloads", () => {
     expect(payload.thermal_bridges[1]?.photo_asset_ids).toEqual([]);
   });
 
-  test("accepts negative psi_value_w_mk values", () => {
+  test("accepts negative psi_value_w_mk cell writes", () => {
     const payload = thermalBridgesPayloadFromCellWrites(
       thermalBridgesSlice({
         thermal_bridges: [
-          thermalBridgeRow({ custom_values: { record_id: "TB-1", psi_value_w_mk: -0.025 } }),
+          thermalBridgeRow({ custom_values: { record_id: "TB-1", psi_value_w_mk: 0.05 } }),
         ],
       }),
-      [],
+      [{ rowId: "tb_1", fieldKey: "psi_value_w_mk", value: -0.025 }],
       {},
       {},
     );
 
+    expect(payload.thermal_bridges[0]?.custom_values.psi_value_w_mk).toBe(-0.025);
     expect(validateThermalBridgesPayload(payload)).toBeNull();
   });
 });
