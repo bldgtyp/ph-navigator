@@ -59,18 +59,9 @@ from features.projects.service import empty_project_document
 
 
 class _StubCatalog:
-    def __init__(
-        self,
-        *,
-        frame: FrameRef | None,
-        glazing: GlazingRef | None,
-        known_frame_ids: set[str] | None = None,
-        known_glazing_ids: set[str] | None = None,
-    ) -> None:
+    def __init__(self, *, frame: FrameRef | None, glazing: GlazingRef | None) -> None:
         self._frame = frame
         self._glazing = glazing
-        self._known_frame_ids = known_frame_ids
-        self._known_glazing_ids = known_glazing_ids
 
     def get_default_frame(self) -> FrameRef | None:
         return self._frame
@@ -79,10 +70,10 @@ class _StubCatalog:
         return self._glazing
 
     def frame_exists(self, record_id: str) -> bool:
-        return self._known_frame_ids is None or record_id in self._known_frame_ids
+        return True
 
     def glazing_exists(self, record_id: str) -> bool:
-        return self._known_glazing_ids is None or record_id in self._known_glazing_ids
+        return True
 
 
 def _seeded_catalog() -> DefaultsCatalogReader:
