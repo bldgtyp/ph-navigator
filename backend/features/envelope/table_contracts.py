@@ -9,23 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.envelope.models import AssemblySegmentTableRow
 from features.envelope.selectors import flatten_assembly_segments
-from features.envelope.specification_status_compat import CompatibleSpecificationStatus
 from features.project_document.document import EvidenceStatus, ProjectDocumentV1, ProjectMaterial
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables.contracts import TableContract, TableRowsResponse
 from features.project_document.validation import validate_document
 
 
-class ProjectMaterialMutation(ProjectMaterial):
-    """Public table-row DTO; the stored ``ProjectMaterial`` remains strict v8."""
-
-    specification_status: CompatibleSpecificationStatus = "needed"
-
-
 class ProjectMaterialsReplaceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    rows: list[ProjectMaterialMutation]
+    rows: list[ProjectMaterial]
 
 
 class AssemblySegmentReplaceRow(BaseModel):
@@ -71,10 +64,7 @@ def build_project_materials_response(
 
 
 def apply_project_materials_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
-    rows = [
-        ProjectMaterial.model_validate(row.model_dump(mode="json"))
-        for row in cast(ProjectMaterialsReplaceRequest, payload).rows
-    ]
+    rows = cast(ProjectMaterialsReplaceRequest, payload).rows
     if body.tables.project_materials == rows:
         return body
     raw = body.model_dump(mode="json")

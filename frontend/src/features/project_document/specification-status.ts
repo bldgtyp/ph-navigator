@@ -151,50 +151,9 @@ export function isSpecificationStatus(value: string): value is SpecificationStat
 }
 
 /**
- * What a response may carry on the wire. The backend is canonical `needed` as
- * of schema v8, but a browser can outlive a deploy, so reads still tolerate the
- * legacy `missing`. Removed in Cleanup Release C once the observation window
- * is clean.
- */
-export type WireSpecificationStatus = SpecificationStatus | "missing";
-export type WireSpecificationStatusRecord<T extends { specification_status: unknown }> = Omit<
-  T,
-  "specification_status"
-> & {
-  specification_status: WireSpecificationStatus;
-};
-
-export function normalizeSpecificationStatus(value: unknown): SpecificationStatus {
-  if (value === "missing") return "needed";
-  if (value === "complete" || value === "needed" || value === "question" || value === "na") {
-    return value;
-  }
-  throw new Error(`Unsupported specification status: ${String(value)}`);
-}
-
-export function normalizeSpecificationStatusRecord<T extends { specification_status: unknown }>(
-  record: T,
-): Omit<T, "specification_status"> & { specification_status: SpecificationStatus } {
-  const specificationStatus = normalizeSpecificationStatus(record.specification_status);
-  if (specificationStatus === record.specification_status) {
-    return record as Omit<T, "specification_status"> & {
-      specification_status: SpecificationStatus;
-    };
-  }
-  return {
-    ...record,
-    specification_status: specificationStatus,
-  };
-}
-
-/**
  * Resolve a value for a built-in specification-status write. `unknown` is a
  * response-only sentinel (D-7) that is never persisted; an editor leaving it
  * alone writes canonical `needed`.
- *
- * Legacy `missing` is deliberately not accepted here: writes originate from
- * this build's own UI state, so the wire-tolerance boundary is
- * `normalizeSpecificationStatus` on the read path, not this one.
  */
 export function serializeSpecificationStatus(
   value: SpecificationStatus | "unknown",

@@ -1,11 +1,12 @@
 ---
-DATE: 2026-07-20
-TIME: 11:30 EDT
-STATUS: Deployed and verified in production — only Phase 07 adapter retirement remains
-AUTHOR: Codex with Ed May
+DATE: 2026-11-23
+TIME: 21:14 EST
+STATUS: Complete — Phase 07 temporary adapters retired on main and packet archived 2026-11-23
+AUTHOR: Codex with Ed May (closeout 2026-11-23)
 SCOPE: Make `needed` the canonical PH-Navigator specification-status value
   while preserving historical project versions, external Honeybee
   compatibility, and safe rollout across two production projects.
+ISSUE: https://github.com/bldgtyp/ph-navigator/issues/76
 RELATED:
   - ./PRD.md
   - ./PLAN.md
@@ -23,13 +24,11 @@ RELATED:
 Planning router for the built-in specification-status rename
 `missing` → `needed`.
 
-Current checkpoint: **shipped**. Commit `ef97b483` deployed to production
-2026-07-19, carrying Compatibility Release A and Canonical Release B together.
-Both production projects verified read-only and passing: stored `schema_version=4`
-bodies read back as `8` with zero legacy `missing`, and nothing was rewritten.
-
-Remaining: retire the two temporary cached-client adapters (Phase 07), which is
-blocked on the observation window and needs a second deploy.
+Current checkpoint: **complete and archived (2026-11-23)**. Commit `ef97b483`
+deployed to production 2026-07-19, carrying Compatibility Release A and
+Canonical Release B together. Phase 07 retired the two temporary cached-client
+adapters on `main` (PR #118); removal takes effect in production on the next
+explicit production deploy.
 
 Read in this order:
 

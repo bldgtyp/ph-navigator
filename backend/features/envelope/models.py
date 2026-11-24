@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from features.envelope.boundary_conditions import HeatFlowDirection
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.envelope.phpp_types import ExportReason
-from features.envelope.specification_status_compat import CompatibleSpecificationStatus
 from features.project_document.document import (
     Assembly,
     AssemblyAirBarrier,
@@ -21,6 +20,7 @@ from features.project_document.document import (
     EvidenceStatus,
     ExteriorCondition,
     ProjectMaterial,
+    SpecificationStatus,
     ThermalStandard,
 )
 from features.project_document.models import ProjectDocumentSource
@@ -503,7 +503,7 @@ class UpdateProjectMaterialCommand(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: CompatibleSpecificationStatus | None = None
+    specification_status: SpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
 
@@ -559,7 +559,7 @@ class UpdateProjectGlazingCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: CompatibleSpecificationStatus | None = None
+    specification_status: SpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
@@ -593,7 +593,7 @@ class UpdateProjectFrameCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: CompatibleSpecificationStatus | None = None
+    specification_status: SpecificationStatus | None = None
     datasheet_status: EvidenceStatus | None = None
     photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None

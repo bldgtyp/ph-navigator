@@ -1,9 +1,6 @@
 import type { CatalogOrigin } from "../project_document/catalog-origin";
 import type { BaseTableSlice } from "../project_document/table-slice";
-import type {
-  SpecificationStatus,
-  WireSpecificationStatusRecord,
-} from "../project_document/specification-status";
+import type { SpecificationStatus } from "../project_document/specification-status";
 
 export type { CatalogOrigin, CatalogTableName } from "../project_document/catalog-origin";
 export type { SpecificationStatus } from "../project_document/specification-status";
@@ -61,10 +58,6 @@ export type ProjectGlazing = GlazingRef & {
   photo_asset_ids: string[];
   photo_not_required?: boolean;
 };
-
-export type WireProjectFrame = WireSpecificationStatusRecord<ProjectFrame>;
-
-export type WireProjectGlazing = WireSpecificationStatusRecord<ProjectGlazing>;
 
 export type ProjectGlazingUseSite = {
   aperture_type_id: string;
@@ -199,14 +192,6 @@ export type ApertureSpecReportResponse = BaseTableSlice & {
   project_frames: ProjectFrameRead[];
 };
 
-export type WireApertureSpecReportResponse = Omit<
-  ApertureSpecReportResponse,
-  "project_glazings" | "project_frames"
-> & {
-  project_glazings: Array<WireSpecificationStatusRecord<ProjectGlazingRead>>;
-  project_frames: Array<WireSpecificationStatusRecord<ProjectFrameRead>>;
-};
-
 export type ApertureAttachmentChangeArgs = {
   tableKey: "project_glazings" | "project_frames";
   rowId: string;
@@ -233,13 +218,8 @@ export type ApertureProductCommand =
   | { kind: "remove_project_glazing"; project_glazing_id: string }
   | { kind: "remove_project_frame"; project_frame_id: string };
 
-export type WireAperturesSlice = Omit<
-  AperturesSlice,
-  "apertures" | "project_glazings" | "project_frames"
-> & {
+export type WireAperturesSlice = Omit<AperturesSlice, "apertures"> & {
   apertures: WireApertureTypeEntry[];
-  project_glazings: WireProjectGlazing[];
-  project_frames: WireProjectFrame[];
 };
 
 // Discriminated union mirroring the backend `ApertureCommand`. Every

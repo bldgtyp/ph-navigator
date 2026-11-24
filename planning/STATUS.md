@@ -12,7 +12,6 @@ GitHub issue (`bldgtyp/ph-navigator`).
 
 | Item | Kind | State | Issue | Pointer |
 | --- | --- | --- | --- | --- |
-| Spec-Status Value Unification | Refactor | **Deployed and verified in production** — only Phase 07 adapter retirement remains | [#76](https://github.com/bldgtyp/ph-navigator/issues/76) | [`refactor/spec-status-value-unification/`](refactor/spec-status-value-unification/STATUS.md) |
 | Window Thermal Comfort Check | Feature | **Scoped** — PRD drafted 2026-08-18, no code; blocked on the per-type vs per-instance design question | [#72](https://github.com/bldgtyp/ph-navigator/issues/72) | [`features/window-thermal-comfort-check/`](features/window-thermal-comfort-check/STATUS.md) |
 | Apertures Catalog-Drift UX Parity | Refactor | **Scoped** — deferred, not started | [#74](https://github.com/bldgtyp/ph-navigator/issues/74) | [`refactor/aperture-catalog-drift-ux-parity/`](refactor/aperture-catalog-drift-ux-parity/STATUS.md) |
 
