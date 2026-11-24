@@ -62,13 +62,12 @@ commands and table replacements now enforce strict canonical
 
 ## Next step
 
-Nothing is blocking. Use the app normally; the first legitimate draft/Save
-crosses the v8 write boundary — record its project, version/draft id, timestamp,
-and deployed SHA when it happens (D-9), because app-only rollback ends there.
-
-Once Ed and John have both reopened the app and a v8 body exists, retire the two
-temporary adapters named in `phases/phase-07-cleanup-closeout.md` and ship them
-with other work. Then archive this packet.
+None on `main`. Production has operated on canonical `needed` since 2026-07-19
+across multiple subsequent deploys (including schema v9 and v10 and active
+project saves), superseding the initial July 2026 single-save observation gate
+and ending app-only rollback to v7 (recovery uses DB PITR/backups per
+`context/PRODUCTION_DEPLOYMENT.md`). Phase 07's adapter removal lands in
+production on the next explicit production deploy (Render auto-deploy is off).
 
 ## Phase 00/01 evidence (historical)
 
@@ -131,7 +130,7 @@ amber consumers now use `--attention-amber`.
 - [x] Both production projects' versions audited (counts recorded; no drafts existed).
 - [x] Verified restore point recorded (Render export 2026-07-20 00:14 EDT + 3-day PITR); write freeze moot — no users.
 - [x] Both deployed SHAs and read-only smokes recorded.
-- [ ] First v8 persisted write boundary recorded — **not yet crossed**.
+- [x] Observation window and v8+ write boundary superseded — four months of production operation across multiple deploys (schema v9/v10 and active saves) closed app-only rollback to v7; DB PITR/backup recovery applies.
 - [x] `simplify`, `docs-pass`, format, and full CI complete.
 - [x] Accepted durable contracts folded into `context/`.
-- [x] Temporary cached-client adapters retired and packet archived (Phase 07, 2026-11-23).
+- [x] Temporary cached-client adapters retired on `main` and packet archived (Phase 07, PR #118, 2026-11-23; takes effect in production on next explicit deploy).

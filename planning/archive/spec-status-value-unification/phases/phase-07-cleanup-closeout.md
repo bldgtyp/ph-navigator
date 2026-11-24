@@ -53,7 +53,7 @@ compatibility adapters, truthful production evidence, and durable context docs.
    project.
 8. Run `simplify`, then `docs-pass`; record any resulting decisions.
 9. Run format, focused cleanup tests, and full `make ci`.
-10. Archive under `planning/archive/dated/<date>/spec-status-value-unification/`,
+10. Archive flat-by-slug under `planning/archive/spec-status-value-unification/`,
     update `planning/archive/README.md`, and update `planning/STATUS.md`.
 
 ## Exit gate
@@ -71,7 +71,7 @@ Do not use closeout to merge `StatusSelect` with DataTable status-pill CSS or to
 rename unrelated missing-data concepts. Record such work separately if still
 valuable.
 
-## Progress (2026-07-20)
+## Progress (2026-07-20, historical)
 
 Done now, because none of it depends on the observation window:
 
@@ -122,5 +122,23 @@ packet stays active until they are gone.
 **Also carried:** the `--report-status-missing` token alias (see the Phase 03
 as-built notes) — a naming cleanup excluded from this rollout by D-8.
 
-Step 10 (archive) is deliberately **not** done: archiving now would file the
-packet away with its contraction step outstanding.
+Step 10 (archive) was held in July 2026 until adapter retirement landed.
+
+## Closeout (2026-11-23)
+
+- **Observation window & prerequisites settled:** four months of production
+  operation since the 2026-07-19 deploy across multiple subsequent releases
+  (including schema v9/v10 and active project saves) refreshed clients and
+  closed app-only rollback to v7; recovery uses DB PITR/backups per
+  `context/PRODUCTION_DEPLOYMENT.md`.
+- **Steps 2–3 complete:** removed `backend/features/envelope/specification_status_compat.py`,
+  `ProjectMaterialMutation`, `WireSpecificationStatus*`,
+  `normalizeSpecificationStatus*`, `normalizeEnvelopeReadResponse`, and
+  `normalizeApertureSpecReport` in PR #118. Permanent v7→v8 upgraders,
+  DataTable `opt_status_needed`, and Honeybee `needed ↔ MISSING` adapters
+  remain intact.
+- **Step 10 complete:** archived flat-by-slug to
+  `planning/archive/spec-status-value-unification/` and updated
+  `planning/archive/README.md` and `planning/STATUS.md`. Production retirement
+  takes effect on the next explicit production deploy (Render auto-deploy is
+  off).
