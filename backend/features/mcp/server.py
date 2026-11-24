@@ -358,15 +358,19 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         )
 
     @mcp.tool()
-    def get_envelope_assembly_thermal(
+    async def get_envelope_assembly_thermal(
         project_id: str,
         version_id: str,
         assembly_id: str,
         ctx: Context,
-        source: ProjectDocumentSource = "draft",
+        source: str = "draft",
     ) -> dict[str, object]:
-        """Return backend-computed SI R-values, U-values, surface films, and status for one envelope assembly."""
-        return tool_get_envelope_assembly_thermal(
+        """Return backend-computed SI R-values, U-values, surface films, and per-layer R for one assembly.
+
+        ``source`` must be ``"draft"`` (default) or ``"version"``. Per-layer R values use the
+        isothermal-planes equivalent for segmented layers and ``null`` for membrane or incomplete layers.
+        """
+        return await tool_get_envelope_assembly_thermal(
             project_id,
             version_id,
             assembly_id,

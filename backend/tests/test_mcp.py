@@ -1549,11 +1549,12 @@ async def test_mcp_server_instructions_and_list_projects_doc_cover_both_token_sc
         assert "project:write" in by_name[lifecycle_tool]
 
 
-def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
+@pytest.mark.anyio
+async def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from features.mcp.tools import tool_get_envelope_assembly_thermal
+    from features.mcp.server import build_mcp_server
 
     client = signed_in_client()
     project = create_project(client)
@@ -1561,7 +1562,6 @@ def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
     version_id = cast(str, project["active_version_id"])
     saved_body = envelope_body()
     assembly = saved_body.tables.assemblies[0]
-    # Make the assembly complete so effective R and U values compute cleanly.
     material_id = saved_body.tables.project_materials[0].id
     saved_body.tables.project_materials[0].conductivity_w_mk = 0.04
     for layer in assembly.layers:
@@ -1569,46 +1569,115 @@ def test_mcp_get_envelope_assembly_thermal_returns_si_r_u_and_films(
             segment.project_material_id = material_id
     write_saved_body(version_id, saved_body)
 
-    issued = client.post(
+    # Create a draft with a different conductivity so draft vs version results diverge.
+    write_token = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Thermal Write MCP", "scopes": ["project:read", "project:write"]},
+    ).json()["token"]
+    monkeypatch.setenv("PHN_MCP_TOKEN", write_token)
+    tool_apply_envelope_command(
+        project_id,
+        version_id,
+        {
+            "kind": "update_project_material",
+            "project_material_id": material_id,
+            "conductivity_w_mk": 0.08,
+        },
+        cast(Context, None),
+        allow_env_token=True,
+        if_match_version=document_etag(saved_body),
+    )
+
+    # Switch to a read-only token and call the registered async MCP tool.
+    read_token = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
         headers={"Origin": ORIGIN},
         json={"label": "Thermal QA MCP", "scopes": ["project:read"]},
-    )
-    monkeypatch.setenv("PHN_MCP_TOKEN", issued.json()["token"])
+    ).json()["token"]
+    monkeypatch.setenv("PHN_MCP_TOKEN", read_token)
+    server = build_mcp_server(allow_env_token=True)
 
-    result = tool_get_envelope_assembly_thermal(
-        project_id,
-        version_id,
-        assembly.id,
-        cast(Context, None),
-        allow_env_token=True,
-        source="version",
+    _, saved_result = await server.call_tool(
+        "get_envelope_assembly_thermal",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "assembly_id": assembly.id,
+            "source": "version",
+        },
     )
-    assert result["assembly_id"] == assembly.id
-    assert result["source"] == "version"
-    assert cast(dict[str, object], result["status"])["is_complete"] is True
-    assert isinstance(result["r_effective_m2k_w"], float)
-    assert isinstance(result["u_effective_w_m2k"], float)
-    assert isinstance(result["r_construction_m2k_w"], float)
-    assert isinstance(result["u_construction_w_m2k"], float)
-    assert isinstance(result["rsi_m2k_w"], float)
-    assert isinstance(result["rse_m2k_w"], float)
-    assert result["r_effective_m2k_w"] > result["r_construction_m2k_w"]
+    _, draft_result = await server.call_tool(
+        "get_envelope_assembly_thermal",
+        {
+            "project_id": project_id,
+            "version_id": version_id,
+            "assembly_id": assembly.id,
+        },
+    )
+    saved_payload = cast(dict[str, object], saved_result)
+    draft_payload = cast(dict[str, object], draft_result)
+
+    assert saved_payload["assembly_id"] == assembly.id
+    assert saved_payload["source"] == "version"
+    assert draft_payload["source"] == "draft"
+    assert cast(dict[str, object], saved_payload["status"])["is_complete"] is True
+    assert cast(dict[str, object], draft_payload["status"])["is_complete"] is True
+
+    # ISO 6946 wall (horizontal heat flow, exterior): Rsi = 0.13, Rse = 0.04.
+    assert saved_payload["rsi_m2k_w"] == pytest.approx(0.13)
+    assert saved_payload["rse_m2k_w"] == pytest.approx(0.04)
+
+    # Layer thickness sum in meters divided by conductivity (0.04 vs 0.08).
+    expected_saved_r_construction = sum(layer.thickness_mm / 1000.0 / 0.04 for layer in assembly.layers)
+    expected_draft_r_construction = sum(layer.thickness_mm / 1000.0 / 0.08 for layer in assembly.layers)
+    assert saved_payload["r_construction_m2k_w"] == pytest.approx(expected_saved_r_construction, rel=1e-5)
+    assert draft_payload["r_construction_m2k_w"] == pytest.approx(expected_draft_r_construction, rel=1e-5)
+    assert saved_payload["r_effective_m2k_w"] == pytest.approx(expected_saved_r_construction + 0.17, rel=1e-5)
+    assert draft_payload["r_effective_m2k_w"] == pytest.approx(expected_draft_r_construction + 0.17, rel=1e-5)
+    assert saved_payload["u_effective_w_m2k"] == pytest.approx(1.0 / (expected_saved_r_construction + 0.17), rel=1e-5)
+
+    # Per-layer R values match each layer's thickness / conductivity.
+    saved_layers = cast(list[dict[str, object]], saved_payload["layers"])
+    assert len(saved_layers) == len(assembly.layers)
+    for layer, layer_thermal in zip(assembly.layers, saved_layers, strict=True):
+        assert layer_thermal["layer_id"] == layer.id
+        assert layer_thermal["is_membrane"] is False
+        assert layer_thermal["r_value_m2k_w"] == pytest.approx(layer.thickness_mm / 1000.0 / 0.04, rel=1e-5)
+
+    with pytest.raises(ToolError) as invalid_source_exc:
+        await server.call_tool(
+            "get_envelope_assembly_thermal",
+            {
+                "project_id": project_id,
+                "version_id": version_id,
+                "assembly_id": assembly.id,
+                "source": "bogus",
+            },
+        )
+    invalid_source_err = json.loads(
+        str(invalid_source_exc.value).removeprefix("Error executing tool get_envelope_assembly_thermal: ")
+    )
+    assert invalid_source_err["code"] == "validation_error"
+    assert invalid_source_err["recoverability"] == "fatal"
+    assert invalid_source_err["details"]["field"] == "source"
 
     with pytest.raises(ToolError, match="assembly_not_found"):
-        tool_get_envelope_assembly_thermal(
-            project_id,
-            version_id,
-            "asm_does_not_exist",
-            cast(Context, None),
-            allow_env_token=True,
+        await server.call_tool(
+            "get_envelope_assembly_thermal",
+            {
+                "project_id": project_id,
+                "version_id": version_id,
+                "assembly_id": "asm_does_not_exist",
+            },
         )
 
     with pytest.raises(ToolError, match="validation_error"):
-        tool_get_envelope_assembly_thermal(
-            project_id,
-            version_id,
-            "   ",
-            cast(Context, None),
-            allow_env_token=True,
+        await server.call_tool(
+            "get_envelope_assembly_thermal",
+            {
+                "project_id": project_id,
+                "version_id": version_id,
+                "assembly_id": "   ",
+            },
         )

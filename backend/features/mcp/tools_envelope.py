@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import cast
 
 from fastapi import HTTPException
@@ -69,14 +70,14 @@ def tool_list_envelope_assemblies(
     }
 
 
-def tool_get_envelope_assembly_thermal(
+async def tool_get_envelope_assembly_thermal(
     project_id: str,
     version_id: str,
     assembly_id: str,
     ctx: Context,
     *,
     allow_env_token: bool,
-    source: ProjectDocumentSource = "draft",
+    source: str = "draft",
 ) -> dict[str, object]:
     parsed_project_id = parse_uuid(project_id, "project_id", ctx)
     parsed_version_id = parse_uuid(version_id, "version_id", ctx)
@@ -97,10 +98,17 @@ def tool_get_envelope_assembly_thermal(
             ctx,
             {"field": "source", "value": source},
         )
+    parsed_source: ProjectDocumentSource = "version" if source == "version" else "draft"
     token = current_token(ctx, allow_env_token)
     access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
     try:
-        response = get_assembly_thermal_model(parsed_version_id, access, normalized_assembly_id, source)
+        response = await asyncio.to_thread(
+            get_assembly_thermal_model,
+            parsed_version_id,
+            access,
+            normalized_assembly_id,
+            parsed_source,
+        )
     except HTTPException as exc:
         raise_http_exception_as_mcp_error(
             exc,
@@ -361,6 +369,7 @@ _ENVELOPE_RECOVERABILITY: dict[str, McpRecoverability] = {
     "project_material_has_no_catalog_origin": "refresh",
     "catalog_material_source_missing": "refresh",
     "catalog_material_source_deactivated": "refresh",
+    "surface_film_table_unavailable": "fatal",
 }
 
 

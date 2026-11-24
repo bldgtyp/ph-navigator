@@ -29,7 +29,7 @@ from features.envelope.boundary_conditions import (
     resolve_surface_resistances,
 )
 from features.envelope.membranes import assigned_materials, is_membrane_layer, is_membrane_material
-from features.envelope.models import AssemblyThermalStatus, ThermalStatusFlag
+from features.envelope.models import AssemblyLayerThermal, AssemblyThermalStatus, ThermalStatusFlag
 from features.project_document.document import (
     Assembly,
     AssemblyLayer,
@@ -73,6 +73,7 @@ class ThermalResult:
     rse_m2k_w: float
     heat_flow_direction: HeatFlowDirection
     thermal_standard: ThermalStandard
+    layers: list[AssemblyLayerThermal]
     warnings: list[str]
 
 
@@ -173,8 +174,36 @@ def calculate_assembly_thermal(
         rse_m2k_w=films.rse_m2k_w,
         heat_flow_direction=films.heat_flow_direction,
         thermal_standard=films.standard,
+        layers=_calculate_layer_thermals(assembly, materials_by_id),
         warnings=construction.warnings,
     )
+
+
+def _calculate_layer_thermals(
+    assembly: Assembly,
+    materials_by_id: dict[str, ProjectMaterial],
+) -> list[AssemblyLayerThermal]:
+    """Compute per-layer SI resistance (isothermal-planes equivalent for segmented layers)."""
+    rows: list[AssemblyLayerThermal] = []
+    for layer in assembly.layers:
+        is_membrane = is_membrane_layer(layer, materials_by_id)
+        r_value: float | None = None
+        if not is_membrane and layer.thickness_mm > 0 and layer.segments:
+            path_segments = _layer_path_segments(layer, materials_by_id)
+            if len(path_segments) == len(layer.segments):
+                u_layer = sum(seg.area_fraction / seg.r_value for seg in path_segments if seg.r_value > 0)
+                if u_layer > 0:
+                    r_value = round(1.0 / u_layer, 6)
+        rows.append(
+            AssemblyLayerThermal(
+                layer_id=layer.id,
+                order=layer.order,
+                thickness_mm=layer.thickness_mm,
+                is_membrane=is_membrane,
+                r_value_m2k_w=r_value,
+            )
+        )
+    return rows
 
 
 def _incomplete_construction(status: AssemblyThermalStatus, warnings: list[str]) -> ConstructionThermalResult:

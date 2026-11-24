@@ -118,6 +118,23 @@ class EnvelopeReadResponse(BaseModel):
     project_materials: list[ProjectMaterialRead] = Field(default_factory=list)
 
 
+class AssemblyLayerThermal(BaseModel):
+    """Per-layer SI thermal resistance (isothermal-planes equivalent for segmented layers).
+
+    Membrane layers are excluded from the R sum and report ``is_membrane=True``
+    with ``r_value_m2k_w=None``. Incomplete layers (missing material, missing
+    conductivity, broken reference, or invalid geometry) also report ``None``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    layer_id: str
+    order: int
+    thickness_mm: float
+    is_membrane: bool
+    r_value_m2k_w: float | None
+
+
 class AssemblyThermalResponse(BaseModel):
     """Backend-computed thermal result in SI units.
 
@@ -144,6 +161,7 @@ class AssemblyThermalResponse(BaseModel):
     rse_m2k_w: float
     heat_flow_direction: HeatFlowDirection
     thermal_standard: ThermalStandard
+    layers: list[AssemblyLayerThermal] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 
